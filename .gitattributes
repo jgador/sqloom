@@ -1,0 +1,19 @@
+* text=auto
+.gitattributes text eol=lf
+
+# Markdown must stay LF for Linux/container usage
+*.md   text eol=lf
+
+# Shell scripts must stay LF
+*.sh   text eol=lf
+*.bash text eol=lf
+*.zsh  text eol=lf
+sshrc  text eol=lf
+
+# YAML files must stay LF for Linux runners and Kubernetes tooling
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# C# files should stay CRLF
+*.cs   text diff=csharp eol=crlf
+*.sln  text eol=crlf

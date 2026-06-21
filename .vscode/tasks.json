@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build: Sqloom.sln",
+      "type": "process",
+      "command": "dotnet",
+      "args": [
+        "build",
+        ".\\Sqloom.sln",
+        "--tl:off",
+        "--nologo",
+        "-clp:ErrorsOnly;NoSummary"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$msCompile",
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      }
+    }
+  ]
+}
