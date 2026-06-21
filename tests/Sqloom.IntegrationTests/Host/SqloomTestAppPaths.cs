@@ -9,18 +9,16 @@ namespace Sqloom.Host.Tests;
 /// </summary>
 internal static class SqloomTestAppPaths
 {
-    public static string GetBackendRoot()
+    public static string GetRepositoryRoot()
     {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
+        return RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
             ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom integration tests.");
-        return Path.Combine(repositoryRoot, "backend");
     }
 
     public static string GetProjectPath()
     {
         return Path.Combine(
-            GetBackendRoot(),
-            "tools",
+            GetRepositoryRoot(),
             "Sqloom.TestApp",
             "Sqloom.TestApp.csproj");
     }
@@ -28,8 +26,7 @@ internal static class SqloomTestAppPaths
     public static string GetSqlServerDacpacPath()
     {
         return Path.Combine(
-            GetBackendRoot(),
-            "tools",
+            GetRepositoryRoot(),
             "Sqloom.TestApp.IntegrationTests",
             "AdventureWorksLT2025.dacpac");
     }
@@ -37,8 +34,7 @@ internal static class SqloomTestAppPaths
     public static string GetSeedExportScriptPath()
     {
         return Path.Combine(
-            GetBackendRoot(),
-            "tools",
+            GetRepositoryRoot(),
             "Sqloom.TestApp.IntegrationTests",
             "Export-AdventureWorksLT2025SeedSql.ps1");
     }
@@ -46,8 +42,7 @@ internal static class SqloomTestAppPaths
     public static string GetSqlServerSeedScriptPath()
     {
         return Path.Combine(
-            GetBackendRoot(),
-            "tools",
+            GetRepositoryRoot(),
             "Sqloom.TestApp.IntegrationTests",
             "AdventureWorksLT2025.seed.sql");
     }
@@ -55,8 +50,7 @@ internal static class SqloomTestAppPaths
     public static string GetSqlServerSchemaPath()
     {
         return Path.Combine(
-            GetBackendRoot(),
-            "tools",
+            GetRepositoryRoot(),
             "Sqloom.TestApp.IntegrationTests",
             "AdventureWorksLT2025.schema.sql");
     }

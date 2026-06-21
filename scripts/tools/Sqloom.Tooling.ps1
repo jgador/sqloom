@@ -9,21 +9,19 @@ function Get-SqloomToolingContext
     )
 
     $scriptsRoot = Split-Path -Parent $ScriptPath
-    $backendRoot = (Resolve-Path (Join-Path $scriptsRoot "..\..")).Path
-    $repoRoot = (Resolve-Path (Join-Path $backendRoot "..")).Path
+    $repoRoot = (Resolve-Path (Join-Path $scriptsRoot "..\..")).Path
     $dotnet = (Get-Command dotnet -ErrorAction Stop).Source
-    $solutionPath = Join-Path $backendRoot "tools\Sqloom.sln"
-    $packageFeedPath = Join-Path $backendRoot "artifacts\packages\sqloom"
+    $solutionPath = Join-Path $repoRoot "Sqloom.sln"
+    $packageFeedPath = Join-Path $repoRoot "artifacts\packages\sqloom"
     $localToolPath = Join-Path $repoRoot ".tools\sqloom-local"
     $wrapperBinPath = Join-Path $repoRoot ".tools\bin"
     $wrapperPath = Join-Path $wrapperBinPath "sqloom-local.cmd"
-    $verifyToolPath = Join-Path $backendRoot "artifacts\tools\sqloom-verify"
+    $verifyToolPath = Join-Path $repoRoot "artifacts\tools\sqloom-verify"
 
-    [xml]$versionXml = Get-Content (Join-Path $backendRoot "Directory.Build.props")
+    [xml]$versionXml = Get-Content (Join-Path $repoRoot "Directory.Build.props")
 
     return [pscustomobject]@{
         RepoRoot = $repoRoot
-        BackendRoot = $backendRoot
         DotNet = $dotnet
         SolutionPath = $solutionPath
         PackageFeedPath = $packageFeedPath
@@ -31,6 +29,7 @@ function Get-SqloomToolingContext
         WrapperBinPath = $wrapperBinPath
         WrapperPath = $wrapperPath
         VerifyToolPath = $verifyToolPath
+        PackConfiguration = "Release"
         PackageVersion = $versionXml.Project.PropertyGroup.Version
     }
 }
@@ -39,15 +38,15 @@ function Get-SqloomPackProjects
 {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$BackendRoot
+        [string]$RepoRoot
     )
 
     return @(
-        Join-Path $BackendRoot "tools\Sqloom.Core\Sqloom.Core.csproj"
-        Join-Path $BackendRoot "tools\Sqloom.QueryStore\Sqloom.QueryStore.csproj"
-        Join-Path $BackendRoot "tools\Sqloom.AzureSql\Sqloom.AzureSql.csproj"
-        Join-Path $BackendRoot "tools\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj"
-        Join-Path $BackendRoot "tools\Sqloom.Host\Sqloom.Host.csproj"
+        Join-Path $RepoRoot "Sqloom.Core\Sqloom.Core.csproj"
+        Join-Path $RepoRoot "Sqloom.QueryStore\Sqloom.QueryStore.csproj"
+        Join-Path $RepoRoot "Sqloom.AzureSql\Sqloom.AzureSql.csproj"
+        Join-Path $RepoRoot "Sqloom.AspNetCore\Sqloom.AspNetCore.csproj"
+        Join-Path $RepoRoot "Sqloom.Host\Sqloom.Host.csproj"
     )
 }
 
@@ -156,13 +155,15 @@ function Invoke-SqloomPackSet
         [switch]$NoRestore
     )
 
-    Reset-Directory -Path $Context.PackageFeedPath -RootPath $Context.BackendRoot -Label "Sqloom package feed"
+    Reset-Directory -Path $Context.PackageFeedPath -RootPath $Context.RepoRoot -Label "Sqloom package feed"
 
-    foreach ($projectPath in (Get-SqloomPackProjects -BackendRoot $Context.BackendRoot))
+    foreach ($projectPath in (Get-SqloomPackProjects -RepoRoot $Context.RepoRoot))
     {
         $arguments = @(
             "pack"
             $projectPath
+            "-c"
+            $Context.PackConfiguration
             "--tl:off"
             "--nologo"
             "-clp:ErrorsOnly;NoSummary"

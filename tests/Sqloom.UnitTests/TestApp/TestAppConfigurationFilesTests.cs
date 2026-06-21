@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
-using Sqloom.Core.Execution;
+using Sqloom.Tests;
 using Xunit;
 
 namespace Sqloom.TestApp.Tests;
@@ -58,12 +58,6 @@ public sealed class TestAppConfigurationFilesTests
 
     private static string GetProjectDirectory()
     {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(
-            repositoryRoot,
-            "backend",
-            "tools",
-            "Sqloom.TestApp");
+        return SqloomRepositoryPaths.GetTestAppProjectDirectory();
     }
 }

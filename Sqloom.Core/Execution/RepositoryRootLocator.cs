@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 
 namespace Sqloom.Core.Execution;
 
@@ -20,9 +21,7 @@ public static class RepositoryRootLocator
         DirectoryInfo? currentDirectory = new(startDirectory);
         while (currentDirectory is not null)
         {
-            var gitPath = Path.Combine(currentDirectory.FullName, ".git");
-            var backendPath = Path.Combine(currentDirectory.FullName, "backend");
-            if ((Directory.Exists(gitPath) || File.Exists(gitPath)) && Directory.Exists(backendPath))
+            if (LooksLikeRepositoryRoot(currentDirectory.FullName))
             {
                 return currentDirectory.FullName;
             }
@@ -31,5 +30,26 @@ public static class RepositoryRootLocator
         }
 
         return null;
+    }
+
+    private static bool LooksLikeRepositoryRoot(string directoryPath)
+    {
+        var gitPath = Path.Combine(directoryPath, ".git");
+        return (Directory.Exists(gitPath) || File.Exists(gitPath))
+            && (HasTalioWorkspaceLayout(directoryPath) || HasDotNetWorkspaceMarkers(directoryPath));
+    }
+
+    private static bool HasTalioWorkspaceLayout(string directoryPath)
+    {
+        return File.Exists(Path.Combine(directoryPath, "backend", "Directory.Build.props"))
+            && File.Exists(Path.Combine(directoryPath, "backend", "tools", "Sqloom.sln"));
+    }
+
+    private static bool HasDotNetWorkspaceMarkers(string directoryPath)
+    {
+        return File.Exists(Path.Combine(directoryPath, "Directory.Build.props"))
+            || File.Exists(Path.Combine(directoryPath, "global.json"))
+            || Directory.EnumerateFiles(directoryPath, "*.sln", SearchOption.TopDirectoryOnly).Any()
+            || Directory.EnumerateFiles(directoryPath, "*.slnf", SearchOption.TopDirectoryOnly).Any();
     }
 }

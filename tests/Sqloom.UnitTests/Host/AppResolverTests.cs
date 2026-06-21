@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using Sqloom.Core.Execution;
+using Sqloom.Tests;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -17,41 +17,18 @@ public sealed class AppResolverTests
     {
         AppProjectResolver resolver = new();
 
-        var projectSelection = resolver.ResolveProjectSelection(GetTestAppProjectPath());
+        var projectSelection = resolver.ResolveProjectSelection(SqloomRepositoryPaths.GetTestAppProjectPath());
 
         Assert.Equal(
-            GetTestAppProjectPath(),
+            SqloomRepositoryPaths.GetTestAppProjectPath(),
             projectSelection.RequestedTargetPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            GetTestAppProjectPath(),
+            SqloomRepositoryPaths.GetTestAppProjectPath(),
             projectSelection.TargetProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            GetTestAppIntegrationProjectPath(),
-            projectSelection.IntegrationProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.False(projectSelection.UsesResolvedTargetProject);
-        Assert.True(projectSelection.UsesCompanionIntegrationProject);
-    }
-
-    [Fact]
-    public void ResolveProjectSelection_UsesCompanionIntegrationProjectWhenDeclared()
-    {
-        AppProjectResolver resolver = new();
-
-        var projectSelection = resolver.ResolveProjectSelection(GetTalioApiProjectPath());
-
-        Assert.Equal(
-            GetTalioApiProjectPath(),
-            projectSelection.RequestedTargetPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            GetTalioApiProjectPath(),
-            projectSelection.TargetProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            GetTalioSqloomProjectPath(),
+            SqloomRepositoryPaths.GetTestAppIntegrationProjectPath(),
             projectSelection.IntegrationProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.False(projectSelection.UsesResolvedTargetProject);
@@ -62,7 +39,7 @@ public sealed class AppResolverTests
     public void ResolveProjectSelection_UsesProjectFromDirectoryTarget()
     {
         AppProjectResolver resolver = new();
-        var targetDirectoryPath = GetTalioApiDirectoryPath();
+        var targetDirectoryPath = SqloomRepositoryPaths.GetTestAppProjectDirectory();
 
         var projectSelection = resolver.ResolveProjectSelection(targetDirectoryPath);
 
@@ -71,11 +48,11 @@ public sealed class AppResolverTests
             projectSelection.RequestedTargetPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            GetTalioApiProjectPath(),
+            SqloomRepositoryPaths.GetTestAppProjectPath(),
             projectSelection.TargetProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            GetTalioSqloomProjectPath(),
+            SqloomRepositoryPaths.GetTestAppIntegrationProjectPath(),
             projectSelection.IntegrationProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.True(projectSelection.UsesResolvedTargetProject);
@@ -83,10 +60,10 @@ public sealed class AppResolverTests
     }
 
     [Fact]
-    public void ResolveProjectSelection_UsesSqloomCapableProjectFromBackendDirectory()
+    public void ResolveProjectSelection_UsesSqloomCapableProjectFromRepositoryRootDirectory()
     {
         AppProjectResolver resolver = new();
-        var targetDirectoryPath = GetBackendDirectoryPath();
+        var targetDirectoryPath = SqloomRepositoryPaths.GetRepositoryRoot();
 
         var projectSelection = resolver.ResolveProjectSelection(targetDirectoryPath);
 
@@ -95,11 +72,11 @@ public sealed class AppResolverTests
             projectSelection.RequestedTargetPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            GetTalioApiProjectPath(),
+            SqloomRepositoryPaths.GetTestAppProjectPath(),
             projectSelection.TargetProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            GetTalioSqloomProjectPath(),
+            SqloomRepositoryPaths.GetTestAppIntegrationProjectPath(),
             projectSelection.IntegrationProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.True(projectSelection.UsesResolvedTargetProject);
@@ -110,7 +87,7 @@ public sealed class AppResolverTests
     public void ResolveProjectSelection_UsesSqloomCapableProjectFromSolutionTarget()
     {
         AppProjectResolver resolver = new();
-        var solutionPath = GetBackendSolutionPath();
+        var solutionPath = SqloomRepositoryPaths.GetSolutionPath();
 
         var projectSelection = resolver.ResolveProjectSelection(solutionPath);
 
@@ -119,11 +96,11 @@ public sealed class AppResolverTests
             projectSelection.RequestedTargetPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            GetTalioApiProjectPath(),
+            SqloomRepositoryPaths.GetTestAppProjectPath(),
             projectSelection.TargetProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            GetTalioSqloomProjectPath(),
+            SqloomRepositoryPaths.GetTestAppIntegrationProjectPath(),
             projectSelection.IntegrationProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.True(projectSelection.UsesResolvedTargetProject);
@@ -189,7 +166,7 @@ public sealed class AppResolverTests
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
         {
-            AppTargetPath = GetTestAppProjectPath(),
+            AppTargetPath = SqloomRepositoryPaths.GetTestAppProjectPath(),
             NoBuild = true,
         };
 
@@ -230,7 +207,7 @@ public sealed class AppResolverTests
     }
 
     [Fact]
-    public void ResolveReplayIntegrations_LoadsDistinctAppsFromSolutionFilter()
+    public void ResolveReplayIntegrations_DeduplicatesRepeatedProjectsFromSolutionFilter()
     {
         AppResolver resolver = new();
         var tempDirectoryPath = Path.Combine(
@@ -243,8 +220,8 @@ public sealed class AppResolverTests
         {
             var solutionFilterPath = WriteSolutionFilter(
                 tempDirectoryPath,
-                GetTestAppProjectPath(),
-                GetTalioApiProjectPath());
+                SqloomRepositoryPaths.GetTestAppProjectPath(),
+                SqloomRepositoryPaths.GetTestAppProjectPath());
             HostStartupOptions startupOptions = new()
             {
                 AppTargetPath = solutionFilterPath,
@@ -258,8 +235,7 @@ public sealed class AppResolverTests
 
             Assert.Collection(
                 appNames,
-                appName => Assert.Equal("Sqloom Test App", appName),
-                appName => Assert.Equal("Talio", appName));
+                appName => Assert.Equal("Sqloom Test App", appName));
         }
         finally
         {
@@ -278,14 +254,14 @@ public sealed class AppResolverTests
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
         {
-            AppTargetPath = GetTestAppProjectPath(),
+            AppTargetPath = SqloomRepositoryPaths.GetTestAppProjectPath(),
             NoBuild = true,
         };
 
         var assemblyPath = resolver.ResolveAssemblyPath(startupOptions);
 
         Assert.Equal(
-            GetExpectedTestAppIntegrationBuildOutputPath(),
+            SqloomRepositoryPaths.GetExpectedTestAppIntegrationBuildOutputPath(),
             assemblyPath,
             StringComparer.OrdinalIgnoreCase);
     }
@@ -299,96 +275,6 @@ public sealed class AppResolverTests
             () => resolver.ResolveAssemblyPath(new HostStartupOptions()));
 
         Assert.Contains("requires an explicit target path", exception.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string GetTestAppProjectPath()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(
-            repositoryRoot,
-            "backend",
-            "tools",
-            "Sqloom.TestApp",
-            "Sqloom.TestApp.csproj");
-    }
-
-    private static string GetExpectedTestAppIntegrationBuildOutputPath()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(
-            repositoryRoot,
-            "backend",
-            "artifacts",
-            "bin",
-            "Sqloom.TestApp.IntegrationTests",
-            "debug",
-            "Sqloom.TestApp.IntegrationTests.dll");
-    }
-
-    private static string GetTestAppIntegrationProjectPath()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(
-            repositoryRoot,
-            "backend",
-            "tools",
-            "Sqloom.TestApp.IntegrationTests",
-            "Sqloom.TestApp.IntegrationTests.csproj");
-    }
-
-    private static string GetTalioApiProjectPath()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(
-            repositoryRoot,
-            "backend",
-            "src",
-            "Talio.Api",
-            "Talio.Api.csproj");
-    }
-
-    private static string GetTalioApiDirectoryPath()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(
-            repositoryRoot,
-            "backend",
-            "src",
-            "Talio.Api");
-    }
-
-    private static string GetBackendDirectoryPath()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(repositoryRoot, "backend");
-    }
-
-    private static string GetBackendSolutionPath()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(
-            repositoryRoot,
-            "backend",
-            "Talio.sln");
-    }
-
-    private static string GetTalioSqloomProjectPath()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(
-            repositoryRoot,
-            "backend",
-            "tests",
-            "Talio.Sqloom",
-            "Talio.Sqloom.csproj");
     }
 
     private static string WriteSolutionFilter(string directoryPath, params string[] projectPaths)

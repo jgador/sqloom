@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using Sqloom.Core.Execution;
 using Sqloom.TestApp.IntegrationTests;
+using Sqloom.Tests;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -15,8 +15,8 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithProjectPathAfterReplayVerb_SelectsProjectAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
-        const string relativeProjectPath = @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\Sqloom.TestApp\Sqloom.TestApp.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -45,8 +45,8 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithProjectPathAfterTuneVerb_SelectsProjectAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
-        const string relativeProjectPath = @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\Sqloom.TestApp\Sqloom.TestApp.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -77,8 +77,8 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithSolutionPathAfterObserveVerb_SelectsTargetAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
-        const string relativeSolutionPath = @".\Talio.sln";
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        const string relativeSolutionPath = @".\Sqloom.sln";
 
         var startupOptions = commandLine.Parse(
             [
@@ -103,8 +103,8 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithDotNetCommandAfterReplayVerb_StoresExplicitCommandAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
-        const string relativeProjectPath = @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\Sqloom.TestApp\Sqloom.TestApp.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -133,8 +133,8 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithGlobalDebugSwitch_SetsDebugEnabledAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
-        const string relativeProjectPath = @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\Sqloom.TestApp\Sqloom.TestApp.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -159,12 +159,12 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Theory]
-    [InlineData(@".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj")]
-    [InlineData(@".\src\Talio.Api")]
+    [InlineData(@".\Sqloom.TestApp\Sqloom.TestApp.csproj")]
+    [InlineData(@".\Sqloom.TestApp")]
     public void Parse_WithLeadingTargetPath_ThrowsWhenStageVerbIsMissing(string relativeTargetPath)
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
 
         var exception = Assert.Throws<ArgumentException>(
             () => commandLine.Parse(
@@ -185,14 +185,14 @@ public sealed class HostStartupCommandLineTests
     public void Parse_ThrowsWhenUnsupportedStartupSwitchIsUsed(string switchName)
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
 
         var exception = Assert.Throws<ArgumentException>(
             () => commandLine.Parse(
                 [
                     "replay",
                     switchName,
-                    @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\Sqloom.TestApp\Sqloom.TestApp.csproj",
                 ],
                 currentDirectory));
 
@@ -204,13 +204,13 @@ public sealed class HostStartupCommandLineTests
     public void Parse_ThrowsWhenDotNetCommandValueIsMissing()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
 
         var exception = Assert.Throws<ArgumentException>(
             () => commandLine.Parse(
                 [
                     "replay",
-                    @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\Sqloom.TestApp\Sqloom.TestApp.csproj",
                     "--dotnet-command",
                 ],
                 currentDirectory));
@@ -222,7 +222,7 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithVersionSwitch_SetsShowVersionAndSkipsTargetSelection()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
 
         var startupOptions = commandLine.Parse(
             [
@@ -241,23 +241,16 @@ public sealed class HostStartupCommandLineTests
     public void Parse_ThrowsWhenUnknownLeadingCommandIsUsed()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = GetBackendRoot();
+        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
 
         var exception = Assert.Throws<ArgumentException>(
             () => commandLine.Parse(
                 [
                     "benchmark",
-                    @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\Sqloom.TestApp\Sqloom.TestApp.csproj",
                 ],
                 currentDirectory));
 
         Assert.Contains("Unknown Sqloom command", exception.Message, StringComparison.OrdinalIgnoreCase);
-    }
-
-    private static string GetBackendRoot()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom unit tests.");
-        return Path.Combine(repositoryRoot, "backend");
     }
 }

@@ -98,7 +98,7 @@ public sealed class HostProductCatalogSeedScriptTests
                     ?? throw new InvalidOperationException("Missing sample replay application connection string.");
 
                 var exportResult = await RunPowerShellAsync(
-                        SqloomTestAppPaths.GetBackendRoot(),
+                        SqloomTestAppPaths.GetRepositoryRoot(),
                         [
                             "-NoProfile",
                             "-File",

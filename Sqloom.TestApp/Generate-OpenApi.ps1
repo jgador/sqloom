@@ -9,7 +9,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$RepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\..\.."))
+$RepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
 
 function Join-RepoPath {
     param(
@@ -48,15 +48,41 @@ function Resolve-OutputPath {
     return Assert-InRepo (Join-Path $PSScriptRoot $Path)
 }
 
+function Get-GeneratedOpenApiPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ProjectName
+    )
+
+    $knownCandidatePaths = @(
+        (Join-RepoPath "artifacts/obj/$ProjectName/$($Configuration.ToLowerInvariant())/$ProjectName.json")
+        (Join-RepoPath "artifacts/bin/$ProjectName/$($Configuration.ToLowerInvariant())/$ProjectName.json")
+    )
+
+    foreach ($candidatePath in $knownCandidatePaths) {
+        if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
+            return $candidatePath
+        }
+    }
+
+    $artifactsRoot = Join-RepoPath "artifacts"
+    $generatedPath = Get-ChildItem -Path $artifactsRoot -Recurse -File -Filter "$ProjectName.json" -ErrorAction SilentlyContinue |
+        Sort-Object -Property LastWriteTimeUtc -Descending |
+        Select-Object -First 1 -ExpandProperty FullName
+    if (-not [string]::IsNullOrWhiteSpace($generatedPath)) {
+        return $generatedPath
+    }
+
+    throw "OpenAPI generation did not produce the expected file under $artifactsRoot"
+}
+
 $dotnet = (Get-Command dotnet -ErrorAction Stop).Source
-$backendDirectory = Join-RepoPath "backend"
-$backendProjectPath = Join-RepoPath "backend/tools/Sqloom.TestApp/Sqloom.TestApp.csproj"
-$generatedSourcePath = Join-RepoPath "backend/artifacts/obj/Sqloom.TestApp/Sqloom.TestApp.json"
+$projectPath = Join-RepoPath "Sqloom.TestApp/Sqloom.TestApp.csproj"
 $destinationPath = Resolve-OutputPath $OutputPath
 
-Push-Location $backendDirectory
+Push-Location $RepoRoot
 try {
-    & $dotnet build $backendProjectPath --tl:off --nologo "-clp:ErrorsOnly;NoSummary" "-p:OpenApiGenerateDocuments=true" "-p:Configuration=$Configuration"
+    & $dotnet build $projectPath --tl:off --nologo "-clp:ErrorsOnly;NoSummary" "-p:OpenApiGenerateDocuments=true" "-p:Configuration=$Configuration"
     if ($LASTEXITCODE -ne 0) {
         throw "OpenAPI generation build failed with exit code $LASTEXITCODE."
     }
@@ -65,9 +91,7 @@ finally {
     Pop-Location
 }
 
-if (-not (Test-Path -LiteralPath $generatedSourcePath -PathType Leaf)) {
-    throw "OpenAPI generation did not produce the expected file: $generatedSourcePath"
-}
+$generatedSourcePath = Get-GeneratedOpenApiPath -ProjectName "Sqloom.TestApp"
 
 $destinationDirectory = Split-Path -Parent $destinationPath
 New-Item -ItemType Directory -Force -Path $destinationDirectory | Out-Null

@@ -129,7 +129,7 @@ public sealed class AdviceCommandTests
             writtenProposalReport.Warnings,
             warning => warning.Contains("did not include rollback SQL", StringComparison.OrdinalIgnoreCase));
 
-        Assert.Contains("Sqloom SQL tuning proposals", proposalScript, StringComparison.Ordinal);
+        Assert.Contains("Sqloom SQL proposals", proposalScript, StringComparison.Ordinal);
         Assert.Contains("Model provider: openai", proposalScript, StringComparison.Ordinal);
         Assert.Contains("-- Kind: maintenance_patch", proposalScript, StringComparison.Ordinal);
         Assert.Contains("UPDATE STATISTICS", proposalScript, StringComparison.OrdinalIgnoreCase);

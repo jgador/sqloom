@@ -1,8 +1,6 @@
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
-using Sqloom.Core.Execution;
 using Sqloom.TestApp.IntegrationTests;
 using Xunit;
 
@@ -18,12 +16,12 @@ public sealed class HostProcessLoadingTests
     [Trait("Category", "Integration")]
     public async Task DotNetRun_WithSqloomHostProjectAndSqloomTestAppProject_ReplaysProductCatalogWorkload()
     {
-        var backendRoot = GetBackendRoot();
-        const string hostProjectPath = @".\tools\Sqloom.Host\Sqloom.Host.csproj";
-        const string targetProjectPath = @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
+        const string hostProjectPath = @".\Sqloom.Host\Sqloom.Host.csproj";
+        const string targetProjectPath = @".\Sqloom.TestApp\Sqloom.TestApp.csproj";
 
         var result = await RunDotNetAsync(
-            backendRoot,
+            repositoryRoot,
             [
                 "run",
                 "--project",
@@ -53,12 +51,12 @@ public sealed class HostProcessLoadingTests
     [Trait("Category", "Integration")]
     public async Task DotNetRun_WithSqloomHostProjectAndLeadingTargetPath_FailsWithoutStageVerb()
     {
-        var backendRoot = GetBackendRoot();
-        const string hostProjectPath = @".\tools\Sqloom.Host\Sqloom.Host.csproj";
-        const string targetProjectPath = @".\tools\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
+        const string hostProjectPath = @".\Sqloom.Host\Sqloom.Host.csproj";
+        const string targetProjectPath = @".\Sqloom.TestApp\Sqloom.TestApp.csproj";
 
         var result = await RunDotNetAsync(
-            backendRoot,
+            repositoryRoot,
             [
                 "run",
                 "--project",
@@ -115,13 +113,6 @@ public sealed class HostProcessLoadingTests
             process.ExitCode,
             standardOutputTask.Result,
             standardErrorTask.Result);
-    }
-
-    private static string GetBackendRoot()
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom integration tests.");
-        return Path.Combine(repositoryRoot, "backend");
     }
 
     private static string FormatFailureMessage(DotNetCommandResult result)

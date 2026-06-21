@@ -60,24 +60,14 @@ internal sealed class CompanionProjectLocator
             return Array.Empty<string>();
         }
 
-        var searchRoots = new[]
-            {
-                Path.Combine(repositoryRoot, "backend", "tools"),
-                Path.Combine(repositoryRoot, "backend", "tests"),
-            }
-            .Where(Directory.Exists)
-            .ToArray();
+        var searchRoots = GetSearchRoots(repositoryRoot).ToArray();
         if (searchRoots.Length == 0)
         {
             return Array.Empty<string>();
         }
 
         return searchRoots
-            .SelectMany(
-                static searchRoot => Directory.EnumerateFiles(
-                    searchRoot,
-                    "*.*proj",
-                    SearchOption.AllDirectories))
+            .SelectMany(EnumerateProjectFiles)
             .Where(IsSupportedProjectPath)
             .Select(Path.GetFullPath)
             .Where(projectPath =>
@@ -85,6 +75,79 @@ internal sealed class CompanionProjectLocator
                     projectPath,
                     targetProjectPath,
                     StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static IEnumerable<string> GetSearchRoots(string repositoryRoot)
+    {
+        var talioRoots = new[]
+            {
+                Path.Combine(repositoryRoot, "backend", "tools"),
+                Path.Combine(repositoryRoot, "backend", "tests"),
+            }
+            .Where(Directory.Exists)
+            .ToArray();
+
+        return talioRoots.Length > 0
+            ? talioRoots
+            : [repositoryRoot];
+    }
+
+    private static IEnumerable<string> EnumerateProjectFiles(string searchRoot)
+    {
+        Stack<string> pendingDirectories = new();
+        pendingDirectories.Push(searchRoot);
+
+        while (pendingDirectories.Count > 0)
+        {
+            var currentDirectory = pendingDirectories.Pop();
+
+            IEnumerable<string> projectPaths;
+            try
+            {
+                projectPaths = Directory.EnumerateFiles(
+                    currentDirectory,
+                    "*.*proj",
+                    SearchOption.TopDirectoryOnly);
+            }
+            catch (Exception exception) when (
+                exception is DirectoryNotFoundException
+                    or IOException
+                    or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (var projectPath in projectPaths)
+            {
+                yield return projectPath;
+            }
+
+            IEnumerable<string> childDirectories;
+            try
+            {
+                childDirectories = Directory.EnumerateDirectories(
+                    currentDirectory,
+                    "*",
+                    SearchOption.TopDirectoryOnly);
+            }
+            catch (Exception exception) when (
+                exception is DirectoryNotFoundException
+                    or IOException
+                    or UnauthorizedAccessException)
+            {
+                continue;
+            }
+
+            foreach (var childDirectory in childDirectories)
+            {
+                if (ShouldSkipDirectory(childDirectory))
+                {
+                    continue;
+                }
+
+                pendingDirectories.Push(childDirectory);
+            }
+        }
     }
 
     private static bool HasNonEmptyProperty(
@@ -151,5 +214,19 @@ internal sealed class CompanionProjectLocator
             ".vbproj" => true,
             _ => false,
         };
+    }
+
+    private static bool ShouldSkipDirectory(string directoryPath)
+    {
+        var directoryName = Path.GetFileName(directoryPath);
+        return string.Equals(directoryName, ".git", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(directoryName, ".idea", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(directoryName, ".synapse", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(directoryName, ".tools", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(directoryName, ".vs", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(directoryName, "artifacts", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(directoryName, "bin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(directoryName, "node_modules", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(directoryName, "obj", StringComparison.OrdinalIgnoreCase);
     }
 }

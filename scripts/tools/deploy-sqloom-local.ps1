@@ -11,12 +11,13 @@ $context = Get-SqloomToolingContext -ScriptPath $PSCommandPath
 
 Write-Host "Sqloom local deploy"
 Write-Host "dotnet: $($context.DotNet)"
-Write-Host "backend: $($context.BackendRoot)"
+Write-Host "repo: $($context.RepoRoot)"
+Write-Host "pack configuration: $($context.PackConfiguration)"
 Write-Host "package feed: $($context.PackageFeedPath)"
 Write-Host "local tool path: $($context.LocalToolPath)"
 Write-Host "wrapper path: $($context.WrapperPath)"
 
-Push-Location $context.BackendRoot
+Push-Location $context.RepoRoot
 try
 {
     Invoke-SqloomPackSet -Context $context
@@ -41,7 +42,7 @@ try
 
     if (-not $SkipSmoke)
     {
-        $sampleAppProject = Join-Path $context.BackendRoot "tools\Sqloom.TestApp\Sqloom.TestApp.csproj"
+        $sampleAppProject = Join-Path $context.RepoRoot "Sqloom.TestApp\Sqloom.TestApp.csproj"
         & $localCommand replay $sampleAppProject --target "GET /api/products/by-category"
         if ($LASTEXITCODE -ne 0)
         {

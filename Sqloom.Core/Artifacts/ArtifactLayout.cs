@@ -12,7 +12,9 @@ public static class ArtifactLayout
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(repositoryRoot);
 
-        return Path.Combine(repositoryRoot, "backend", "artifacts", "sqloom");
+        return UsesTalioBackendLayout(repositoryRoot)
+            ? Path.Combine(repositoryRoot, "backend", "artifacts", "sqloom")
+            : Path.Combine(repositoryRoot, "artifacts", "sqloom");
     }
 
     public static string GetDefaultQueryStoreSnapshotPath(string artifactRoot, DateTimeOffset capturedAtUtc)
@@ -154,5 +156,11 @@ public static class ArtifactLayout
         }
 
         return new string(buffer).Trim('-');
+    }
+
+    private static bool UsesTalioBackendLayout(string repositoryRoot)
+    {
+        return File.Exists(Path.Combine(repositoryRoot, "backend", "Directory.Build.props"))
+            && File.Exists(Path.Combine(repositoryRoot, "backend", "tools", "Sqloom.sln"));
     }
 }

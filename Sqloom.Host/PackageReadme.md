@@ -23,9 +23,9 @@ The tool package depends on `Sqloom.Core`, `Sqloom.QueryStore`, `Sqloom.AzureSql
 ## Example
 
 ```powershell
-& "<tool-path>\\sqloom.exe" replay .\Talio.sln --no-build --sqlserver-dacpac-file .\artifacts\Talio.dacpac --target "GET /api/expenses/dashboard"
+& "<tool-path>\\sqloom.exe" replay .\Sqloom.TestApp\Sqloom.TestApp.csproj --no-build --sqlserver-dacpac-file .\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"
 ```
 
-Repository metadata currently points at the future standalone Sqloom project:
+Repository metadata currently points at the standalone Sqloom project:
 
 `https://github.com/jgador/sqloom`

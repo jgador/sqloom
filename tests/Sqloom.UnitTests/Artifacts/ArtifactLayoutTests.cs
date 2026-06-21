@@ -13,7 +13,7 @@ public sealed class ArtifactLayoutTests
     private const string RepositoryRoot = "repo-root";
 
     private static string ArtifactRoot =>
-        Path.Combine(RepositoryRoot, "backend", "artifacts", "sqloom");
+        Path.Combine(RepositoryRoot, "artifacts", "sqloom");
 
     private static string TuneArtifactDirectory =>
         Path.Combine(ArtifactRoot, "tune", "tune-20260608T040506000Z");

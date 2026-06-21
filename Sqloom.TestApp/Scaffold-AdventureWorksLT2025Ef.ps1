@@ -89,21 +89,21 @@ function Get-SelectedTables {
 
 $dotnetPath = Get-RequiredCommandPath -Name 'dotnet'
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$backendRoot = (Resolve-Path (Join-Path $scriptRoot '..\..')).Path
+$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..')).Path
 $appProjectPath = (Resolve-Path (Join-Path $scriptRoot 'Sqloom.TestApp.csproj')).Path
 $appProjectRoot = Split-Path -Parent $appProjectPath
 $selectedTables = Get-SelectedTables -ExplicitTables $Tables
 
 # Keep the reverse-engineered model inside Sqloom.TestApp so the sample app owns the generated EF types.
 $generatedRoot = Join-Path $appProjectRoot 'Generated'
-$stageRoot = Join-Path $backendRoot 'artifacts\ef-scaffold\Sqloom.TestApp'
-$contextDir = '..\..\artifacts\ef-scaffold\Sqloom.TestApp\Generated'
-$entitiesDir = '..\..\artifacts\ef-scaffold\Sqloom.TestApp\Generated\Entities'
+$stageRoot = Join-Path $repoRoot 'artifacts\ef-scaffold\Sqloom.TestApp'
+$contextDir = '..\artifacts\ef-scaffold\Sqloom.TestApp\Generated'
+$entitiesDir = '..\artifacts\ef-scaffold\Sqloom.TestApp\Generated\Entities'
 
 if (Test-Path -LiteralPath $stageRoot) {
     $resolvedStageRoot = (Resolve-Path -LiteralPath $stageRoot).Path
-    if (-not $resolvedStageRoot.StartsWith($backendRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-        throw "Refusing to clear scaffold staging outside the backend root: $resolvedStageRoot"
+    if (-not $resolvedStageRoot.StartsWith($repoRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to clear scaffold staging outside the repository root: $resolvedStageRoot"
     }
 
     Remove-Item -LiteralPath $resolvedStageRoot -Recurse -Force
@@ -119,7 +119,7 @@ if (-not (Test-Path -LiteralPath $dotnetEfExePath)) {
     }
 
     New-Item -ItemType Directory -Path $efToolPath -Force | Out-Null
-    Invoke-CheckedProcess -FilePath $dotnetPath -WorkingDirectory $backendRoot -Arguments @(
+    Invoke-CheckedProcess -FilePath $dotnetPath -WorkingDirectory $repoRoot -Arguments @(
         'tool',
         'install',
         'dotnet-ef',
@@ -160,7 +160,7 @@ internal static class Program
 }
 "@
 
-Invoke-CheckedProcess -FilePath $dotnetPath -WorkingDirectory $backendRoot -Arguments @(
+Invoke-CheckedProcess -FilePath $dotnetPath -WorkingDirectory $repoRoot -Arguments @(
     'restore',
     $designHostProjectPath,
     '--nologo'
@@ -194,7 +194,7 @@ foreach ($table in $selectedTables) {
 }
 
 try {
-    Invoke-CheckedProcess -FilePath $dotnetEfExePath -WorkingDirectory $backendRoot -Arguments $scaffoldArguments
+    Invoke-CheckedProcess -FilePath $dotnetEfExePath -WorkingDirectory $repoRoot -Arguments $scaffoldArguments
 }
 finally {
     if (Test-Path -LiteralPath $designHostRoot) {
@@ -212,7 +212,7 @@ if (Test-Path -LiteralPath $generatedRoot) {
 }
 
 Copy-Item -Path (Join-Path $stageRoot 'Generated') -Destination $generatedRoot -Recurse -Force
-Invoke-CheckedProcess -FilePath $dotnetPath -WorkingDirectory $backendRoot -Arguments @(
+Invoke-CheckedProcess -FilePath $dotnetPath -WorkingDirectory $repoRoot -Arguments @(
     'format',
     'style',
     $appProjectPath,
@@ -225,5 +225,5 @@ Invoke-CheckedProcess -FilePath $dotnetPath -WorkingDirectory $backendRoot -Argu
 
 Write-Host "Raw scaffold output staged at: $stageRoot"
 Write-Host "Reverse-engineered model written to: $generatedRoot"
-Write-Host "Review the generated files under tools/Sqloom.TestApp before committing."
+Write-Host "Review the generated files under Sqloom.TestApp before committing."
 Write-Host "Scaffolded tables: $($selectedTables -join ', ')"
