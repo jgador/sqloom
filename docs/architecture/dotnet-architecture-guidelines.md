@@ -1,43 +1,39 @@
 # Sqloom .NET Architecture and Coding Guidelines
 
 > Repo-adopted guidance for structuring serious C#/.NET applications and libraries.  
-> Derived from recurring patterns in public .NET repositories such as `dotnet/runtime`, `dotnet/aspnetcore`, `dotnet/efcore`, `dotnet/roslyn`, `dotnet/extensions`, `dotnet/aspire`, and `microsoft/semantic-kernel`.
 
 ---
 
 ## Table of Contents
 
 1. [Purpose](#1-purpose)
-2. [Source Repository Patterns](#2-source-repository-patterns)
-3. [Recommended Solution Structure](#3-recommended-solution-structure)
-4. [Recommended Project Structure](#4-recommended-project-structure)
-5. [Dependency Direction and Layering](#5-dependency-direction-and-layering)
-6. [Source Organization Inside Projects](#6-source-organization-inside-projects)
-7. [Public API Design Standard](#7-public-api-design-standard)
-8. [Naming Standards](#8-naming-standards)
-9. [.editorconfig Recommendations](#9-editorconfig-recommendations)
-10. [Dependency Injection Standard](#10-dependency-injection-standard)
-11. [Configuration and Options Standard](#11-configuration-and-options-standard)
-12. [Error Handling and Validation Standard](#12-error-handling-and-validation-standard)
-13. [Logging and Diagnostics Standard](#13-logging-and-diagnostics-standard)
-14. [Async, Cancellation, and Threading Standard](#14-async-cancellation-and-threading-standard)
-15. [Performance Standard](#15-performance-standard)
-16. [Testing Architecture Standard](#16-testing-architecture-standard)
-17. [Documentation and Maintainability Standard](#17-documentation-and-maintainability-standard)
-18. [Good and Bad Code Examples](#18-good-and-bad-code-examples)
-19. [Pull Request Review Checklist](#19-pull-request-review-checklist)
-20. [Starter Template Structure](#20-starter-template-structure)
-21. [Minimal Project Reference Policy](#21-minimal-project-reference-policy)
-22. [Golden Rules](#22-golden-rules)
-23. [Reference Links](#23-reference-links)
+2. [Recommended Solution Structure](#2-recommended-solution-structure)
+3. [Recommended Project Structure](#3-recommended-project-structure)
+4. [Dependency Direction and Layering](#4-dependency-direction-and-layering)
+5. [Source Organization Inside Projects](#5-source-organization-inside-projects)
+6. [Public API Design Standard](#6-public-api-design-standard)
+7. [Naming Standards](#7-naming-standards)
+8. [Dependency Injection Standard](#8-dependency-injection-standard)
+9. [Configuration and Options Standard](#9-configuration-and-options-standard)
+10. [Error Handling and Validation Standard](#10-error-handling-and-validation-standard)
+11. [Logging and Diagnostics Standard](#11-logging-and-diagnostics-standard)
+12. [Async, Cancellation, and Threading Standard](#12-async-cancellation-and-threading-standard)
+13. [Performance Standard](#13-performance-standard)
+14. [Testing Architecture Standard](#14-testing-architecture-standard)
+15. [Documentation and Maintainability Standard](#15-documentation-and-maintainability-standard)
+16. [Good and Bad Code Examples](#16-good-and-bad-code-examples)
+17. [Pull Request Review Checklist](#17-pull-request-review-checklist)
+18. [Starter Template Structure](#18-starter-template-structure)
+19. [Minimal Project Reference Policy](#19-minimal-project-reference-policy)
+20. [Golden Rules](#20-golden-rules)
 
 ---
 
 ## 1. Purpose
 
-This standard adapts recurring architectural practices from large public .NET repositories into rules a product team can apply to ordinary business applications.
+This document sets practical rules for how to structure and evolve C# and .NET code in this repository.
 
-It is **not** a recommendation to copy the internal complexity of `dotnet/runtime`, `dotnet/aspnetcore`, `dotnet/efcore`, or `dotnet/roslyn`. Instead, it extracts repeatable habits:
+It is **not** a recommendation to add unnecessary layers or rename projects just to match a template. The goal is to keep the codebase understandable, testable, and easy to change.
 
 - Clear solution and project boundaries.
 - Explicit dependency direction.
@@ -54,23 +50,7 @@ The goal is to make a .NET application easy to extend, test, operate, and review
 
 ---
 
-## 2. Source Repository Patterns
-
-The standard is inspired by the following public repository patterns.
-
-| Repository | Pattern Extracted |
-|---|---|
-| `dotnet/runtime` | Root build policy, `eng/` engineering assets, strict coding guidelines, package/API compatibility, performance guidance, abstractions plus implementations, shared source discipline. |
-| `dotnet/aspnetcore` | Modular service registration, `Add*`, `Use*`, and `Map*` APIs, endpoint composition, middleware organization, structured diagnostics, functional testing patterns. |
-| `dotnet/efcore` | Core/relational/provider separation, abstractions, provider-specific projects, specification tests, functional tests, API baseline tests, diagnostics, options, and internal/public separation. |
-| `dotnet/roslyn` | Large-solution organization, solution filters, subsystem-oriented source trees, analyzers, source generation, test infrastructure. |
-| `dotnet/extensions` | Production-grade libraries for dependency injection, options, logging, telemetry, resilience, compliance, analyzers, and testing support. |
-| `dotnet/aspire` | Service defaults, app-host style composition, integration and end-to-end testing separation, local orchestration, distributed app concerns. |
-| `microsoft/semantic-kernel` | Abstractions/core/connectors/plugins split, samples as executable documentation, integration tests, connectors hidden behind abstractions, configuration through secrets and environment variables. |
-
----
-
-## 3. Recommended Solution Structure
+## 2. Recommended Solution Structure
 
 Use one root solution and one root build policy.
 
@@ -87,15 +67,10 @@ Company.Product/
 ├─ NuGet.config                          # only if required
 ├─ README.md
 ├─ SECURITY.md
-├─ eng/
-│  ├─ build.ps1
-│  ├─ build.sh
-│  ├─ Version.props
-│  └─ pipelines/
 ├─ docs/
 │  ├─ architecture/
 │  ├─ api/
-│  ├─ decisions/
+│  ├─ project-layout.md
 │  └─ breaking-changes/
 ├─ src/
 │  ├─ Company.Product.Domain/
@@ -140,9 +115,8 @@ global.json
 .editorconfig
 ```
 
-**Why:** Large .NET repositories use root-level build policy to avoid divergent project settings.
+**Why:** Root-level build policy avoids divergent project settings.
 
-**Inspired by:** `dotnet/runtime`, `dotnet/efcore`, `dotnet/aspnetcore`.
 
 #### 3.2 Use `src/` for production code and `tests/` for tests
 
@@ -150,15 +124,11 @@ Do not mix tests inside production projects.
 
 **Why:** The directory structure should make production code and test code immediately distinguishable.
 
-**Inspired by:** `dotnet/efcore`, `dotnet/aspnetcore`, `dotnet/aspire`, `microsoft/semantic-kernel`.
 
-#### 3.3 Use `eng/` for engineering automation
+#### 3.3 Keep repo automation in `scripts/` until it needs its own area
 
-Build scripts, pipeline templates, versioning, signing, and repo automation belong in `eng/`, not inside product projects.
+For a repo of this size, keep build scripts and repo automation in `scripts/`. Only add another top-level automation area when the repo grows enough to justify it.
 
-**Why:** Engineering automation should be visible and separate from product logic.
-
-**Inspired by:** `dotnet/runtime`, `dotnet/aspnetcore`, `dotnet/efcore`, `dotnet/roslyn`.
 
 #### 3.4 Use solution filters for large systems
 
@@ -171,9 +141,8 @@ Benchmarks.slnf
 Analyzers.slnf
 ```
 
-**Why:** Large solutions need smaller inner-loop entry points without fragmenting the repository.
+**Why:** Solution filters can speed up inner-loop work without fragmenting the repository.
 
-**Inspired by:** `dotnet/roslyn`, `dotnet/efcore`.
 
 #### 3.5 Use `samples/` as executable documentation
 
@@ -181,13 +150,12 @@ Samples should compile and preferably run in CI.
 
 **Why:** Samples show real usage and prevent public APIs from drifting into awkward or unusable shapes.
 
-**Inspired by:** `microsoft/semantic-kernel`, `dotnet/aspnetcore`, `dotnet/extensions`.
 
 ---
 
-## 4. Recommended Project Structure
+## 3. Recommended Project Structure
 
-### 4.1 Required project types for most applications
+### 3.1 Required project types for most applications
 
 ```text
 Company.Product.Domain
@@ -199,7 +167,7 @@ Company.Product.Worker
 Company.Product.*.Tests
 ```
 
-### 4.2 Optional project types
+### 3.2 Optional project types
 
 ```text
 Company.Product.Abstractions
@@ -215,13 +183,15 @@ Company.Product.SourceGeneration
 Company.Product.Benchmarks
 ```
 
-### 4.3 Project responsibilities
+These project names are examples for larger applications. They are not a requirement for this repository.
+
+### 3.3 Project responsibilities
 
 | Project | Purpose | Must not contain |
 |---|---|---|
 | `Domain` | Entities, value objects, domain services, domain events, invariants. | EF Core mappings, HTTP, queues, logging-heavy orchestration, DI registrations. |
 | `Application` | Use cases, commands, queries, workflows, application interfaces, authorization decisions. | ASP.NET controllers/endpoints, SQL implementation details, cloud SDK calls. |
-| `Contracts` | Public DTOs, request/response models, integration events, API contracts. | Domain entities, EF entities, infrastructure-specific types. |
+| `Contracts` | Public request/response models, integration events, and API contracts. | Domain entities, EF entities, infrastructure-specific types. |
 | `Abstractions` | Interfaces/options/builders intended for multiple implementations or external extension points. | Concrete implementations, business workflows, host startup. |
 | `Infrastructure` | Implementations for persistence, messaging, email, files, external APIs. | Public web endpoints, domain invariants. |
 | `Web` | HTTP host, routing, middleware, authentication, endpoint composition. | Business rules, direct SQL, provider-specific orchestration. |
@@ -229,7 +199,7 @@ Company.Product.Benchmarks
 | `ServiceDefaults` | Shared host defaults: health checks, OpenTelemetry, resilience, discovery. | Product feature logic. |
 | `Testing` / `tests/Shared` | Test fixtures, builders, fake clocks, test containers, common assertions. | Production logic. |
 
-### 4.4 When to use an `Abstractions` project
+### 3.4 When to use an `Abstractions` project
 
 Use an `Abstractions` project only when at least two of these are true:
 
@@ -241,9 +211,8 @@ Use an `Abstractions` project only when at least two of these are true:
 
 **Why:** `Abstractions` projects are valuable when they stabilize extension points. They become harmful when used as dumping grounds.
 
-**Inspired by:** `Microsoft.Extensions.DependencyInjection.Abstractions`, EF Core abstractions/provider split, Semantic Kernel abstractions/core/connectors split.
 
-### 4.5 Standard project naming
+### 3.5 Standard project naming
 
 Use:
 
@@ -273,27 +242,35 @@ Company.Product.Services
 
 ---
 
-## 5. Dependency Direction and Layering
+## 4. Dependency Direction and Layering
 
 Use this dependency model:
 
 ```text
-                    ┌────────────────────────┐
-                    │        Web Host         │
-                    │   Web / Worker / CLI    │
-                    └───────────┬────────────┘
-                                │
-          ┌─────────────────────┼─────────────────────┐
-          │                     │                     │
-          ▼                     ▼                     ▼
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│   Application    │  │  Infrastructure  │  │    Contracts      │
-└────────┬─────────┘  └────────┬─────────┘  └──────────────────┘
-         │                     │
-         ▼                     ▼
-┌──────────────────┐  ┌──────────────────┐
-│      Domain      │  │   Abstractions    │
-└──────────────────┘  └──────────────────┘
+Web / Worker / CLI
+  -> Application
+  -> Infrastructure
+  -> Contracts
+
+Infrastructure
+  -> Application
+  -> Domain
+  -> Abstractions
+  -> Contracts
+
+Application
+  -> Domain
+  -> Contracts
+  -> Abstractions
+
+Domain
+  -> BCL and domain-only packages
+
+Contracts
+  -> minimal BCL packages only
+
+Abstractions
+  -> minimal BCL and Microsoft.Extensions.* abstractions
 ```
 
 More precisely:
@@ -308,7 +285,7 @@ Application
 
 Infrastructure
   references: Application, Domain, Abstractions, Contracts
-  implements: repositories, message publishers, external clients, storage
+  implements: stores, message publishers, external clients, storage
 
 Web / Worker / CLI
   references: Application, Infrastructure, Contracts
@@ -316,7 +293,7 @@ Web / Worker / CLI
 
 Contracts
   references: minimal BCL packages only
-  owns: DTOs and wire contracts
+  owns: request/response models, integration events, and wire contracts
 
 Abstractions
   references: minimal BCL and Microsoft.Extensions.* abstractions
@@ -326,7 +303,7 @@ Tests
   reference: the project under test plus approved test helpers
 ```
 
-### 5.1 Hard dependency rules
+### 4.1 Hard dependency rules
 
 #### Rule 1: Domain must not reference infrastructure
 
@@ -364,11 +341,11 @@ public sealed class Order
 }
 ```
 
-#### Rule 2: Application defines ports; infrastructure implements them
+#### Rule 2: Introduce a store abstraction only when the application actually needs one
 
 ```csharp
 // Application
-public interface IOrderRepository
+public interface IOrderStore
 {
     Task<Order?> FindAsync(OrderId id, CancellationToken cancellationToken = default);
     Task SaveAsync(Order order, CancellationToken cancellationToken = default);
@@ -377,7 +354,7 @@ public interface IOrderRepository
 
 ```csharp
 // Infrastructure.SqlServer
-internal sealed class SqlOrderRepository : IOrderRepository
+internal sealed class SqlOrderStore : IOrderStore
 {
     public Task<Order?> FindAsync(OrderId id, CancellationToken cancellationToken = default)
     {
@@ -425,47 +402,36 @@ Company.Product.Infrastructure.AzureStorage
 
 **Why:** Provider-specific implementations carry different dependencies, configuration, failure behavior, and test requirements.
 
-**Inspired by:** EF Core’s core/relational/provider architecture.
 
 ---
 
-## 6. Source Organization Inside Projects
+## 5. Source Organization Inside Projects
 
-### 6.1 Prefer shallow project- or subsystem-oriented layout
+### 5.1 Keep folders simple
 
-For application and web projects, prefer shallow folders organized around stable project areas or namespaces. Add deeper per-feature nesting only when an area is large enough to need it.
+Start flat. Add folders only when a project becomes hard to scan.
 
 ```text
 Company.Product.Application/
-├─ Orders/
-│  ├─ CreateOrderCommand.cs
-│  ├─ CreateOrderHandler.cs
-│  ├─ CancelOrderHandler.cs
-│  ├─ CreateOrderValidator.cs
-│  ├─ CreateOrderResult.cs
-│  └─ IOrderRepository.cs
-├─ Invoices/
-├─ Customers/
-└─ DependencyInjection/
-   └─ ApplicationServiceCollectionExtensions.cs
+├─ ApplicationServiceCollectionExtensions.cs
+├─ OrderCommands.cs
+├─ OrderHandlers.cs
+├─ OrderValidation.cs
+└─ OrderStore.cs
 ```
 
 ```text
 Company.Product.Web/
-├─ Orders/
-│  ├─ OrderEndpoints.cs
-│  ├─ OrderRequests.cs
-│  ├─ OrderResponses.cs
-│  └─ OrderMappers.cs
-├─ Diagnostics/
-├─ Middleware/
-├─ OpenApi/
+├─ OrderEndpoints.cs
+├─ OrderRequests.cs
+├─ OrderResponses.cs
+├─ OrderMappings.cs
 └─ Program.cs
 ```
 
-**Why:** Large Microsoft-maintained .NET repositories commonly organize source by stable subsystems and namespaces such as `Diagnostics`, `Infrastructure`, `Metadata`, `Query`, `Routing`, or `Builder`, rather than by deep vertical-slice trees. A shallow layout is easier to scan and usually avoids unnecessary nesting.
+**Why:** Deep nesting adds ceremony quickly. Start with simple, obvious files and group them only when the project genuinely gets hard to navigate.
 
-### 6.2 Technical folders are allowed for stable technical subsystems
+### 5.2 Technical folders are allowed for stable technical subsystems
 
 Technical folders are appropriate when they represent stable concepts.
 
@@ -492,9 +458,8 @@ Base/
 Utils/
 ```
 
-**Inspired by:** EF Core’s use of technical namespaces such as `ChangeTracking`, `Diagnostics`, `Extensions`, `Infrastructure`, `Internal`, `Metadata`, `Query`, `Storage`, and `Update`.
 
-### 6.3 File and type rules
+### 5.3 File and type rules
 
 1. One public type per file.
 2. File path should match namespace.
@@ -513,11 +478,10 @@ Storage/
    └─ BlobLeaseRenewalLoop.cs
 ```
 
-**Inspired by:** `dotnet/runtime` coding and project guidelines.
 
 ---
 
-## 7. Public API Design Standard
+## 6. Public API Design Standard
 
 Public API means anything consumed outside the project:
 
@@ -528,12 +492,12 @@ Public API means anything consumed outside the project:
 - Options.
 - Builders.
 - Factories.
-- DTOs.
+- Request and response types for public-facing APIs.
 - Endpoint contracts.
 - NuGet package types.
 - Shared library types.
 
-### 7.1 Public API review rule
+### 6.1 Public API review rule
 
 Every new public API must have:
 
@@ -551,9 +515,8 @@ Every new public API must have:
 
 **Why:** A public API is a long-term contract. Sample-first review reveals whether the API is understandable and difficult to misuse.
 
-**Inspired by:** `dotnet/runtime` API review process and Framework Design Guidelines.
 
-### 7.2 Make the common path obvious
+### 6.2 Make the common path obvious
 
 Bad:
 
@@ -571,7 +534,7 @@ builder.Services.AddOrders(builder.Configuration);
 app.MapOrderEndpoints();
 ```
 
-### 7.3 Use extension methods for framework integration
+### 6.3 Use extension methods for framework integration
 
 Standard names:
 
@@ -592,9 +555,8 @@ app.UseOrderCorrelation();
 app.MapOrderEndpoints();
 ```
 
-**Inspired by:** ASP.NET Core service registration, middleware, and endpoint routing APIs.
 
-### 7.4 Return a builder when follow-up configuration is expected
+### 6.4 Return a builder when follow-up configuration is expected
 
 ```csharp
 public interface IOrdersBuilder
@@ -616,7 +578,7 @@ public static IOrdersBuilder AddOrders(this IServiceCollection services)
 }
 ```
 
-### 7.5 Do not expose speculative interfaces
+### 6.5 Do not expose speculative interfaces
 
 Create an interface only when there is at least one implementation and at least one consumer that benefits from substitution.
 
@@ -637,12 +599,12 @@ public sealed class OrderNameFormatter : IOrderNameFormatter
 Good when substitution is real:
 
 ```csharp
-public interface IOrderRepository
+public interface IOrderStore
 {
     Task SaveAsync(Order order, CancellationToken cancellationToken = default);
 }
 
-internal sealed class SqlOrderRepository : IOrderRepository
+internal sealed class SqlOrderStore : IOrderStore
 {
     public Task SaveAsync(Order order, CancellationToken cancellationToken = default)
     {
@@ -651,7 +613,7 @@ internal sealed class SqlOrderRepository : IOrderRepository
 }
 ```
 
-### 7.6 Use least-specific input and most-specific output
+### 6.6 Use least-specific input and most-specific output
 
 Good:
 
@@ -665,7 +627,7 @@ Bad:
 public static object CreateSummary(List<OrderLine> lines)
 ```
 
-### 7.7 Avoid Boolean parameter soup
+### 6.7 Avoid Boolean parameter soup
 
 Bad:
 
@@ -684,7 +646,7 @@ Process(order, new OrderProcessingOptions
 });
 ```
 
-### 7.8 Simple overloads must delegate to richer overloads
+### 6.8 Simple overloads must delegate to richer overloads
 
 ```csharp
 public static IServiceCollection AddOrders(this IServiceCollection services)
@@ -702,7 +664,7 @@ public static IServiceCollection AddOrders(
 }
 ```
 
-### 7.9 Public collections must not expose mutable internals
+### 6.9 Public collections must not expose mutable internals
 
 Good:
 
@@ -718,7 +680,7 @@ Bad:
 public List<OrderLine> Lines { get; set; } = [];
 ```
 
-### 7.10 Public classes are sealed by default unless inheritance is intentional
+### 6.10 Public classes are sealed by default unless inheritance is intentional
 
 Inheritance is a public contract. If a type is designed for inheritance, document virtual members and invariants.
 
@@ -733,13 +695,13 @@ public sealed class CreateOrderHandler
 Allowed when designed:
 
 ```csharp
-public abstract class OrderRepositorySpecification
+public abstract class OrderStoreSpecification
 {
-    protected abstract IOrderRepository CreateRepository();
+    protected abstract IOrderStore CreateStore();
 }
 ```
 
-### 7.11 Extension methods must live in a discoverable namespace
+### 6.11 Extension methods must live in a discoverable namespace
 
 Service registration extensions belong in:
 
@@ -760,15 +722,14 @@ namespace Company.Product;
 namespace Company.Product.DependencyInjection;
 ```
 
-**Inspired by:** ASP.NET Core MVC and endpoint routing extension method placement.
 
 ---
 
-## 8. Naming Standards
+## 7. Naming Standards
 
-### 8.1 General C# naming
+### 7.1 General C# naming
 
-Adopt the .NET runtime and Roslyn style baseline.
+Use standard .NET naming and keep naming consistent across the repo.
 
 | Symbol | Standard |
 |---|---|
@@ -786,9 +747,8 @@ Adopt the .NET runtime and Roslyn style baseline.
 | Async methods | `VerbNounAsync` |
 | Generic type parameters | `T` or `TDescriptiveName` |
 
-**Inspired by:** `dotnet/runtime` coding style and Roslyn `.editorconfig`.
 
-### 8.2 Project names
+### 7.2 Project names
 
 Use:
 
@@ -812,7 +772,7 @@ Company.Product.Managers
 Company.Product.BusinessLogic
 ```
 
-### 8.3 Type suffix standards
+### 7.3 Type suffix standards
 
 | Suffix | Use when | Example |
 |---|---|---|
@@ -822,16 +782,17 @@ Company.Product.BusinessLogic
 | `Provider` | Supplies values from an external/contextual source. | `TenantProvider` |
 | `Handler` | Handles one command/query/message. | `CreateOrderHandler` |
 | `Validator` | Validates a specific input/options/domain concept. | `CreateOrderCommandValidator` |
-| `Repository` | Collection-like persistence abstraction for aggregate roots. | `IOrderRepository` |
+| `Store` | Persists or retrieves app-owned records or state. Do not create an interface unless substitution is real. | `OrderStore` |
 | `Client` | Talks to an external service. | `FraudDetectionClient` |
-| `Store` | Persists/retrieves lower-level records/tokens/state. | `RefreshTokenStore` |
+| `Request` | Public-facing ASP.NET Core request contract. | `CreateOrderRequest` |
+| `Response` | Public-facing ASP.NET Core response contract. | `CreateOrderResponse` |
 | `HostedService` | Background service implementation. | `OutboxHostedService` |
 | `Middleware` | ASP.NET Core middleware. | `CorrelationIdMiddleware` |
 | `EndpointRouteBuilderExtensions` | Endpoint mapping extensions. | `OrderEndpointRouteBuilderExtensions` |
 | `ServiceCollectionExtensions` | DI registration extensions. | `OrderServiceCollectionExtensions` |
 | `ApplicationBuilderExtensions` | Middleware extensions. | `OrderApplicationBuilderExtensions` |
 
-### 8.4 Names to avoid
+### 7.4 Names to avoid
 
 Avoid these unless they are part of a precise domain term:
 
@@ -861,9 +822,9 @@ Preferred replacements:
 | `UserService` | `UserRegistrationHandler` |
 | `DataProcessor` | `InvoiceImportPipeline` |
 | `CommonExtensions` | `OrderEndpointRouteBuilderExtensions` |
-| `BaseRepository` | `SqlOrderRepository` plus shared composition, not inheritance. |
+| `BaseStore` | `SqlOrderStore` plus shared composition, not inheritance. |
 
-### 8.5 Method naming
+### 7.5 Method naming
 
 Use verbs that describe observable behavior.
 
@@ -891,127 +852,9 @@ Manage
 
 Generic names such as `Execute` are acceptable only when implementing a known framework contract or command pattern where the context is already precise.
 
----
+## 8. Dependency Injection Standard
 
-## 9. `.editorconfig` Recommendations
-
-Use the repository root as the source of truth. This baseline follows the runtime and Roslyn style direction.
-
-```editorconfig
-root = true
-
-[*]
-indent_style = space
-insert_final_newline = true
-trim_trailing_whitespace = true
-charset = utf-8
-
-[*.cs]
-indent_size = 4
-end_of_line = crlf
-
-# Braces and formatting
-csharp_new_line_before_open_brace = all
-csharp_indent_case_contents = true
-csharp_indent_switch_labels = true
-csharp_space_after_cast = false
-csharp_space_after_keywords_in_control_flow_statements = true
-
-# Usings
-dotnet_sort_system_directives_first = true
-csharp_using_directive_placement = outside_namespace:suggestion
-
-# Qualification
-dotnet_style_qualification_for_field = false:suggestion
-dotnet_style_qualification_for_property = false:suggestion
-dotnet_style_qualification_for_method = false:suggestion
-dotnet_style_qualification_for_event = false:suggestion
-
-# Language keywords
-dotnet_style_predefined_type_for_locals_parameters_members = true:suggestion
-dotnet_style_predefined_type_for_member_access = true:suggestion
-
-# var
-csharp_style_var_for_built_in_types = false:suggestion
-csharp_style_var_when_type_is_apparent = true:suggestion
-csharp_style_var_elsewhere = false:suggestion
-
-# Null and object creation
-dotnet_style_coalesce_expression = true:suggestion
-dotnet_style_null_propagation = true:suggestion
-csharp_style_implicit_object_creation_when_type_is_apparent = true:suggestion
-dotnet_style_object_initializer = true:suggestion
-dotnet_style_collection_initializer = true:suggestion
-
-# Immutability
-dotnet_style_readonly_field = true:suggestion
-csharp_prefer_readonly_struct = true:suggestion
-
-# Braces
-csharp_prefer_braces = true:suggestion
-
-# Naming: private/internal instance fields
-dotnet_naming_symbols.private_or_internal_fields.applicable_kinds = field
-dotnet_naming_symbols.private_or_internal_fields.applicable_accessibilities = private, internal
-dotnet_naming_style.underscore_prefix.required_prefix = _
-dotnet_naming_style.underscore_prefix.capitalization = camel_case
-dotnet_naming_rule.private_or_internal_fields_should_be_underscore.severity = suggestion
-dotnet_naming_rule.private_or_internal_fields_should_be_underscore.symbols = private_or_internal_fields
-dotnet_naming_rule.private_or_internal_fields_should_be_underscore.style = underscore_prefix
-
-# Naming: static fields
-dotnet_naming_symbols.static_fields.applicable_kinds = field
-dotnet_naming_symbols.static_fields.required_modifiers = static
-dotnet_naming_style.static_prefix.required_prefix = s_
-dotnet_naming_style.static_prefix.capitalization = camel_case
-dotnet_naming_rule.static_fields_should_be_s_prefix.severity = suggestion
-dotnet_naming_rule.static_fields_should_be_s_prefix.symbols = static_fields
-dotnet_naming_rule.static_fields_should_be_s_prefix.style = static_prefix
-
-# Naming: constants
-dotnet_naming_symbols.constants.applicable_kinds = field
-dotnet_naming_symbols.constants.required_modifiers = const
-dotnet_naming_style.pascal_case.capitalization = pascal_case
-dotnet_naming_rule.constants_should_be_pascal_case.severity = suggestion
-dotnet_naming_rule.constants_should_be_pascal_case.symbols = constants
-dotnet_naming_rule.constants_should_be_pascal_case.style = pascal_case
-
-[*.{csproj,props,targets,xml,resx}]
-indent_size = 2
-
-[*.{json,yml,yaml}]
-indent_size = 2
-
-[*.sh]
-end_of_line = lf
-
-[*.{cmd,bat}]
-end_of_line = crlf
-```
-
-### 9.1 Team enforcement
-
-Use these settings in `Directory.Build.props`:
-
-```xml
-<Project>
-  <PropertyGroup>
-    <Nullable>enable</Nullable>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-  </PropertyGroup>
-</Project>
-```
-
-Suppressions must be local, justified, and reviewed.
-
----
-
-## 10. Dependency Injection Standard
-
-### 10.1 Registration shape
+### 8.1 Registration shape
 
 Every feature that registers services must expose one primary `AddX` method.
 
@@ -1034,16 +877,15 @@ public static class OrderServiceCollectionExtensions
             .ValidateOnStart();
 
         services.TryAddScoped<CreateOrderHandler>();
-        services.TryAddScoped<IOrderRepository, SqlOrderRepository>();
+        services.TryAddScoped<SqlOrderStore>();
 
         return services;
     }
 }
 ```
 
-**Inspired by:** ASP.NET Core and Microsoft Extensions service registration APIs.
 
-### 10.2 DI rules
+### 8.2 DI rules
 
 #### Rule 1: The host is the composition root
 
@@ -1128,7 +970,7 @@ Good:
 
 ```csharp
 public sealed class CreateOrderHandler(
-    IOrderRepository orders,
+    SqlOrderStore orders,
     TimeProvider timeProvider,
     ILogger<CreateOrderHandler> logger)
 {
@@ -1148,9 +990,9 @@ public static class Services
 
 ---
 
-## 11. Configuration and Options Standard
+## 9. Configuration and Options Standard
 
-### 11.1 Options class rules
+### 9.1 Options class rules
 
 Use one options class per feature.
 
@@ -1169,7 +1011,7 @@ public sealed class OrderProcessingOptions
 }
 ```
 
-### 11.2 Registration
+### 9.2 Registration
 
 ```csharp
 services
@@ -1182,7 +1024,7 @@ services
     .ValidateOnStart();
 ```
 
-### 11.3 Complex validation
+### 9.3 Complex validation
 
 ```csharp
 internal sealed class OrderProcessingOptionsValidator
@@ -1207,7 +1049,7 @@ internal sealed class OrderProcessingOptionsValidator
 }
 ```
 
-### 11.4 Configuration rules
+### 9.4 Configuration rules
 
 1. Do not inject `IConfiguration` into application services.
 2. Bind configuration at startup.
@@ -1220,13 +1062,12 @@ internal sealed class OrderProcessingOptionsValidator
 9. Secrets must not appear in samples, test snapshots, logs, or README files.
 10. Prefer environment-specific configuration over conditional code.
 
-**Inspired by:** Microsoft Extensions options pattern and Semantic Kernel sample configuration using Secret Manager and environment variables.
 
 ---
 
-## 12. Error Handling and Validation Standard
+## 10. Error Handling and Validation Standard
 
-### 12.1 Guard clauses
+### 10.1 Guard clauses
 
 Public methods must validate arguments at the boundary.
 
@@ -1252,9 +1093,8 @@ ArgumentException.ThrowIfNullOrWhiteSpace(value);
 ArgumentOutOfRangeException.ThrowIfNegativeOrZero(value);
 ```
 
-**Inspired by:** ASP.NET Core and Microsoft.Extensions public API guard patterns.
 
-### 12.2 Exception rules
+### 10.2 Exception rules
 
 #### Rule 1: Use exceptions for programmer errors and failed invariants
 
@@ -1323,7 +1163,7 @@ catch (PaymentGatewayException ex)
 Good:
 
 ```text
-Unable to resolve IOrderRepository. Call AddSqlServerInfrastructure or register a custom IOrderRepository before AddOrders.
+Unable to resolve SqlOrderStore. Call AddSqlServerInfrastructure or register a custom store before AddOrders.
 ```
 
 Bad:
@@ -1332,13 +1172,12 @@ Bad:
 Object not set.
 ```
 
-**Inspired by:** Framework Design Guidelines exception recommendations.
 
 ---
 
-## 13. Logging and Diagnostics Standard
+## 11. Logging and Diagnostics Standard
 
-### 13.1 Use structured logging
+### 11.1 Use structured logging
 
 Bad:
 
@@ -1355,14 +1194,14 @@ _logger.LogInformation(
     customer.Id);
 ```
 
-### 13.2 Category rules
+### 11.2 Category rules
 
 Use typed categories:
 
 ```csharp
 ILogger<CreateOrderHandler>
 ILogger<OrderFulfillmentWorkflow>
-ILogger<SqlOrderRepository>
+ILogger<SqlOrderStore>
 ```
 
 For framework-like packages, define stable logging categories:
@@ -1375,9 +1214,8 @@ public static class ProductLoggerCategory
 }
 ```
 
-**Inspired by:** EF Core diagnostics and Microsoft.Extensions logging categories.
 
-### 13.3 Log level standard
+### 11.3 Log level standard
 
 | Level | Use |
 |---|---|
@@ -1388,7 +1226,7 @@ public static class ProductLoggerCategory
 | `Error` | Operation failed and requires attention. |
 | `Critical` | Process-wide failure, data corruption risk, service unavailable. |
 
-### 13.4 Sensitive data rules
+### 11.4 Sensitive data rules
 
 Never log:
 
@@ -1416,7 +1254,7 @@ enum values
 sanitized failure codes
 ```
 
-### 13.5 Event IDs
+### 11.5 Event IDs
 
 Use stable event IDs for important logs.
 
@@ -1428,7 +1266,7 @@ internal static class OrderEventIds
 }
 ```
 
-### 13.6 Distributed tracing
+### 11.6 Distributed tracing
 
 Use `ActivitySource` for distributed tracing.
 
@@ -1440,7 +1278,7 @@ internal static class OrderDiagnostics
 }
 ```
 
-### 13.7 Metrics
+### 11.7 Metrics
 
 Use `Meter` for metrics.
 
@@ -1453,13 +1291,12 @@ internal static class OrderMetrics
 
 Do not use high-cardinality metric labels. Avoid tagging metrics with order IDs, user IDs, emails, or raw URLs.
 
-**Inspired by:** Microsoft.Extensions diagnostics, telemetry, resilience, and compliance libraries.
 
 ---
 
-## 14. Async, Cancellation, and Threading Standard
+## 12. Async, Cancellation, and Threading Standard
 
-### 14.1 Async naming
+### 12.1 Async naming
 
 ```csharp
 Task<Order?> FindAsync(OrderId id, CancellationToken cancellationToken = default);
@@ -1467,7 +1304,7 @@ Task SaveAsync(Order order, CancellationToken cancellationToken = default);
 IAsyncEnumerable<Order> SearchAsync(OrderSearch search, CancellationToken cancellationToken = default);
 ```
 
-### 14.2 Rules
+### 12.2 Rules
 
 #### Rule 1: Every async method ends with `Async`
 
@@ -1498,13 +1335,13 @@ public Task SaveAsync(Order order, CancellationToken cancellationToken = default
 Bad:
 
 ```csharp
-await _client.GetFromJsonAsync<OrderDto>(url);
+await _client.GetFromJsonAsync<OrderResponse>(url);
 ```
 
 Good:
 
 ```csharp
-await _client.GetFromJsonAsync<OrderDto>(url, cancellationToken);
+await _client.GetFromJsonAsync<OrderResponse>(url, cancellationToken);
 ```
 
 #### Rule 4: Do not block async code
@@ -1551,19 +1388,17 @@ await Task.Run(() => httpClient.GetAsync(url));
 await using var scope = serviceScopeFactory.CreateAsyncScope();
 ```
 
-**Inspired by:** .NET runtime async/performance guidance and common Microsoft library design practices.
 
 ---
 
-## 15. Performance Standard
+## 13. Performance Standard
 
-### 15.1 General rule
+### 13.1 General rule
 
 Readable code is the default. Performance-specific code must be justified by measurement, isolated, documented, and tested.
 
-**Inspired by:** `dotnet/runtime` performance guidelines.
 
-### 15.2 Rules
+### 13.2 Rules
 
 #### Rule 1: Benchmark before claiming performance improvement
 
@@ -1606,7 +1441,6 @@ foreach (var item in items)
 private static readonly string[] s_emptyTags = [];
 ```
 
-**Inspired by:** ASP.NET Core endpoint routing allocation-conscious helpers.
 
 #### Rule 5: Use `ReadOnlySpan<T>`, `Span<T>`, `Memory<T>`, and pooling only where lifetime rules are clear
 
@@ -1650,9 +1484,9 @@ Good:
 
 ---
 
-## 16. Testing Architecture Standard
+## 14. Testing Architecture Standard
 
-### 16.1 Test project types
+### 14.1 Test project types
 
 ```text
 Company.Product.Domain.Tests
@@ -1666,9 +1500,8 @@ Company.Product.AotTests
 Company.Product.TrimmingTests
 ```
 
-**Inspired by:** EF Core’s unit, functional, specification, provider-specific, native AOT, trimming, API baseline, shared infrastructure, and tooling test projects.
 
-### 16.2 Test type definitions
+### 14.2 Test type definitions
 
 | Type | Purpose |
 |---|---|
@@ -1680,40 +1513,37 @@ Company.Product.TrimmingTests
 | Benchmark tests | Measure performance-sensitive paths. |
 | AOT/trimming tests | Validate compatibility where publishing constraints matter. |
 
-### 16.3 Folder structure
+### 14.3 Folder structure
 
 Mirror the production area structure.
 
 ```text
 tests/Company.Product.Application.Tests/
-├─ Orders/
-│  ├─ CreateOrderHandlerTests.cs
-│  ├─ CreateOrderValidatorTests.cs
-│  └─ CancelOrderHandlerTests.cs
-├─ Invoices/
+├─ OrderHandlerTests.cs
+├─ OrderValidationTests.cs
+├─ OrderResultTests.cs
 └─ TestUtilities/
 ```
 
-**Inspired by:** EF Core tests mirroring product areas such as change tracking, diagnostics, infrastructure, metadata, query, storage, and update.
 
-### 16.4 Specification test pattern
+### 14.4 Specification test pattern
 
 Use this when multiple implementations must obey the same contract.
 
 ```csharp
-public abstract class OrderRepositorySpecification
+public abstract class OrderStoreSpecification
 {
-    protected abstract IOrderRepository CreateRepository();
+    protected abstract IOrderStore CreateStore();
 
     [Fact]
     public async Task SaveAsync_persists_order()
     {
-        var repository = CreateRepository();
+        var store = CreateStore();
         var order = OrderFactory.Create();
 
-        await repository.SaveAsync(order);
+        await store.SaveAsync(order);
 
-        var found = await repository.FindAsync(order.Id);
+        var found = await store.FindAsync(order.Id);
 
         Assert.NotNull(found);
         Assert.Equal(order.Id, found.Id);
@@ -1722,17 +1552,16 @@ public abstract class OrderRepositorySpecification
 ```
 
 ```csharp
-public sealed class SqlServerOrderRepositoryTests
-    : OrderRepositorySpecification
+public sealed class SqlServerOrderStoreTests
+    : OrderStoreSpecification
 {
-    protected override IOrderRepository CreateRepository()
-        => SqlServerRepositoryFixture.CreateRepository();
+    protected override IOrderStore CreateStore()
+        => SqlServerStoreFixture.CreateStore();
 }
 ```
 
-**Inspired by:** EF Core specification tests for provider behavior.
 
-### 16.5 Test naming
+### 14.5 Test naming
 
 Use one standard form:
 
@@ -1749,7 +1578,7 @@ SaveAsync_when_order_exists_updates_existing_record()
 AddOrders_when_services_is_null_throws()
 ```
 
-### 16.6 Test rules
+### 14.6 Test rules
 
 1. Test public behavior, not private implementation.
 2. Do not use reflection to test private methods.
@@ -1773,13 +1602,12 @@ WebApplicationFixture
 FakeClock
 ```
 
-**Inspired by:** EF Core fixtures/specification tests and Aspire test filtering/end-to-end separation.
 
 ---
 
-## 17. Documentation and Maintainability Standard
+## 15. Documentation and Maintainability Standard
 
-### 17.1 Required docs
+### 15.1 Required docs
 
 ```text
 README.md
@@ -1791,7 +1619,7 @@ docs/breaking-changes/
 samples/
 ```
 
-### 17.2 README structure
+### 15.2 README structure
 
 ```markdown
 # Company.Product
@@ -1808,7 +1636,7 @@ samples/
 ## Contributing
 ```
 
-### 17.3 Package README structure
+### 15.3 Package README structure
 
 For NuGet packages, include:
 
@@ -1821,28 +1649,12 @@ Additional documentation
 Feedback and issues
 ```
 
-**Inspired by:** `dotnet/runtime` package README and packaging guidance.
 
-### 17.4 XML docs
+### 15.4 Keep comments sparse
 
-Public APIs must have XML docs.
+Prefer clear names and obvious signatures first. Add a brief comment only when public behavior, required ordering, or error behavior would be non-obvious without it.
 
-```csharp
-/// <summary>
-/// Registers order processing services.
-/// </summary>
-/// <param name="services">The service collection.</param>
-/// <param name="configuration">The application configuration.</param>
-/// <returns>The same service collection for chaining.</returns>
-/// <exception cref="ArgumentNullException">
-/// Thrown when <paramref name="services" /> or <paramref name="configuration" /> is <see langword="null" />.
-/// </exception>
-public static IServiceCollection AddOrders(
-    this IServiceCollection services,
-    IConfiguration configuration)
-```
-
-### 17.5 API compatibility
+### 15.5 API compatibility
 
 For shared libraries and packages:
 
@@ -1854,9 +1666,8 @@ Package baseline validation
 Breaking-change notes
 ```
 
-**Inspired by:** `dotnet/runtime` API compatibility and package baseline validation, plus EF Core API baseline tests.
 
-### 17.6 Breaking changes
+### 15.6 Breaking changes
 
 A breaking change requires:
 
@@ -1870,7 +1681,7 @@ A breaking change requires:
 7. Version introduced
 ```
 
-### 17.7 Samples
+### 15.7 Samples
 
 Samples must:
 
@@ -1883,13 +1694,12 @@ cover common scenarios
 stay minimal
 ```
 
-**Inspired by:** Semantic Kernel getting-started samples and ASP.NET Core samples.
 
 ---
 
-## 18. Good and Bad Code Examples
+## 16. Good and Bad Code Examples
 
-### 18.1 Example A: bad architecture
+### 16.1 Example A: bad architecture
 
 ```csharp
 public sealed class OrderController : ControllerBase
@@ -1936,7 +1746,7 @@ No application use case.
 No testable persistence abstraction.
 ```
 
-### 18.2 Example A: good architecture
+### 16.2 Example A: good architecture
 
 ```csharp
 // Application
@@ -1945,7 +1755,7 @@ public sealed record CreateOrderCommand(
     IReadOnlyList<CreateOrderLine> Lines);
 
 public sealed class CreateOrderHandler(
-    IOrderRepository orders,
+    IOrderStore orders,
     TimeProvider timeProvider,
     ILogger<CreateOrderHandler> logger)
 {
@@ -2004,8 +1814,8 @@ public static class OrderEndpoints
 
 ```csharp
 // Infrastructure.SqlServer
-internal sealed class SqlOrderRepository(OrderDbContext dbContext)
-    : IOrderRepository
+internal sealed class SqlOrderStore(OrderDbContext dbContext)
+    : IOrderStore
 {
     public async Task SaveAsync(
         Order order,
@@ -2017,7 +1827,7 @@ internal sealed class SqlOrderRepository(OrderDbContext dbContext)
 }
 ```
 
-### 18.3 Example B: bad DI
+### 16.3 Example B: bad DI
 
 ```csharp
 public static class StartupHelpers
@@ -2043,7 +1853,7 @@ Creates singleton with unclear lifetime safety.
 Returns void, so chaining is impossible.
 ```
 
-### 18.4 Example B: good DI
+### 16.4 Example B: good DI
 
 ```csharp
 namespace Microsoft.Extensions.DependencyInjection;
@@ -2064,14 +1874,14 @@ public static class OrderServiceCollectionExtensions
             .ValidateOnStart();
 
         services.TryAddScoped<CreateOrderHandler>();
-        services.TryAddScoped<IOrderRepository, SqlOrderRepository>();
+        services.TryAddScoped<IOrderStore, SqlOrderStore>();
 
         return services;
     }
 }
 ```
 
-### 18.5 Example C: bad options
+### 16.5 Example C: bad options
 
 ```csharp
 public sealed class Settings
@@ -2092,7 +1902,7 @@ No validation.
 Unit ambiguity for Timeout.
 ```
 
-### 18.6 Example C: good options
+### 16.6 Example C: good options
 
 ```csharp
 public sealed class FraudDetectionOptions
@@ -2109,14 +1919,14 @@ public sealed class FraudDetectionOptions
 }
 ```
 
-### 18.7 Example D: bad logging
+### 16.7 Example D: bad logging
 
 ```csharp
 _logger.LogInformation(
     $"Charging card {request.CardNumber} for {request.CustomerEmail}");
 ```
 
-### 18.8 Example D: good logging
+### 16.8 Example D: good logging
 
 ```csharp
 _logger.LogInformation(
@@ -2127,9 +1937,9 @@ _logger.LogInformation(
 
 ---
 
-## 19. Pull Request Review Checklist
+## 17. Pull Request Review Checklist
 
-### 19.1 Architecture
+### 17.1 Architecture
 
 ```text
 [ ] Code is in the correct project.
@@ -2142,7 +1952,7 @@ _logger.LogInformation(
 [ ] New shared code has a clear owner and is not a dumping ground.
 ```
 
-### 19.2 Public API
+### 17.2 Public API
 
 ```text
 [ ] New public API has a usage sample.
@@ -2151,12 +1961,12 @@ _logger.LogInformation(
 [ ] Extension method uses Add*, Use*, Map*, With*, or Configure* correctly.
 [ ] Overloads are minimal and delegate to a main overload.
 [ ] Public collections do not expose mutable internals.
-[ ] Public API has XML docs.
+[ ] Public API comments are added only when the behavior is not obvious from the code and signature.
 [ ] Exceptions and ordering requirements are documented.
 [ ] API compatibility files or baselines are updated when required.
 ```
 
-### 19.3 Naming and style
+### 17.3 Naming and style
 
 ```text
 [ ] Names avoid Manager, Helper, Utils, Common, Shared, and Base unless justified.
@@ -2167,7 +1977,7 @@ _logger.LogInformation(
 [ ] .editorconfig warnings are fixed, not casually suppressed.
 ```
 
-### 19.4 DI and configuration
+### 17.4 DI and configuration
 
 ```text
 [ ] Services are registered through a clear AddX extension method.
@@ -2181,7 +1991,7 @@ _logger.LogInformation(
 [ ] No application service injects IConfiguration directly.
 ```
 
-### 19.5 Error handling
+### 17.5 Error handling
 
 ```text
 [ ] Public methods validate arguments.
@@ -2191,7 +2001,7 @@ _logger.LogInformation(
 [ ] Code does not log and rethrow without adding value.
 ```
 
-### 19.6 Logging and diagnostics
+### 17.6 Logging and diagnostics
 
 ```text
 [ ] Logs are structured, not interpolated.
@@ -2202,7 +2012,7 @@ _logger.LogInformation(
 [ ] Traces are added at meaningful boundaries, not every method.
 ```
 
-### 19.7 Async and cancellation
+### 17.7 Async and cancellation
 
 ```text
 [ ] Async methods accept CancellationToken as the last parameter.
@@ -2212,7 +2022,7 @@ _logger.LogInformation(
 [ ] ValueTask is justified by measurement or a known hot path.
 ```
 
-### 19.8 Performance
+### 17.8 Performance
 
 ```text
 [ ] Hot-path changes are benchmarked.
@@ -2222,7 +2032,7 @@ _logger.LogInformation(
 [ ] Reflection, LINQ, closures, and allocations are avoided where measurement requires it.
 ```
 
-### 19.9 Testing
+### 17.9 Testing
 
 ```text
 [ ] Tests cover public behavior.
@@ -2235,7 +2045,7 @@ _logger.LogInformation(
 [ ] Benchmark/AOT/trimming/API baseline tests are updated when relevant.
 ```
 
-### 19.10 Documentation
+### 17.10 Documentation
 
 ```text
 [ ] README or feature docs updated.
@@ -2247,7 +2057,7 @@ _logger.LogInformation(
 
 ---
 
-## 20. Starter Template Structure
+## 18. Starter Template Structure
 
 ```text
 Company.Product/
@@ -2263,7 +2073,7 @@ Company.Product/
 │  │  ├─ overview.md
 │  │  ├─ dependencies.md
 │  │  └─ project-layout.md
-├─ eng/
+├─ scripts/
 │  ├─ build.ps1
 │  └─ build.sh
 ├─ src/
@@ -2279,29 +2089,25 @@ Company.Product/
 │  │  │  └─ CreateOrderResponse.cs
 │  │  └─ Company.Product.Contracts.csproj
 │  ├─ Company.Product.Application/
-│  │  ├─ Orders/
-│  │  │  ├─ CreateOrderCommand.cs
-│  │  │  ├─ CreateOrderHandler.cs
-│  │  │  ├─ CreateOrderResult.cs
-│  │  │  └─ IOrderRepository.cs
-│  │  ├─ DependencyInjection/
-│  │  │  └─ ApplicationServiceCollectionExtensions.cs
+│  │  ├─ ApplicationServiceCollectionExtensions.cs
+│  │  ├─ OrderCommands.cs
+│  │  ├─ OrderHandlers.cs
+│  │  ├─ OrderResults.cs
+│  │  ├─ OrderStore.cs
 │  │  └─ Company.Product.Application.csproj
 │  ├─ Company.Product.Infrastructure.SqlServer/
-│  │  ├─ Orders/
-│  │  │  ├─ SqlOrderRepository.cs
-│  │  │  └─ OrderEntityConfiguration.cs
+│  │  ├─ SqlOrderStore.cs
+│  │  ├─ OrderEntityConfiguration.cs
 │  │  ├─ Options/
 │  │  │  └─ SqlServerOptions.cs
 │  │  ├─ DependencyInjection/
 │  │  │  └─ SqlServerServiceCollectionExtensions.cs
 │  │  └─ Company.Product.Infrastructure.SqlServer.csproj
 │  ├─ Company.Product.Web/
-│  │  ├─ Orders/
-│  │  │  ├─ OrderEndpoints.cs
-│  │  │  ├─ OrderRequests.cs
-│  │  │  └─ OrderMappers.cs
-│  │  ├─ Diagnostics/
+│  │  ├─ OrderEndpoints.cs
+│  │  ├─ OrderRequests.cs
+│  │  ├─ OrderResponses.cs
+│  │  ├─ OrderMappings.cs
 │  │  ├─ Program.cs
 │  │  └─ Company.Product.Web.csproj
 │  └─ Company.Product.ServiceDefaults/
@@ -2312,18 +2118,14 @@ Company.Product/
 │  │  └─ Orders/
 │  │     └─ OrderTests.cs
 │  ├─ Company.Product.Application.Tests/
-│  │  └─ Orders/
-│  │     ├─ CreateOrderHandlerTests.cs
-│  │     └─ CreateOrderValidatorTests.cs
+│  │  ├─ OrderHandlerTests.cs
+│  │  └─ OrderValidationTests.cs
 │  ├─ Company.Product.Infrastructure.SqlServer.Tests/
-│  │  └─ Orders/
-│  │     └─ SqlOrderRepositoryTests.cs
+│  │  └─ SqlOrderStoreTests.cs
 │  ├─ Company.Product.Web.FunctionalTests/
-│  │  └─ Orders/
-│  │     └─ OrderEndpointTests.cs
+│  │  └─ OrderEndpointTests.cs
 │  ├─ Company.Product.Specification.Tests/
-│  │  └─ Orders/
-│  │     └─ OrderRepositorySpecification.cs
+│  │  └─ OrderStoreSpecification.cs
 │  ├─ Company.Product.Architecture.Tests/
 │  │  └─ DependencyRulesTests.cs
 │  ├─ Company.Product.Benchmarks/
@@ -2340,7 +2142,7 @@ Company.Product/
 
 ---
 
-## 21. Minimal Project Reference Policy
+## 19. Minimal Project Reference Policy
 
 Use this as the default `ProjectReference` policy.
 
@@ -2394,7 +2196,7 @@ Production -> Tests
 
 ---
 
-## 22. Golden Rules
+## 20. Golden Rules
 
 1. The project graph is the architecture. Keep it clean.
 2. Domain has no infrastructure dependency.
@@ -2412,26 +2214,3 @@ Production -> Tests
 14. Compatibility, docs, and samples are part of the feature, not cleanup work.
 
 ---
-
-## 23. Reference Links
-
-These links are included as source references for the repository patterns behind this standard.
-
-- `dotnet/runtime`: <https://github.com/dotnet/runtime>
-- `dotnet/runtime` coding style: <https://raw.githubusercontent.com/dotnet/runtime/main/docs/coding-guidelines/coding-style.md>
-- `dotnet/runtime` project guidelines: <https://raw.githubusercontent.com/dotnet/runtime/main/docs/coding-guidelines/project-guidelines.md>
-- `dotnet/runtime` performance guidelines: <https://raw.githubusercontent.com/dotnet/runtime/main/docs/coding-guidelines/performance-guidelines.md>
-- `dotnet/runtime` API review process: <https://raw.githubusercontent.com/dotnet/runtime/main/docs/project/api-review-process.md>
-- `dotnet/runtime` Framework Design Guidelines digest: <https://raw.githubusercontent.com/dotnet/runtime/main/docs/coding-guidelines/framework-design-guidelines-digest.md>
-- `dotnet/aspnetcore`: <https://github.com/dotnet/aspnetcore>
-- ASP.NET Core MVC service registration source: <https://source.dot.net/Microsoft.AspNetCore.Mvc/MvcServiceCollectionExtensions.cs.html>
-- ASP.NET Core endpoint route builder source: <https://source.dot.net/Microsoft.AspNetCore.Routing/Builder/EndpointRouteBuilderExtensions.cs.html>
-- `dotnet/efcore`: <https://github.com/dotnet/efcore>
-- `dotnet/efcore` source tree: <https://github.com/dotnet/efcore/tree/main/src>
-- `dotnet/efcore` test tree: <https://github.com/dotnet/efcore/tree/main/test>
-- `dotnet/roslyn`: <https://github.com/dotnet/roslyn>
-- `dotnet/extensions`: <https://github.com/dotnet/extensions>
-- `dotnet/aspire`: <https://github.com/dotnet/aspire>
-- `dotnet/aspire` test README: <https://github.com/dotnet/aspire/blob/main/tests/README.md>
-- `microsoft/semantic-kernel`: <https://github.com/microsoft/semantic-kernel>
-- Semantic Kernel getting-started samples: <https://github.com/microsoft/semantic-kernel/blob/main/dotnet/samples/GettingStarted/README.md>
