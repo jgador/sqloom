@@ -1,0 +1,24 @@
+{
+  "patterns": [
+    ".git/",
+    ".synapse/",
+    "node_modules/",
+    "bin/",
+    "obj/",
+    "dist/",
+    "build/",
+    "coverage/",
+    "artifacts/",
+    ".next/",
+    ".turbo/",
+    ".cache/",
+    ".vs/",
+    ".vscode/",
+    ".dotnet-cli/",
+    ".nuget-packages/",
+    ".appdata/",
+    "package-lock.json",
+    "yarn.lock",
+    "pnpm-lock.yaml"
+  ]
+}

@@ -2,15 +2,15 @@
 
 ## Project Structure & Module Organization
 
-`src/` contains the production libraries: `Sqloom.Core`, `Sqloom.QueryStore`, `Sqloom.AzureSql`, `Sqloom.AspNetCore`, and the `sqloom` CLI in `Sqloom.Host`. `tests/` contains the unit and integration lanes plus the sample app and companion harness: `Sqloom.UnitTests`, `Sqloom.IntegrationTests`, `Sqloom.TestApp`, and `Sqloom.TestApp.IntegrationTests`. Use `scripts/tools/` for local tool deployment and package preparation. Treat `artifacts/` as generated output for builds, packages, replay runs, and tune runs. If a bug report mentions replay, correlate, advise, or tune behavior, inspect the generated files under `artifacts/sqloom/` before guessing from code alone.
+`src/` contains the production libraries: `Sqloom.Core`, `Sqloom.QueryStore`, `Sqloom.AzureSql`, `Sqloom.AspNetCore`, and the `sqloom` CLI in `Sqloom.Host`. `tests/` contains the unit and integration lanes plus the sample app and companion harness: `Sqloom.UnitTests`, `Sqloom.IntegrationTests`, `Sqloom.TestApp`, and `Sqloom.TestApp.IntegrationTests`. Use `scripts/` for local tool deployment and package preparation. Treat `artifacts/` as generated output for builds, packages, replay runs, and tune runs. If a bug report mentions replay, correlate, advise, or tune behavior, inspect the generated files under `artifacts/sqloom/` before guessing from code alone.
 
 ## Agent Workflow
 
-Use sub-agents for non-trivial work in this repository. Treat work as non-trivial when the correct files are not already known, when multiple projects may need coordinated changes, or when a change can affect CLI contracts, artifact formats, package output, database/test harness behavior, or build and test workflows.
+The user explicitly authorizes Codex to spawn and coordinate sub-agents for non-trivial work in this repository. Use sub-agents for non-trivial work here to keep the main agent focused on coordination, integration, and final synthesis. Treat work as non-trivial when the correct files are not already known, when multiple projects may need coordinated changes, or when a change can affect CLI contracts, artifact formats, package output, database/test harness behavior, or build and test workflows.
 
 ### Scout-First Repo Search
 
-Use `scout` for repo discovery when any of these are true:
+Use `scout`, the repo discovery sub-agent, for repo discovery when any of these are true:
 - the user asks to find, trace, investigate, or discover which files matter
 - the user did not name an exact target file
 - more than one top-level area may be relevant
@@ -22,7 +22,7 @@ When using `scout`:
 - ground first in `AGENTS.md`, `README.md`, and any directly named files
 - use Repository Synapse first when available, then pass the strongest recall hints into the scout prompt
 - normalize and de-overlap scopes before spawning
-- spawn one `scout` per disjoint scope
+- spawn one `scout` sub-agent per disjoint scope
 - prefer these default scopes when the area is unclear: `src/`, `tests/`, `scripts/`, `artifacts/`, and repo-root config or docs files
 - include `artifacts/sqloom/` in scope when investigating generated replay or tuning behavior
 
@@ -55,8 +55,8 @@ dotnet restore .\Sqloom.sln
 dotnet build .\Sqloom.sln --tl:off --nologo "-clp:ErrorsOnly;NoSummary"
 dotnet test --solution .\Sqloom.UnitTests.slnf
 dotnet test --solution .\Sqloom.IntegrationTests.slnf
-pwsh .\scripts\tools\deploy-sqloom-local.ps1 -SkipSmoke
-pwsh .\scripts\tools\prepare-sqloom-packages.ps1 -SkipSmoke
+pwsh .\scripts\deploy-sqloom-local.ps1 -SkipSmoke
+pwsh .\scripts\prepare-sqloom-packages.ps1 -SkipSmoke
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --target "GET /api/products/by-category"
 ```
 

@@ -1,3 +1,8 @@
-/artifacts/
-/.synapse/
-/.tools/
+/artifacts/*
+!/artifacts/.gitkeep
+
+/.synapse/*
+!/.synapse/ignored.json
+
+/.tools/*
+!/.tools/.gitkeep

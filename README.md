@@ -110,7 +110,7 @@ Talio-specific Sqloom test lanes remain in the Talio repository.
 From the repo root, use the repo-local deployment script when you want a fast dev install that stays separate from the published global `sqloom` command:
 
 ```powershell
-pwsh .\scripts\tools\deploy-sqloom-local.ps1
+pwsh .\scripts\deploy-sqloom-local.ps1
 ```
 
 That script repacks the full `Sqloom.*` package set into `.\artifacts\packages\sqloom`, reinstalls the local dev tool into `..\.tools\sqloom-local`, and regenerates the wrapper command at `..\.tools\bin\sqloom-local.cmd`. Add the repo-local wrapper directory to `PATH` if you want to call the dev tool as `sqloom-local`:
@@ -119,7 +119,7 @@ That script repacks the full `Sqloom.*` package set into `.\artifacts\packages\s
 ..\.tools\bin
 ```
 
-The deploy script now also ensures that wrapper directory is on the current PowerShell session PATH and on the user PATH for new terminals, so a direct invocation like `.\scripts\tools\deploy-sqloom-local.ps1` is followed immediately by `sqloom-local --version` in the same shell.
+The deploy script now also ensures that wrapper directory is on the current PowerShell session PATH and on the user PATH for new terminals, so a direct invocation like `.\scripts\deploy-sqloom-local.ps1` is followed immediately by `sqloom-local --version` in the same shell.
 
 The local wrapper accepts the same explicit stage-verb model as `Sqloom.Host` itself. SQL Server-backed replay harnesses can require an app-owned DACPAC path; Talio examples below use the repo-local `.\artifacts\Talio.dacpac` artifact.
 
@@ -146,7 +146,7 @@ sqloom-local tune .\Talio.sln --no-build --read-only-connection-string "<connect
 When you want a clean package-prep pass before a manual `nuget.org` push, use:
 
 ```powershell
-pwsh .\scripts\tools\prepare-sqloom-packages.ps1
+pwsh .\scripts\prepare-sqloom-packages.ps1
 ```
 
 That script restores and builds `.\Sqloom.sln`, repacks the full `Sqloom.*` feed under `.\artifacts\packages\sqloom`, verifies a clean tool-path install from that folder feed, and prints the exact `dotnet nuget push` commands without pushing anything.

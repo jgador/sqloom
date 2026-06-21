@@ -9,7 +9,7 @@ function Get-SqloomToolingContext
     )
 
     $scriptsRoot = Split-Path -Parent $ScriptPath
-    $repoRoot = (Resolve-Path (Join-Path $scriptsRoot "..\..")).Path
+    $repoRoot = (Resolve-Path (Join-Path $scriptsRoot "..")).Path
     $dotnet = (Get-Command dotnet -ErrorAction Stop).Source
     $solutionPath = Join-Path $repoRoot "Sqloom.sln"
     $packageFeedPath = Join-Path $repoRoot "artifacts\packages\sqloom"
