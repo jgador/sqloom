@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "dgSpecHash": "t3auOdYQlsw=",
+  "success": false,
+  "projectFilePath": "C:\\repo\\GitHub\\sqloom\\Sqloom.TestApp.IntegrationTests\\Sqloom.TestApp.IntegrationTests.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1015",
+      "level": "Error",
+      "message": "The following PackageReference item(s) do not have a version specified: Microsoft.AspNetCore.TestHost, Microsoft.Data.SqlClient, Microsoft.EntityFrameworkCore.InMemory, Microsoft.EntityFrameworkCore.SqlServer, Microsoft.SqlServer.DacFx, Testcontainers.MsSql",
+      "projectPath": "C:\\repo\\GitHub\\sqloom\\Sqloom.TestApp.IntegrationTests\\Sqloom.TestApp.IntegrationTests.csproj",
+      "filePath": "C:\\repo\\GitHub\\sqloom\\Sqloom.TestApp.IntegrationTests\\Sqloom.TestApp.IntegrationTests.csproj",
+      "targetGraphs": []
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "dgSpecHash": "G1hqvtSGXlM=",
+  "success": false,
+  "projectFilePath": "C:\\repo\\GitHub\\sqloom\\Sqloom.AzureSql\\Sqloom.AzureSql.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1015",
+      "level": "Error",
+      "message": "The following PackageReference item(s) do not have a version specified: Microsoft.Data.SqlClient",
+      "projectPath": "C:\\repo\\GitHub\\sqloom\\Sqloom.AzureSql\\Sqloom.AzureSql.csproj",
+      "filePath": "C:\\repo\\GitHub\\sqloom\\Sqloom.AzureSql\\Sqloom.AzureSql.csproj",
+      "targetGraphs": []
+    }
+  ]
+}

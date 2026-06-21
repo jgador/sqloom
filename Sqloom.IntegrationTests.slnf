@@ -1,0 +1,8 @@
+{
+  "solution": {
+    "path": "Sqloom.sln",
+    "projects": [
+      "tests\\Sqloom.IntegrationTests\\Sqloom.IntegrationTests.csproj"
+    ]
+  }
+}

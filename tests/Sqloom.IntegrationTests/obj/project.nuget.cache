@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "dgSpecHash": "MEgglK2lxGU=",
+  "success": false,
+  "projectFilePath": "C:\\repo\\GitHub\\sqloom\\tests\\Sqloom.IntegrationTests\\Sqloom.IntegrationTests.csproj",
+  "expectedPackageFiles": [],
+  "logs": [
+    {
+      "code": "NU1015",
+      "level": "Error",
+      "message": "The following PackageReference item(s) do not have a version specified: Microsoft.Testing.Extensions.CodeCoverage, xunit.v3.mtp-v2",
+      "projectPath": "C:\\repo\\GitHub\\sqloom\\tests\\Sqloom.IntegrationTests\\Sqloom.IntegrationTests.csproj",
+      "filePath": "C:\\repo\\GitHub\\sqloom\\tests\\Sqloom.IntegrationTests\\Sqloom.IntegrationTests.csproj",
+      "targetGraphs": []
+    }
+  ]
+}

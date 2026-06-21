@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <Authors>sqloom contributors</Authors>
+    <Description>Query Store observation and workload classification contracts for Sqloom.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/jgador/sqloom</PackageProjectUrl>
+    <PackageTags>sqloom;performance;benchmark;query-store;classification</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <RepositoryUrl>https://github.com/jgador/sqloom</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
+  </ItemGroup>
+</Project>
