@@ -89,7 +89,7 @@ function Get-SelectedTables {
 
 $dotnetPath = Get-RequiredCommandPath -Name 'dotnet'
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
-$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..')).Path
+$repoRoot = (Resolve-Path (Join-Path $scriptRoot '..\..')).Path
 $appProjectPath = (Resolve-Path (Join-Path $scriptRoot 'Sqloom.TestApp.csproj')).Path
 $appProjectRoot = Split-Path -Parent $appProjectPath
 $selectedTables = Get-SelectedTables -ExplicitTables $Tables
@@ -97,8 +97,8 @@ $selectedTables = Get-SelectedTables -ExplicitTables $Tables
 # Keep the reverse-engineered model inside Sqloom.TestApp so the sample app owns the generated EF types.
 $generatedRoot = Join-Path $appProjectRoot 'Generated'
 $stageRoot = Join-Path $repoRoot 'artifacts\ef-scaffold\Sqloom.TestApp'
-$contextDir = '..\artifacts\ef-scaffold\Sqloom.TestApp\Generated'
-$entitiesDir = '..\artifacts\ef-scaffold\Sqloom.TestApp\Generated\Entities'
+$contextDir = '..\..\artifacts\ef-scaffold\Sqloom.TestApp\Generated'
+$entitiesDir = '..\..\artifacts\ef-scaffold\Sqloom.TestApp\Generated\Entities'
 
 if (Test-Path -LiteralPath $stageRoot) {
     $resolvedStageRoot = (Resolve-Path -LiteralPath $stageRoot).Path
@@ -225,5 +225,5 @@ Invoke-CheckedProcess -FilePath $dotnetPath -WorkingDirectory $repoRoot -Argumen
 
 Write-Host "Raw scaffold output staged at: $stageRoot"
 Write-Host "Reverse-engineered model written to: $generatedRoot"
-Write-Host "Review the generated files under Sqloom.TestApp before committing."
+Write-Host "Review the generated files under tests\\Sqloom.TestApp before committing."
 Write-Host "Scaffolded tables: $($selectedTables -join ', ')"

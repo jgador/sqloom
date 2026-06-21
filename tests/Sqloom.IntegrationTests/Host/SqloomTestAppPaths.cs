@@ -19,6 +19,7 @@ internal static class SqloomTestAppPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
+            "tests",
             "Sqloom.TestApp",
             "Sqloom.TestApp.csproj");
     }
@@ -27,6 +28,7 @@ internal static class SqloomTestAppPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
+            "tests",
             "Sqloom.TestApp.IntegrationTests",
             "AdventureWorksLT2025.dacpac");
     }
@@ -35,6 +37,7 @@ internal static class SqloomTestAppPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
+            "tests",
             "Sqloom.TestApp.IntegrationTests",
             "Export-AdventureWorksLT2025SeedSql.ps1");
     }
@@ -43,6 +46,7 @@ internal static class SqloomTestAppPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
+            "tests",
             "Sqloom.TestApp.IntegrationTests",
             "AdventureWorksLT2025.seed.sql");
     }
@@ -51,6 +55,7 @@ internal static class SqloomTestAppPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
+            "tests",
             "Sqloom.TestApp.IntegrationTests",
             "AdventureWorksLT2025.schema.sql");
     }

@@ -26,6 +26,7 @@ internal static class SqloomRepositoryPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
+            "tests",
             "Sqloom.TestApp",
             "Sqloom.TestApp.csproj");
     }
@@ -34,6 +35,7 @@ internal static class SqloomRepositoryPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
+            "tests",
             "Sqloom.TestApp");
     }
 
@@ -41,6 +43,7 @@ internal static class SqloomRepositoryPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
+            "tests",
             "Sqloom.TestApp.IntegrationTests",
             "Sqloom.TestApp.IntegrationTests.csproj");
     }

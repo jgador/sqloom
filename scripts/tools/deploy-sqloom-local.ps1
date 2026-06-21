@@ -42,7 +42,7 @@ try
 
     if (-not $SkipSmoke)
     {
-        $sampleAppProject = Join-Path $context.RepoRoot "Sqloom.TestApp\Sqloom.TestApp.csproj"
+        $sampleAppProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp\Sqloom.TestApp.csproj"
         & $localCommand replay $sampleAppProject --target "GET /api/products/by-category"
         if ($LASTEXITCODE -ne 0)
         {

@@ -23,7 +23,7 @@ The tool package depends on `Sqloom.Core`, `Sqloom.QueryStore`, `Sqloom.AzureSql
 ## Example
 
 ```powershell
-& "<tool-path>\\sqloom.exe" replay .\Sqloom.TestApp\Sqloom.TestApp.csproj --no-build --sqlserver-dacpac-file .\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"
+& "<tool-path>\\sqloom.exe" replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --no-build --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"
 ```
 
 Repository metadata currently points at the standalone Sqloom project:

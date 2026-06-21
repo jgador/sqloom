@@ -42,11 +42,11 @@ function Get-SqloomPackProjects
     )
 
     return @(
-        Join-Path $RepoRoot "Sqloom.Core\Sqloom.Core.csproj"
-        Join-Path $RepoRoot "Sqloom.QueryStore\Sqloom.QueryStore.csproj"
-        Join-Path $RepoRoot "Sqloom.AzureSql\Sqloom.AzureSql.csproj"
-        Join-Path $RepoRoot "Sqloom.AspNetCore\Sqloom.AspNetCore.csproj"
-        Join-Path $RepoRoot "Sqloom.Host\Sqloom.Host.csproj"
+        Join-Path $RepoRoot "src\Sqloom.Core\Sqloom.Core.csproj"
+        Join-Path $RepoRoot "src\Sqloom.QueryStore\Sqloom.QueryStore.csproj"
+        Join-Path $RepoRoot "src\Sqloom.AzureSql\Sqloom.AzureSql.csproj"
+        Join-Path $RepoRoot "src\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj"
+        Join-Path $RepoRoot "src\Sqloom.Host\Sqloom.Host.csproj"
     )
 }
 

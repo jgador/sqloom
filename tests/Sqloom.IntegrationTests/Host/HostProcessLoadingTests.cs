@@ -17,8 +17,8 @@ public sealed class HostProcessLoadingTests
     public async Task DotNetRun_WithSqloomHostProjectAndSqloomTestAppProject_ReplaysProductCatalogWorkload()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
-        const string hostProjectPath = @".\Sqloom.Host\Sqloom.Host.csproj";
-        const string targetProjectPath = @".\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
+        const string targetProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
 
         var result = await RunDotNetAsync(
             repositoryRoot,
@@ -52,8 +52,8 @@ public sealed class HostProcessLoadingTests
     public async Task DotNetRun_WithSqloomHostProjectAndLeadingTargetPath_FailsWithoutStageVerb()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
-        const string hostProjectPath = @".\Sqloom.Host\Sqloom.Host.csproj";
-        const string targetProjectPath = @".\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
+        const string targetProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
 
         var result = await RunDotNetAsync(
             repositoryRoot,

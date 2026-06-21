@@ -21,9 +21,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj" />
-    <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
-    <ProjectReference Include="..\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
+    <ProjectReference Include="..\..\src\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj" />
+    <ProjectReference Include="..\..\src\Sqloom.Core\Sqloom.Core.csproj" />
+    <ProjectReference Include="..\..\src\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
     <ProjectReference Include="..\Sqloom.TestApp\Sqloom.TestApp.csproj" />
   </ItemGroup>
 </Project>

@@ -3,23 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.Core", "Sqloom.Core\Sqloom.Core.csproj", "{2CB00B98-E29B-4689-A861-5B9C70741BE2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.Core", "src\Sqloom.Core\Sqloom.Core.csproj", "{2CB00B98-E29B-4689-A861-5B9C70741BE2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.QueryStore", "Sqloom.QueryStore\Sqloom.QueryStore.csproj", "{43842864-DFAE-48BC-9184-CCE0588AB86E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.QueryStore", "src\Sqloom.QueryStore\Sqloom.QueryStore.csproj", "{43842864-DFAE-48BC-9184-CCE0588AB86E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.AzureSql", "Sqloom.AzureSql\Sqloom.AzureSql.csproj", "{9156335E-4F63-4FCD-B09F-4F4EAC3425DB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.AzureSql", "src\Sqloom.AzureSql\Sqloom.AzureSql.csproj", "{9156335E-4F63-4FCD-B09F-4F4EAC3425DB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.AspNetCore", "Sqloom.AspNetCore\Sqloom.AspNetCore.csproj", "{206E4A92-73EE-4FFD-B088-66639262D473}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.AspNetCore", "src\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj", "{206E4A92-73EE-4FFD-B088-66639262D473}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.Host", "Sqloom.Host\Sqloom.Host.csproj", "{4D5DE649-8E70-4D94-A896-715F5AD3A747}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.Host", "src\Sqloom.Host\Sqloom.Host.csproj", "{4D5DE649-8E70-4D94-A896-715F5AD3A747}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.UnitTests", "tests\Sqloom.UnitTests\Sqloom.UnitTests.csproj", "{09BC61E8-4BF0-4B00-8470-335820FF6978}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.IntegrationTests", "tests\Sqloom.IntegrationTests\Sqloom.IntegrationTests.csproj", "{721B6D5A-E916-42AE-B98B-5B4AF952F5FB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.TestApp", "Sqloom.TestApp\Sqloom.TestApp.csproj", "{2EB25A9F-65CF-4BD1-A408-440A0833CC03}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.TestApp", "tests\Sqloom.TestApp\Sqloom.TestApp.csproj", "{2EB25A9F-65CF-4BD1-A408-440A0833CC03}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.TestApp.IntegrationTests", "Sqloom.TestApp.IntegrationTests\Sqloom.TestApp.IntegrationTests.csproj", "{958891DF-BFC8-4000-9D83-3554FAB9B957}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sqloom.TestApp.IntegrationTests", "tests\Sqloom.TestApp.IntegrationTests\Sqloom.TestApp.IntegrationTests.csproj", "{958891DF-BFC8-4000-9D83-3554FAB9B957}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

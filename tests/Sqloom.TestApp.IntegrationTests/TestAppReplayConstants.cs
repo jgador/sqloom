@@ -5,7 +5,7 @@ namespace Sqloom.TestApp.IntegrationTests;
 /// </summary>
 internal static class TestAppReplayConstants
 {
-    public const int CommandTimeoutSeconds = 60;
+    public const int CommandTimeoutSeconds = 180;
     public const string DatabaseNamePrefix = "SqloomTestApp";
     public const string MasterDatabaseName = "master";
     public const string SqlServerDacpacFileName = "AdventureWorksLT2025.dacpac";

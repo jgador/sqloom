@@ -9,7 +9,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$RepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$RepoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
 
 function Join-RepoPath {
     param(
@@ -77,7 +77,7 @@ function Get-GeneratedOpenApiPath {
 }
 
 $dotnet = (Get-Command dotnet -ErrorAction Stop).Source
-$projectPath = Join-RepoPath "Sqloom.TestApp/Sqloom.TestApp.csproj"
+$projectPath = Join-RepoPath "tests/Sqloom.TestApp/Sqloom.TestApp.csproj"
 $destinationPath = Resolve-OutputPath $OutputPath
 
 Push-Location $RepoRoot
