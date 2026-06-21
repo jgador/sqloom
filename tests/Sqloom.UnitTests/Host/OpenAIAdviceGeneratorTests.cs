@@ -315,7 +315,7 @@ public sealed class OpenAIAdviceGeneratorTests
         return new QueryStoreCorrelationReport
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
-            AppName = "Talio",
+            AppName = "SqloomTestApp",
             ReplayArtifactDirectory = replayArtifactDirectory,
             QueryStoreSnapshotPath = Path.Combine(replayArtifactDirectory, "query-store-snapshot.json"),
             QueryStoreCapturedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
@@ -428,7 +428,7 @@ public sealed class OpenAIAdviceGeneratorTests
                         CurrentStorageSizeMb = 32,
                         MaxStorageSizeMb = 1024,
                     },
-                    WorkloadProfileName = "Talio",
+                    WorkloadProfileName = "SqloomTestApp",
                     DiscoveredObjectCatalog = new DiscoveredDatabaseObjectCatalog
                     {
                         CapturedAtUtc = correlationReport.QueryStoreCapturedAtUtc,

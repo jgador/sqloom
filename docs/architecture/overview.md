@@ -21,7 +21,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 - `Sqloom.Host`: generic runner for project, solution, solution-filter, or directory targets
 - `Sqloom.TestApp`: sample target app in this repo
 - `Sqloom.TestApp.IntegrationTests`: sample companion harness loaded by the host for generic replay coverage, including optional SQL Server DACPAC bootstrap
-- `Talio.Sqloom` and `Talio.Sqloom.Tests`: Talio-owned harnesses that stay in the Talio repository
+- Additional app-owned companion harnesses can follow the same pattern without changing the host
 - Replay, correlation, and advice artifacts keep explicit stage metadata so downstream steps stay tied to the right pipeline state
 
 ## Current Project Roles

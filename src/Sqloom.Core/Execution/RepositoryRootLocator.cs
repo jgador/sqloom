@@ -36,13 +36,7 @@ public static class RepositoryRootLocator
     {
         var gitPath = Path.Combine(directoryPath, ".git");
         return (Directory.Exists(gitPath) || File.Exists(gitPath))
-            && (HasTalioWorkspaceLayout(directoryPath) || HasDotNetWorkspaceMarkers(directoryPath));
-    }
-
-    private static bool HasTalioWorkspaceLayout(string directoryPath)
-    {
-        return File.Exists(Path.Combine(directoryPath, "backend", "Directory.Build.props"))
-            && File.Exists(Path.Combine(directoryPath, "backend", "tools", "Sqloom.sln"));
+            && HasDotNetWorkspaceMarkers(directoryPath);
     }
 
     private static bool HasDotNetWorkspaceMarkers(string directoryPath)

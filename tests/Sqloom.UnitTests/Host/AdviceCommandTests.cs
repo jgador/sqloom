@@ -146,7 +146,7 @@ public sealed class AdviceCommandTests
         return new AdviceReport
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
-            AppName = "Talio",
+            AppName = "SqloomTestApp",
             ReplayArtifactDirectory = replayArtifactDirectory,
             QueryStoreCorrelationPath = correlationPath,
             ModelProvider = "openai",
@@ -223,7 +223,7 @@ public sealed class AdviceCommandTests
         return new QueryStoreCorrelationReport
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
-            AppName = "Talio",
+            AppName = "SqloomTestApp",
             ReplayArtifactDirectory = replayArtifactDirectory,
             QueryStoreSnapshotPath = Path.Combine(replayArtifactDirectory, "query-store-20260614T000000000Z.json"),
             QueryStoreCapturedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),

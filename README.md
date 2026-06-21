@@ -1,6 +1,6 @@
 # Sqloom
 
-`Sqloom.sln` is the standalone Sqloom workspace. The active user-facing runner is `Sqloom.Host` or the packaged `sqloom` tool: a host-first CLI that resolves target paths such as `Sqloom.TestApp` or `Talio.Api` through companion integration libraries such as `Sqloom.TestApp.IntegrationTests` or `Talio.Sqloom`. Talio-owned Sqloom integration code lives in the Talio repository, not in this standalone repo.
+`Sqloom.sln` is the standalone Sqloom workspace. The active user-facing runner is `Sqloom.Host` or the packaged `sqloom` tool: a host-first CLI that resolves target paths such as `Sqloom.TestApp` through companion integration libraries such as `Sqloom.TestApp.IntegrationTests`.
 
 `Sqloom.TestApp` also supports an optional post-DACPAC seed script through `--sqlserver-seed-sql-file <path>` on both `replay` and `sqloom-local tune`, used together with `--sqlserver-dacpac-file <path>`. Generate that script from localhost with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.ps1` when you want the Testcontainer to mirror exported `AdventureWorksLT2025` data instead of the built-in sample seed.
 
@@ -54,7 +54,7 @@ Add `--debug` to any `sqloom` or `sqloom-local` command when you want stage-owne
     `-- Sqloom.IntegrationTests/
 ```
 
-Talio-owned companion harnesses such as `Talio.Sqloom` remain in the Talio repository.
+Companion harnesses live beside the apps they support.
 
 ## Architecture Summary
 
@@ -64,7 +64,7 @@ Sqloom stays host-first:
 - Convenience front door: `tune` runs the common path and writes the same artifact chain under `artifacts/sqloom/`
 - `Sqloom.Host` is the generic CLI and runtime for target resolution, harness loading, and stage execution
 - `Sqloom.TestApp.IntegrationTests` is the sample companion harness in this repository
-- Talio-specific harnesses stay in the Talio repository
+- Additional app-specific harnesses can follow the same companion-project model
 
 For the canonical repo layout, current project ownership, and dependency graph, see:
 
@@ -82,16 +82,12 @@ dotnet build .\Sqloom.sln --tl:off --nologo "-clp:ErrorsOnly;NoSummary"
 
 Build `Sqloom.sln` before using either the standalone `sqloom` tool or the non-packed `Sqloom.Host` wrapper. When you run `replay <path>` or `observe <path>`, the host resolves that target path down to one or more distinct library harnesses, resolves each harness project's `TargetPath` through `dotnet msbuild`, and builds those harnesses automatically unless you add `--no-build`. Pass `--dotnet-command <command>` explicitly when that nested resolution should use a non-default dotnet executable. Supported target paths are project files, solution files, solution filters, and directories. Composite replay targets run every distinct integration they resolve to in order; when you pass `--artifact-dir` to a composite replay, Sqloom creates one child artifact directory per app under that root.
 
-In a separate Talio checkout that still carries Sqloom integration, `Talio.sln`, `src\Talio.Api\`, and `src\Talio.Api\Talio.Api.csproj` resolve to the Talio harness behind the scenes. Those paths are external to this standalone repo.
-
-`Sqloom.sln` stays the main Sqloom workspace solution. The repo-root `global.json` opts this workspace into the Microsoft Testing Platform runner, so run the generic Sqloom xUnit lanes from the repo root:
+`Sqloom.sln` stays the main Sqloom workspace solution. The repo-root `global.json` opts this workspace into the Microsoft Testing Platform runner, so run the Sqloom xUnit lanes from the repo root:
 
 ```powershell
 dotnet test --solution .\Sqloom.UnitTests.slnf
 dotnet test --solution .\Sqloom.IntegrationTests.slnf
 ```
-
-Talio-specific Sqloom test lanes remain in the Talio repository.
 
 ## Tool Front Door
 
@@ -266,7 +262,7 @@ dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqlo
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.seed.sql --target "GET /api/products/by-category"
 ```
 
-The standalone `Sqloom.Host` executable uses the same explicit form, for example `replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"`. In a separate Talio checkout, the same stage-verb model also works against Talio-owned target paths there.
+The standalone `Sqloom.Host` executable uses the same explicit form, for example `replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"`.
 
 Supported replay switches:
 
@@ -355,11 +351,11 @@ dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-art
 
 The OpenAI advisor keeps the same correlation artifact input, sends the operation evidence bundle plus the supplied schema text to the Responses API with a strict JSON schema, preserves the model's free-form `proposalKind`, and writes the same `tuning-advice.json` artifact shape with `modelProvider=openai` and the selected model recorded in the report.
 
-## External Talio Composition
+## Companion Project Model
 
-`Sqloom.Host` does not reference `Talio.Sqloom` or any other app under test. The standalone host stays generic and requires explicit stage verbs plus verb-scoped target paths such as `observe <path>` and `replay <path>`, where the path can be a project, solution, solution filter, or directory. `Sqloom.Host` owns the generic target resolution, app loading, and command pipeline.
+`Sqloom.Host` does not reference app code directly. The standalone host stays generic and requires explicit stage verbs plus verb-scoped target paths such as `observe <path>` and `replay <path>`, where the path can be a project, solution, solution filter, or directory. `Sqloom.Host` owns the generic target resolution, app loading, and command pipeline.
 
-Talio-specific composition lives in the Talio repository, where `Talio.Sqloom` under `backend/tests` keeps the Talio replay bootstrap, personas, operation overlays, and `WebApplicationFactory` setup together as a host-loaded library harness. `Sqloom.TestApp` in this repo follows the same companion-project pattern through `Sqloom.TestApp.IntegrationTests` for generic integration coverage.
+App-specific replay bootstrap, personas, operation overlays, and `WebApplicationFactory` setup belong in companion integration projects such as `Sqloom.TestApp.IntegrationTests`. The host discovers those projects through the companion-project contract instead of hard-coding app-specific dependencies.
 
 ## Azure SQL Principal
 

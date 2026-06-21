@@ -79,22 +79,7 @@ internal sealed class CompanionProjectLocator
 
     private static IEnumerable<string> GetSearchRoots(string repositoryRoot)
     {
-        var talioRoots = new[]
-            {
-                Path.Combine(repositoryRoot, "backend", "tools"),
-                Path.Combine(repositoryRoot, "backend", "tests"),
-            }
-            .Where(Directory.Exists)
-            .ToArray();
-
-        return talioRoots.Length > 0
-            ? talioRoots
-            : GetStandaloneSearchRoots(repositoryRoot);
-    }
-
-    private static IEnumerable<string> GetStandaloneSearchRoots(string repositoryRoot)
-    {
-        var standaloneRoots = new[]
+        var searchRoots = new[]
             {
                 Path.Combine(repositoryRoot, "src"),
                 Path.Combine(repositoryRoot, "tests"),
@@ -102,8 +87,8 @@ internal sealed class CompanionProjectLocator
             .Where(Directory.Exists)
             .ToArray();
 
-        return standaloneRoots.Length > 0
-            ? standaloneRoots
+        return searchRoots.Length > 0
+            ? searchRoots
             : [repositoryRoot];
     }
 

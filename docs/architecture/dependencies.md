@@ -23,8 +23,8 @@ Sqloom.IntegrationTests -> production projects, Sqloom.TestApp, Sqloom.TestApp.I
 
 ## External Composition
 
-- `Talio.Sqloom` and `Talio.Sqloom.Tests` stay in the Talio repository.
-- The standalone `Sqloom.Host` stays generic and loads app-owned companion harnesses without taking a direct Talio-specific dependency.
+- `Sqloom.Host` stays generic and loads app-owned companion harnesses through project discovery and `SqloomTargetProject` mappings.
+- App-specific replay harnesses belong with the apps they support, not in the core `Sqloom.*` production graph.
 
 ## Boundary Rules
 

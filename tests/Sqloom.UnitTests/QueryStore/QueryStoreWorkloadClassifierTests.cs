@@ -11,11 +11,11 @@ public sealed class QueryStoreWorkloadClassifierTests
 {
     private static readonly QueryStoreWorkloadProfile _sampleProfile = new()
     {
-        Name = "SampleApp",
+        Name = "SqloomTestApp",
         DiscoveredObjectCatalog = new DiscoveredDatabaseObjectCatalog
         {
             CapturedAtUtc = new DateTimeOffset(2026, 6, 8, 0, 0, 0, TimeSpan.Zero),
-            SourceName = "sample-local",
+            SourceName = "sqloom-local",
             IsComplete = true,
             Warnings = Array.Empty<string>(),
             Objects =
@@ -82,7 +82,7 @@ public sealed class QueryStoreWorkloadClassifierTests
                 DiscoveredObjectCatalog = new DiscoveredDatabaseObjectCatalog
                 {
                     CapturedAtUtc = new DateTimeOffset(2026, 6, 8, 0, 0, 0, TimeSpan.Zero),
-                    SourceName = "talio-local",
+                    SourceName = "sqloom-local",
                     IsComplete = false,
                     Warnings =
                     [
@@ -159,7 +159,7 @@ public sealed class QueryStoreWorkloadClassifierTests
         var appWait = Assert.Single(classifiedSnapshot.Waits, wait => wait.QueryId == 142L);
         var toolingWait = Assert.Single(classifiedSnapshot.Waits, wait => wait.QueryId == 20L);
 
-        Assert.Equal("SampleApp", classifiedSnapshot.WorkloadProfileName);
+        Assert.Equal("SqloomTestApp", classifiedSnapshot.WorkloadProfileName);
         Assert.NotNull(classifiedSnapshot.DiscoveredObjectCatalog);
         Assert.Equal(QueryWorkloadKind.App, appPlan.Classification?.Kind);
         Assert.Equal(QueryWorkloadKind.Tooling, toolingPlan.Classification?.Kind);

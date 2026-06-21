@@ -65,7 +65,7 @@ public sealed class AzureSqlDiscoveredObjectCollectorTests
     public void FinalizeCatalog_CreatesPartialCatalogWithWarningWhenModuleDiscoveryIsIncomplete()
     {
         var catalog = AzureSqlDiscoveredObjectCollector.FinalizeCatalog(
-            "talio-local",
+            "sqloom-local",
             [
                 new DiscoveredDatabaseObject
                 {
@@ -89,7 +89,7 @@ public sealed class AzureSqlDiscoveredObjectCollectorTests
             ],
             capturedAtUtc: new DateTimeOffset(2026, 6, 8, 0, 0, 0, TimeSpan.Zero));
 
-        Assert.Equal("talio-local", catalog.SourceName);
+        Assert.Equal("sqloom-local", catalog.SourceName);
         Assert.False(catalog.IsComplete);
         Assert.Single(catalog.Warnings);
         Assert.Equal("ExpenseRecord", catalog.Objects[0].ObjectName);

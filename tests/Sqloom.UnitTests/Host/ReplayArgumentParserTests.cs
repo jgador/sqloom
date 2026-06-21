@@ -15,8 +15,8 @@ public sealed class ReplayArgumentParserTests
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDirectory();
-        var dacpacPath = Path.Combine(currentDirectory, "Talio.dacpac");
-        var seedSqlPath = Path.Combine(currentDirectory, "Talio.seed.sql");
+        var dacpacPath = Path.Combine(currentDirectory, "SqloomTestApp.dacpac");
+        var seedSqlPath = Path.Combine(currentDirectory, "SqloomTestApp.seed.sql");
         var openApiPath = Path.Combine(currentDirectory, "openapi.json");
         File.WriteAllText(dacpacPath, "sqloom");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
@@ -72,7 +72,7 @@ public sealed class ReplayArgumentParserTests
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDirectory();
-        var dacpacPath = Path.Combine(currentDirectory, "Talio.dacpac");
+        var dacpacPath = Path.Combine(currentDirectory, "SqloomTestApp.dacpac");
         var missingSeedSqlPath = Path.Combine(currentDirectory, "missing.seed.sql");
         File.WriteAllText(dacpacPath, "sqloom");
 
@@ -95,7 +95,7 @@ public sealed class ReplayArgumentParserTests
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDirectory();
-        var seedSqlPath = Path.Combine(currentDirectory, "Talio.seed.sql");
+        var seedSqlPath = Path.Combine(currentDirectory, "SqloomTestApp.seed.sql");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
 
         var exception = Assert.Throws<ArgumentException>(
@@ -133,7 +133,7 @@ public sealed class ReplayArgumentParserTests
 
     [Theory]
     [InlineData("--openapi-path", "openapi.json")]
-    [InlineData("--sqlserver-dacpac", "Talio.dacpac")]
+    [InlineData("--sqlserver-dacpac", "SqloomTestApp.dacpac")]
     public void Parse_RejectsLegacyPathSwitches(string legacySwitch, string fileName)
     {
         ReplayArgumentParser parser = new();
