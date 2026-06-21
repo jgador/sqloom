@@ -68,6 +68,8 @@ Talio-owned companion harnesses such as `Talio.Sqloom` remain in the Talio repos
 - `Talio.Sqloom.Tests`: the Talio-specific replay and correlation lane in Talio's `backend/tests`.
 - Replay, correlation, and advice artifacts carry explicit pipeline stage metadata so each artifact records where it belongs in the flow.
 
+Repo-wide architecture guidance lives in `docs/architecture/overview.md` and `docs/architecture/dependencies.md`.
+
 ## Responsibilities
 
 - `Sqloom.Core`: shared run options, workload definitions, replay host and profile contracts, artifact layout, pipeline and advice report models, and the merged Showplan plus OpenAI advice contracts. The moved types keep their existing `Sqloom.Showplan.Plans` and `Sqloom.OpenAI.Advice` namespaces.
