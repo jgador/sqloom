@@ -1,6 +1,6 @@
 # Sqloom Dependency Direction
 
-Sqloom keeps a small, directional project graph. New project references should preserve this shape.
+This is the canonical project-graph and boundary-rules document for the standalone Sqloom repository.
 
 ## Production Graph
 
@@ -21,12 +21,17 @@ Sqloom.UnitTests -> production projects, Sqloom.TestApp.IntegrationTests
 Sqloom.IntegrationTests -> production projects, Sqloom.TestApp, Sqloom.TestApp.IntegrationTests
 ```
 
-## Rules for Future Changes
+## External Composition
+
+- `Talio.Sqloom` and `Talio.Sqloom.Tests` stay in the Talio repository.
+- The standalone `Sqloom.Host` stays generic and loads app-owned companion harnesses without taking a direct Talio-specific dependency.
+
+## Boundary Rules
 
 - No production project may reference anything under `tests/`.
-- Do not add Azure SQL, SQL Server, EF Core host bootstrapping, or Testcontainers dependencies to `Sqloom.Core`.
-- Do not add live connection management, app-host bootstrapping, or CLI orchestration to `Sqloom.QueryStore`.
-- Do not add CLI argument parsing or command orchestration outside `Sqloom.Host`.
-- Do not add provider-specific database concerns to `Sqloom.AspNetCore` unless they are required for replay orchestration at the ASP.NET Core boundary.
+- Keep `Sqloom.Core` free of ASP.NET Core, live SQL connectivity, Testcontainers, and CLI orchestration.
+- Keep `Sqloom.QueryStore` free of connection management, app-host bootstrapping, and CLI orchestration.
+- Keep CLI argument parsing and stage orchestration inside `Sqloom.Host`.
+- Keep provider-specific database concerns out of `Sqloom.AspNetCore` unless they are required at the ASP.NET Core replay boundary.
 - Keep project references acyclic and minimal.
-- If a capability must support multiple concrete providers or hosts, extract a dedicated abstraction or provider-specific project instead of routing everything through `Sqloom.Core`.
+- If a capability must support multiple concrete providers or hosts, extract a dedicated abstraction or provider-specific project instead of broadening `Sqloom.Core`.

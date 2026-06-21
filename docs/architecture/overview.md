@@ -1,6 +1,12 @@
 # Sqloom Architecture Overview
 
-This document explains how the current `Sqloom.*` projects are laid out and what each one owns.
+This is the canonical repo-layout and project-ownership document for the standalone Sqloom repository.
+
+## Pipeline Shape
+
+- User-facing flow: `observe -> replay -> correlate -> advise`
+- Convenience front door: `tune` runs the common path and writes the same stage-owned artifacts under `artifacts/sqloom/`
+- `Sqloom.Host` and the packaged `sqloom` tool stay host-first and generic
 
 ## Top-Level Structure
 
@@ -10,27 +16,31 @@ This document explains how the current `Sqloom.*` projects are laid out and what
 - `artifacts/`: generated build, package, replay, and tune output
 - `docs/`: architecture notes and repo guidance
 
+## Host and Companion Model
+
+- `Sqloom.Host`: generic runner for project, solution, solution-filter, or directory targets
+- `Sqloom.TestApp`: sample target app in this repo
+- `Sqloom.TestApp.IntegrationTests`: sample companion harness loaded by the host for generic replay coverage, including optional SQL Server DACPAC bootstrap
+- `Talio.Sqloom` and `Talio.Sqloom.Tests`: Talio-owned harnesses that stay in the Talio repository
+- Replay, correlation, and advice artifacts keep explicit stage metadata so downstream steps stay tied to the right pipeline state
+
 ## Current Project Roles
 
-- `Sqloom.Core`: lowest-level shared contracts, options, artifact layout, pipeline models, and generic helpers
-- `Sqloom.QueryStore`: Query Store models, workload classification, and correlation-adjacent logic that can remain independent from live SQL connectivity
-- `Sqloom.AzureSql`: Azure SQL and SQL Server connectivity, collection, statement-handle resolution, and database-backed replay support
-- `Sqloom.AspNetCore`: OpenAPI discovery, request resolution, replay planning, and ASP.NET Core replay orchestration
-- `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, and the composition root
-- `Sqloom.TestApp`: executable sample target used for generic host coverage
-- `Sqloom.TestApp.IntegrationTests`: companion replay harness for the sample app
+- `Sqloom.Core`: shared contracts, options, artifact layout, pipeline models, generic helpers, and merged Showplan/OpenAI advice contracts
+- `Sqloom.QueryStore`: Query Store models, workload classification, and discovery-first catalog logic that can stay independent from live SQL connectivity
+- `Sqloom.AzureSql`: Azure SQL and SQL Server connectivity, Query Store collection, statement-handle resolution, replay support, and statistics capture
+- `Sqloom.AspNetCore`: OpenAPI discovery, request resolution, replay planning, ASP.NET Core replay orchestration, request-scoped SQL capture hooks, and Query Store correlation types
+- `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, library-harness loading, and the composition root
+- `Sqloom.TestApp`: sample target app for generic host coverage
+- `Sqloom.TestApp.IntegrationTests`: sample replay harness, replay profile, optional DACPAC bootstrap, and sample SQL Server setup
+- `Sqloom.UnitTests`: unit-test lane for core libraries and host-adjacent logic
+- `Sqloom.IntegrationTests`: process and host integration lane for the standalone repository
 
-## How the Standard Applies Here
-
-- Keep the current `Sqloom.*` names. The standard guides responsibilities and dependency direction, not a forced rename into generic `Domain` or `Infrastructure` buckets.
-- Keep `Sqloom.Core` focused on shared primitives. If a capability is provider-specific, host-specific, or ASP.NET Core-specific, it belongs in a more specific project.
-- Treat `Sqloom.Host` as the only CLI composition root. Reusable runtime logic should live in libraries, not in command handlers.
-- Treat `Sqloom.TestApp` and `Sqloom.TestApp.IntegrationTests` as sample and harness code, not as production dependencies.
-- If a stable extension point is needed across more than one provider or host, prefer a dedicated abstraction project over broadening `Sqloom.Core`.
+Retired runtime boundaries stay merged into adjacent survivors: `Sqloom.Showplan -> Sqloom.Core`, `Sqloom.OpenAI -> Sqloom.Core`, and `Sqloom.Correlation -> Sqloom.AspNetCore`.
 
 ## Current Repo Direction
 
-- Keep the current `Sqloom.*` project names. Do not force a generic `Domain` / `Application` / `Infrastructure` rename unless there is a concrete repo need.
-- Keep `scripts/` at the repo root for now. Do not move repo automation into `eng/` unless the engineering layer grows enough to justify that split.
-- Make structural refactors incremental and task-driven rather than rewriting the whole project graph at once.
-- Preserve the current dependency direction and keep new shared code narrowly owned.
+- Keep the current `Sqloom.*` names. Do not rename into generic `Domain`, `Application`, or `Infrastructure` buckets unless there is a concrete repo need.
+- Keep repo automation in `scripts/` for now.
+- Keep `Sqloom.Host` as the only CLI composition root.
+- Keep new shared code narrowly owned and task-driven.

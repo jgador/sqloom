@@ -56,35 +56,20 @@ Add `--debug` to any `sqloom` or `sqloom-local` command when you want stage-owne
 
 Talio-owned companion harnesses such as `Talio.Sqloom` remain in the Talio repository.
 
-## Architecture Shape
+## Architecture Summary
 
-- High-level flow: `observe -> replay -> capture -> correlate -> advise`
-- Convenience front door: `tune` runs `observe -> replay -> correlate -> advise` as one typed workflow while still emitting the same JSON and SQL artifacts.
-- `Sqloom.Host`: generic CLI, tool wrapper, and runtime for target resolution, library-harness loading, and pipeline execution. This is the primary user-facing runner.
-- `Sqloom.TestApp`: minimal sample target project used to validate companion-project host behavior without Talio-specific bootstrap.
-- `Sqloom.TestApp.IntegrationTests`: sample library harness companion loaded by the host for generic coverage, including optional SQL Server DACPAC bootstrap.
-- `Talio.Sqloom`: Talio-specific library harness in Talio's `backend/tests`, loaded by the host for workload definitions, personas, `WebApplicationFactory` hosting, and replay bootstrap.
-- `Sqloom.UnitTests` and `Sqloom.IntegrationTests`: the generic Sqloom unit and host-integration lanes under `tests/`.
-- `Talio.Sqloom.Tests`: the Talio-specific replay and correlation lane in Talio's `backend/tests`.
-- Replay, correlation, and advice artifacts carry explicit pipeline stage metadata so each artifact records where it belongs in the flow.
+Sqloom stays host-first:
 
-Repo-wide architecture guidance lives in `docs/architecture/overview.md` and `docs/architecture/dependencies.md`.
+- User-facing flow: `observe -> replay -> correlate -> advise`
+- Convenience front door: `tune` runs the common path and writes the same artifact chain under `artifacts/sqloom/`
+- `Sqloom.Host` is the generic CLI and runtime for target resolution, harness loading, and stage execution
+- `Sqloom.TestApp.IntegrationTests` is the sample companion harness in this repository
+- Talio-specific harnesses stay in the Talio repository
 
-## Responsibilities
+For the canonical repo layout, current project ownership, and dependency graph, see:
 
-- `Sqloom.Core`: shared run options, workload definitions, replay host and profile contracts, artifact layout, pipeline and advice report models, and the merged Showplan plus OpenAI advice contracts. The moved types keep their existing `Sqloom.Showplan.Plans` and `Sqloom.OpenAI.Advice` namespaces.
-- `Sqloom.QueryStore`: Query Store observation contracts, discovered-object catalogs, and discovery-first workload classification that stay independent of SQL connectivity.
-- `Sqloom.AzureSql`: readonly connection, user-object discovery, Query Store collection, statement-handle resolution, replay, and statistics-capture entry points for Azure SQL.
-- `Sqloom.AspNetCore`: OpenAPI discovery, replay planning, resolved request generation, in-process ASP.NET Core replay orchestration, SQL capture for EF Core plus request-scoped capture middleware hooks, legacy heuristic tuning helpers over correlation artifacts, and the merged Query Store correlation types. The moved correlator types keep their existing `Sqloom.Correlation.QueryStore` namespaces.
-- `Sqloom.Host`: standalone CLI, tool wrapper, and generic runtime that owns `HostRuntime`, path resolution, library-harness loading, and the command pipeline without referencing any concrete app.
-- `Sqloom.TestApp`: synthetic sample target project kept as the user-facing path for generic host coverage.
-- `Sqloom.TestApp.IntegrationTests`: sample companion integration library that owns the generic replay harness, replay profile, and optional SQL Server DACPAC bootstrap used by `Sqloom.TestApp`, `Sqloom.UnitTests`, and `Sqloom.IntegrationTests`.
-- `Talio.Sqloom`: Talio-specific library harness in Talio's `backend/tests` for operation overlays, managed local SQL Server bootstrap, deterministic personas and setup, `WebApplicationFactory` hosting of `Talio.Api`, and the advisor raw-SQL bridge over the existing controllers and read/query services.
-- `Sqloom.UnitTests`: consolidated unit-test lane for classifier, collector, replay planning, replay request resolution, correlator behavior, and standalone app-resolution coverage across the generic Sqloom libraries.
-- `Sqloom.IntegrationTests`: consolidated integration-test lane for the standalone generic host surface, including process-level `Sqloom.Host` coverage against the sample app integration.
-- `Talio.Sqloom.Tests`: Talio-owned replay and end-to-end Query Store correlation coverage in Talio's `backend/tests` for the Talio integration over Sqloom.
-
-The retired runtime project boundaries are merged into adjacent survivors: `Sqloom.Showplan -> Sqloom.Core`, `Sqloom.OpenAI -> Sqloom.Core`, and `Sqloom.Correlation -> Sqloom.AspNetCore`.
+- `docs/architecture/overview.md`
+- `docs/architecture/dependencies.md`
 
 ## Build and Test
 
