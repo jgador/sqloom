@@ -6,7 +6,7 @@
 
 ## Highlight
 
-The fastest way to demo the full tuning flow today is the sample app plus `sqloom-local tune`. That path exercises `observe -> replay -> correlate -> advise` and emits both the advice JSON and the generated SQL proposal script:
+The fastest way to demo the full tuning flow today is the sample app plus `sqloom-local tune` with the committed AdventureWorks DACPAC, optional seed script, and `--debug`. That path exercises `observe -> replay -> correlate -> advise` and emits both the advice JSON and the generated SQL proposal script:
 
 ```powershell
 if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
@@ -20,7 +20,8 @@ sqloom-local tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --target "GET /api/products/by-category" `
   --model-provider openai `
   --openai-api-key $env:OPENAI_API_KEY `
-  --openai-model "gpt-5.5"
+  --openai-model "gpt-5.5" `
+  --debug
 ```
 
 The run writes artifacts under `artifacts/sqloom/tune/tune-<timestamp>/`, including:
@@ -79,7 +80,7 @@ Talio-owned companion harnesses such as `Talio.Sqloom` remain in the Talio repos
 - `Talio.Sqloom`: Talio-specific library harness in Talio's `backend/tests` for operation overlays, managed local SQL Server bootstrap, deterministic personas and setup, `WebApplicationFactory` hosting of `Talio.Api`, and the advisor raw-SQL bridge over the existing controllers and read/query services.
 - `Sqloom.UnitTests`: consolidated unit-test lane for classifier, collector, replay planning, replay request resolution, correlator behavior, and standalone app-resolution coverage across the generic Sqloom libraries.
 - `Sqloom.IntegrationTests`: consolidated integration-test lane for the standalone generic host surface, including process-level `Sqloom.Host` coverage against the sample app integration.
-- `Talio.Sqloom.Tests`: Talio-owned replay and end-to-end Query Store correlation coverage in Talio's `backend/tests` for the sample app integration over Sqloom.
+- `Talio.Sqloom.Tests`: Talio-owned replay and end-to-end Query Store correlation coverage in Talio's `backend/tests` for the Talio integration over Sqloom.
 
 The retired runtime project boundaries are merged into adjacent survivors: `Sqloom.Showplan -> Sqloom.Core`, `Sqloom.OpenAI -> Sqloom.Core`, and `Sqloom.Correlation -> Sqloom.AspNetCore`.
 
@@ -94,7 +95,7 @@ dotnet build .\Sqloom.sln --tl:off --nologo "-clp:ErrorsOnly;NoSummary"
 
 Build `Sqloom.sln` before using either the standalone `sqloom` tool or the non-packed `Sqloom.Host` wrapper. When you run `replay <path>` or `observe <path>`, the host resolves that target path down to one or more distinct library harnesses, resolves each harness project's `TargetPath` through `dotnet msbuild`, and builds those harnesses automatically unless you add `--no-build`. Pass `--dotnet-command <command>` explicitly when that nested resolution should use a non-default dotnet executable. Supported target paths are project files, solution files, solution filters, and directories. Composite replay targets run every distinct integration they resolve to in order; when you pass `--artifact-dir` to a composite replay, Sqloom creates one child artifact directory per app under that root.
 
-Talio's workspace is configured so `Talio.sln`, `src\Talio.Api\`, and `src\Talio.Api\Talio.Api.csproj` resolve to the Talio harness behind the scenes.
+In a separate Talio checkout that still carries Sqloom integration, `Talio.sln`, `src\Talio.Api\`, and `src\Talio.Api\Talio.Api.csproj` resolve to the Talio harness behind the scenes. Those paths are external to this standalone repo.
 
 `Sqloom.sln` stays the main Sqloom workspace solution. The repo-root `global.json` opts this workspace into the Microsoft Testing Platform runner, so run the generic Sqloom xUnit lanes from the repo root:
 
@@ -113,15 +114,15 @@ From the repo root, use the repo-local deployment script when you want a fast de
 pwsh .\scripts\deploy-sqloom-local.ps1
 ```
 
-That script repacks the full `Sqloom.*` package set into `.\artifacts\packages\sqloom`, reinstalls the local dev tool into `..\.tools\sqloom-local`, and regenerates the wrapper command at `..\.tools\bin\sqloom-local.cmd`. Add the repo-local wrapper directory to `PATH` if you want to call the dev tool as `sqloom-local`:
+That script repacks the full `Sqloom.*` package set into `.\artifacts\packages\sqloom`, reinstalls the local dev tool into `.\.tools\sqloom-local`, and regenerates the wrapper command at `.\.tools\bin\sqloom-local.cmd`. Add the repo-local wrapper directory to `PATH` if you want to call the dev tool as `sqloom-local`:
 
 ```text
-..\.tools\bin
+.\.tools\bin
 ```
 
 The deploy script now also ensures that wrapper directory is on the current PowerShell session PATH and on the user PATH for new terminals, so a direct invocation like `.\scripts\deploy-sqloom-local.ps1` is followed immediately by `sqloom-local --version` in the same shell.
 
-The local wrapper accepts the same explicit stage-verb model as `Sqloom.Host` itself. SQL Server-backed replay harnesses can require an app-owned DACPAC path; Talio examples below use the repo-local `.\artifacts\Talio.dacpac` artifact.
+The local wrapper accepts the same explicit stage-verb model as `Sqloom.Host` itself. SQL Server-backed replay harnesses can require an app-owned DACPAC path and can also accept an optional post-DACPAC seed script when they need to restore data into the fresh replay database after publish.
 
 ```powershell
 if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
@@ -129,19 +130,17 @@ if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
 sqloom-local tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --no-build `
   --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac `
+  --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.seed.sql `
   --sqlserver-schema-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.schema.sql `
   --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
   --target "GET /api/products/by-category" `
   --model-provider openai `
   --openai-api-key $env:OPENAI_API_KEY `
-  --openai-model "gpt-5.5"
+  --openai-model "gpt-5.5" `
+  --debug
 ```
 
 For the aggregated workflow, `tune` takes the same target-selection and replay knobs plus the observe connection string, required `--model-provider openai`, and the OpenAI settings. The sample-app command above is the recommended first run because it produces a concrete `sql-tuning-proposal.sql` artifact with the least setup.
-
-```powershell
-sqloom-local tune .\Talio.sln --no-build --read-only-connection-string "<connection-string>" --sqlserver-dacpac-file .\artifacts\Talio.dacpac --sqlserver-schema-file ".\artifacts\Talio.schema.sql" --target "GET /api/expenses/dashboard" --model-provider openai --openai-api-key $env:OPENAI_API_KEY
-```
 
 When you want a clean package-prep pass before a manual `nuget.org` push, use:
 
@@ -172,7 +171,7 @@ The generic sample app uses the same host-first surface. Without `--sqlserver-da
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --target "GET /api/products/by-category"
 ```
 
-When you want the sample harness to mirror Talio's SQL Server-backed replay path, pass the committed AdventureWorks DACPAC explicitly:
+When you want the sample harness to exercise the SQL Server-backed replay path, pass the committed AdventureWorks DACPAC explicitly:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"
@@ -190,7 +189,7 @@ For `Sqloom.TestApp`, that post-DACPAC seed script is app-owned input. When you 
 
 When `tests/Sqloom.TestApp.IntegrationTests/AdventureWorksLT2025.dacpac` changes, regenerate the Codex-friendly single-file schema dump beside it with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025Schema.ps1`. The script publishes the DACPAC to a scratch database on `localhost`, extracts `AdventureWorksLT2025.schema.sql`, and drops the scratch database afterward.
 
-To export seed data from a local `AdventureWorksLT2025` database on `localhost` into a post-DACPAC replay script, run from `backend/`:
+To export seed data from a local `AdventureWorksLT2025` database on `localhost` into a post-DACPAC replay script, run from the repo root:
 
 ```powershell
 pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.ps1
@@ -198,7 +197,7 @@ pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.
 
 By default that script reads `Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True` and writes `tests/Sqloom.TestApp.IntegrationTests/AdventureWorksLT2025.seed.sql`. Override `-ConnectionString` or `-OutputPath` when you want to export a different localhost source database or stage the script somewhere else.
 
-To stage a fresh reverse-engineered EF Core snapshot for the sample harness from a local `AdventureWorksLT2025` database on `localhost`, run from `backend/`:
+To stage a fresh reverse-engineered EF Core snapshot for the sample harness from a local `AdventureWorksLT2025` database on `localhost`, run from the repo root:
 
 ```powershell
 pwsh .\tests\Sqloom.TestApp\Scaffold-AdventureWorksLT2025Ef.ps1
@@ -208,15 +207,15 @@ The script stages raw scaffold output under `artifacts/ef-scaffold/Sqloom.TestAp
 
 ## Query Store Capture
 
-From `backend/`, capture the hottest Query Store plans and waits from a readonly Azure SQL connection through the generic host against the Talio solution path:
+From the repo root, capture the hottest Query Store plans and waits from a readonly SQL connection through the generic host against the sample app target path:
 
 ```powershell
-dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- observe .\Talio.sln --read-only-connection-string "<connection-string>" --lookback-hours 24 --max-plans 100 --max-waits 10 --json-output-file ".\artifacts\query-store-snapshot.json" --app-only --show-classification
+dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- observe .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" --lookback-hours 24 --max-plans 100 --max-waits 10 --json-output-file ".\artifacts\query-store-snapshot.json" --app-only --show-classification
 ```
 
 `observe` and `correlate` require `--read-only-connection-string <connection-string>`. The active host surface does not use environment variables for that input.
 
-When an app integration is supplied, `observe` applies that app's workload profile. Talio currently contributes only the snapshot label, while app classification itself stays discovery-first: the host captures a discovered-object catalog from the same readonly connection and uses that live database evidence to decide which plans belong to the app.
+When an app integration is supplied, `observe` applies that app's workload profile. App classification itself stays discovery-first: the host captures a discovered-object catalog from the same readonly connection and uses that live database evidence to decide which plans belong to the app.
 
 If `--json-output-file` is omitted, the host writes the full `QueryStoreSnapshot` to the default artifact location under `artifacts/sqloom/query-store/` with a timestamped file name.
 
@@ -228,11 +227,11 @@ Before classification, the host also discovers user-defined database objects wit
 
 `--app-only` keeps the console output focused on queries classified as `App`, while the JSON artifact still preserves the full captured snapshot. `--app-only` also implies `--show-classification`. `--show-classification` prints the deterministic workload kind, confidence, and matching reasons for each displayed plan and wait. Wait entries inherit their classification from the matching `(query_id, plan_id)` plan record.
 
-The workload classifier is intentionally discovery-first. The Azure SQL Query Store collector stays broad and reusable, while Talio's workload profile now only contributes the snapshot label. App classification comes from discovered objects captured from the live database rather than repo-maintained table lists, query hashes, or evidence modes.
+The workload classifier is intentionally discovery-first. The Azure SQL Query Store collector stays broad and reusable, and app classification comes from discovered objects captured from the live database rather than repo-maintained table lists, query hashes, or evidence modes.
 
 ## Tune Workflow
 
-From `backend/`, run the full observe, replay, correlate, and advise flow in one command:
+From the repo root, run the full observe, replay, correlate, and advise flow in one command:
 
 Recommended first run:
 
@@ -242,19 +241,17 @@ if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
 sqloom-local tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --no-build `
   --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac `
+  --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.seed.sql `
   --sqlserver-schema-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.schema.sql `
   --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
   --target "GET /api/products/by-category" `
   --model-provider openai `
   --openai-api-key $env:OPENAI_API_KEY `
-  --openai-model "gpt-5.5"
+  --openai-model "gpt-5.5" `
+  --debug
 ```
 
 That command is the easiest way to see the tuning pipeline produce both an advice report and a SQL proposal script from the sample AdventureWorks product query.
-
-```powershell
-dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- tune .\Talio.sln --no-build --read-only-connection-string "<connection-string>" --sqlserver-dacpac-file .\artifacts\Talio.dacpac --sqlserver-schema-file ".\artifacts\Talio.schema.sql" --target "GET /api/expenses/dashboard" --model-provider openai --openai-api-key "<api-key>"
-```
 
 Supported `tune` switches are the union of the main observe, replay, and advice knobs that affect behavior rather than file locations:
 
@@ -275,32 +272,32 @@ The `replay/` directory then contains the same replay, correlation, advice, and 
 
 ## Replay Mode
 
-From `backend/`, replay OpenAPI operations through the generic host against the Talio solution path:
+From the repo root, replay OpenAPI operations through the generic host against the sample app target path:
 
 ```powershell
-dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\Talio.sln --sqlserver-dacpac-file .\artifacts\Talio.dacpac --target "GET /api/expenses/dashboard"
-dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\Talio.sln --sqlserver-dacpac-file .\artifacts\Talio.dacpac --target "POST /api/advisor/query"
+dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --target "GET /api/products/by-category"
+dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.seed.sql --target "GET /api/products/by-category"
 ```
 
-The standalone `Sqloom.Host` executable uses the same explicit form, for example `replay .\Talio.sln --sqlserver-dacpac-file .\artifacts\Talio.dacpac --target "GET /api/expenses/dashboard"`, `replay .\src\Talio.Api --sqlserver-dacpac-file .\artifacts\Talio.dacpac --target "GET /api/expenses/dashboard"`, or `replay .\src\Talio.Api\Talio.Api.csproj --sqlserver-dacpac-file .\artifacts\Talio.dacpac --target "GET /api/expenses/dashboard"`. Talio's workspace maps those user-facing paths to the Talio integration behind the scenes.
+The standalone `Sqloom.Host` executable uses the same explicit form, for example `replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"`. In a separate Talio checkout, the same stage-verb model also works against Talio-owned target paths there.
 
 Supported replay switches:
 
-- `--openapi-file <path>`: override the OpenAPI document. Talio defaults to `shared/generated/openapi/talio-api-v1.json`.
+- `--openapi-file <path>`: override the app-owned OpenAPI document when you do not want the integration default.
 - `--max-operations <count>`: cap the number of replayed operations after filtering.
-- `--target "METHOD /path/template"`: replay one exact discovered operation key such as `GET /api/expenses/dashboard` or `POST /api/advisor/query`.
+- `--target "METHOD /path/template"`: replay one exact discovered operation key such as `GET /api/products/by-category`.
 - `--dotnet-command <command>`: override the dotnet executable Sqloom uses for nested project resolution and builds.
 - `--sqlserver-dacpac-file <path>`: pass a prebuilt DACPAC to a SQL Server-backed replay harness. Sqloom treats this as app-owned input and does not build the DACPAC.
 - `--sqlserver-seed-sql-file <path>`: apply an app-owned SQL seed script after DACPAC publish. `Sqloom.TestApp` uses this to restore exported AdventureWorks data and skips its built-in hot-product seed when the script is supplied.
 - `--artifact-dir <path>`: override the replay artifact directory.
 
-Replay V1 is intentionally read-heavy. Authenticated `GET` operations are replay-safe by default, while non-`GET` operations require app-owned opt-in through `AllowNonGetReplay`. Talio marks `POST /api/advisor/query` as replayable but not defaulted, so it only runs when you select it explicitly with `--target "POST /api/advisor/query"`.
+Replay V1 is intentionally read-heavy. Authenticated `GET` operations are replay-safe by default, while non-`GET` operations require app-owned opt-in through `AllowNonGetReplay`.
 
 `--target` is strict. It must use the exact form `METHOD /path/template` with an uppercase HTTP method, one space, a leading `/`, and no trailing `/` or repeated `//`. If you mistype the shape, Sqloom fails fast and suggests the corrected form when it can.
 
-Talio replay runs are self-managed. `Talio.Sqloom` boots `Talio.Api` in-process, provisions a disposable local SQL Server Testcontainer, publishes the supplied SQL Server DACPAC into that database, applies Talio-specific post-publish advisor read-only setup, installs deterministic test doubles for email, OpenAI, and semantic dependencies, and seeds only the setup state needed to make the selected replay runnable. A pre-running Docker Compose stack is not required.
+SQL Server-backed replay runs are self-managed. For the sample app, `Sqloom.TestApp.IntegrationTests` boots the target in-process, provisions a disposable local SQL Server Testcontainer, publishes the supplied AdventureWorks DACPAC into that database, optionally applies the post-DACPAC seed script, and seeds only the setup state needed to make the selected replay runnable. A pre-running Docker or local SQL bootstrap stack is not required beyond the inputs you pass explicitly.
 
-If `--artifact-dir` is omitted, replay artifacts default under `artifacts/sqloom/replay/<timestamp>/`. When one composite target replays multiple app integrations, that timestamped directory becomes the parent folder and Sqloom writes one child directory per app such as `01-Sqloom.TestApp/` or `02-Talio.Sqloom/`. Each run writes:
+If `--artifact-dir` is omitted, replay artifacts default under `artifacts/sqloom/replay/<timestamp>/`. When one composite target replays multiple app integrations, that timestamped directory becomes the parent folder and Sqloom writes one child directory per app such as `01-Sqloom.TestApp/`. Each run writes:
 
 - `discovered-operations.json`
 - `replay-plan.json`
@@ -313,7 +310,7 @@ Per-operation artifacts preserve the resolved HTTP request, response status and 
 
 ## Query Store Correlation
 
-From `backend/`, correlate a captured replay run back to a previously captured Query Store snapshot:
+From the repo root, correlate a captured replay run back to a previously captured Query Store snapshot:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- correlate --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --query-store-snapshot-file ".\artifacts\sqloom\query-store\query-store-20260608T041245123Z.json" --read-only-connection-string "<connection-string>"
@@ -332,7 +329,7 @@ Correlation uses this ranking:
 
 ## Advice Mode
 
-From `backend/`, derive operation-level tuning guidance from a completed replay and correlation pair:
+From the repo root, derive operation-level tuning guidance from a completed replay and correlation pair:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --model-provider openai --openai-api-key "<api-key>" --sqlserver-schema-file "<schema-file>"
@@ -371,9 +368,11 @@ dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-art
 
 The OpenAI advisor keeps the same correlation artifact input, sends the operation evidence bundle plus the supplied schema text to the Responses API with a strict JSON schema, preserves the model's free-form `proposalKind`, and writes the same `tuning-advice.json` artifact shape with `modelProvider=openai` and the selected model recorded in the report.
 
-## Talio Composition
+## External Talio Composition
 
-`Sqloom.Host` does not reference `Talio.Sqloom` or any other app under test. The standalone host stays generic and now requires explicit stage verbs plus verb-scoped target paths such as `observe <path>` and `replay <path>`, where the path can be a project, solution, solution filter, or directory. `Sqloom.Host` owns the generic target resolution, app loading, and command pipeline, while `Talio.Sqloom` under `backend/tests` keeps the Talio-specific replay bootstrap, personas, operation overlays, and `WebApplicationFactory` setup together as a host-loaded library harness. `Sqloom.TestApp` now follows the same companion-project pattern through `Sqloom.TestApp.IntegrationTests` for generic integration coverage.
+`Sqloom.Host` does not reference `Talio.Sqloom` or any other app under test. The standalone host stays generic and requires explicit stage verbs plus verb-scoped target paths such as `observe <path>` and `replay <path>`, where the path can be a project, solution, solution filter, or directory. `Sqloom.Host` owns the generic target resolution, app loading, and command pipeline.
+
+Talio-specific composition lives in the Talio repository, where `Talio.Sqloom` under `backend/tests` keeps the Talio replay bootstrap, personas, operation overlays, and `WebApplicationFactory` setup together as a host-loaded library harness. `Sqloom.TestApp` in this repo follows the same companion-project pattern through `Sqloom.TestApp.IntegrationTests` for generic integration coverage.
 
 ## Azure SQL Principal
 
