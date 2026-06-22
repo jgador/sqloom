@@ -2,11 +2,11 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>true</IsPackable>
-    <Authors>sqloom contributors</Authors>
+    <Authors>Sqloom contributors</Authors>
     <Description>Shared workload, replay, artifact, and advice contracts for Sqloom.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/jgador/sqloom</PackageProjectUrl>
-    <PackageTags>sqloom;performance;benchmark;query-store;contracts</PackageTags>
+    <PackageTags>sqloom;performance;tuning;query-store;contracts</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/jgador/sqloom</RepositoryUrl>
   </PropertyGroup>

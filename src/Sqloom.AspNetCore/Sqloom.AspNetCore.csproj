@@ -2,11 +2,11 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>true</IsPackable>
-    <Authors>sqloom contributors</Authors>
+    <Authors>Sqloom contributors</Authors>
     <Description>ASP.NET Core OpenAPI discovery and replay pipeline services for Sqloom.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/jgador/sqloom</PackageProjectUrl>
-    <PackageTags>sqloom;performance;benchmark;aspnetcore;openapi</PackageTags>
+    <PackageTags>sqloom;performance;tuning;aspnetcore;openapi</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/jgador/sqloom</RepositoryUrl>
   </PropertyGroup>

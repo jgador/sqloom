@@ -1,16 +1,51 @@
 # sqloom
 
-`sqloom` is a .NET CLI for Sqloom replay, Query Store correlation, and tuning-advice workflows. Advice now requires `--model-provider openai`, `--openai-*`, and `--sqlserver-schema-file <path>`. The `advise` stage reads `query-store-correlation.json`, sends replay and Query Store evidence plus the supplied schema file to OpenAI without preloading a local fix, then writes `tuning-advice.json` and replay-scoped `sql-tuning-proposal.json` and `sql-tuning-proposal.sql` sidecars.
+`sqloom` is a .NET tool for finding slow database work behind API requests in .NET applications. It can read Query Store from SQL Server or Azure SQL, replay API operations against app-specific test harnesses, correlate captured SQL with Query Store, and generate tuning advice plus SQL proposal sidecars.
 
-Query Store capture and correlation use `--read-only-connection-string <connection-string>` explicitly. OpenAI advice uses explicit `--openai-*` arguments, runtime target resolution can override its nested dotnet executable with `--dotnet-command <command>`, and the active tool surface does not use environment-variable fallbacks for those inputs.
+`tune` runs the full flow: `observe -> replay -> correlate -> advise`.
+
+## Install from NuGet.org
+
+```powershell
+dotnet tool install --global sqloom
+sqloom --help
+```
+
+To update an existing install:
+
+```powershell
+dotnet tool update --global sqloom
+```
+
+## Main commands
+
+- `observe`: read recent Query Store data with an explicit `--read-only-connection-string <connection-string>`
+- `replay`: replay API operations against an app-specific test harness and capture SQL
+- `correlate`: match replayed SQL back to a Query Store snapshot
+- `advise`: send replay evidence, Query Store matches, and a schema file to OpenAI
+- `tune`: run the full `observe -> replay -> correlate -> advise` flow
+
+## Required inputs
+
+`observe` and `correlate` require `--read-only-connection-string <connection-string>`.
+
+`advise` and `tune` use OpenAI for the advice step. Pass:
+
+- `--model-provider openai`
+- `--openai-api-key <key>`
+- `--sqlserver-schema-file <path>`
+
+SQL Server-backed replay harnesses can use a prebuilt DACPAC via `--sqlserver-dacpac-file <path>`. App-owned harnesses can also accept a post-DACPAC SQL seed script via `--sqlserver-seed-sql-file <path>` when they need to restore data into the fresh replay database after publish.
 
 Use the global `--debug` switch when you want stage-owned diagnostics on `stderr`. In particular, `advise --debug` prints readable, redacted OpenAI request and response payloads, and `tune --debug` cascades the same debug mode through `observe`, `replay`, `correlate`, and `advise`.
 
-SQL Server-backed replay harnesses can require a prebuilt DACPAC via `--sqlserver-dacpac-file <path>`. Sqloom consumes that DACPAC as app-owned input and does not build it. App-owned harnesses can also accept a post-DACPAC SQL seed script via `--sqlserver-seed-sql-file <path>` when they need to restore data into the fresh replay database after publish.
+## Example
 
-In phase 1, the proposal sidecars are SQL Server-oriented review artifacts derived from replay and Query Store evidence already captured for the run plus the supplied schema file. OpenAI proposal kinds are preserved as model-provided free-form strings, and every model proposal that deserializes successfully is persisted into `tuning-advice.json`, `sql-tuning-proposal.json`, and `sql-tuning-proposal.sql`. Rollback SQL is recommended but optional: if the model omits `rollbackSqlScript`, Sqloom keeps the proposal, records a warning, and renders a placeholder rollback note in the `.sql` sidecar. Sqloom no longer synthesizes deterministic local SQL proposals from Query Store correlation alone.
+```powershell
+sqloom replay .\src\MyApi\MyApi.csproj --target "GET /api/orders/{id}"
+```
 
-## Local install
+## Install from a local feed
 
 Pack the required `Sqloom.*` packages into one local folder feed, then install the tool from that feed:
 
@@ -18,14 +53,8 @@ Pack the required `Sqloom.*` packages into one local folder feed, then install t
 dotnet tool install --tool-path <tool-path> sqloom --add-source <local-feed-path> --ignore-failed-sources
 ```
 
-The tool package depends on `Sqloom.Core`, `Sqloom.QueryStore`, `Sqloom.AzureSql`, and `Sqloom.AspNetCore`, so those packages must be present in the same feed for local installs. The same dependency set must be published to any public feed before `sqloom` can be installed from it.
+The `sqloom` tool package depends on `Sqloom.Core`, `Sqloom.QueryStore`, `Sqloom.AzureSql`, and `Sqloom.AspNetCore`, so those packages must be present in the same folder feed for local installs. Public NuGet.org installs resolve that same dependency set after all five packages are published.
 
-## Example
+See the repository README for the full end-to-end sample and maintainer workflow:
 
-```powershell
-& "<tool-path>\\sqloom.exe" replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --no-build --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"
-```
-
-Repository metadata currently points at the standalone Sqloom project:
-
-`https://github.com/jgador/sqloom`
+[Sqloom on GitHub](https://github.com/jgador/sqloom)

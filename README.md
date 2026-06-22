@@ -8,6 +8,21 @@ This repo includes a sample app for `GET /api/products/by-category`. It can star
 
 ![Sqloom tuning pipeline diagram](docs/images/sqloom-diagram.png)
 
+## Install
+
+Install the public tool from NuGet.org:
+
+```powershell
+dotnet tool install --global sqloom
+sqloom --help
+```
+
+To update an existing install:
+
+```powershell
+dotnet tool update --global sqloom
+```
+
 ## Quick Start
 
 If you want the quickest end-to-end demo, run `sqloom tune` against the sample app with the included AdventureWorks DACPAC, the optional seed script, and `--debug`. This runs the whole flow and writes both the advice report and the generated SQL proposal script:

@@ -6,12 +6,12 @@
     <PackAsTool>true</PackAsTool>
     <PackageId>sqloom</PackageId>
     <ToolCommandName>sqloom</ToolCommandName>
-    <Authors>sqloom contributors</Authors>
-    <Description>Sqloom benchmark runner.</Description>
+    <Authors>Sqloom contributors</Authors>
+    <Description>CLI for replaying API requests, correlating SQL with Query Store, and generating tuning advice.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/jgador/sqloom</PackageProjectUrl>
     <PackageReadmeFile>PackageReadme.md</PackageReadmeFile>
-    <PackageTags>sqloom;benchmark;performance;query-store;aspnetcore;dotnet-tool</PackageTags>
+    <PackageTags>sqloom;performance;tuning;query-store;aspnetcore;dotnet-tool</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/jgador/sqloom</RepositoryUrl>
   </PropertyGroup>

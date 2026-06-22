@@ -19,6 +19,17 @@ function Get-SqloomToolingContext
     $verifyToolPath = Join-Path $repoRoot "artifacts\tools\sqloom-verify"
 
     [xml]$versionXml = Get-Content (Join-Path $repoRoot "Directory.Build.props")
+    $packageVersion = $versionXml.Project.PropertyGroup.Version
+
+    if ([string]::IsNullOrWhiteSpace($packageVersion))
+    {
+        throw "Directory.Build.props must define <Version> for Sqloom packages."
+    }
+
+    if ($packageVersion.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase))
+    {
+        throw "Directory.Build.props <Version> must use a bare NuGet version like 0.1.0, not v0.1.0. Use the leading 'v' only for Git tags or release titles."
+    }
 
     return [pscustomobject]@{
         RepoRoot = $repoRoot
@@ -30,7 +41,7 @@ function Get-SqloomToolingContext
         WrapperPath = $wrapperPath
         VerifyToolPath = $verifyToolPath
         PackConfiguration = "Release"
-        PackageVersion = $versionXml.Project.PropertyGroup.Version
+        PackageVersion = $packageVersion
     }
 }
 

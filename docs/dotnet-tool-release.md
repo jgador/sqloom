@@ -1,4 +1,4 @@
-# Public `sqloom` `dotnet tool` Release
+# Public `sqloom` `.NET tool` Release
 
 This runbook is for publishing a new public version of the `sqloom` dotnet tool to NuGet.org when package upload is done manually after the local build completes.
 
@@ -18,7 +18,7 @@ The release version comes from `Directory.Build.props`. The tool package metadat
 
 ## 1. Update release metadata
 
-1. Set the new `<Version>` in `Directory.Build.props`.
+1. Set the new `<Version>` in `Directory.Build.props` using a bare NuGet version such as `0.1.0`. Use the leading `v` only for Git tags or release titles such as `v0.1.0`.
 2. Confirm `src/Sqloom.Host/Sqloom.Host.csproj` still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
 3. Confirm `src/Sqloom.Host/PackageReadme.md` still matches the current CLI behavior and install story.
 4. If the public CLI surface or documented workflow changed, update `README.md` in the same change.
