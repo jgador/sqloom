@@ -30,7 +30,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 
 - `Sqloom.Core`: shared contracts, options, artifact layout, pipeline models, generic helpers, and merged Showplan/OpenAI advice contracts
 - `Sqloom.QueryStore`: Query Store models, workload classification, and discovery-first catalog logic that can stay independent from live SQL connectivity
-- `Sqloom.AzureSql`: Azure SQL and SQL Server connectivity, Query Store collection, statement-handle resolution, replay support, and statistics capture
+- `Sqloom.SqlServer`: SQL Server and Azure SQL connectivity, Query Store collection, statement-handle resolution, replay support, and statistics capture
 - `Sqloom.AspNetCore`: OpenAPI discovery, request resolution, replay planning, ASP.NET Core replay orchestration, request-scoped SQL capture hooks, and Query Store correlation types
 - `Sqloom.Testing`: public app-harness runner contracts used by external harness projects and the sample harness
 - `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, library-harness loading, and the composition root

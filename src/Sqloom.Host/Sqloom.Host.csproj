@@ -18,7 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj" />
-    <ProjectReference Include="..\Sqloom.AzureSql\Sqloom.AzureSql.csproj" />
+    <ProjectReference Include="..\Sqloom.SqlServer\Sqloom.SqlServer.csproj" />
     <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
     <ProjectReference Include="..\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
     <ProjectReference Include="..\Sqloom.Testing\Sqloom.Testing.csproj" />

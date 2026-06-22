@@ -1,15 +1,15 @@
 using System;
 using System.Data;
-using Sqloom.AzureSql.QueryStore;
+using Sqloom.SqlServer.QueryStore;
 using Sqloom.QueryStore.QueryStore;
 using Xunit;
 
-namespace Sqloom.AzureSql.Tests.QueryStore;
+namespace Sqloom.SqlServer.Tests.QueryStore;
 
 /// <summary>
-/// Exercises Azure SQL Query Store collector.
+/// Exercises SQL Server Query Store collector.
 /// </summary>
-public sealed class AzureSqlQueryStoreCollectorTests
+public sealed class SqlServerQueryStoreCollectorTests
 {
     [Fact]
     public void ValidateOptions_RejectsNonPositiveValues()
@@ -22,7 +22,7 @@ public sealed class AzureSqlQueryStoreCollectorTests
             CommandTimeoutSeconds = 30,
         };
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => AzureSqlQueryStoreCollector.ValidateOptions(options));
+        Assert.Throws<ArgumentOutOfRangeException>(() => SqlServerQueryStoreCollector.ValidateOptions(options));
     }
 
     [Fact]
@@ -32,7 +32,7 @@ public sealed class AzureSqlQueryStoreCollectorTests
         using var reader = table.CreateDataReader();
         Assert.True(reader.Read());
 
-        var options = AzureSqlQueryStoreCollector.ReadDatabaseOptions(reader);
+        var options = SqlServerQueryStoreCollector.ReadDatabaseOptions(reader);
 
         Assert.Equal("READ_WRITE", options.DesiredState);
         Assert.Equal("READ_ONLY", options.ActualState);
@@ -48,7 +48,7 @@ public sealed class AzureSqlQueryStoreCollectorTests
         using var reader = table.CreateDataReader();
         Assert.True(reader.Read());
 
-        var record = AzureSqlQueryStoreCollector.ReadPlanRecord(reader);
+        var record = SqlServerQueryStoreCollector.ReadPlanRecord(reader);
 
         Assert.Equal(42L, record.QueryId);
         Assert.Equal(84L, record.PlanId);
@@ -77,7 +77,7 @@ public sealed class AzureSqlQueryStoreCollectorTests
         using var reader = table.CreateDataReader();
         Assert.True(reader.Read());
 
-        var wait = AzureSqlQueryStoreCollector.ReadWaitStat(reader);
+        var wait = SqlServerQueryStoreCollector.ReadWaitStat(reader);
 
         Assert.Equal(42L, wait.QueryId);
         Assert.Equal(84L, wait.PlanId);

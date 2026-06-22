@@ -59,7 +59,7 @@ Add `--debug` to any `sqloom` or `sqloom-local` command when you want step-by-st
 |-- src/
 |   |-- Sqloom.Core/
 |   |-- Sqloom.QueryStore/
-|   |-- Sqloom.AzureSql/
+|   |-- Sqloom.SqlServer/
 |   |-- Sqloom.AspNetCore/
 |   |-- Sqloom.Testing/
 |   `-- Sqloom.Host/
@@ -371,9 +371,9 @@ This uses the same correlation file, sends the evidence bundle and schema text t
 
 External harness projects reference `Sqloom.Testing` for the public runner contracts. In this repo, the sample harness project is `Sqloom.TestApp.Harness`. It contains the startup code, replay settings, Query Store profile, DACPAC and seed defaults, and test setup for the sample app. Other apps can follow the same pattern without changing `Sqloom.Host`.
 
-## Set Up an Azure SQL User for Sqloom
+## Set Up a SQL Server or Azure SQL User for Sqloom
 
-Create a dedicated database user for Sqloom. Do not reuse the app's normal database user. Run this while connected to the target Azure SQL database:
+Create a dedicated database user for Sqloom. Do not reuse the app's normal database user. Run this while connected to the target SQL Server or Azure SQL database:
 
 ```sql
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'sqloom_ro')

@@ -5,7 +5,7 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="src/Sqloom.AspNetCore/Sqloom.AspNetCore.csproj" />
-  <Project Path="src/Sqloom.AzureSql/Sqloom.AzureSql.csproj" />
+  <Project Path="src/Sqloom.SqlServer/Sqloom.SqlServer.csproj" />
   <Project Path="src/Sqloom.Core/Sqloom.Core.csproj" />
   <Project Path="src/Sqloom.Host/Sqloom.Host.csproj" />
   <Project Path="src/Sqloom.QueryStore/Sqloom.QueryStore.csproj" />

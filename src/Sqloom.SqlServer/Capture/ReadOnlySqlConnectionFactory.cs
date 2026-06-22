@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 
-namespace Sqloom.AzureSql.Capture;
+namespace Sqloom.SqlServer.Capture;
 
 /// <summary>
 /// Creates readonly SQL connection.

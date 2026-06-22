@@ -5,15 +5,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Sqloom.AzureSql.Capture;
+using Sqloom.SqlServer.Capture;
 using Sqloom.QueryStore.QueryStore;
 
-namespace Sqloom.AzureSql.QueryStore;
+namespace Sqloom.SqlServer.QueryStore;
 
 /// <summary>
-/// Discovers user-defined database objects from Azure SQL or SQL Server using a readonly connection.
+/// Discovers user-defined database objects from SQL Server or Azure SQL using a readonly connection.
 /// </summary>
-public sealed class AzureSqlDiscoveredObjectCollector : IDiscoveredDatabaseObjectCollector
+public sealed class SqlServerDiscoveredObjectCollector : IDiscoveredDatabaseObjectCollector
 {
     private const string UserTablesAndViewsSql = """
         SELECT
@@ -58,12 +58,12 @@ public sealed class AzureSqlDiscoveredObjectCollector : IDiscoveredDatabaseObjec
 
     private readonly ReadOnlySqlConnectionFactory _connectionFactory;
 
-    public AzureSqlDiscoveredObjectCollector()
+    public SqlServerDiscoveredObjectCollector()
         : this(new ReadOnlySqlConnectionFactory())
     {
     }
 
-    public AzureSqlDiscoveredObjectCollector(ReadOnlySqlConnectionFactory connectionFactory)
+    public SqlServerDiscoveredObjectCollector(ReadOnlySqlConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
     }

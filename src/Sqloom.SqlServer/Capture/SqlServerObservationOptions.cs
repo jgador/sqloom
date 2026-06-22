@@ -1,9 +1,9 @@
-namespace Sqloom.AzureSql.Capture;
+namespace Sqloom.SqlServer.Capture;
 
 /// <summary>
-/// Carries options for Azure SQL observation.
+/// Carries options for SQL Server observation.
 /// </summary>
-public sealed class AzureSqlObservationOptions
+public sealed class SqlServerObservationOptions
 {
     public required string ReadOnlyConnectionString { get; init; }
 

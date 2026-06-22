@@ -6,10 +6,10 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Sqloom.AzureSql.Capture;
+using Sqloom.SqlServer.Capture;
 using Sqloom.QueryStore.QueryStore;
 
-namespace Sqloom.AzureSql.QueryStore;
+namespace Sqloom.SqlServer.QueryStore;
 
 /// <summary>
 /// Resolves SQL statement_sql_handle values for captured commands.

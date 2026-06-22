@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Sqloom.AzureSql.QueryStore;
+using Sqloom.SqlServer.QueryStore;
 using Sqloom.Core.Artifacts;
 using Sqloom.QueryStore.QueryStore;
 
@@ -64,7 +64,7 @@ internal sealed class ObserveCommand
         var workloadProfile = arguments.BaseWorkloadProfile.WithDiscoveredObjectCatalog(
             discoveredObjectCatalog);
 
-        AzureSqlQueryStoreCollector collector = new();
+        SqlServerQueryStoreCollector collector = new();
         var rawSnapshot = await collector
             .CaptureAsync(
                 arguments.ReadOnlyConnectionString,
@@ -114,7 +114,7 @@ internal sealed class ObserveCommand
         string readOnlyConnectionString,
         QueryStoreObservationOptions options)
     {
-        AzureSqlDiscoveredObjectCollector collector = new();
+        SqlServerDiscoveredObjectCollector collector = new();
         DiscoveredDatabaseObjectObservationOptions discoveryOptions = new()
         {
             CommandTimeoutSeconds = options.CommandTimeoutSeconds,

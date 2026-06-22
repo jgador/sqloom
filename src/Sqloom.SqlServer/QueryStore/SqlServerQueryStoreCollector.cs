@@ -4,15 +4,15 @@ using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Sqloom.AzureSql.Capture;
+using Sqloom.SqlServer.Capture;
 using Sqloom.QueryStore.QueryStore;
 
-namespace Sqloom.AzureSql.QueryStore;
+namespace Sqloom.SqlServer.QueryStore;
 
 /// <summary>
-/// Collects Query Store evidence from Azure SQL or SQL Server using a readonly connection.
+/// Collects Query Store evidence from SQL Server or Azure SQL using a readonly connection.
 /// </summary>
-public sealed class AzureSqlQueryStoreCollector : IQueryStoreCollector
+public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
 {
     // Reads Query Store state and storage so observe can report whether capture is usable.
     private const string QueryStoreOptionsSql = """
@@ -149,12 +149,12 @@ public sealed class AzureSqlQueryStoreCollector : IQueryStoreCollector
 
     private readonly ReadOnlySqlConnectionFactory _connectionFactory;
 
-    public AzureSqlQueryStoreCollector()
+    public SqlServerQueryStoreCollector()
         : this(new ReadOnlySqlConnectionFactory())
     {
     }
 
-    public AzureSqlQueryStoreCollector(ReadOnlySqlConnectionFactory connectionFactory)
+    public SqlServerQueryStoreCollector(ReadOnlySqlConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
     }

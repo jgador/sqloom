@@ -74,7 +74,7 @@ internal sealed class HostConsoleWriter
     public void PrintNoCommandHint()
     {
         Console.WriteLine("Use tune <path> to start the harness and run the full replay, observe, correlate, and advise workflow in one command.");
-        Console.WriteLine("Use observe to capture a readonly Azure SQL Query Store snapshot.");
+        Console.WriteLine("Use observe to capture a readonly SQL Server or Azure SQL Query Store snapshot.");
         Console.WriteLine("Use replay <path> to execute OpenAPI-driven in-process ASP.NET Core replays explicitly.");
         Console.WriteLine("Standalone replay accepts a harness project, harness assembly, solution, solution filter, or directory path immediately after the replay verb.");
         Console.WriteLine("Sqloom resolves the target to exactly one public non-abstract ISqloomApplication implementation.");

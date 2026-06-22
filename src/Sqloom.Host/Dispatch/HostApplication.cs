@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Sqloom.AspNetCore.Endpoints;
-using Sqloom.AzureSql.Capture;
+using Sqloom.SqlServer.Capture;
 using Sqloom.Core.Execution;
 using Sqloom.QueryStore.QueryStore;
 using Sqloom.Testing;
@@ -126,7 +126,7 @@ internal sealed class HostApplication
         [
             typeof(RunOptions).Assembly.GetName().Name ?? "Sqloom.Core",
             typeof(QueryStoreSnapshot).Assembly.GetName().Name ?? "Sqloom.QueryStore",
-            typeof(AzureSqlObservationOptions).Assembly.GetName().Name ?? "Sqloom.AzureSql",
+            typeof(SqlServerObservationOptions).Assembly.GetName().Name ?? "Sqloom.SqlServer",
             typeof(EndpointReplayRequest).Assembly.GetName().Name ?? "Sqloom.AspNetCore",
             typeof(ISqloomApplication).Assembly.GetName().Name ?? "Sqloom.Testing",
             typeof(HostApplication).Assembly.GetName().Name ?? "Sqloom.Host",

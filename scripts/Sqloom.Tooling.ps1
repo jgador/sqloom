@@ -55,7 +55,7 @@ function Get-SqloomPackProjects
     return @(
         Join-Path $RepoRoot "src\Sqloom.Core\Sqloom.Core.csproj"
         Join-Path $RepoRoot "src\Sqloom.QueryStore\Sqloom.QueryStore.csproj"
-        Join-Path $RepoRoot "src\Sqloom.AzureSql\Sqloom.AzureSql.csproj"
+        Join-Path $RepoRoot "src\Sqloom.SqlServer\Sqloom.SqlServer.csproj"
         Join-Path $RepoRoot "src\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj"
         Join-Path $RepoRoot "src\Sqloom.Testing\Sqloom.Testing.csproj"
         Join-Path $RepoRoot "src\Sqloom.Host\Sqloom.Host.csproj"
@@ -72,7 +72,7 @@ function Get-SqloomPackagePaths
     return @(
         Join-Path $Context.PackageFeedPath "Sqloom.Core.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.QueryStore.$($Context.PackageVersion).nupkg"
-        Join-Path $Context.PackageFeedPath "Sqloom.AzureSql.$($Context.PackageVersion).nupkg"
+        Join-Path $Context.PackageFeedPath "Sqloom.SqlServer.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.AspNetCore.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.Testing.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"

@@ -1,7 +1,7 @@
-using Sqloom.AzureSql.Capture;
+using Sqloom.SqlServer.Capture;
 using Xunit;
 
-namespace Sqloom.AzureSql.Tests.Capture;
+namespace Sqloom.SqlServer.Tests.Capture;
 
 /// <summary>
 /// Exercises readonly SQL connection factory.

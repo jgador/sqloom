@@ -1,15 +1,15 @@
 using System;
 using System.Data;
-using Sqloom.AzureSql.QueryStore;
+using Sqloom.SqlServer.QueryStore;
 using Sqloom.QueryStore.QueryStore;
 using Xunit;
 
-namespace Sqloom.AzureSql.Tests.QueryStore;
+namespace Sqloom.SqlServer.Tests.QueryStore;
 
 /// <summary>
-/// Exercises Azure SQL discovered object collector.
+/// Exercises SQL Server discovered object collector.
 /// </summary>
-public sealed class AzureSqlDiscoveredObjectCollectorTests
+public sealed class SqlServerDiscoveredObjectCollectorTests
 {
     [Fact]
     public void ValidateOptions_RejectsNonPositiveCommandTimeout()
@@ -19,7 +19,7 @@ public sealed class AzureSqlDiscoveredObjectCollectorTests
             CommandTimeoutSeconds = 0,
         };
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => AzureSqlDiscoveredObjectCollector.ValidateOptions(options));
+        Assert.Throws<ArgumentOutOfRangeException>(() => SqlServerDiscoveredObjectCollector.ValidateOptions(options));
     }
 
     [Theory]
@@ -37,7 +37,7 @@ public sealed class AzureSqlDiscoveredObjectCollectorTests
         using var reader = table.CreateDataReader();
         Assert.True(reader.Read());
 
-        var record = AzureSqlDiscoveredObjectCollector.ReadDiscoveredObjectRecord(reader);
+        var record = SqlServerDiscoveredObjectCollector.ReadDiscoveredObjectRecord(reader);
 
         Assert.Equal(schemaName, record.SchemaName);
         Assert.Equal(objectName, record.ObjectName);
@@ -56,7 +56,7 @@ public sealed class AzureSqlDiscoveredObjectCollectorTests
         using var reader = table.CreateDataReader();
         Assert.True(reader.Read());
 
-        var actual = AzureSqlDiscoveredObjectCollector.ReadViewDefinitionPermission(reader);
+        var actual = SqlServerDiscoveredObjectCollector.ReadViewDefinitionPermission(reader);
 
         Assert.Equal(hasViewDefinition, actual);
     }
@@ -64,7 +64,7 @@ public sealed class AzureSqlDiscoveredObjectCollectorTests
     [Fact]
     public void FinalizeCatalog_CreatesPartialCatalogWithWarningWhenModuleDiscoveryIsIncomplete()
     {
-        var catalog = AzureSqlDiscoveredObjectCollector.FinalizeCatalog(
+        var catalog = SqlServerDiscoveredObjectCollector.FinalizeCatalog(
             "sqloom-local",
             [
                 new DiscoveredDatabaseObject

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Sqloom.AzureSql.QueryStore;
+using Sqloom.SqlServer.QueryStore;
 using Sqloom.QueryStore.QueryStore;
 using Xunit;
 
-namespace Sqloom.AzureSql.Tests.QueryStore;
+namespace Sqloom.SqlServer.Tests.QueryStore;
 
 /// <summary>
 /// Exercises SQL statement handle resolver.
