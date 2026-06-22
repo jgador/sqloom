@@ -1,16 +1,16 @@
 # Sqloom
 
-Sqloom is a host-first CLI for investigating and tuning database-backed application operations. It captures Query Store evidence from a live SQL Server or Azure SQL workload, replays OpenAPI operations through app-specific companion integrations, correlates captured SQL back to Query Store, and emits operation-level advice plus SQL proposal artifacts.
+Sqloom helps you find slow database work behind API requests in a .NET app. It can read Query Store from SQL Server or Azure SQL, replay API requests against a test app, match the SQL it saw back to Query Store, and write tuning advice plus suggested SQL changes.
 
-`tune` is the end-to-end front door over `observe -> replay -> correlate -> advise`. The user-facing packaged command is `sqloom`. This repository also provides `sqloom-local`, a repo-local wrapper for local development after `pwsh .\scripts\deploy-sqloom-local.ps1`.
+`tune` runs the full flow: `observe -> replay -> correlate -> advise`. Most people will use the `sqloom` command. If you are changing Sqloom in this repo, use `sqloom-local` instead.
 
-The sample app in this repository centers on `GET /api/products/by-category` and can bootstrap a disposable SQL Server replay database from `AdventureWorksLT2025.dacpac`, with an optional post-DACPAC seed script when you want replay to mirror exported localhost data.
+This repo includes a sample app for `GET /api/products/by-category`. It can start a throwaway SQL Server database from `AdventureWorksLT2025.dacpac` and can optionally run a SQL seed script afterward so the replay uses data exported from `localhost`.
 
 ![Sqloom tuning pipeline diagram](docs/images/sqloom-diagram.png)
 
-## Highlight
+## Quick Start
 
-The fastest way to demo the full tuning flow is the sample app plus `sqloom tune` with the committed AdventureWorks DACPAC, optional seed script, and `--debug`. That path exercises `observe -> replay -> correlate -> advise` and emits both the advice JSON and the generated SQL proposal script:
+If you want the quickest end-to-end demo, run `sqloom tune` against the sample app with the included AdventureWorks DACPAC, the optional seed script, and `--debug`. This runs the whole flow and writes both the advice report and the generated SQL proposal script:
 
 ```powershell
 if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
@@ -27,9 +27,9 @@ sqloom tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --debug
 ```
 
-`Sqloom.TestApp` also supports an optional post-DACPAC seed script through `--sqlserver-seed-sql-file <path>` on both `replay` and `tune`, used together with `--sqlserver-dacpac-file <path>`. Generate that script from localhost with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.ps1` when you want the Testcontainer to mirror exported `AdventureWorksLT2025` data instead of the built-in sample seed.
+`Sqloom.TestApp` also accepts `--sqlserver-seed-sql-file <path>` on both `replay` and `tune`. Use it with `--sqlserver-dacpac-file <path>` when you want the throwaway database to load exported AdventureWorks data instead of the built-in sample data. You can generate that script from `localhost` with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.ps1`.
 
-The run writes artifacts under `artifacts/sqloom/tune/tune-<timestamp>/`, including:
+The run writes output files under `artifacts/sqloom/tune/tune-<timestamp>/`, including:
 
 - `query-store-snapshot.json`
 - `tune-summary.json`
@@ -37,7 +37,7 @@ The run writes artifacts under `artifacts/sqloom/tune/tune-<timestamp>/`, includ
 - `replay/sql-tuning-proposal.json`
 - `replay/sql-tuning-proposal.sql`
 
-Add `--debug` to any `sqloom` or `sqloom-local` command when you want stage-owned diagnostics on `stderr`. `advise --debug` prints readable, redacted OpenAI request and response payloads, and `tune --debug` cascades debug output through `observe`, `replay`, `correlate`, and `advise`.
+Add `--debug` to any `sqloom` or `sqloom-local` command when you want step-by-step details on `stderr`. `advise --debug` prints readable, redacted OpenAI request and response data, and `tune --debug` turns on debug output for `observe`, `replay`, `correlate`, and `advise`.
 
 ```text
 .
@@ -59,20 +59,20 @@ Add `--debug` to any `sqloom` or `sqloom-local` command when you want stage-owne
     `-- Sqloom.IntegrationTests/
 ```
 
-Companion harnesses live beside the apps they support.
+The app-specific test projects live next to the apps they support.
 
-## Architecture Summary
+## How Sqloom Works
 
-Sqloom stays host-first and app-integration driven:
+Sqloom is built around one CLI plus app-specific test projects:
 
-- User-facing flow: `observe -> replay -> correlate -> advise`
-- Convenience front door: `tune` runs the common path and writes the same artifact chain under `artifacts/sqloom/`
-- The packaged `sqloom` command wraps `Sqloom.Host`, the generic CLI and runtime for target resolution, harness loading, and stage execution
-- Replay discovers stable OpenAPI operation keys such as `GET /api/products/by-category` and runs them through companion harnesses that own app-specific bootstrap
-- `Sqloom.TestApp.IntegrationTests` is the sample companion harness in this repository
-- Additional app-specific harnesses can follow the same companion-project model
+- Main flow for users: `observe -> replay -> correlate -> advise`
+- `tune` runs that full flow for you and writes its output under `artifacts/sqloom/`
+- The `sqloom` command is the tool most people should use. `Sqloom.Host` is the project you can run directly while developing Sqloom itself.
+- Replay finds API operations such as `GET /api/products/by-category` and runs them through app-specific test code
+- `Sqloom.TestApp.IntegrationTests` is the sample app-specific test project in this repo
+- More apps can follow the same pattern
 
-For the canonical repo layout, current project ownership, and dependency graph, see:
+For more detail about the repo layout, project ownership, and dependency graph, see:
 
 - `docs/architecture/overview.md`
 - `docs/architecture/dependencies.md`
@@ -86,34 +86,34 @@ dotnet restore .\Sqloom.slnx
 dotnet build .\Sqloom.slnx --tl:off --nologo "-clp:ErrorsOnly;NoSummary"
 ```
 
-Build `Sqloom.slnx` before using the packaged `sqloom` tool or the non-packed `Sqloom.Host` wrapper. When you run `replay <path>` or `observe <path>`, the host resolves that target path down to one or more distinct library harnesses, resolves each harness project's `TargetPath` through `dotnet msbuild`, and builds those harnesses automatically unless you add `--no-build`. Pass `--dotnet-command <command>` explicitly when that nested resolution should use a non-default dotnet executable. Supported target paths are project files, solution files, solution filters, and directories. Composite replay targets run every distinct integration they resolve to in order; when you pass `--artifact-dir` to a composite replay, Sqloom creates one child artifact directory per app under that root.
+Build `Sqloom.slnx` before using the `sqloom` tool or running `Sqloom.Host` directly. When you run `replay <path>` or `observe <path>`, Sqloom looks at the project, solution, solution filter, or directory you pass in, finds the matching app test projects, and builds them unless you add `--no-build`. Use `--dotnet-command <command>` if you need Sqloom to call a specific `dotnet` executable. If one replay target expands to more than one app and you pass `--artifact-dir`, Sqloom creates one output folder per app under that root.
 
-`Sqloom.slnx` is the repo's main workspace solution. The repo-root `global.json` opts this workspace into the Microsoft Testing Platform runner, so run the Sqloom xUnit lanes from the repo root:
+`Sqloom.slnx` is the repo's main workspace solution. The repo-root `global.json` makes these test commands use Microsoft Testing Platform, so run the Sqloom xUnit lanes from the repo root:
 
 ```powershell
 dotnet test --solution .\Sqloom.UnitTests.slnf
 dotnet test --solution .\Sqloom.IntegrationTests.slnf
 ```
 
-## CLI Entry Points
+## Using `sqloom` and `sqloom-local`
 
-Use `sqloom` in the user-facing examples throughout this README. Use `sqloom-local` only when iterating on this repository and you want a fast repo-local install that stays separate from an installed `sqloom`.
+Use `sqloom` when you want to use Sqloom. Use `sqloom-local` only when you are working on Sqloom inside this repo and want a separate local install.
 
-From the repo root, use the repo-local deployment script when you want a fast dev install that stays separate from the published global `sqloom` command:
+From the repo root, use the repo-local deployment script when you want a fast dev install that stays separate from an installed `sqloom` command:
 
 ```powershell
 pwsh .\scripts\deploy-sqloom-local.ps1
 ```
 
-That script repacks the full `Sqloom.*` package set into `.\artifacts\packages\sqloom`, reinstalls the local dev tool into `.\.tools\sqloom-local`, and regenerates the wrapper command at `.\.tools\bin\sqloom-local.cmd`. Add the repo-local wrapper directory to `PATH` if you want to call the dev tool as `sqloom-local`:
+That script rebuilds the local packages, reinstalls the repo-local tool into `.\.tools\sqloom-local`, and recreates the wrapper at `.\.tools\bin\sqloom-local.cmd`. Add that folder to `PATH` if you want to call the local tool as `sqloom-local`:
 
 ```text
 .\.tools\bin
 ```
 
-The deploy script now also ensures that wrapper directory is on the current PowerShell session PATH and on the user PATH for new terminals, so a direct invocation like `.\scripts\deploy-sqloom-local.ps1` is followed immediately by `sqloom-local --version` in the same shell.
+The deploy script also updates the current PowerShell session PATH and the user PATH for new terminals, so you can run `sqloom-local --version` right away in the same shell.
 
-The local wrapper accepts the same explicit stage-verb model as the packaged `sqloom` command and `Sqloom.Host` itself. SQL Server-backed replay harnesses can require an app-owned DACPAC path and can also accept an optional post-DACPAC seed script when they need to restore data into the fresh replay database after publish.
+The local wrapper accepts the same commands as the packaged `sqloom` tool. SQL Server replays can use a DACPAC and, if needed, a SQL seed script that loads data after the DACPAC is applied.
 
 ```powershell
 if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
@@ -131,7 +131,7 @@ sqloom-local tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --debug
 ```
 
-For the aggregated workflow, `tune` takes the same target-selection and replay knobs plus the observe connection string, required `--model-provider openai`, and the OpenAI settings. The sample-app command above is the recommended first run because it produces a concrete `sql-tuning-proposal.sql` artifact with the least setup.
+This uses the same full `tune` flow as the main example, but it uses your local build. It is the best option when you are changing this repo and want a real `sql-tuning-proposal.sql` output with minimal setup.
 
 When you want a clean package-prep pass before a manual `nuget.org` push, use:
 
@@ -139,46 +139,46 @@ When you want a clean package-prep pass before a manual `nuget.org` push, use:
 pwsh .\scripts\prepare-sqloom-packages.ps1
 ```
 
-That script restores and builds `.\Sqloom.slnx`, repacks the full `Sqloom.*` feed under `.\artifacts\packages\sqloom`, verifies a clean tool-path install from that folder feed, and prints the exact `dotnet nuget push` commands without pushing anything.
+That script restores and builds `.\Sqloom.slnx`, rebuilds the local package folder under `.\artifacts\packages\sqloom`, checks that the tool installs cleanly from that folder, and prints the exact `dotnet nuget push` commands without pushing anything.
 
-During development, the equivalent non-packed host command is:
+While developing, you can also run the host project directly:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --target "GET /api/products/by-category"
 ```
 
-## Replay Smoke Check
+## Quick Replay Check
 
-From the repo root, run one focused replay through the generic host against the sample app. Sqloom consumes the prebuilt DACPAC you give it; it does not build the DACPAC for you.
+Use this when you want a quick check that replay works before trying the full tune flow. If you pass `--sqlserver-dacpac-file`, Sqloom uses the DACPAC file you give it. It does not build one for you.
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --target "GET /api/products/by-category"
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"
 ```
 
-The generic sample app uses the same host-first surface. Without `--sqlserver-dacpac-file`, this route replays against the in-memory EF Core fallback:
+Without `--sqlserver-dacpac-file`, the sample app replays against its in-memory EF Core fallback instead of SQL Server:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --target "GET /api/products/by-category"
 ```
 
-When you want the sample harness to exercise the SQL Server-backed replay path, pass the committed AdventureWorks DACPAC explicitly:
+If you want to run the SQL Server version of the sample, pass the included AdventureWorks DACPAC:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"
 ```
 
-That SQL-backed sample harness seeds `SalesLT.ProductCategory` and `SalesLT.Product` rows into a SQL Server 2025 Testcontainer so the replay can drive the missing-index tuning scenario. Use that route when you want the sample app to produce a concrete `SalesLT.Product` SQL proposal from Query Store correlation and `advise --model-provider openai --sqlserver-schema-file <path>`.
+This path loads `SalesLT.ProductCategory` and `SalesLT.Product` rows into a throwaway SQL Server container so the sample can show the missing-index tuning case. Use it when you want the sample app to produce a real `SalesLT.Product` SQL proposal from Query Store data and `advise --model-provider openai --sqlserver-schema-file <path>`.
 
-If you want the sample harness to restore app-owned data after DACPAC publish instead of using its built-in hot-product seed, pass `--sqlserver-seed-sql-file <path>` alongside the DACPAC:
+If you want to load your own exported data instead of the built-in sample data, pass `--sqlserver-seed-sql-file <path>` with the DACPAC:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.seed.sql --target "GET /api/products/by-category"
 ```
 
-For `Sqloom.TestApp`, that post-DACPAC seed script is app-owned input. When you supply it, the sample harness executes the script against the fresh Testcontainer database and skips the built-in `Sqloom Hot Product` seeding.
+For `Sqloom.TestApp`, that script is optional input. When you supply it, the sample app runs it against the fresh container database and skips the built-in `Sqloom Hot Product` data load.
 
-When `tests/Sqloom.TestApp.IntegrationTests/AdventureWorksLT2025.dacpac` changes, regenerate the Codex-friendly single-file schema dump beside it with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025Schema.ps1`. The script publishes the DACPAC to a scratch database on `localhost`, extracts `AdventureWorksLT2025.schema.sql`, and drops the scratch database afterward.
+When `tests/Sqloom.TestApp.IntegrationTests/AdventureWorksLT2025.dacpac` changes, regenerate the single-file schema dump next to it with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025Schema.ps1`. The script applies the DACPAC to a temporary database on `localhost`, writes `AdventureWorksLT2025.schema.sql`, and then removes the temporary database.
 
 To export seed data from a local `AdventureWorksLT2025` database on `localhost` into a post-DACPAC replay script, run from the repo root:
 
@@ -186,43 +186,47 @@ To export seed data from a local `AdventureWorksLT2025` database on `localhost` 
 pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.ps1
 ```
 
-By default that script reads `Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True` and writes `tests/Sqloom.TestApp.IntegrationTests/AdventureWorksLT2025.seed.sql`. Override `-ConnectionString` or `-OutputPath` when you want to export a different localhost source database or stage the script somewhere else.
+By default, that script reads `Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True` and writes `tests/Sqloom.TestApp.IntegrationTests/AdventureWorksLT2025.seed.sql`. Override `-ConnectionString` or `-OutputPath` when you want a different source database or output path.
 
-To stage a fresh reverse-engineered EF Core snapshot for the sample harness from a local `AdventureWorksLT2025` database on `localhost`, run from the repo root:
+If you need to regenerate the EF Core model for the sample app from a local `AdventureWorksLT2025` database on `localhost`, run this from the repo root:
 
 ```powershell
 pwsh .\tests\Sqloom.TestApp\Scaffold-AdventureWorksLT2025Ef.ps1
 ```
 
-The script stages raw scaffold output under `artifacts/ef-scaffold/Sqloom.TestApp/`, installs a temporary local `dotnet-ef` tool if needed, and then syncs the generated DbContext plus entities into `tests/Sqloom.TestApp/Generated/` so `Sqloom.TestApp` owns the reverse-engineered EF model. `Sqloom.TestApp.IntegrationTests` now references `Sqloom.TestApp` for those app-owned types. By default the script scaffolds the curated AdventureWorksLT2025 table set used by the sample harness: `dbo.BuildVersion`, `dbo.ErrorLog`, `SalesLT.Address`, `SalesLT.Customer`, `SalesLT.CustomerAddress`, `SalesLT.Product`, `SalesLT.ProductCategory`, `SalesLT.ProductDescription`, `SalesLT.ProductModel`, `SalesLT.ProductModelProductDescription`, `SalesLT.SalesOrderDetail`, and `SalesLT.SalesOrderHeader`. Pass `-Tables SalesLT.Product,SalesLT.ProductCategory` if you want to narrow scaffolding to a smaller slice while you iterate.
+The script writes raw scaffold output under `artifacts/ef-scaffold/Sqloom.TestApp/`, installs a temporary local `dotnet-ef` tool if needed, and then copies the generated DbContext and entities into `tests/Sqloom.TestApp/Generated/`. `Sqloom.TestApp.IntegrationTests` references `Sqloom.TestApp` for those generated types. By default, the script scaffolds the AdventureWorksLT2025 tables used by the sample app: `dbo.BuildVersion`, `dbo.ErrorLog`, `SalesLT.Address`, `SalesLT.Customer`, `SalesLT.CustomerAddress`, `SalesLT.Product`, `SalesLT.ProductCategory`, `SalesLT.ProductDescription`, `SalesLT.ProductModel`, `SalesLT.ProductModelProductDescription`, `SalesLT.SalesOrderDetail`, and `SalesLT.SalesOrderHeader`. Pass `-Tables SalesLT.Product,SalesLT.ProductCategory` if you want to work on a smaller set of tables.
 
-## Query Store Capture
+## Read Query Store
 
-From the repo root, capture the hottest Query Store plans and waits from a readonly SQL connection through the generic host against the sample app target path:
+Use `observe` to read recent Query Store data from SQL Server or Azure SQL. Query Store is SQL Server's built-in history of query performance.
+
+From the repo root, run this command with a read-only connection string and the sample app path:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- observe .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" --lookback-hours 24 --max-plans 100 --max-waits 10 --json-output-file ".\artifacts\query-store-snapshot.json" --app-only --show-classification
 ```
 
-`observe` and `correlate` require `--read-only-connection-string <connection-string>`. The active host surface does not use environment variables for that input.
+`observe` and `correlate` both require `--read-only-connection-string <connection-string>`. This command path does not read that value from environment variables.
 
-When an app integration is supplied, `observe` applies that app's workload profile. App classification itself stays discovery-first: the host captures a discovered-object catalog from the same readonly connection and uses that live database evidence to decide which plans belong to the app.
+If you pass an app path, `observe` uses that app's rules to decide which queries belong to the app. Sqloom also reads the live database objects from the same read-only connection instead of relying on a hard-coded list in the repo.
 
-If `--json-output-file` is omitted, the host writes the full `QueryStoreSnapshot` to the default artifact location under `artifacts/sqloom/query-store/` with a timestamped file name.
+If you do not pass `--json-output-file`, Sqloom writes the full `QueryStoreSnapshot` to `artifacts/sqloom/query-store/` with a timestamped file name.
 
-When `--max-plans` is omitted, the host now captures the top 100 Query Store plans before classification and `--app-only` console filtering. `--max-waits` still defaults to 10.
+If you do not pass `--max-plans`, Sqloom captures the top 100 Query Store plans before it filters the console output. `--max-waits` still defaults to 10.
 
-The console summary includes `query_hash`, `object`, `last_exec_utc`, and a truncated one-line SQL text preview for every top Query Store plan so you can identify the query before deeper replay and correlation analysis.
+The console summary shows fields such as `query_hash`, `object`, `last_exec_utc`, and a shortened one-line SQL preview so you can spot the query before moving on.
 
-Before classification, the host also discovers user-defined database objects with the same readonly connection. Tables and views are discovered by default, and module discovery is attempted when the principal also has `VIEW DEFINITION`. The discovered-object catalog is attached to the classified snapshot JSON and printed in the console summary.
+Before it labels queries, Sqloom also reads user-defined database objects through the same read-only connection. Tables and views are included by default. It also tries to read stored procedures and functions if the user has `VIEW DEFINITION`. That object list is saved in the JSON file and printed in the console summary.
 
-`--app-only` keeps the console output focused on queries classified as `App`, while the JSON artifact still preserves the full captured snapshot. `--app-only` also implies `--show-classification`. `--show-classification` prints the deterministic workload kind, confidence, and matching reasons for each displayed plan and wait. Wait entries inherit their classification from the matching `(query_id, plan_id)` plan record.
+`--app-only` keeps the console output focused on queries Sqloom thinks belong to the app, while the JSON file still keeps the full snapshot. `--app-only` also turns on `--show-classification`. `--show-classification` prints the chosen kind, confidence, and reasons for each displayed plan and wait. Wait entries use the same label as the matching `(query_id, plan_id)` plan.
 
-The workload classifier is intentionally discovery-first. The Azure SQL Query Store collector stays broad and reusable, and app classification comes from discovered objects captured from the live database rather than repo-maintained table lists, query hashes, or evidence modes.
+Sqloom decides what belongs to the app by looking at the live database, not by checking a repo-owned list of tables or query hashes.
 
-## Tune Workflow
+## Run the Full Tune Flow
 
-From the repo root, run the full observe, replay, correlate, and advise flow in one command with the packaged `sqloom` tool:
+Use `tune` when you want Sqloom to do the full run in one command: read Query Store, replay requests, match the SQL, and generate advice.
+
+From the repo root, run:
 
 Recommended first run:
 
@@ -241,30 +245,32 @@ sqloom tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --debug
 ```
 
-That command is the easiest way to see the tuning pipeline produce both an advice report and a SQL proposal script from the sample AdventureWorks product query.
+This is the easiest way to get both an advice report and a SQL proposal script from the sample AdventureWorks product query.
 
 If you are iterating on this repository itself, the repo-local equivalent is the `sqloom-local tune` example in the `CLI Entry Points` section above.
 
-Supported `tune` switches are the union of the main observe, replay, and advice knobs that affect behavior rather than file locations:
+`tune` accepts the main behavior-changing options from `observe`, `replay`, and `advise`:
 
-- `--debug`: global host switch that prints per-stage diagnostics to `stderr`. With `tune`, the same debug setting flows into the nested `observe`, `replay`, `correlate`, and `advise` stages.
-- `--read-only-connection-string <connection-string>`: required Query Store connection used by the observe and correlate stages.
+- `--debug`: print step-by-step details to `stderr` for `observe`, `replay`, `correlate`, and `advise`
+- `--read-only-connection-string <connection-string>`: required Query Store connection for `observe` and `correlate`
 - `--lookback-hours <hours>`, `--max-plans <count>`, `--max-waits <count>`, `--command-timeout-seconds <seconds>`, `--app-only`, `--show-classification`: same behavior as `observe`.
 - `--openapi-file <path>`, `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--max-operations <count>`, `--target "METHOD /path/template"`, `--dotnet-command <command>`, `--no-build`: same behavior as `replay`.
 - `--model-provider openai`, `--openai-api-key <key>`, `--sqlserver-schema-file <path>`, `--openai-base-url <url>`, `--openai-model <id>`: same behavior as `advise`.
-- `--artifact-dir <path>`: override the workflow root instead of using the default timestamped tune artifact directory.
+- `--artifact-dir <path>`: choose a different output folder instead of the default timestamped tune folder
 
-If `--artifact-dir` is omitted, `tune` writes under `artifacts/sqloom/tune/tune-<timestamp>/`. Each run writes:
+If you do not pass `--artifact-dir`, `tune` writes under `artifacts/sqloom/tune/tune-<timestamp>/`. Each run writes:
 
 - `query-store-snapshot.json`
 - `tune-summary.json`
 - `replay/`
 
-The `replay/` directory then contains the same replay, correlation, advice, and SQL proposal artifacts that the standalone `replay`, `correlate`, and `advise` commands already emit.
+The `replay/` directory then contains the same replay, match, advice, and SQL proposal files you get when you run `replay`, `correlate`, and `advise` separately.
 
-## Replay Mode
+## Replay Requests
 
-From the repo root, replay OpenAPI operations through the generic host against the sample app target path:
+Use `replay` when you want to run one or more API operations and capture the SQL they cause.
+
+From the repo root, run:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --target "GET /api/products/by-category"
@@ -273,84 +279,84 @@ dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqlo
 
 The `Sqloom.Host` executable uses the same explicit form, for example `replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"`.
 
-Supported replay switches:
+Common replay switches:
 
-- `--openapi-file <path>`: override the app-owned OpenAPI document when you do not want the integration default.
+- `--openapi-file <path>`: use a different OpenAPI document instead of the app's default
 - `--max-operations <count>`: cap the number of replayed operations after filtering.
-- `--target "METHOD /path/template"`: replay one exact discovered operation key such as `GET /api/products/by-category`.
-- `--dotnet-command <command>`: override the dotnet executable Sqloom uses for nested project resolution and builds.
-- `--sqlserver-dacpac-file <path>`: pass a prebuilt DACPAC to a SQL Server-backed replay harness. Sqloom treats this as app-owned input and does not build the DACPAC.
-- `--sqlserver-seed-sql-file <path>`: apply an app-owned SQL seed script after DACPAC publish. `Sqloom.TestApp` uses this to restore exported AdventureWorks data and skips its built-in hot-product seed when the script is supplied.
-- `--artifact-dir <path>`: override the replay artifact directory.
+- `--target "METHOD /path/template"`: replay one exact operation such as `GET /api/products/by-category`
+- `--dotnet-command <command>`: choose the `dotnet` executable Sqloom should use for nested builds
+- `--sqlserver-dacpac-file <path>`: use a prebuilt DACPAC for a SQL Server replay. Sqloom does not build the DACPAC for you.
+- `--sqlserver-seed-sql-file <path>`: run a SQL seed script after the DACPAC is applied. `Sqloom.TestApp` uses this to restore exported AdventureWorks data and skips its built-in sample data when the script is supplied.
+- `--artifact-dir <path>`: choose a different replay output folder
 
-Replay V1 is intentionally read-heavy. Authenticated `GET` operations are replay-safe by default, while non-`GET` operations require app-owned opt-in through `AllowNonGetReplay`.
+Sqloom plays it safe by default. Authenticated `GET` requests can be replayed automatically. Non-`GET` requests must be allowed by the app through `AllowNonGetReplay`.
 
 `--target` is strict. It must use the exact form `METHOD /path/template` with an uppercase HTTP method, one space, a leading `/`, and no trailing `/` or repeated `//`. If you mistype the shape, Sqloom fails fast and suggests the corrected form when it can.
 
-SQL Server-backed replay runs are self-managed. For the sample app, `Sqloom.TestApp.IntegrationTests` boots the target in-process, provisions a disposable local SQL Server Testcontainer, publishes the supplied AdventureWorks DACPAC into that database, optionally applies the post-DACPAC seed script, and seeds only the setup state needed to make the selected replay runnable. A pre-running Docker or local SQL bootstrap stack is not required beyond the inputs you pass explicitly.
+For the sample app, the SQL Server replay path is self-contained. `Sqloom.TestApp.IntegrationTests` starts the app in-process, starts a throwaway local SQL Server container, applies the AdventureWorks DACPAC, optionally runs the seed script, and loads only the data needed for the replay. You do not need a pre-built Docker or local SQL setup beyond the files you pass in.
 
-If `--artifact-dir` is omitted, replay artifacts default under `artifacts/sqloom/replay/<timestamp>/`. When one composite target replays multiple app integrations, that timestamped directory becomes the parent folder and Sqloom writes one child directory per app such as `01-Sqloom.TestApp/`. Each run writes:
+If you do not pass `--artifact-dir`, replay output goes under `artifacts/sqloom/replay/<timestamp>/`. When one replay target expands to more than one app, that timestamped folder becomes the parent folder and Sqloom writes one child folder per app such as `01-Sqloom.TestApp/`. Each run writes:
 
 - `discovered-operations.json`
 - `replay-plan.json`
 - `replay-summary.json`
 - `operations/<ordinal>-<operation>.json`
 
-`replay-summary.json` records the app name plus the first-class pipeline state so the next `correlate` and `advise` steps are explicit in the artifact itself. When a SQL Server DACPAC or post-DACPAC SQL seed script is supplied, the summary also records that artifact's source path, file name, and SHA-256 provenance.
+`replay-summary.json` keeps the app name with the run and makes the next `correlate` and `advise` steps clear. When you supply a DACPAC or seed script, the summary also records the source path, file name, and SHA-256 hash for that file.
 
-Per-operation artifacts preserve the resolved HTTP request, response status and body, captured SQL commands, normalized SQL text, fingerprints, and parameter values so later Query Store correlation can start from concrete replay evidence. Attach-to-existing local database support is planned later and is not part of V1.
+Each operation file records the request, response status and body, captured SQL commands, normalized SQL text, fingerprints, and parameter values so later Query Store matching can start from real replay evidence. Support for attaching to an existing local database is planned later and is not part of V1.
 
-## Query Store Correlation
+## Match Replayed SQL to Query Store
 
-From the repo root, correlate a captured replay run back to a previously captured Query Store snapshot:
+Use `correlate` after replay when you want Sqloom to match the SQL it captured back to a Query Store snapshot:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- correlate --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --query-store-snapshot-file ".\artifacts\sqloom\query-store\query-store-20260608T041245123Z.json" --read-only-connection-string "<connection-string>"
 ```
 
-By default, the host writes `query-store-correlation.json` under the replay artifact directory. Each record keeps the replay operation key, route, captured SQL metadata, resolved `statement_sql_handle` candidates, match kind, confidence, and the matched Query Store rows. The summary groups results at the HTTP operation boundary so you can answer which stable API operation most likely owns a degrading database query without relying on controller method names.
+By default, Sqloom writes `query-store-correlation.json` under the replay output folder. Each record keeps the replay operation key, route, captured SQL details, possible `statement_sql_handle` values, match kind, confidence, and the matched Query Store rows. The summary groups results by API operation so you can tell which request most likely owns a slow database query.
 
-`query-store-correlation.json` records the app name plus the first-class pipeline state so the downstream `advise` stage is explicit in the artifact.
+`query-store-correlation.json` also keeps the app name with the run and makes the next `advise` step clear.
 
-Correlation uses this ranking:
+Sqloom uses this ranking:
 
-- `StatementHandleExact`: exact `statement_sql_handle` match after resolving the captured SQL through `sys.fn_stmt_sql_handle_from_sql_stmt`.
-- `QueryTextExact`: exact raw SQL text match after trimming only the same outer whitespace and comments Query Store ignores.
-- `FingerprintFallback`: local normalized and fingerprint similarity for diagnostics only.
-- `Unmatched`: no safe correlation.
+- `StatementHandleExact`: exact match using `statement_sql_handle`
+- `QueryTextExact`: exact match on SQL text after the same outer trimming Query Store uses
+- `FingerprintFallback`: local similarity check for troubleshooting only
+- `Unmatched`: no safe match found
 
-## Advice Mode
+## Generate Advice
 
-From the repo root, derive operation-level tuning guidance from a completed replay and correlation pair:
+Use `advise` after replay and correlation when you want Sqloom to turn the evidence into tuning suggestions:
 
 ```powershell
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --model-provider openai --openai-api-key "<api-key>" --sqlserver-schema-file "<schema-file>"
 ```
 
-Supported advice switches:
+Common advice switches:
 
-- `--debug`: global host switch that prints per-stage diagnostics to `stderr`. For `advise`, that includes readable, redacted OpenAI request and response payloads.
-- `--replay-artifact-dir <path>`: required replay artifact directory that already contains `query-store-correlation.json`.
-- `--query-store-correlation-file <path>`: override the correlation artifact path when it lives outside the replay directory default.
-- `--json-output-file <path>`: override the advice artifact output path.
-- `--model-provider openai`: required LLM model provider selector for the advice stage.
-- `--openai-api-key <key>`: required API key for the OpenAI-backed advisor.
-- `--sqlserver-schema-file <path>`: required SQL Server schema file that the advisor uses as table, column, and existing-index context.
+- `--debug`: print readable, redacted OpenAI request and response data to `stderr`
+- `--replay-artifact-dir <path>`: required replay output folder that already contains `query-store-correlation.json`
+- `--query-store-correlation-file <path>`: use a different correlation file path
+- `--json-output-file <path>`: choose a different advice output file
+- `--model-provider openai`: required model provider for this step
+- `--openai-api-key <key>`: required API key for the OpenAI-backed advice step
+- `--sqlserver-schema-file <path>`: required schema file used as table, column, and existing-index context
 - `--openai-base-url <url>`: optional override for the OpenAI base URL. The default is `https://api.openai.com`.
 - `--openai-model <id>`: optional override for the OpenAI model id. The default is `gpt-5.4-mini`.
 
-By default, the host reads `query-store-correlation.json` under the replay artifact directory and writes `tuning-advice.json` beside it. The `advise` stage also emits two replay-scoped proposal sidecars under that same artifact directory:
+By default, Sqloom reads `query-store-correlation.json` from the replay output folder and writes `tuning-advice.json` next to it. It also writes two SQL-focused review files in that same folder:
 
 - `sql-tuning-proposal.json`
 - `sql-tuning-proposal.sql`
 
-Advice now always runs through OpenAI. Before sending the request, Sqloom packages the replay operation evidence, Query Store correlation evidence, any available snapshot subset, and the supplied SQL Server schema file into an evidence-only prompt envelope with no preloaded local tuning fix.
+Sqloom now uses OpenAI for this step. Before it sends the request, it packages the replay evidence, Query Store match data, any matching snapshot data, and the SQL Server schema file into a single evidence bundle.
 
-Use `--model-provider openai` and pass the OpenAI settings explicitly on the command line. The active host surface does not use environment-variable fallbacks for OpenAI configuration.
+Use `--model-provider openai` and pass the OpenAI settings on the command line. This CLI path does not read OpenAI settings from environment variables.
 
-The proposal sidecars are phase-1, SQL Server-oriented review artifacts synthesized from the existing replay and Query Store evidence plus the supplied SQL Server schema file. OpenAI proposal kinds are now preserved as model-provided free-form strings, and every model proposal that passes JSON deserialization is written into `tuning-advice.json`, `sql-tuning-proposal.json`, and `sql-tuning-proposal.sql`.
+The proposal files are SQL-focused review output built from the replay evidence, the Query Store match data, and the SQL Server schema file. Sqloom keeps the proposal kind returned by the model, and every valid model proposal is written into `tuning-advice.json`, `sql-tuning-proposal.json`, and `sql-tuning-proposal.sql`.
 
-Rollback SQL is recommended but optional in the OpenAI path. When the model omits `rollbackSqlScript`, Sqloom keeps the proposal, records a warning in the advice and proposal reports, and renders a placeholder rollback note in the `.sql` sidecar. Sqloom no longer synthesizes deterministic local SQL proposals from Query Store correlation alone.
+Rollback SQL is helpful but optional in the OpenAI path. If the model leaves out `rollbackSqlScript`, Sqloom still keeps the proposal, records a warning in the advice files, and writes a placeholder rollback note in the `.sql` file. Sqloom no longer invents local SQL proposals from Query Store data alone.
 
 To generate operation advice:
 
@@ -358,17 +364,17 @@ To generate operation advice:
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --model-provider openai --openai-api-key "<api-key>" --sqlserver-schema-file "<schema-file>" --openai-base-url "https://api.openai.com" --openai-model "gpt-5.4-mini"
 ```
 
-The OpenAI advisor keeps the same correlation artifact input, sends the operation evidence bundle plus the supplied schema text to the Responses API with a strict JSON schema, preserves the model's free-form `proposalKind`, and writes the same `tuning-advice.json` artifact shape with `modelProvider=openai` and the selected model recorded in the report.
+This uses the same correlation file, sends the evidence bundle and schema text to the Responses API with a strict JSON schema, keeps the model's `proposalKind`, and writes the selected model name into the report.
 
-## Companion Project Model
+## How App-Specific Code Fits In
 
-`Sqloom.Host` does not reference app code directly. The host stays generic and requires explicit stage verbs plus verb-scoped target paths such as `observe <path>` and `replay <path>`, where the path can be a project, solution, solution filter, or directory. `Sqloom.Host` owns the generic target resolution, app loading, and command pipeline.
+`Sqloom.Host` stays generic and does not reference app code directly. You give it a project, solution, solution filter, or directory, and it finds the matching app-specific replay project.
 
-App-specific replay bootstrap, personas, operation overlays, and `WebApplicationFactory` setup belong in companion integration projects such as `Sqloom.TestApp.IntegrationTests`. The host discovers those projects through the companion-project contract instead of hard-coding app-specific dependencies.
+In this repo, that app-specific project is `Sqloom.TestApp.IntegrationTests`. It contains the startup code, replay settings, and test setup for the sample app. Other apps can follow the same pattern without changing `Sqloom.Host`.
 
-## Azure SQL Principal
+## Set Up an Azure SQL User for Sqloom
 
-Create a dedicated contained database user for Sqloom. Do not reuse an application runtime principal. Run this while connected to the target Azure SQL database:
+Create a dedicated database user for Sqloom. Do not reuse the app's normal database user. Run this while connected to the target Azure SQL database:
 
 ```sql
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'sqloom_ro')
@@ -397,7 +403,7 @@ DENY UPDATE TO [sqloom_ro];
 DENY DELETE TO [sqloom_ro];
 ```
 
-This keeps the Sqloom connection read-only while still allowing Query Store access, discovered-object classification, and targeted plan capture.
+This keeps the Sqloom connection read-only while still allowing it to read Query Store, inspect metadata, and view query plans.
 
 If the host prints this warning:
 
@@ -411,8 +417,8 @@ grant `VIEW DEFINITION` to the Sqloom principal:
 GRANT VIEW DEFINITION TO [sqloom_ro];
 ```
 
-That permission is read-only metadata access. It lets Sqloom discover stored procedures and functions so module-backed workloads can classify as `App`, but it does not grant `INSERT`, `UPDATE`, or `DELETE`.
+That permission only grants read-only metadata access. It lets Sqloom discover stored procedures and functions so those queries can still be recognized as part of the app, but it does not grant `INSERT`, `UPDATE`, or `DELETE`.
 
-If you only need table and view discovery, `VIEW DEFINITION` can be omitted and the warning is expected. If you only need Query Store snapshots, `SHOWPLAN` is optional, but the full lab uses both Query Store and plan inspection.
+If you only need tables and views, you can skip `VIEW DEFINITION` and ignore the warning. If you only need Query Store snapshots, `SHOWPLAN` is optional, but the full Sqloom flow uses both Query Store and plan inspection.
 
 Use the resulting connection string with `--read-only-connection-string` when running `observe` or `correlate`.
