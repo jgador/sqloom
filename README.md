@@ -141,6 +141,8 @@ pwsh .\scripts\prepare-sqloom-packages.ps1
 
 That script restores and builds `.\Sqloom.slnx`, rebuilds the local package folder under `.\artifacts\packages\sqloom`, checks that the tool installs cleanly from that folder, and prints the exact `dotnet nuget push` commands without pushing anything.
 
+For the full maintainer runbook, including manual NuGet.org upload order, see [`docs/dotnet-tool-release.md`](docs/dotnet-tool-release.md).
+
 While developing, you can also run the host project directly:
 
 ```powershell
