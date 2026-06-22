@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -33,7 +33,8 @@ public sealed class ReplayArgumentParserTests
                 "--target",
                 TestAppProductCatalogScenario.OperationKey,
             ],
-            new MultipleTestAppIntegrationA(),
+            TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
             currentDirectory);
 
         Assert.Equal(
@@ -61,8 +62,9 @@ public sealed class ReplayArgumentParserTests
                     "--sqlserver-dacpac-file",
                     missingDacpacPath,
                 ],
-                new MultipleTestAppIntegrationA(),
-                currentDirectory));
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            currentDirectory));
 
         Assert.Contains("SQL Server DACPAC", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -84,8 +86,9 @@ public sealed class ReplayArgumentParserTests
                     "--sqlserver-seed-sql-file",
                     missingSeedSqlPath,
                 ],
-                new MultipleTestAppIntegrationA(),
-                currentDirectory));
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            currentDirectory));
 
         Assert.Contains("SQL seed script", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -104,8 +107,9 @@ public sealed class ReplayArgumentParserTests
                     "--sqlserver-seed-sql-file",
                     seedSqlPath,
                 ],
-                new MultipleTestAppIntegrationA(),
-                currentDirectory));
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            currentDirectory));
 
         Assert.Contains("--sqlserver-dacpac-file", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -124,8 +128,9 @@ public sealed class ReplayArgumentParserTests
                     legacySwitch,
                     value,
                 ],
-                new MultipleTestAppIntegrationA(),
-                currentDirectory));
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(legacySwitch, exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -145,8 +150,9 @@ public sealed class ReplayArgumentParserTests
                     legacySwitch,
                     Path.Combine(currentDirectory, fileName),
                 ],
-                new MultipleTestAppIntegrationA(),
-                currentDirectory));
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(legacySwitch, exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -171,8 +177,9 @@ public sealed class ReplayArgumentParserTests
                     "--target",
                     targetFilter,
                 ],
-                new MultipleTestAppIntegrationA(),
-                currentDirectory));
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            currentDirectory));
 
         Assert.Contains("METHOD /path/template", exception.Message, StringComparison.Ordinal);
         Assert.Contains(expectedReason, exception.Message, StringComparison.Ordinal);
@@ -193,8 +200,9 @@ public sealed class ReplayArgumentParserTests
                     "--target",
                     targetFilter,
                 ],
-                new MultipleTestAppIntegrationA(),
-                currentDirectory));
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            currentDirectory));
 
         Assert.Contains("METHOD /path/template", exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Did you mean", exception.Message, StringComparison.Ordinal);
@@ -216,8 +224,9 @@ public sealed class ReplayArgumentParserTests
                     "replay",
                     legacySwitch,
                 ],
-                new MultipleTestAppIntegrationA(),
-                currentDirectory));
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(legacySwitch, exception.Message, StringComparison.OrdinalIgnoreCase);

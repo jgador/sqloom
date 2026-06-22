@@ -1,4 +1,4 @@
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 internal static class TestAppConfigurationKeys
 {

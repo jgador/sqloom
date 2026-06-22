@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Sqloom.Core.Contracts;
 using Sqloom.QueryStore.QueryStore;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -39,7 +39,7 @@ internal sealed class ObserveArgumentParser
 
     public ObserveArguments Parse(
         string[] args,
-        IAppIntegration? appIntegration,
+        SqloomApplicationDescriptor? descriptor,
         string readOnlyConnectionString,
         string currentDirectory)
     {
@@ -63,7 +63,7 @@ internal sealed class ObserveArgumentParser
         {
             ReadOnlyConnectionString = readOnlyConnectionString,
             ObservationOptions = observationOptions,
-            BaseWorkloadProfile = (appIntegration as IQueryStoreAppIntegration)?.GetQueryStoreWorkloadProfile()
+            BaseWorkloadProfile = descriptor?.QueryStoreWorkloadProfile
                 ?? QueryStoreWorkloadProfile.Empty,
             AppOnly = appOnly,
             ShowClassification = showClassification,

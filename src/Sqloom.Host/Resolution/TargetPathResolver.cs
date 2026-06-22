@@ -10,132 +10,122 @@ using System.Xml.Linq;
 namespace Sqloom.Host;
 
 /// <summary>
-/// Resolves supported Sqloom target paths down to concrete project files.
+/// Resolves supported Sqloom harness targets down to concrete projects or assemblies.
 /// </summary>
 internal sealed class TargetPathResolver
 {
     private static readonly Regex _solutionProjectLineRegex = new(
         "^Project\\(\"\\{[^}]+\\}\"\\)\\s*=\\s*\"[^\"]+\",\\s*\"(?<path>[^\"]+)\",\\s*\"\\{[^}]+\\}\"$",
         RegexOptions.Compiled);
-    private readonly CompanionProjectLocator _companionProjectLocator = new();
 
-    public string ResolveProjectPath(string targetPath)
+    public IReadOnlyList<ResolvedTargetSelection> ResolveTargetSelections(string targetPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(targetPath);
 
         var fullTargetPath = Path.GetFullPath(targetPath);
-        var candidateProjectPaths = ResolveProjectPaths(fullTargetPath);
-        return ResolveCandidateProjectPath(
-            $"target '{fullTargetPath}'",
-            candidateProjectPaths,
-            "Place SqloomAppIntegrationType on the intended project, add a companion integration project that points back through SqloomTargetProject, or pass an explicit project path.");
-    }
+        var selections = Directory.Exists(fullTargetPath)
+            ? ResolveTargetSelectionsFromDirectory(fullTargetPath)
+            : File.Exists(fullTargetPath)
+                ? ResolveTargetSelectionsFromFile(fullTargetPath)
+                : throw BuildUnsupportedOrMissingTargetException(fullTargetPath);
 
-    public IReadOnlyCollection<string> ResolveProjectPaths(string targetPath)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetPath);
-
-        var fullTargetPath = Path.GetFullPath(targetPath);
-        if (Directory.Exists(fullTargetPath))
-        {
-            return ResolveProjectPathsFromDirectory(fullTargetPath);
-        }
-
-        if (File.Exists(fullTargetPath))
-        {
-            return ResolveProjectPathsFromFile(fullTargetPath);
-        }
-
-        if (IsSupportedTargetFilePath(fullTargetPath))
+        var distinctSelections = selections
+            .DistinctBy(static selection => selection.TargetPath, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (distinctSelections.Length == 0)
         {
             throw new AppResolutionException(
-                $"The specified Sqloom target '{fullTargetPath}' does not exist.");
+                $"The Sqloom target '{fullTargetPath}' did not resolve to any harness project or assembly.");
         }
 
-        throw new AppResolutionException(
-            $"The specified Sqloom target '{fullTargetPath}' is not supported. Use a directory, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
+        return distinctSelections;
     }
 
-    private IReadOnlyCollection<string> ResolveProjectPathsFromDirectory(string directoryPath)
+    private static IReadOnlyList<ResolvedTargetSelection> ResolveTargetSelectionsFromDirectory(string directoryPath)
     {
-        var directProjectPaths = Directory
+        var directProjectSelections = Directory
             .EnumerateFiles(directoryPath, "*.*proj", SearchOption.TopDirectoryOnly)
             .Where(IsSupportedProjectPath)
-            .Select(Path.GetFullPath)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Select(projectPath => ResolvedTargetSelection.Project(
+                directoryPath,
+                Path.GetFullPath(projectPath)))
             .ToArray();
-        if (directProjectPaths.Length == 1)
+        if (directProjectSelections.Length > 0)
         {
-            return directProjectPaths;
+            return directProjectSelections;
         }
 
-        if (directProjectPaths.Length > 1)
+        var solutionSelections = Directory
+            .EnumerateFiles(directoryPath, "*", SearchOption.TopDirectoryOnly)
+            .Where(IsSupportedSolutionPath)
+            .SelectMany(ResolveProjectsFromSolutionContainer)
+            .Select(projectPath => ResolvedTargetSelection.Project(
+                directoryPath,
+                projectPath))
+            .ToArray();
+        if (solutionSelections.Length > 0)
         {
-            return directProjectPaths
-                .Where(_companionProjectLocator.IsSqloomCapableProject)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
+            return solutionSelections;
         }
 
         return Directory
             .EnumerateFiles(directoryPath, "*", SearchOption.TopDirectoryOnly)
-            .Where(IsSupportedSolutionPath)
-            .SelectMany(ResolveProjectsFromSolutionContainer)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(IsSupportedAssemblyPath)
+            .Select(assemblyPath => ResolvedTargetSelection.Assembly(
+                directoryPath,
+                Path.GetFullPath(assemblyPath)))
             .ToArray();
     }
 
-    private IReadOnlyCollection<string> ResolveProjectPathsFromFile(string filePath)
+    private static IReadOnlyList<ResolvedTargetSelection> ResolveTargetSelectionsFromFile(string filePath)
     {
         if (IsSupportedProjectPath(filePath))
         {
-            return [filePath];
+            return [ResolvedTargetSelection.Project(filePath, filePath)];
+        }
+
+        if (IsSupportedAssemblyPath(filePath))
+        {
+            return [ResolvedTargetSelection.Assembly(filePath, filePath)];
         }
 
         if (IsSolutionPath(filePath))
         {
-            return ResolveProjectsFromSolution(filePath);
+            return ResolveProjectsFromSolution(filePath)
+                .Select(projectPath => ResolvedTargetSelection.Project(
+                    filePath,
+                    projectPath))
+                .ToArray();
         }
 
         if (IsSolutionFilterPath(filePath))
         {
-            return ResolveProjectsFromSolutionFilter(filePath);
+            return ResolveProjectsFromSolutionFilter(filePath)
+                .Select(projectPath => ResolvedTargetSelection.Project(
+                    filePath,
+                    projectPath))
+                .ToArray();
         }
 
         throw new AppResolutionException(
-            $"The specified Sqloom target '{filePath}' is not supported. Use a directory, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
+            $"The specified Sqloom target '{filePath}' is not supported. Use a directory, harness assembly, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
     }
 
-    private static string ResolveCandidateProjectPath(
-        string sourceDescription,
-        IReadOnlyCollection<string> candidateProjectPaths,
-        string guidance)
-    {
-        return candidateProjectPaths.Count switch
-        {
-            0 => throw new AppResolutionException(
-                $"The Sqloom {sourceDescription} did not resolve to any Sqloom-capable projects. {guidance}"),
-            1 => candidateProjectPaths.First(),
-            _ => throw new AppResolutionException(
-                $"The Sqloom {sourceDescription} resolved to multiple Sqloom-capable projects: {string.Join(", ", candidateProjectPaths)}. Pass an explicit project path instead."),
-        };
-    }
-
-    private IReadOnlyCollection<string> ResolveProjectsFromSolutionContainer(string path)
+    private static IReadOnlyList<string> ResolveProjectsFromSolutionContainer(string path)
     {
         return IsSolutionPath(path)
             ? ResolveProjectsFromSolution(path)
             : ResolveProjectsFromSolutionFilter(path);
     }
 
-    private IReadOnlyCollection<string> ResolveProjectsFromSolution(string solutionPath)
+    private static IReadOnlyList<string> ResolveProjectsFromSolution(string solutionPath)
     {
         return IsXmlSolutionPath(solutionPath)
             ? ResolveProjectsFromXmlSolution(solutionPath)
             : ResolveProjectsFromClassicSolution(solutionPath);
     }
 
-    private IReadOnlyCollection<string> ResolveProjectsFromClassicSolution(string solutionPath)
+    private static IReadOnlyList<string> ResolveProjectsFromClassicSolution(string solutionPath)
     {
         var solutionDirectory = Path.GetDirectoryName(solutionPath)
             ?? throw new InvalidOperationException($"The solution path '{solutionPath}' has no parent directory.");
@@ -147,12 +137,11 @@ internal sealed class TargetPathResolver
             .Select(static match => match.Groups["path"].Value)
             .Where(IsSupportedProjectPath)
             .Select(relativeProjectPath => Path.GetFullPath(relativeProjectPath, solutionDirectory))
-            .Where(_companionProjectLocator.IsSqloomCapableProject)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
-    private IReadOnlyCollection<string> ResolveProjectsFromXmlSolution(string solutionPath)
+    private static IReadOnlyList<string> ResolveProjectsFromXmlSolution(string solutionPath)
     {
         try
         {
@@ -166,8 +155,7 @@ internal sealed class TargetPathResolver
                 .OfType<string>()
                 .Where(static relativeProjectPath => !string.IsNullOrWhiteSpace(relativeProjectPath))
                 .Where(IsSupportedProjectPath)
-                .Select(relativeProjectPath => Path.GetFullPath(relativeProjectPath!, solutionDirectory))
-                .Where(_companionProjectLocator.IsSqloomCapableProject)
+                .Select(relativeProjectPath => Path.GetFullPath(relativeProjectPath, solutionDirectory))
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToArray();
         }
@@ -182,7 +170,7 @@ internal sealed class TargetPathResolver
         }
     }
 
-    private IReadOnlyCollection<string> ResolveProjectsFromSolutionFilter(string solutionFilterPath)
+    private static IReadOnlyList<string> ResolveProjectsFromSolutionFilter(string solutionFilterPath)
     {
         try
         {
@@ -217,13 +205,9 @@ internal sealed class TargetPathResolver
                     continue;
                 }
 
-                var fullProjectPath = Path.GetFullPath(
+                projectPaths.Add(Path.GetFullPath(
                     relativeProjectPath,
-                    solutionFilterDirectory);
-                if (_companionProjectLocator.IsSqloomCapableProject(fullProjectPath))
-                {
-                    projectPaths.Add(fullProjectPath);
-                }
+                    solutionFilterDirectory));
             }
 
             return projectPaths
@@ -238,10 +222,23 @@ internal sealed class TargetPathResolver
         }
     }
 
+    private static AppResolutionException BuildUnsupportedOrMissingTargetException(string targetPath)
+    {
+        if (IsSupportedTargetFilePath(targetPath))
+        {
+            return new AppResolutionException(
+                $"The specified Sqloom target '{targetPath}' does not exist.");
+        }
+
+        return new AppResolutionException(
+            $"The specified Sqloom target '{targetPath}' is not supported. Use a directory, harness assembly, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
+    }
+
     private static bool IsSupportedTargetFilePath(string path)
     {
         return IsSupportedProjectPath(path)
-            || IsSupportedSolutionPath(path);
+            || IsSupportedSolutionPath(path)
+            || IsSupportedAssemblyPath(path);
     }
 
     private static bool IsSupportedSolutionPath(string path)
@@ -289,5 +286,47 @@ internal sealed class TargetPathResolver
             ".vbproj" => true,
             _ => false,
         };
+    }
+
+    private static bool IsSupportedAssemblyPath(string path)
+    {
+        return Path.GetExtension(path).ToLowerInvariant() switch
+        {
+            ".dll" => true,
+            ".exe" => true,
+            _ => false,
+        };
+    }
+}
+
+internal enum ResolvedTargetKind
+{
+    Project,
+    Assembly,
+}
+
+internal sealed record ResolvedTargetSelection(
+    string RequestedTargetPath,
+    string TargetPath,
+    ResolvedTargetKind Kind)
+{
+    public static ResolvedTargetSelection Project(
+        string requestedTargetPath,
+        string projectPath)
+    {
+        return new ResolvedTargetSelection(
+            requestedTargetPath,
+            projectPath,
+            ResolvedTargetKind.Project);
+    }
+
+    public static ResolvedTargetSelection Assembly(
+        string requestedTargetPath,
+        string assemblyPath)
+    {
+        return new ResolvedTargetSelection(
+            requestedTargetPath,
+            assemblyPath,
+            ResolvedTargetKind.Assembly);
     }
 }

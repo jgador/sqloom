@@ -1,6 +1,6 @@
 using Sqloom.Core.Execution;
 
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 internal sealed class TestAppReplayDatabaseBootstrapResult
 {

@@ -38,10 +38,10 @@ public sealed class HostApplicationTests
     [Fact]
     public async Task RunAsync_WithTuneVerb_InvokesMatchingHandler()
     {
-        var appIntegration = new MultipleTestAppIntegrationA();
+        var applicationHarness = new MultipleTestApplicationA();
         StubCommandHandler handler = new(HostCommandKind.Tune, 23);
         HostApplication application = new(
-            appIntegration,
+            applicationHarness,
             new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
@@ -60,7 +60,7 @@ public sealed class HostApplicationTests
 
         Assert.Equal(23, result);
         Assert.NotNull(handler.LastContext);
-        Assert.Same(appIntegration, handler.LastContext!.AppIntegration);
+        Assert.Same(applicationHarness, handler.LastContext!.Application);
         Assert.Collection(
             handler.LastContext!.Arguments,
             item => Assert.Equal("tune", item),
@@ -92,12 +92,12 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithReplayVerb_UsesBoundIntegrationAsOnlyReplayTarget()
+    public async Task RunAsync_WithReplayVerb_UsesBoundApplication()
     {
-        var appIntegration = new MultipleTestAppIntegrationA();
+        var applicationHarness = new MultipleTestApplicationA();
         StubCommandHandler handler = new(HostCommandKind.Replay, 29);
         HostApplication application = new(
-            appIntegration,
+            applicationHarness,
             new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
@@ -111,10 +111,7 @@ public sealed class HostApplicationTests
 
         Assert.Equal(29, result);
         Assert.NotNull(handler.LastContext);
-        Assert.Null(handler.LastContext!.AppIntegration);
-        Assert.Collection(
-            handler.LastContext.AppIntegrations,
-            item => Assert.Same(appIntegration, item));
+        Assert.Same(applicationHarness, handler.LastContext!.Application);
     }
 
     [Fact]

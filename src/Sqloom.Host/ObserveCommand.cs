@@ -22,10 +22,13 @@ internal sealed class ObserveCommand
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
-        var appIntegration = context.AppIntegration;
+        var descriptor = context.Application?.Describe(new Sqloom.Testing.SqloomApplicationContext
+        {
+            CurrentDirectory = context.CurrentDirectory,
+        });
         context.ConsoleWriter.PrintBanner(
-            appIntegration?.AppName,
-            HostApplication.GetProjectNames(appIntegration));
+            descriptor?.Name,
+            HostApplication.GetProjectNames(context.Application));
 
         var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments);
         if (string.IsNullOrWhiteSpace(readOnlyConnectionString))
@@ -37,7 +40,7 @@ internal sealed class ObserveCommand
 
         var arguments = _argumentParser.Parse(
             context.Arguments,
-            appIntegration,
+            descriptor,
             readOnlyConnectionString,
             context.CurrentDirectory);
         arguments.DebugWriter = context.DebugWriter;

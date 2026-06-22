@@ -17,7 +17,9 @@ public sealed class EndpointReplayRunnerOptions
 
     public required ReplayProfile ReplayProfile { get; init; }
 
-    public required IReplayHostFactory ReplayHostFactory { get; init; }
+    public IReplayHostFactory? ReplayHostFactory { get; init; }
+
+    public IReplayHost? ReplayHost { get; init; }
 
     public ReplayLaunchOptions ReplayLaunchOptions { get; init; } = new();
 

@@ -2,12 +2,12 @@
   <PropertyGroup>
     <OutputType>Library</OutputType>
     <TargetFramework>net10.0</TargetFramework>
-    <AssemblyName>Sqloom.TestApp.IntegrationTests</AssemblyName>
-    <RootNamespace>Sqloom.TestApp.IntegrationTests</RootNamespace>
+    <AssemblyName>Sqloom.TestApp.Harness</AssemblyName>
+    <RootNamespace>Sqloom.TestApp.Harness</RootNamespace>
     <IsPackable>false</IsPackable>
+    <IsTestProject>false</IsTestProject>
+    <UseMicrosoftTestingPlatformRunner>false</UseMicrosoftTestingPlatformRunner>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
-    <SqloomAppIntegrationType>Sqloom.TestApp.IntegrationTests.TestAppIntegration</SqloomAppIntegrationType>
-    <SqloomTargetProject>..\Sqloom.TestApp\Sqloom.TestApp.csproj</SqloomTargetProject>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,8 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj" />
-    <ProjectReference Include="..\..\src\Sqloom.Core\Sqloom.Core.csproj" />
     <ProjectReference Include="..\..\src\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
+    <ProjectReference Include="..\..\src\Sqloom.Testing\Sqloom.Testing.csproj" />
     <ProjectReference Include="..\Sqloom.TestApp\Sqloom.TestApp.csproj" />
   </ItemGroup>
 </Project>

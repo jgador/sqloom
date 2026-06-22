@@ -9,11 +9,10 @@ using System.Threading.Tasks;
 namespace Sqloom.Host;
 
 /// <summary>
-/// Resolves an app project and its companion Sqloom integration project.
+/// Resolves harness target projects and assemblies into loadable assembly paths.
 /// </summary>
 internal sealed class AppProjectResolver
 {
-    private readonly CompanionProjectLocator _companionProjectLocator = new();
     private readonly TargetPathResolver _targetPathResolver = new();
 
     public string ResolveAssemblyPath(
@@ -21,11 +20,15 @@ internal sealed class AppProjectResolver
         bool noBuild,
         string dotNetCommand)
     {
-        var projectSelection = ResolveProjectSelection(targetPath);
-        return ResolveAssemblyPath(
-            projectSelection,
+        var assemblySelections = ResolveAssemblySelections(
+            targetPath,
             noBuild,
             dotNetCommand);
+        return assemblySelections.Count switch
+        {
+            1 => assemblySelections[0].AssemblyPath,
+            _ => throw BuildMultipleAssemblySelectionException(targetPath, assemblySelections),
+        };
     }
 
     internal IReadOnlyList<ResolvedAssemblySelection> ResolveAssemblySelections(
@@ -33,107 +36,50 @@ internal sealed class AppProjectResolver
         bool noBuild,
         string dotNetCommand)
     {
-        return ResolveProjectSelections(targetPath)
-            .Select(projectSelection => new ResolvedAssemblySelection(
-                projectSelection,
+        return _targetPathResolver
+            .ResolveTargetSelections(targetPath)
+            .Select(selection => new ResolvedAssemblySelection(
+                selection,
                 ResolveAssemblyPath(
-                    projectSelection,
+                    selection,
                     noBuild,
                     dotNetCommand)))
+            .DistinctBy(static selection => selection.AssemblyPath, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
 
-    internal ResolvedProjectSelection ResolveProjectSelection(string targetPath)
-    {
-        var fullTargetPath = Path.GetFullPath(targetPath);
-        var projectSelections = ResolveProjectSelections(fullTargetPath);
-        return projectSelections.Count switch
-        {
-            1 => projectSelections[0],
-            _ => throw BuildMultipleProjectSelectionException(fullTargetPath, projectSelections),
-        };
-    }
-
-    internal IReadOnlyList<ResolvedProjectSelection> ResolveProjectSelections(string targetPath)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetPath);
-
-        var fullTargetPath = Path.GetFullPath(targetPath);
-        var fullProjectPaths = _targetPathResolver.ResolveProjectPaths(fullTargetPath);
-        Dictionary<string, ResolvedProjectSelection> projectSelectionsByIntegrationPath = new(StringComparer.OrdinalIgnoreCase);
-
-        foreach (var fullProjectPath in fullProjectPaths)
-        {
-            var validatedProjectPath = NormalizeAndValidateProjectPath(
-                fullProjectPath,
-                "app project");
-            var projectDirectory = Path.GetDirectoryName(validatedProjectPath)
-                ?? throw new InvalidOperationException($"The app project path '{validatedProjectPath}' has no parent directory.");
-            var integrationProjectPath = ResolveIntegrationProjectPath(
-                _companionProjectLocator,
-                validatedProjectPath,
-                projectDirectory);
-            var projectSelection = new ResolvedProjectSelection(
-                fullTargetPath,
-                validatedProjectPath,
-                integrationProjectPath);
-
-            if (projectSelectionsByIntegrationPath.TryGetValue(integrationProjectPath, out var existingSelection))
-            {
-                if (!existingSelection.UsesCompanionIntegrationProject
-                    && projectSelection.UsesCompanionIntegrationProject)
-                {
-                    projectSelectionsByIntegrationPath[integrationProjectPath] = projectSelection;
-                }
-
-                continue;
-            }
-
-            projectSelectionsByIntegrationPath.Add(
-                integrationProjectPath,
-                projectSelection);
-        }
-
-        var projectSelections = projectSelectionsByIntegrationPath.Values.ToList();
-
-        if (projectSelections.Count == 0)
-        {
-            throw new AppResolutionException(
-                $"The Sqloom target '{fullTargetPath}' did not resolve to any Sqloom-capable projects. Use an explicit project path, place SqloomAppIntegrationType on the intended project, or add a companion integration project that points back through SqloomTargetProject.");
-        }
-
-        return projectSelections;
-    }
-
-    private static AppResolutionException BuildMultipleProjectSelectionException(
+    private static AppResolutionException BuildMultipleAssemblySelectionException(
         string targetPath,
-        IReadOnlyCollection<ResolvedProjectSelection> projectSelections)
+        IReadOnlyCollection<ResolvedAssemblySelection> assemblySelections)
     {
-        var selectionDescriptions = projectSelections
-            .Select(static projectSelection => projectSelection.UsesCompanionIntegrationProject
-                ? $"{projectSelection.TargetProjectPath} -> {projectSelection.IntegrationProjectPath}"
-                : projectSelection.TargetProjectPath);
         return new AppResolutionException(
-            $"The Sqloom target '{targetPath}' resolved to multiple distinct app integrations: {string.Join(", ", selectionDescriptions)}. Pass an explicit project path instead.");
+            $"The Sqloom target '{Path.GetFullPath(targetPath)}' resolved to multiple harness assembly candidates: {string.Join(", ", assemblySelections.Select(static selection => selection.AssemblyPath))}. Pass a narrower target in v1.");
     }
 
     private string ResolveAssemblyPath(
-        ResolvedProjectSelection projectSelection,
+        ResolvedTargetSelection targetSelection,
         bool noBuild,
         string dotNetCommand)
     {
-        var effectiveProjectPath = projectSelection.IntegrationProjectPath;
-        var projectDirectory = Path.GetDirectoryName(effectiveProjectPath)
-            ?? throw new InvalidOperationException($"The app project path '{effectiveProjectPath}' has no parent directory.");
+        if (targetSelection.Kind == ResolvedTargetKind.Assembly)
+        {
+            return NormalizeAndValidateAssemblyPath(targetSelection.TargetPath);
+        }
+
+        var projectPath = NormalizeAndValidateProjectPath(
+            targetSelection.TargetPath,
+            "harness project");
+        var projectDirectory = Path.GetDirectoryName(projectPath)
+            ?? throw new InvalidOperationException($"The harness project path '{projectPath}' has no parent directory.");
         var resolvedAssemblyPath = ResolveTargetPath(
-            effectiveProjectPath,
+            projectPath,
             projectDirectory,
             dotNetCommand);
 
         if (!noBuild)
         {
             BuildProject(
-                effectiveProjectPath,
+                projectPath,
                 projectDirectory,
                 dotNetCommand);
         }
@@ -141,8 +87,8 @@ internal sealed class AppProjectResolver
         if (!File.Exists(resolvedAssemblyPath))
         {
             var missingArtifactMessage = noBuild
-                ? BuildMissingNoBuildMessage(projectSelection, resolvedAssemblyPath)
-                : BuildMissingBuildOutputMessage(projectSelection, resolvedAssemblyPath);
+                ? $"The Sqloom harness project '{projectPath}' resolved to '{resolvedAssemblyPath}', but that assembly does not exist. Remove --no-build or build the project first."
+                : $"The Sqloom harness project '{projectPath}' resolved to '{resolvedAssemblyPath}', but that assembly was not found after the build completed.";
             throw new AppResolutionException(missingArtifactMessage);
         }
 
@@ -164,7 +110,7 @@ internal sealed class AppProjectResolver
         if (result.ExitCode != 0)
         {
             throw new AppResolutionException(
-                $"Failed to resolve the build output for Sqloom app project '{projectPath}'. {FormatCommandOutput(dotNetCommand, result)}");
+                $"Failed to resolve the build output for Sqloom harness project '{projectPath}'. {FormatCommandOutput(dotNetCommand, result)}");
         }
 
         var targetPath = result.StandardOutput
@@ -178,28 +124,11 @@ internal sealed class AppProjectResolver
         if (string.IsNullOrWhiteSpace(targetPath))
         {
             throw new AppResolutionException(
-                $"Failed to resolve the build output for Sqloom app project '{projectPath}'. dotnet msbuild did not report a TargetPath.");
+                $"Failed to resolve the build output for Sqloom harness project '{projectPath}'. dotnet msbuild did not report a TargetPath.");
         }
 
         return Path.GetFullPath(
             targetPath,
-            workingDirectory);
-    }
-
-    private static string ResolveIntegrationProjectPath(
-        CompanionProjectLocator companionProjectLocator,
-        string projectPath,
-        string workingDirectory)
-    {
-        var companionProjectPath = companionProjectLocator.TryResolveCompanionProjectPath(projectPath);
-        if (string.IsNullOrWhiteSpace(companionProjectPath))
-        {
-            return projectPath;
-        }
-
-        return NormalizeAndValidateProjectPath(
-            companionProjectPath,
-            "Sqloom integration project",
             workingDirectory);
     }
 
@@ -219,7 +148,7 @@ internal sealed class AppProjectResolver
         if (result.ExitCode != 0)
         {
             throw new AppResolutionException(
-                $"Failed to build Sqloom app project '{projectPath}'. {FormatCommandOutput(dotNetCommand, result)}");
+                $"Failed to build Sqloom harness project '{projectPath}'. {FormatCommandOutput(dotNetCommand, result)}");
         }
     }
 
@@ -253,7 +182,7 @@ internal sealed class AppProjectResolver
             if (!process.Start())
             {
                 throw new AppResolutionException(
-                    $"Failed to start '{dotNetCommand}' while resolving a Sqloom app project.");
+                    $"Failed to start '{dotNetCommand}' while resolving a Sqloom harness project.");
             }
         }
         catch (Exception exception) when (
@@ -261,7 +190,7 @@ internal sealed class AppProjectResolver
                 or Win32Exception)
         {
             throw new AppResolutionException(
-                $"Failed to start '{dotNetCommand}' while resolving a Sqloom app project: {exception.Message}",
+                $"Failed to start '{dotNetCommand}' while resolving a Sqloom harness project: {exception.Message}",
                 exception);
         }
 
@@ -297,12 +226,9 @@ internal sealed class AppProjectResolver
 
     private static string NormalizeAndValidateProjectPath(
         string projectPath,
-        string projectDescription,
-        string? basePath = null)
+        string projectDescription)
     {
-        var fullProjectPath = basePath is null
-            ? Path.GetFullPath(projectPath)
-            : Path.GetFullPath(projectPath, basePath);
+        var fullProjectPath = Path.GetFullPath(projectPath);
         if (!File.Exists(fullProjectPath))
         {
             throw new AppResolutionException(
@@ -318,52 +244,22 @@ internal sealed class AppProjectResolver
         return fullProjectPath;
     }
 
-    private static string BuildMissingNoBuildMessage(
-        ResolvedProjectSelection projectSelection,
-        string targetPath)
+    private static string NormalizeAndValidateAssemblyPath(string assemblyPath)
     {
-        if (!projectSelection.UsesResolvedTargetProject
-            && !projectSelection.UsesCompanionIntegrationProject)
+        var fullAssemblyPath = Path.GetFullPath(assemblyPath);
+        if (!File.Exists(fullAssemblyPath))
         {
-            return $"The Sqloom app project '{projectSelection.TargetProjectPath}' resolved to '{targetPath}', but that assembly does not exist. Remove --no-build or build the project first.";
+            throw new AppResolutionException(
+                $"The specified harness assembly '{fullAssemblyPath}' does not exist.");
         }
 
-        if (projectSelection.UsesResolvedTargetProject
-            && !projectSelection.UsesCompanionIntegrationProject)
+        if (!IsSupportedAssemblyPath(fullAssemblyPath))
         {
-            return $"The Sqloom target '{projectSelection.RequestedTargetPath}' resolved to app project '{projectSelection.TargetProjectPath}', but the resolved assembly '{targetPath}' does not exist. Remove --no-build or build the project first.";
+            throw new AppResolutionException(
+                $"The specified harness assembly '{fullAssemblyPath}' is not supported. Use a .dll or .exe file.");
         }
 
-        if (!projectSelection.UsesResolvedTargetProject)
-        {
-            return $"The Sqloom target project '{projectSelection.TargetProjectPath}' maps to companion integration project '{projectSelection.IntegrationProjectPath}', but the resolved assembly '{targetPath}' does not exist. Remove --no-build or build the companion integration project first.";
-        }
-
-        return $"The Sqloom target '{projectSelection.RequestedTargetPath}' resolved to app project '{projectSelection.TargetProjectPath}' and companion integration project '{projectSelection.IntegrationProjectPath}', but the resolved assembly '{targetPath}' does not exist. Remove --no-build or build the companion integration project first.";
-    }
-
-    private static string BuildMissingBuildOutputMessage(
-        ResolvedProjectSelection projectSelection,
-        string targetPath)
-    {
-        if (!projectSelection.UsesResolvedTargetProject
-            && !projectSelection.UsesCompanionIntegrationProject)
-        {
-            return $"The Sqloom app project '{projectSelection.TargetProjectPath}' resolved to '{targetPath}', but that assembly was not found after the build completed.";
-        }
-
-        if (projectSelection.UsesResolvedTargetProject
-            && !projectSelection.UsesCompanionIntegrationProject)
-        {
-            return $"The Sqloom target '{projectSelection.RequestedTargetPath}' resolved to app project '{projectSelection.TargetProjectPath}', but the resolved assembly '{targetPath}' was not found after the build completed.";
-        }
-
-        if (!projectSelection.UsesResolvedTargetProject)
-        {
-            return $"The Sqloom target project '{projectSelection.TargetProjectPath}' maps to companion integration project '{projectSelection.IntegrationProjectPath}', but the resolved assembly '{targetPath}' was not found after the build completed.";
-        }
-
-        return $"The Sqloom target '{projectSelection.RequestedTargetPath}' resolved to app project '{projectSelection.TargetProjectPath}' and companion integration project '{projectSelection.IntegrationProjectPath}', but the resolved assembly '{targetPath}' was not found after the build completed.";
+        return fullAssemblyPath;
     }
 
     private static bool IsSupportedProjectPath(string projectPath)
@@ -377,30 +273,22 @@ internal sealed class AppProjectResolver
         };
     }
 
+    private static bool IsSupportedAssemblyPath(string assemblyPath)
+    {
+        return Path.GetExtension(assemblyPath).ToLowerInvariant() switch
+        {
+            ".dll" => true,
+            ".exe" => true,
+            _ => false,
+        };
+    }
+
     private sealed record DotNetCommandResult(
         int ExitCode,
         string StandardOutput,
         string StandardError);
 }
 
-internal sealed record ResolvedProjectSelection(
-    string RequestedTargetPath,
-    string TargetProjectPath,
-    string IntegrationProjectPath)
-{
-    public bool UsesResolvedTargetProject =>
-        !string.Equals(
-            RequestedTargetPath,
-            TargetProjectPath,
-            StringComparison.OrdinalIgnoreCase);
-
-    public bool UsesCompanionIntegrationProject =>
-        !string.Equals(
-            TargetProjectPath,
-            IntegrationProjectPath,
-            StringComparison.OrdinalIgnoreCase);
-}
-
 internal sealed record ResolvedAssemblySelection(
-    ResolvedProjectSelection ProjectSelection,
+    ResolvedTargetSelection TargetSelection,
     string AssemblyPath);

@@ -1,13 +1,13 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
 
 /// <summary>
-/// Exercises the Sqloom host when it resolves app integrations through project builds.
+/// Exercises the Sqloom host when it resolves app harnesses through project builds.
 /// </summary>
 [Collection("ConsoleHostRuntime")]
 public sealed class HostProcessLoadingTests
@@ -18,7 +18,7 @@ public sealed class HostProcessLoadingTests
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
-        const string targetProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string targetProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var result = await RunDotNetAsync(
             repositoryRoot,
@@ -53,7 +53,7 @@ public sealed class HostProcessLoadingTests
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
-        const string targetProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string targetProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var result = await RunDotNetAsync(
             repositoryRoot,

@@ -35,25 +35,25 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("  --help");
         Console.WriteLine("  --version");
         Console.WriteLine("  [--debug] observe [<path>] --read-only-connection-string <connection-string> [options]");
-        Console.WriteLine("  [--debug] tune <path> --read-only-connection-string <connection-string> [options]");
+        Console.WriteLine("  [--debug] tune <path> [--read-only-connection-string <connection-string>] [options]");
         Console.WriteLine("  [--debug] replay <path> [options]");
         Console.WriteLine("  [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [options]");
         Console.WriteLine("  [--debug] advise --replay-artifact-dir <path> [options]");
         Console.WriteLine(
             "  [--debug] observe [<path>] [--dotnet-command <command>] [--no-build] --read-only-connection-string <connection-string> [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--json-output-file <path>] [--app-only] [--show-classification]");
-        Console.WriteLine("    --app-only implies classification display and filters the console view to App-classified queries when the selected app integration supplies Query Store profile data.");
+        Console.WriteLine("    --app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.");
         Console.WriteLine(
-            "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] --read-only-connection-string <connection-string> [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] --model-provider openai --openai-api-key <key> --sqlserver-schema-file <path> [--openai-model <id>] [--openai-base-url <url>]");
-        Console.WriteLine("    Tune runs observe -> replay -> correlate -> advise in one command. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
+            "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] [--read-only-connection-string <connection-string>] [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] --model-provider openai --openai-api-key <key> [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
+        Console.WriteLine("    Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
+        Console.WriteLine("    Tune uses --read-only-connection-string and --sqlserver-schema-file when supplied, otherwise it uses the harness session connection string and descriptor schema path.");
         Console.WriteLine("    When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.");
         Console.WriteLine(
             "  [--debug] replay <path> [--dotnet-command <command>] [--no-build] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"]");
-        Console.WriteLine("    Standalone replay requires an explicit target path after the replay verb. Supported target paths are project files, solution files, solution filters, and directories.");
-        Console.WriteLine("    Sqloom resolves that target to one or more distinct app integrations, resolves each project's TargetPath through dotnet msbuild, and builds it unless --no-build is supplied.");
+        Console.WriteLine("    Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.");
+        Console.WriteLine("    Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.");
         Console.WriteLine("    Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.");
-        Console.WriteLine("    When a solution, solution filter, or directory resolves to multiple distinct app integrations, replay runs each target in order. If --artifact-dir is supplied, Sqloom writes one per-app subdirectory under that root.");
-        Console.WriteLine("    SQL Server-backed replay harnesses can require an app-owned DACPAC path through --sqlserver-dacpac-file.");
-        Console.WriteLine("    App-owned SQL replay harnesses can also apply a post-DACPAC seed script through --sqlserver-seed-sql-file, which requires --sqlserver-dacpac-file.");
+        Console.WriteLine("    If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.");
+        Console.WriteLine("    SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; --sqlserver-dacpac-file and --sqlserver-seed-sql-file override them.");
         Console.WriteLine("    Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".");
         Console.WriteLine("    Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.");
         Console.WriteLine(
@@ -73,12 +73,12 @@ internal sealed class HostConsoleWriter
 
     public void PrintNoCommandHint()
     {
-        Console.WriteLine("Use tune <path> to run the full observe, replay, correlate, and advise workflow in one command.");
+        Console.WriteLine("Use tune <path> to start the harness and run the full replay, observe, correlate, and advise workflow in one command.");
         Console.WriteLine("Use observe to capture a readonly Azure SQL Query Store snapshot.");
         Console.WriteLine("Use replay <path> to execute OpenAPI-driven in-process ASP.NET Core replays explicitly.");
-        Console.WriteLine("Standalone replay accepts a project, solution, solution filter, or directory path immediately after the replay verb.");
-        Console.WriteLine("SQL Server-backed replay harnesses can require an app-owned DACPAC path through --sqlserver-dacpac-file <path>.");
-        Console.WriteLine("Some app-owned SQL replay harnesses can also apply a post-DACPAC seed script through --sqlserver-seed-sql-file <path>.");
+        Console.WriteLine("Standalone replay accepts a harness project, harness assembly, solution, solution filter, or directory path immediately after the replay verb.");
+        Console.WriteLine("Sqloom resolves the target to exactly one public non-abstract ISqloomApplication implementation.");
+        Console.WriteLine("SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; CLI paths override them.");
         Console.WriteLine("Replay target selection uses --target \"METHOD /path/template\" when you need one exact operation.");
         Console.WriteLine("Use correlate to map replay SQL back to captured Query Store rows.");
         Console.WriteLine("Use advise to turn a correlation artifact into operation-level tuning guidance.");

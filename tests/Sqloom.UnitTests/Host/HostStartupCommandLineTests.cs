@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
 using Sqloom.Tests;
 using Xunit;
 
@@ -16,7 +16,7 @@ public sealed class HostStartupCommandLineTests
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -46,7 +46,7 @@ public sealed class HostStartupCommandLineTests
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -104,7 +104,7 @@ public sealed class HostStartupCommandLineTests
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -134,7 +134,7 @@ public sealed class HostStartupCommandLineTests
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -159,8 +159,8 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Theory]
-    [InlineData(@".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj")]
-    [InlineData(@".\tests\Sqloom.TestApp")]
+    [InlineData(@".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj")]
+    [InlineData(@".\tests\Sqloom.TestApp.Harness")]
     public void Parse_WithLeadingTargetPath_ThrowsWhenStageVerbIsMissing(string relativeTargetPath)
     {
         HostStartupCommandLine commandLine = new();
@@ -192,7 +192,7 @@ public sealed class HostStartupCommandLineTests
                 [
                     "replay",
                     switchName,
-                    @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj",
                 ],
                 currentDirectory));
 
@@ -210,7 +210,7 @@ public sealed class HostStartupCommandLineTests
             () => commandLine.Parse(
                 [
                     "replay",
-                    @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj",
                     "--dotnet-command",
                 ],
                 currentDirectory));
@@ -247,7 +247,7 @@ public sealed class HostStartupCommandLineTests
             () => commandLine.Parse(
                 [
                     "benchmark",
-                    @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj",
                 ],
                 currentDirectory));
 

@@ -5,7 +5,7 @@ using Microsoft.Data.SqlClient;
 using Sqloom.Core.Execution;
 using Testcontainers.MsSql;
 
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 /// <summary>
 /// Bootstraps the disposable SQL Server database used for the sample Sqloom replay harness.

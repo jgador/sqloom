@@ -9,3 +9,6 @@
 
 /.vs/
 /TestResults/
+
+**/bin/
+**/obj/

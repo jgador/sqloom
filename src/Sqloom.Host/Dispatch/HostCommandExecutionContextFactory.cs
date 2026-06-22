@@ -1,6 +1,5 @@
 using System;
-using System.Collections.Generic;
-using Sqloom.Core.Contracts;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -19,8 +18,7 @@ internal sealed class HostCommandExecutionContextFactory
     public CommandExecutionContext Create(
         HostStartupOptions startupOptions,
         string currentDirectory,
-        IAppIntegration? appIntegration = null,
-        IReadOnlyList<IAppIntegration>? appIntegrations = null)
+        ISqloomApplication? application = null)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
         ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
@@ -34,8 +32,7 @@ internal sealed class HostCommandExecutionContextFactory
             DebugWriter = startupOptions.DebugEnabled
                 ? new HostDebugWriter(isEnabled: true)
                 : HostDebugWriter.Disabled,
-            AppIntegration = appIntegration,
-            AppIntegrations = appIntegrations ?? Array.Empty<IAppIntegration>(),
+            Application = application,
         };
     }
 }

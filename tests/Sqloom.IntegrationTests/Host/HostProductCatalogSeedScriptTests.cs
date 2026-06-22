@@ -9,7 +9,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sqloom.Core.Execution;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
 using Xunit;
 using SqloomTestApp = global::Sqloom.TestApp;
 

@@ -1,6 +1,6 @@
 using System;
+using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
 using Sqloom.Tests;
 using Xunit;
@@ -8,160 +8,32 @@ using Xunit;
 namespace Sqloom.Host.Tests;
 
 /// <summary>
-/// Exercises Sqloom app resolver.
+/// Exercises Sqloom harness resolution.
 /// </summary>
 public sealed class AppResolverTests
 {
     [Fact]
-    public void ResolveProjectSelection_UsesCompanionIntegrationProjectForSqloomTestApp()
+    public void Resolve_LoadsApplicationFromExplicitHarnessProjectPathWithoutBuild()
     {
-        AppProjectResolver resolver = new();
-
-        var projectSelection = resolver.ResolveProjectSelection(SqloomRepositoryPaths.GetTestAppProjectPath());
-
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppProjectPath(),
-            projectSelection.RequestedTargetPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppProjectPath(),
-            projectSelection.TargetProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppIntegrationProjectPath(),
-            projectSelection.IntegrationProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.False(projectSelection.UsesResolvedTargetProject);
-        Assert.True(projectSelection.UsesCompanionIntegrationProject);
-    }
-
-    [Fact]
-    public void ResolveProjectSelection_UsesProjectFromDirectoryTarget()
-    {
-        AppProjectResolver resolver = new();
-        var targetDirectoryPath = SqloomRepositoryPaths.GetTestAppProjectDirectory();
-
-        var projectSelection = resolver.ResolveProjectSelection(targetDirectoryPath);
-
-        Assert.Equal(
-            targetDirectoryPath,
-            projectSelection.RequestedTargetPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppProjectPath(),
-            projectSelection.TargetProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppIntegrationProjectPath(),
-            projectSelection.IntegrationProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.True(projectSelection.UsesResolvedTargetProject);
-        Assert.True(projectSelection.UsesCompanionIntegrationProject);
-    }
-
-    [Fact]
-    public void ResolveProjectSelection_UsesSqloomCapableProjectFromRepositoryRootDirectory()
-    {
-        AppProjectResolver resolver = new();
-        var targetDirectoryPath = SqloomRepositoryPaths.GetRepositoryRoot();
-
-        var projectSelection = resolver.ResolveProjectSelection(targetDirectoryPath);
-
-        Assert.Equal(
-            targetDirectoryPath,
-            projectSelection.RequestedTargetPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppProjectPath(),
-            projectSelection.TargetProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppIntegrationProjectPath(),
-            projectSelection.IntegrationProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.True(projectSelection.UsesResolvedTargetProject);
-        Assert.True(projectSelection.UsesCompanionIntegrationProject);
-    }
-
-    [Fact]
-    public void ResolveProjectSelection_UsesSqloomCapableProjectFromSolutionTarget()
-    {
-        AppProjectResolver resolver = new();
-        var solutionPath = SqloomRepositoryPaths.GetSolutionPath();
-
-        var projectSelection = resolver.ResolveProjectSelection(solutionPath);
-
-        Assert.Equal(
-            solutionPath,
-            projectSelection.RequestedTargetPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppProjectPath(),
-            projectSelection.TargetProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppIntegrationProjectPath(),
-            projectSelection.IntegrationProjectPath,
-            StringComparer.OrdinalIgnoreCase);
-        Assert.True(projectSelection.UsesResolvedTargetProject);
-        Assert.True(projectSelection.UsesCompanionIntegrationProject);
-    }
-
-    [Fact]
-    public void ResolveProjectSelection_ThrowsWhenDirectoryContainsMultipleSqloomCapableProjects()
-    {
-        AppProjectResolver resolver = new();
-        var directoryPath = Path.Combine(
-            Path.GetTempPath(),
-            "sqloom-tests",
-            Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(directoryPath);
-
-        try
+        AppResolver resolver = new();
+        HostStartupOptions startupOptions = new()
         {
-            var projectAPath = Path.Combine(directoryPath, "AppA.csproj");
-            var projectBPath = Path.Combine(directoryPath, "AppB.csproj");
-            File.WriteAllText(
-                projectAPath,
-                """
-                <Project Sdk="Microsoft.NET.Sdk">
-                  <PropertyGroup>
-                    <TargetFramework>net10.0</TargetFramework>
-                    <SqloomAppIntegrationType>Example.AppAIntegration</SqloomAppIntegrationType>
-                  </PropertyGroup>
-                </Project>
-                """);
-            File.WriteAllText(
-                projectBPath,
-                """
-                <Project Sdk="Microsoft.NET.Sdk">
-                  <PropertyGroup>
-                    <TargetFramework>net10.0</TargetFramework>
-                    <SqloomAppIntegrationType>Example.AppBIntegration</SqloomAppIntegrationType>
-                  </PropertyGroup>
-                </Project>
-                """);
+            AppTargetPath = SqloomRepositoryPaths.GetTestAppApplicationProjectPath(),
+            NoBuild = true,
+        };
 
-            var exception = Assert.Throws<AppResolutionException>(
-                () => resolver.ResolveProjectSelection(directoryPath));
-
-            Assert.Contains("multiple distinct app integrations", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("AppA.csproj", exception.Message, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("AppB.csproj", exception.Message, StringComparison.OrdinalIgnoreCase);
-        }
-        finally
+        var application = resolver.Resolve(startupOptions);
+        var descriptor = application.Describe(new Sqloom.Testing.SqloomApplicationContext
         {
-            if (Directory.Exists(directoryPath))
-            {
-                Directory.Delete(
-                    directoryPath,
-                    recursive: true);
-            }
-        }
+            CurrentDirectory = SqloomRepositoryPaths.GetRepositoryRoot(),
+        });
+
+        Assert.Equal("Sqloom Test App", descriptor.Name);
+        Assert.Equal("Sqloom.TestApp.Harness.TestAppApplication", application.GetType().FullName);
     }
 
     [Fact]
-    public void Resolve_LoadsAppIntegrationFromExplicitProjectPathWithoutBuild()
+    public void Resolve_ThrowsWhenTargetDoesNotContainSqloomApplication()
     {
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
@@ -170,10 +42,136 @@ public sealed class AppResolverTests
             NoBuild = true,
         };
 
-        var appIntegration = resolver.Resolve(startupOptions);
+        var exception = Assert.Throws<AppResolutionException>(
+            () => resolver.Resolve(startupOptions));
 
-        Assert.Equal("Sqloom Test App", appIntegration.AppName);
-        Assert.Equal("Sqloom.TestApp.IntegrationTests.TestAppIntegration", appIntegration.GetType().FullName);
+        Assert.Contains("does not contain an ISqloomApplication implementation", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Resolve_ThrowsWhenHarnessProjectContainsMultipleApplications()
+    {
+        var tempDirectoryPath = CreateTempDirectory();
+
+        try
+        {
+            var projectPath = WriteHarnessProject(
+                tempDirectoryPath,
+                """
+                public sealed class FirstHarnessApplication : ISqloomApplication
+                {
+                    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+                    {
+                        return new SqloomApplicationDescriptor
+                        {
+                            Name = "First",
+                            ReplayProfile = new ReplayProfile
+                            {
+                                DefaultOpenApiDocumentPath = "openapi.json",
+                            },
+                        };
+                    }
+
+                    public ValueTask<ISqloomApplicationSession> StartAsync(
+                        SqloomApplicationContext context,
+                        CancellationToken cancellationToken = default)
+                    {
+                        throw new NotSupportedException();
+                    }
+                }
+
+                public sealed class SecondHarnessApplication : ISqloomApplication
+                {
+                    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+                    {
+                        return new SqloomApplicationDescriptor
+                        {
+                            Name = "Second",
+                            ReplayProfile = new ReplayProfile
+                            {
+                                DefaultOpenApiDocumentPath = "openapi.json",
+                            },
+                        };
+                    }
+
+                    public ValueTask<ISqloomApplicationSession> StartAsync(
+                        SqloomApplicationContext context,
+                        CancellationToken cancellationToken = default)
+                    {
+                        throw new NotSupportedException();
+                    }
+                }
+                """);
+            BuildProject(projectPath, tempDirectoryPath);
+
+            AppResolver resolver = new();
+            HostStartupOptions startupOptions = new()
+            {
+                AppTargetPath = projectPath,
+                NoBuild = true,
+            };
+
+            var exception = Assert.Throws<AppResolutionException>(
+                () => resolver.Resolve(startupOptions));
+
+            Assert.Contains("multiple public ISqloomApplication implementations", exception.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("FirstHarnessApplication", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("SecondHarnessApplication", exception.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDirectoryPath);
+        }
+    }
+
+    [Fact]
+    public void Resolve_DeduplicatesRepeatedProjectsFromSolutionFilter()
+    {
+        AppResolver resolver = new();
+        var tempDirectoryPath = CreateTempDirectory();
+
+        try
+        {
+            var solutionFilterPath = WriteSolutionFilter(
+                tempDirectoryPath,
+                SqloomRepositoryPaths.GetTestAppApplicationProjectPath(),
+                SqloomRepositoryPaths.GetTestAppApplicationProjectPath());
+            HostStartupOptions startupOptions = new()
+            {
+                AppTargetPath = solutionFilterPath,
+                NoBuild = true,
+            };
+
+            var application = resolver.Resolve(startupOptions);
+            var descriptor = application.Describe(new Sqloom.Testing.SqloomApplicationContext
+            {
+                CurrentDirectory = SqloomRepositoryPaths.GetRepositoryRoot(),
+            });
+
+            Assert.Equal("Sqloom Test App", descriptor.Name);
+        }
+        finally
+        {
+            DeleteDirectoryIfExists(tempDirectoryPath);
+        }
+    }
+
+    [Fact]
+    public void ResolveAssemblyPath_WithHarnessProjectPathWithoutBuild_ReturnsBuildOutputPath()
+    {
+        AppResolver resolver = new();
+        HostStartupOptions startupOptions = new()
+        {
+            AppTargetPath = SqloomRepositoryPaths.GetTestAppApplicationProjectPath(),
+            NoBuild = true,
+        };
+
+        var assemblyPath = resolver.ResolveAssemblyPath(startupOptions);
+
+        Assert.Equal(
+            SqloomRepositoryPaths.GetExpectedTestAppApplicationBuildOutputPath(),
+            assemblyPath,
+            StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -203,78 +201,43 @@ public sealed class AppResolverTests
         var exception = Assert.Throws<AppResolutionException>(
             () => resolver.Resolve(new HostStartupOptions()));
 
-        Assert.Contains("requires an explicit target path", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("requires an explicit harness target path", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public void ResolveReplayIntegrations_DeduplicatesRepeatedProjectsFromSolutionFilter()
+    private static string WriteHarnessProject(
+        string directoryPath,
+        string applicationSource)
     {
-        AppResolver resolver = new();
-        var tempDirectoryPath = Path.Combine(
-            Path.GetTempPath(),
-            "sqloom-tests",
-            Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tempDirectoryPath);
+        var projectPath = Path.Combine(directoryPath, "TempHarness.csproj");
+        File.WriteAllText(
+            projectPath,
+            $$"""
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net10.0</TargetFramework>
+                <ImplicitUsings>disable</ImplicitUsings>
+                <Nullable>enable</Nullable>
+              </PropertyGroup>
+              <ItemGroup>
+                <ProjectReference Include="{{SqloomRepositoryPaths.GetTestingProjectPath()}}" />
+              </ItemGroup>
+            </Project>
+            """);
+        File.WriteAllText(
+            Path.Combine(directoryPath, "HarnessApplications.cs"),
+            $$"""
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Sqloom.Core.Execution;
+            using Sqloom.Testing;
 
-        try
-        {
-            var solutionFilterPath = WriteSolutionFilter(
-                tempDirectoryPath,
-                SqloomRepositoryPaths.GetTestAppProjectPath(),
-                SqloomRepositoryPaths.GetTestAppProjectPath());
-            HostStartupOptions startupOptions = new()
-            {
-                AppTargetPath = solutionFilterPath,
-                NoBuild = true,
-            };
+            namespace TempHarness;
 
-            var appIntegrations = resolver.ResolveReplayIntegrations(startupOptions);
-            var appNames = appIntegrations
-                .Select(static appIntegration => appIntegration.AppName)
-                .ToArray();
+            {{applicationSource}}
+            """);
 
-            Assert.Collection(
-                appNames,
-                appName => Assert.Equal("Sqloom Test App", appName));
-        }
-        finally
-        {
-            if (Directory.Exists(tempDirectoryPath))
-            {
-                Directory.Delete(
-                    tempDirectoryPath,
-                    recursive: true);
-            }
-        }
-    }
-
-    [Fact]
-    public void ResolveAssemblyPath_WithProjectPathWithoutBuild_ReturnsBuildOutputPath()
-    {
-        AppResolver resolver = new();
-        HostStartupOptions startupOptions = new()
-        {
-            AppTargetPath = SqloomRepositoryPaths.GetTestAppProjectPath(),
-            NoBuild = true,
-        };
-
-        var assemblyPath = resolver.ResolveAssemblyPath(startupOptions);
-
-        Assert.Equal(
-            SqloomRepositoryPaths.GetExpectedTestAppIntegrationBuildOutputPath(),
-            assemblyPath,
-            StringComparer.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public void ResolveAssemblyPath_ThrowsWhenTargetPathIsMissing()
-    {
-        AppResolver resolver = new();
-
-        var exception = Assert.Throws<AppResolutionException>(
-            () => resolver.ResolveAssemblyPath(new HostStartupOptions()));
-
-        Assert.Contains("requires an explicit target path", exception.Message, StringComparison.OrdinalIgnoreCase);
+        return projectPath;
     }
 
     private static string WriteSolutionFilter(string directoryPath, params string[] projectPaths)
@@ -292,5 +255,66 @@ public sealed class AppResolverTests
             solutionFilterPath,
             document);
         return solutionFilterPath;
+    }
+
+    private static void BuildProject(
+        string projectPath,
+        string workingDirectory)
+    {
+        ProcessStartInfo startInfo = new("dotnet")
+        {
+            CreateNoWindow = true,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            WorkingDirectory = workingDirectory,
+        };
+        startInfo.ArgumentList.Add("build");
+        startInfo.ArgumentList.Add(projectPath);
+        startInfo.ArgumentList.Add("--tl:off");
+        startInfo.ArgumentList.Add("--nologo");
+        startInfo.ArgumentList.Add("-clp:ErrorsOnly;NoSummary");
+
+        using Process process = new()
+        {
+            StartInfo = startInfo,
+        };
+        if (!process.Start())
+        {
+            throw new InvalidOperationException("Failed to start dotnet while building a temporary harness project.");
+        }
+
+        var standardOutput = process.StandardOutput.ReadToEnd();
+        var standardError = process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        Assert.True(
+            process.ExitCode == 0,
+            $"Temp harness build failed.{Environment.NewLine}StdOut:{Environment.NewLine}{standardOutput}{Environment.NewLine}StdErr:{Environment.NewLine}{standardError}");
+    }
+
+    private static string CreateTempDirectory()
+    {
+        var directoryPath = Path.Combine(
+            Path.GetTempPath(),
+            "sqloom-tests",
+            Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directoryPath);
+        return directoryPath;
+    }
+
+    private static void DeleteDirectoryIfExists(string directoryPath)
+    {
+        if (Directory.Exists(directoryPath))
+        {
+            try
+            {
+                Directory.Delete(
+                    directoryPath,
+                    recursive: true);
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
     }
 }

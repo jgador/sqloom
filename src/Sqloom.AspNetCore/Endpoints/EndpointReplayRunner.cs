@@ -12,7 +12,7 @@ using Sqloom.Core.Execution;
 namespace Sqloom.AspNetCore.Endpoints;
 
 /// <summary>
-/// Executes OpenAPI-driven replay operations against a Sqloom app integration.
+/// Executes OpenAPI-driven replay operations against a Sqloom app harness.
 /// </summary>
 public sealed class EndpointReplayRunner
 {
@@ -55,67 +55,29 @@ public sealed class EndpointReplayRunner
             operation => operation.OperationKey,
             StringComparer.OrdinalIgnoreCase);
 
-        var replayHost = await options.ReplayHostFactory
-            .CreateAsync(options.ReplayLaunchOptions, cancellationToken)
-            .ConfigureAwait(false);
-        await using (replayHost.ConfigureAwait(false))
+        var ownsReplayHost = options.ReplayHost is null;
+        var replayHost = options.ReplayHost
+            ?? await CreateReplayHostAsync(options, cancellationToken).ConfigureAwait(false);
+        ReplayBootstrapReport replayBootstrap;
+        try
         {
-            var captureCollector =
-                replayHost.Services.GetService<ReplaySqlCaptureCollector>();
-
-            var ordinal = 0;
-            foreach (var planItem in initialPlan.Operations)
+            await ExecuteReplayPlanAsync(
+                    options,
+                    replayHost,
+                    initialPlan,
+                    discoveredByKey,
+                    overlays,
+                    results,
+                    finalizedPlanItems,
+                    cancellationToken)
+                .ConfigureAwait(false);
+            replayBootstrap = replayHost.Bootstrap;
+        }
+        finally
+        {
+            if (ownsReplayHost)
             {
-                if (!string.Equals(planItem.Status, "planned", StringComparison.OrdinalIgnoreCase))
-                {
-                    finalizedPlanItems.Add(planItem);
-                    continue;
-                }
-
-                ordinal++;
-                var discoveredOperation = discoveredByKey[planItem.OperationKey];
-                overlays.TryGetValue(planItem.OperationKey, out var overlay);
-                var resolvedOperation = ResolvedReplayOperationResolver.Resolve(
-                    discoveredOperation,
-                    overlay);
-                var artifactPath = _artifactWriter.GetOperationArtifactPath(
-                    options.ReplayArtifactDirectory,
-                    ordinal,
-                    planItem.OperationKey);
-
-                EndpointReplayResult result;
-                try
-                {
-                    var preparedOperation = await replayHost
-                        .PrepareOperationAsync(resolvedOperation, cancellationToken)
-                        .ConfigureAwait(false);
-                    var request = _requestResolver.Resolve(
-                        discoveredOperation,
-                        resolvedOperation,
-                        preparedOperation);
-                    result = await _requestExecutor
-                        .ExecuteAsync(
-                            replayHost.Client,
-                            captureCollector,
-                            request,
-                            preparedOperation.AccessToken,
-                            artifactPath,
-                            cancellationToken)
-                        .ConfigureAwait(false);
-                }
-                catch (Exception exception) when (exception is not OperationCanceledException)
-                {
-                    result = EndpointReplayResultFactory.CreateFailed(
-                        planItem,
-                        artifactPath,
-                        exception.Message);
-                }
-
-                await _artifactWriter
-                    .WriteOperationResultAsync(result, cancellationToken)
-                    .ConfigureAwait(false);
-                results.Add(result);
-                finalizedPlanItems.Add(CreateFinalPlanItem(planItem, result));
+                await replayHost.DisposeAsync().ConfigureAwait(false);
             }
         }
 
@@ -142,7 +104,7 @@ public sealed class EndpointReplayRunner
             DiscoveredOperations = discoveredOperations,
             ReplayPlan = finalPlan,
             Pipeline = CreatePipeline(options.ReplayArtifactDirectory, summaryPath, results),
-            ReplayBootstrap = replayHost.Bootstrap,
+            ReplayBootstrap = replayBootstrap,
             Results = results,
         };
         await _artifactWriter
@@ -150,6 +112,90 @@ public sealed class EndpointReplayRunner
             .ConfigureAwait(false);
 
         return runResult;
+    }
+
+    private static async Task<IReplayHost> CreateReplayHostAsync(
+        EndpointReplayRunnerOptions options,
+        CancellationToken cancellationToken)
+    {
+        if (options.ReplayHostFactory is null)
+        {
+            throw new InvalidOperationException(
+                "Endpoint replay requires either a ReplayHost or a ReplayHostFactory.");
+        }
+
+        return await options.ReplayHostFactory
+            .CreateAsync(options.ReplayLaunchOptions, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task ExecuteReplayPlanAsync(
+        EndpointReplayRunnerOptions options,
+        IReplayHost replayHost,
+        EndpointReplayPlan initialPlan,
+        IReadOnlyDictionary<string, DiscoveredOpenApiOperation> discoveredByKey,
+        IReadOnlyDictionary<string, ReplayOperationOverlayDefinition> overlays,
+        ICollection<EndpointReplayResult> results,
+        ICollection<EndpointReplayPlanItem> finalizedPlanItems,
+        CancellationToken cancellationToken)
+    {
+        var captureCollector =
+            replayHost.Services.GetService<ReplaySqlCaptureCollector>();
+
+        var ordinal = 0;
+        foreach (var planItem in initialPlan.Operations)
+        {
+            if (!string.Equals(planItem.Status, "planned", StringComparison.OrdinalIgnoreCase))
+            {
+                finalizedPlanItems.Add(planItem);
+                continue;
+            }
+
+            ordinal++;
+            var discoveredOperation = discoveredByKey[planItem.OperationKey];
+            overlays.TryGetValue(planItem.OperationKey, out var overlay);
+            var resolvedOperation = ResolvedReplayOperationResolver.Resolve(
+                discoveredOperation,
+                overlay);
+            var artifactPath = _artifactWriter.GetOperationArtifactPath(
+                options.ReplayArtifactDirectory,
+                ordinal,
+                planItem.OperationKey);
+
+            EndpointReplayResult result;
+            try
+            {
+                var preparedOperation = await replayHost
+                    .PrepareOperationAsync(resolvedOperation, cancellationToken)
+                    .ConfigureAwait(false);
+                var request = _requestResolver.Resolve(
+                    discoveredOperation,
+                    resolvedOperation,
+                    preparedOperation);
+                result = await _requestExecutor
+                    .ExecuteAsync(
+                        replayHost.Client,
+                        captureCollector,
+                        request,
+                        preparedOperation.AccessToken,
+                        artifactPath,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                result = EndpointReplayResultFactory.CreateFailed(
+                    planItem,
+                    artifactPath,
+                    exception.Message);
+            }
+
+            await _artifactWriter
+                .WriteOperationResultAsync(result, cancellationToken)
+                .ConfigureAwait(false);
+            results.Add(result);
+            finalizedPlanItems.Add(CreateFinalPlanItem(planItem, result));
+        }
     }
 
     private static PipelineReport CreatePipeline(

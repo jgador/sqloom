@@ -1,33 +1,32 @@
 using System;
-using System.Collections.Generic;
-using Sqloom.Core.Contracts;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
 /// <summary>
-/// Resolves the app integrations required by a selected host command.
+/// Resolves the application harness required by a selected host command.
 /// </summary>
 internal sealed class HostCommandIntegrationResolver
 {
     private readonly AppResolver _appResolver;
-    private readonly IAppIntegration? _boundAppIntegration;
+    private readonly ISqloomApplication? _boundApplication;
 
     public HostCommandIntegrationResolver(AppResolver appResolver)
         : this(appResolver, null)
     {
     }
 
-    public HostCommandIntegrationResolver(IAppIntegration appIntegration)
-        : this(new AppResolver(), appIntegration)
+    public HostCommandIntegrationResolver(ISqloomApplication application)
+        : this(new AppResolver(), application)
     {
     }
 
     internal HostCommandIntegrationResolver(
         AppResolver appResolver,
-        IAppIntegration? boundAppIntegration)
+        ISqloomApplication? boundApplication)
     {
         _appResolver = appResolver ?? throw new ArgumentNullException(nameof(appResolver));
-        _boundAppIntegration = boundAppIntegration;
+        _boundApplication = boundApplication;
     }
 
     public HostCommandBindings Resolve(
@@ -40,38 +39,38 @@ internal sealed class HostCommandIntegrationResolver
         {
             HostCommandKind.Observe => new HostCommandBindings
             {
-                AppIntegration = ResolveObserveIntegration(startupOptions),
+                Application = ResolveObserveApplication(startupOptions),
             },
             HostCommandKind.Tune => new HostCommandBindings
             {
-                AppIntegration = ResolveRequiredIntegration(startupOptions),
+                Application = ResolveRequiredApplication(startupOptions),
             },
             HostCommandKind.Replay => new HostCommandBindings
             {
-                AppIntegrations = ResolveReplayIntegrations(startupOptions),
+                Application = ResolveRequiredApplication(startupOptions),
             },
             HostCommandKind.Correlate or HostCommandKind.Advise => new HostCommandBindings
             {
-                AppIntegration = _boundAppIntegration,
+                Application = _boundApplication,
             },
             _ => throw new ArgumentOutOfRangeException(
                 nameof(commandKind),
                 commandKind,
-                "Sqloom could not resolve app integrations for the selected command kind."),
+                "Sqloom could not resolve an app harness for the selected command kind."),
         };
     }
 
-    public IAppIntegration? ResolveBannerIntegration(HostStartupOptions startupOptions)
+    public ISqloomApplication? ResolveBannerApplication(HostStartupOptions startupOptions)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
-        return ResolveObserveIntegration(startupOptions);
+        return ResolveObserveApplication(startupOptions);
     }
 
-    private IAppIntegration? ResolveObserveIntegration(HostStartupOptions startupOptions)
+    private ISqloomApplication? ResolveObserveApplication(HostStartupOptions startupOptions)
     {
-        if (_boundAppIntegration is not null)
+        if (_boundApplication is not null)
         {
-            return _boundAppIntegration;
+            return _boundApplication;
         }
 
         if (!startupOptions.HasTargetSelection)
@@ -82,19 +81,9 @@ internal sealed class HostCommandIntegrationResolver
         return _appResolver.Resolve(startupOptions);
     }
 
-    private IAppIntegration ResolveRequiredIntegration(HostStartupOptions startupOptions)
+    private ISqloomApplication ResolveRequiredApplication(HostStartupOptions startupOptions)
     {
-        return _boundAppIntegration
+        return _boundApplication
             ?? _appResolver.Resolve(startupOptions);
-    }
-
-    private IReadOnlyList<IAppIntegration> ResolveReplayIntegrations(HostStartupOptions startupOptions)
-    {
-        if (_boundAppIntegration is not null)
-        {
-            return [_boundAppIntegration];
-        }
-
-        return _appResolver.ResolveReplayIntegrations(startupOptions);
     }
 }

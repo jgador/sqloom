@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Sqloom.Core.Execution;
 
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 /// <summary>
 /// Resolves the sample app DACPAC path required for SQL Server-backed replay bootstrap.

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using Sqloom.AspNetCore.Endpoints;
 using Sqloom.Core.Artifacts;
-using Sqloom.Core.Contracts;
 using Sqloom.Core.Execution;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -35,11 +35,13 @@ internal sealed class ReplayArgumentParser
 
     public ReplayArguments Parse(
         string[] args,
-        IAppIntegration appIntegration,
+        SqloomApplicationDescriptor descriptor,
+        IReplayHost replayHost,
         string currentDirectory,
         string? artifactDirectoryOverride = null)
     {
-        ArgumentNullException.ThrowIfNull(appIntegration);
+        ArgumentNullException.ThrowIfNull(descriptor);
+        ArgumentNullException.ThrowIfNull(replayHost);
 
         CommandArgumentSupport.ValidateArguments(
             args,
@@ -47,7 +49,7 @@ internal sealed class ReplayArgumentParser
             SupportedSwitches,
             ValueSwitches);
 
-        var replayProfile = appIntegration.GetReplayProfile();
+        var replayProfile = descriptor.ReplayProfile;
         var openApiDocumentPath = Path.GetFullPath(
             CommandArgumentSupport.GetArgumentValue(args, "--openapi-file")
             ?? replayProfile.DefaultOpenApiDocumentPath);
@@ -61,11 +63,11 @@ internal sealed class ReplayArgumentParser
         {
             RunnerOptions = new EndpointReplayRunnerOptions
             {
-                AppName = appIntegration.AppName,
+                AppName = descriptor.Name,
                 OpenApiDocumentPath = openApiDocumentPath,
                 ReplayArtifactDirectory = replayArtifactDirectory,
                 ReplayProfile = replayProfile,
-                ReplayHostFactory = appIntegration.CreateReplayHostFactory(),
+                ReplayHost = replayHost,
                 ReplayLaunchOptions = replayLaunchOptions,
                 MaxOperations = CommandArgumentSupport.GetIntArgumentValue(args, "--max-operations") ?? 25,
                 TargetFilter = targetFilter,
@@ -89,7 +91,7 @@ internal sealed class ReplayArgumentParser
             DateTimeOffset.UtcNow);
     }
 
-    private static ReplayLaunchOptions CreateReplayLaunchOptions(
+    internal ReplayLaunchOptions CreateReplayLaunchOptions(
         string[] args,
         string currentDirectory)
     {

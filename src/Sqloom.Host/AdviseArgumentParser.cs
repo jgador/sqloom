@@ -73,7 +73,8 @@ internal sealed class AdviseArgumentParser
         string[] args,
         string replayArtifactDirectory,
         string queryStoreCorrelationPath,
-        string jsonOutputPath)
+        string jsonOutputPath,
+        string? defaultSqlServerSchemaPath = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(queryStoreCorrelationPath);
@@ -81,7 +82,9 @@ internal sealed class AdviseArgumentParser
 
         var modelProvider = ParseModelProvider(CommandArgumentSupport.GetRequiredArgumentValue(args, "--model-provider"));
         var openAIOptions = ResolveOpenAIAdviceOptions(args);
-        var sqlServerSchemaPath = ResolveSqlServerSchemaPath(args);
+        var sqlServerSchemaPath = ResolveSqlServerSchemaPath(
+            args,
+            defaultSqlServerSchemaPath);
 
         return new AdviseArguments
         {
@@ -132,10 +135,19 @@ internal sealed class AdviseArgumentParser
         };
     }
 
-    private static string ResolveSqlServerSchemaPath(string[] args)
+    private static string ResolveSqlServerSchemaPath(
+        string[] args,
+        string? defaultSqlServerSchemaPath)
     {
+        var rawSchemaPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-schema-file")
+            ?? defaultSqlServerSchemaPath;
+        if (string.IsNullOrWhiteSpace(rawSchemaPath))
+        {
+            throw new ArgumentException("Missing required argument --sqlserver-schema-file.");
+        }
+
         var sqlServerSchemaPath = Path.GetFullPath(
-            CommandArgumentSupport.GetRequiredArgumentValue(args, "--sqlserver-schema-file"));
+            rawSchemaPath);
         if (!File.Exists(sqlServerSchemaPath))
         {
             throw new ArgumentException(

@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Sqloom.Core.Artifacts;
-using Sqloom.Core.Contracts;
+using Sqloom.Core.Execution;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -90,13 +91,48 @@ internal sealed class TuneArgumentParser
         return CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string");
     }
 
+    public ReplayLaunchOptions CreateReplayLaunchOptions(
+        string[] args,
+        string currentDirectory)
+    {
+        return _replayArgumentParser.CreateReplayLaunchOptions(
+            ExtractSwitchArguments(args, ReplaySwitches),
+            currentDirectory);
+    }
+
+    public void ValidateBeforeSession(
+        string[] args,
+        SqloomApplicationDescriptor descriptor,
+        string currentDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(descriptor);
+
+        CommandArgumentSupport.ValidateArguments(
+            args,
+            HostCommandKind.Tune,
+            SupportedSwitches,
+            ValueSwitches);
+
+        var validationPath = Path.Combine(
+            currentDirectory,
+            "sqloom-validation-placeholder.json");
+        _adviseArgumentParser.CreateArguments(
+            ExtractSwitchArguments(args, AdviceSwitches),
+            currentDirectory,
+            validationPath,
+            validationPath,
+            descriptor.SqlServerSchemaPath);
+    }
+
     public TuneArguments Parse(
         string[] args,
-        IAppIntegration appIntegration,
+        SqloomApplicationDescriptor descriptor,
+        IReplayHost replayHost,
         string readOnlyConnectionString,
         string currentDirectory)
     {
-        ArgumentNullException.ThrowIfNull(appIntegration);
+        ArgumentNullException.ThrowIfNull(descriptor);
+        ArgumentNullException.ThrowIfNull(replayHost);
 
         CommandArgumentSupport.ValidateArguments(
             args,
@@ -115,19 +151,21 @@ internal sealed class TuneArgumentParser
                 ExtractSwitchArguments(args, ObserveSwitches),
                 "--json-output-file",
                 snapshotPath),
-            appIntegration,
+            descriptor,
             readOnlyConnectionString,
             currentDirectory);
         var replayArguments = _replayArgumentParser.Parse(
             ExtractSwitchArguments(args, ReplaySwitches),
-            appIntegration,
+            descriptor,
+            replayHost,
             currentDirectory,
             replayArtifactDirectory);
         var adviseArguments = _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             replayArtifactDirectory,
             correlationPath,
-            advicePath);
+            advicePath,
+            descriptor.SqlServerSchemaPath);
 
         return new TuneArguments
         {

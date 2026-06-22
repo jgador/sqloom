@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using Sqloom.Core.Contracts;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -19,7 +17,5 @@ internal sealed class CommandExecutionContext
 
     public required HostDebugWriter DebugWriter { get; init; }
 
-    public IAppIntegration? AppIntegration { get; init; }
-
-    public IReadOnlyList<IAppIntegration> AppIntegrations { get; init; } = Array.Empty<IAppIntegration>();
+    public ISqloomApplication? Application { get; init; }
 }

@@ -2,7 +2,7 @@ using System;
 using System.IO;
 using Sqloom.Core.Execution;
 
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 /// <summary>
 /// Resolves the optional SQL seed script path used for post-DACPAC sample replay bootstrap.

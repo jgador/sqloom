@@ -33,8 +33,8 @@ internal sealed class AdviceCommand
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
         context.ConsoleWriter.PrintBanner(
-            context.AppIntegration?.AppName,
-            HostApplication.GetProjectNames(context.AppIntegration));
+            null,
+            HostApplication.GetProjectNames(context.Application));
 
         var arguments = _argumentParser.Parse(context.Arguments);
         arguments.DebugWriter = context.DebugWriter;

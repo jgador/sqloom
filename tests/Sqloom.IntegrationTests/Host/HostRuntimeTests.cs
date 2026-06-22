@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using Sqloom.Core.Execution;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
+using Sqloom.Testing;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -14,7 +16,7 @@ namespace Sqloom.Host.Tests;
 [Collection("ConsoleHostRuntime")]
 public sealed class HostRuntimeTests
 {
-    [Fact]
+    [RequiresDockerFact]
     [Trait("Category", "Integration")]
     public async Task RunAsync_WithExplicitReplayProjectWithoutBuild_ReplaysProductCatalogWorkload()
     {
@@ -47,7 +49,7 @@ public sealed class HostRuntimeTests
             StringComparison.Ordinal);
     }
 
-    [Fact]
+    [RequiresDockerFact]
     [Trait("Category", "Integration")]
     public async Task RunAsync_WithReplayDebug_PrintsStageDiagnosticsToStandardError()
     {
@@ -187,7 +189,7 @@ public sealed class HostRuntimeTests
         {
             return await HostRuntime
                 .RunAsync(
-                    new StandaloneTestAppIntegration(),
+                    new StandaloneTestAppApplication(),
                     [
                         "observe",
                     ],
@@ -207,22 +209,37 @@ public sealed class HostRuntimeTests
     public async Task RunAsync_WithTuneWithoutConnectionStringSwitch_StillRequiresExplicitConnectionStringSwitch()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
+        var schemaPath = Path.Combine(CreateTempDirectory(), "schema.sql");
+        File.WriteAllText(
+            schemaPath,
+            """
+            CREATE TABLE [dbo].[Product] (
+                [Id] INT NOT NULL
+            );
+            GO
+            """);
 
         var result = await CaptureConsoleAsync(static async state =>
         {
             return await HostRuntime
                 .RunAsync(
-                    new StandaloneTestAppIntegration(),
+                    new NoConnectionTestApplication(state.SchemaPath),
                     [
                         "tune",
+                        "--model-provider",
+                        "openai",
+                        "--openai-api-key",
+                        "openai-key",
+                        "--sqlserver-schema-file",
+                        state.SchemaPath,
                     ],
-                    state)
+                    state.CurrentDirectory)
                 .ConfigureAwait(false);
-        }, currentDirectory);
+        }, (CurrentDirectory: currentDirectory, SchemaPath: schemaPath));
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains(
-            "Sqloom tune requires --read-only-connection-string.",
+            "Sqloom tune requires --read-only-connection-string or a read-only connection string from the harness session.",
             result.StdErr,
             StringComparison.Ordinal);
     }
@@ -338,7 +355,7 @@ public sealed class HostRuntimeTests
         {
             return await HostRuntime
                 .RunAsync(
-                    new StandaloneTestAppIntegration(),
+                    new NoSchemaTestApplication(),
                     [
                         "tune",
                         "--read-only-connection-string",
@@ -425,7 +442,7 @@ public sealed class HostRuntimeTests
         {
             return await HostRuntime
                 .RunAsync(
-                    new StandaloneTestAppIntegration(),
+                    new StandaloneTestAppApplication(),
                     [
                         "replay",
                         state.ProjectPath,
@@ -435,7 +452,7 @@ public sealed class HostRuntimeTests
         }, (ProjectPath: projectPath, CurrentDirectory: currentDirectory));
 
         Assert.Equal(1, result.ExitCode);
-        Assert.Contains("already provides its integration", result.StdErr, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("already provides its harness", result.StdErr, StringComparison.OrdinalIgnoreCase);
     }
 
     private static async Task<ConsoleCaptureResult> CaptureConsoleAsync<TState>(
@@ -490,8 +507,86 @@ public sealed class ConsoleHostRuntimeCollection
 }
 
 /// <summary>
-/// Supplies a direct-bound sample app integration for host runtime tests.
+/// Supplies a direct-bound sample app harness for host runtime tests.
 /// </summary>
-internal sealed class StandaloneTestAppIntegration : TestAppIntegrationBase
+internal sealed class StandaloneTestAppApplication : TestAppApplicationBase
 {
+}
+
+/// <summary>
+/// Supplies a harness descriptor without a session connection string for validation tests.
+/// </summary>
+internal sealed class NoConnectionTestApplication : ISqloomApplication
+{
+    private readonly string _schemaPath;
+
+    public NoConnectionTestApplication(string schemaPath)
+    {
+        _schemaPath = schemaPath;
+    }
+
+    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+    {
+        return new SqloomApplicationDescriptor
+        {
+            Name = "No Connection Test App",
+            ReplayProfile = HostRuntimeTestHarnessDescriptors.CreateReplayProfile(),
+            SqlServerSchemaPath = _schemaPath,
+        };
+    }
+
+    public ValueTask<ISqloomApplicationSession> StartAsync(
+        SqloomApplicationContext context,
+        CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult<ISqloomApplicationSession>(new NoConnectionSession());
+    }
+}
+
+/// <summary>
+/// Supplies a harness descriptor without a default schema for validation tests.
+/// </summary>
+internal sealed class NoSchemaTestApplication : ISqloomApplication
+{
+    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+    {
+        return new SqloomApplicationDescriptor
+        {
+            Name = "No Schema Test App",
+            ReplayProfile = HostRuntimeTestHarnessDescriptors.CreateReplayProfile(),
+        };
+    }
+
+    public ValueTask<ISqloomApplicationSession> StartAsync(
+        SqloomApplicationContext context,
+        CancellationToken cancellationToken = default)
+    {
+        throw new NotSupportedException("Schema validation should run before the harness session starts.");
+    }
+}
+
+internal sealed class NoConnectionSession : ISqloomApplicationSession
+{
+    public IReplayHost ReplayHost =>
+        throw new NotSupportedException("Replay should not start when the harness does not supply a connection string.");
+
+    public string? ReadOnlyConnectionString => null;
+
+    public ReplayBootstrapReport Bootstrap { get; } = new();
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
+}
+
+internal static class HostRuntimeTestHarnessDescriptors
+{
+    public static ReplayProfile CreateReplayProfile()
+    {
+        return new ReplayProfile
+        {
+            DefaultOpenApiDocumentPath = "openapi.json",
+        };
+    }
 }

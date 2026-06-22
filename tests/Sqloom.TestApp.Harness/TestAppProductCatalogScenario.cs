@@ -1,4 +1,4 @@
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 /// <summary>
 /// Defines the seeded product-catalog replay scenario used by the sample Sqloom harness.

@@ -1,11 +1,12 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
 /// <summary>
-/// Runs the Sqloom tune workflow against one resolved app integration.
+/// Runs the Sqloom tune workflow against one resolved app harness.
 /// </summary>
 internal sealed class TuneCommand
     : ICommandHandler
@@ -17,25 +18,43 @@ internal sealed class TuneCommand
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
-        var appIntegration = context.AppIntegration
+        var application = context.Application
             ?? throw new InvalidOperationException(
-                "Sqloom tune requires one resolved app integration.");
+                "Sqloom tune requires one resolved app harness.");
+        var launchOptions = _argumentParser.CreateReplayLaunchOptions(
+            context.Arguments,
+            context.CurrentDirectory);
+        var applicationContext = new SqloomApplicationContext
+        {
+            CurrentDirectory = context.CurrentDirectory,
+            ReplayLaunchOptions = launchOptions,
+        };
+        var descriptor = application.Describe(applicationContext);
 
         context.ConsoleWriter.PrintBanner(
-            appIntegration.AppName,
-            HostApplication.GetProjectNames(appIntegration));
+            descriptor.Name,
+            HostApplication.GetProjectNames(application));
+        _argumentParser.ValidateBeforeSession(
+            context.Arguments,
+            descriptor,
+            context.CurrentDirectory);
 
-        var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments);
+        await using var session = await application
+            .StartAsync(applicationContext)
+            .ConfigureAwait(false);
+        var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments)
+            ?? session.ReadOnlyConnectionString;
         if (string.IsNullOrWhiteSpace(readOnlyConnectionString))
         {
             Console.Error.WriteLine(
-                "Sqloom tune requires --read-only-connection-string.");
+                "Sqloom tune requires --read-only-connection-string or a read-only connection string from the harness session.");
             return 1;
         }
 
         var arguments = _argumentParser.Parse(
             context.Arguments,
-            appIntegration,
+            descriptor,
+            session.ReplayHost,
             readOnlyConnectionString,
             context.CurrentDirectory);
         arguments.DebugWriter = context.DebugWriter;

@@ -8,10 +8,10 @@ using Microsoft.AspNetCore.TestHost;
 using Sqloom.Core.Execution;
 using Testcontainers.MsSql;
 
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 /// <summary>
-/// Creates replay hosts for the sample Sqloom test app integration.
+/// Creates replay hosts for the sample Sqloom test app harness.
 /// </summary>
 public sealed class TestAppReplayHostFactory : IReplayHostFactory
 {
@@ -96,16 +96,19 @@ internal sealed class TestAppReplayHost : IReplayHost
     private readonly WebApplication _application;
     private readonly HttpClient _client;
     private readonly ReplayBootstrapReport _bootstrap;
+    private readonly string? _readOnlyConnectionString;
 
     private TestAppReplayHost(
         MsSqlContainer? sqlServer,
         WebApplication application,
         HttpClient client,
+        string? readOnlyConnectionString,
         ReplayBootstrapReport bootstrap)
     {
         _sqlServer = sqlServer;
         _application = application;
         _client = client;
+        _readOnlyConnectionString = readOnlyConnectionString;
         _bootstrap = bootstrap;
     }
 
@@ -115,13 +118,15 @@ internal sealed class TestAppReplayHost : IReplayHost
 
     public ReplayBootstrapReport Bootstrap => _bootstrap;
 
+    public string? ReadOnlyConnectionString => _readOnlyConnectionString;
+
     public static async Task<TestAppReplayHost> CreateAsync(
         MsSqlContainer? sqlServer,
         string? applicationConnectionString,
         ReplayBootstrapReport bootstrap,
         CancellationToken cancellationToken)
     {
-        var application = await TestAppIntegrationBase
+        var application = await TestAppApplicationBase
             .CreateReplayApplicationAsync(
                 applicationConnectionString,
                 cancellationToken)
@@ -134,6 +139,7 @@ internal sealed class TestAppReplayHost : IReplayHost
             sqlServer,
             application,
             client,
+            applicationConnectionString,
             bootstrap);
     }
 

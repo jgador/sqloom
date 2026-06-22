@@ -7,7 +7,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.SqlServer.Dac;
 using Sqloom.Core.Execution;
 
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 /// <summary>
 /// Publishes the sample app DACPAC into a disposable SQL Server replay database.

@@ -15,7 +15,8 @@
     <ProjectReference Include="..\..\src\Sqloom.AzureSql\Sqloom.AzureSql.csproj" />
     <ProjectReference Include="..\..\src\Sqloom.Core\Sqloom.Core.csproj" />
     <ProjectReference Include="..\..\src\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
+    <ProjectReference Include="..\..\src\Sqloom.Testing\Sqloom.Testing.csproj" />
     <ProjectReference Include="..\..\src\Sqloom.Host\Sqloom.Host.csproj" />
-    <ProjectReference Include="..\Sqloom.TestApp.IntegrationTests\Sqloom.TestApp.IntegrationTests.csproj" />
+    <ProjectReference Include="..\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj" />
   </ItemGroup>
 </Project>

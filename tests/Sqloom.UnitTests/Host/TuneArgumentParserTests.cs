@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 using Sqloom.Core.Artifacts;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -60,7 +60,8 @@ public sealed class TuneArgumentParserTests
                 "--sqlserver-schema-file",
                 schemaPath,
             ],
-            new MultipleTestAppIntegrationA(),
+            TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
             currentDirectory);
 
@@ -121,8 +122,9 @@ public sealed class TuneArgumentParserTests
                     "--json-output-file",
                     Path.Combine(currentDirectory, "tune-summary.json"),
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -142,8 +144,9 @@ public sealed class TuneArgumentParserTests
                     "--read-only-connection-string",
                     "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("--model-provider", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -164,8 +167,9 @@ public sealed class TuneArgumentParserTests
                     "--model-provider",
                     "openai",
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -188,8 +192,9 @@ public sealed class TuneArgumentParserTests
                     "--openai-api-key",
                     "openai-key",
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("--sqlserver-schema-file", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -210,8 +215,9 @@ public sealed class TuneArgumentParserTests
                     "--advice-provider",
                     "openai",
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                TestApplicationDescriptorFactory.CreateDescriptor(),
+            new TestReplayHost(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);

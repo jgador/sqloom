@@ -177,6 +177,8 @@ internal sealed class HostStartupCommandLine
             ".sln" => true,
             ".slnx" => true,
             ".slnf" => true,
+            ".dll" => true,
+            ".exe" => true,
             _ => false,
         };
     }
@@ -212,7 +214,7 @@ internal sealed class HostStartupCommandLine
     private static void ThrowUnsupportedStartupSwitch(string switchName)
     {
         throw new ArgumentException(
-            $"Unsupported switch '{switchName}'. Sqloom now requires an explicit stage verb followed by a project, solution, solution filter, or directory path when runtime app selection is needed.");
+            $"Unsupported switch '{switchName}'. Sqloom now requires an explicit stage verb followed by a harness project, harness assembly, solution, solution filter, or directory path when runtime app selection is needed.");
     }
 
     private static string SetPathOnce(

@@ -57,6 +57,7 @@ function Get-SqloomPackProjects
         Join-Path $RepoRoot "src\Sqloom.QueryStore\Sqloom.QueryStore.csproj"
         Join-Path $RepoRoot "src\Sqloom.AzureSql\Sqloom.AzureSql.csproj"
         Join-Path $RepoRoot "src\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj"
+        Join-Path $RepoRoot "src\Sqloom.Testing\Sqloom.Testing.csproj"
         Join-Path $RepoRoot "src\Sqloom.Host\Sqloom.Host.csproj"
     )
 }
@@ -73,18 +74,24 @@ function Get-SqloomPackagePaths
         Join-Path $Context.PackageFeedPath "Sqloom.QueryStore.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.AzureSql.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.AspNetCore.$($Context.PackageVersion).nupkg"
+        Join-Path $Context.PackageFeedPath "Sqloom.Testing.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
     )
 }
 
-function Get-SqloomPublicPackagePath
+function Get-SqloomPublicPackagePaths
 {
     param(
         [Parameter(Mandatory = $true)]
         [pscustomobject]$Context
     )
 
-    return Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
+    return @(
+        Join-Path $Context.PackageFeedPath "Sqloom.Core.$($Context.PackageVersion).nupkg"
+        Join-Path $Context.PackageFeedPath "Sqloom.QueryStore.$($Context.PackageVersion).nupkg"
+        Join-Path $Context.PackageFeedPath "Sqloom.Testing.$($Context.PackageVersion).nupkg"
+        Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
+    )
 }
 
 function Assert-PathUnderRoot
@@ -368,7 +375,9 @@ function Show-SqloomPublishCommands
     )
 
     Write-Host ""
-    Write-Host "Manual NuGet.org publish command for the public tool package:"
-    $packagePath = Get-SqloomPublicPackagePath -Context $Context
-    Write-Host "dotnet nuget push `"$packagePath`" --source https://api.nuget.org/v3/index.json --api-key <nuget-api-key>"
+    Write-Host "Manual NuGet.org publish commands for public packages:"
+    foreach ($packagePath in (Get-SqloomPublicPackagePaths -Context $Context))
+    {
+        Write-Host "dotnet nuget push `"$packagePath`" --source https://api.nuget.org/v3/index.json --api-key <nuget-api-key>"
+    }
 }

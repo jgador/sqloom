@@ -24,8 +24,8 @@ internal sealed class CorrelateCommand
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
         context.ConsoleWriter.PrintBanner(
-            context.AppIntegration?.AppName,
-            HostApplication.GetProjectNames(context.AppIntegration));
+            null,
+            HostApplication.GetProjectNames(context.Application));
 
         var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments);
         if (string.IsNullOrWhiteSpace(readOnlyConnectionString))

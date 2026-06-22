@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.UnitTests.TestApp;

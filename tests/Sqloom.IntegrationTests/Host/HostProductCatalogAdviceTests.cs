@@ -18,7 +18,7 @@ using Sqloom.AspNetCore.Endpoints;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
 using Sqloom.Correlation.QueryStore;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
 using Xunit;
 using SqloomTestApp = global::Sqloom.TestApp;
 
@@ -90,14 +90,22 @@ public sealed class HostProductCatalogAdviceTests
         {
             try
             {
-                TestAppIntegration appIntegration = new();
-                var replayProfile = appIntegration.GetReplayProfile();
+                TestAppApplication application = new();
+                var descriptor = application.Describe(new Sqloom.Testing.SqloomApplicationContext
+                {
+                    CurrentDirectory = currentDirectory,
+                    ReplayLaunchOptions = new ReplayLaunchOptions
+                    {
+                        SqlServerDacpacPath = dacpacPath,
+                    },
+                });
+                var replayProfile = descriptor.ReplayProfile;
                 EndpointReplayRunner replayRunner = new();
                 var replayResult = await replayRunner
                     .RunAsync(
                         new EndpointReplayRunnerOptions
                         {
-                            AppName = appIntegration.AppName,
+                            AppName = descriptor.Name,
                             OpenApiDocumentPath = replayProfile.DefaultOpenApiDocumentPath,
                             ReplayArtifactDirectory = artifactDirectory,
                             ReplayProfile = replayProfile,
@@ -441,7 +449,7 @@ public sealed class HostProductCatalogAdviceTests
         {
             var exitCode = await HostRuntime
                 .RunAsync(
-                    new StandaloneTestAppIntegration(),
+                    new StandaloneTestAppApplication(),
                     state.Args,
                     state.CurrentDirectory)
                 .ConfigureAwait(false);

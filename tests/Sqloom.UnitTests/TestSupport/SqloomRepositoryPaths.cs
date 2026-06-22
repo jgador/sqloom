@@ -22,6 +22,15 @@ internal static class SqloomRepositoryPaths
             "Sqloom.slnx");
     }
 
+    public static string GetTestingProjectPath()
+    {
+        return Path.Combine(
+            GetRepositoryRoot(),
+            "src",
+            "Sqloom.Testing",
+            "Sqloom.Testing.csproj");
+    }
+
     public static string GetTestAppProjectPath()
     {
         return Path.Combine(
@@ -39,24 +48,24 @@ internal static class SqloomRepositoryPaths
             "Sqloom.TestApp");
     }
 
-    public static string GetTestAppIntegrationProjectPath()
+    public static string GetTestAppApplicationProjectPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
-            "Sqloom.TestApp.IntegrationTests",
-            "Sqloom.TestApp.IntegrationTests.csproj");
+            "Sqloom.TestApp.Harness",
+            "Sqloom.TestApp.Harness.csproj");
     }
 
-    public static string GetExpectedTestAppIntegrationBuildOutputPath()
+    public static string GetExpectedTestAppApplicationBuildOutputPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
             "artifacts",
             "bin",
-            "Sqloom.TestApp.IntegrationTests",
+            "Sqloom.TestApp.Harness",
             "debug",
-            "Sqloom.TestApp.IntegrationTests.dll");
+            "Sqloom.TestApp.Harness.dll");
     }
 
     public static string GetDefaultArtifactRoot()

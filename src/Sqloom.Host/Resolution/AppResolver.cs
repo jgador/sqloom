@@ -4,12 +4,12 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
-using Sqloom.Core.Contracts;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
 /// <summary>
-/// Loads Sqloom app integrations from the resolved target projects.
+/// Loads Sqloom application harnesses from the resolved target projects or assemblies.
 /// </summary>
 internal sealed class AppResolver
 {
@@ -18,26 +18,20 @@ internal sealed class AppResolver
     private static bool _defaultAssemblyResolverRegistered;
     private readonly AppProjectResolver _projectResolver = new();
 
-    public IAppIntegration Resolve(
+    public ISqloomApplication Resolve(
         HostStartupOptions startupOptions)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
 
-        var assemblyPath = ResolveAssemblyPath(startupOptions);
-        return CreateAppIntegration(assemblyPath);
-    }
-
-    public IReadOnlyList<IAppIntegration> ResolveReplayIntegrations(HostStartupOptions startupOptions)
-    {
-        ArgumentNullException.ThrowIfNull(startupOptions);
-
-        return _projectResolver
+        var targetPath = GetRequiredTargetPath(startupOptions);
+        var assemblySelections = _projectResolver
             .ResolveAssemblySelections(
-                GetRequiredTargetPath(startupOptions),
+                targetPath,
                 startupOptions.NoBuild,
-                startupOptions.DotNetCommand)
-            .Select(static selection => CreateAppIntegration(selection.AssemblyPath))
-            .ToArray();
+                startupOptions.DotNetCommand);
+        return CreateApplication(
+            targetPath,
+            assemblySelections);
     }
 
     public string ResolveAssemblyPath(HostStartupOptions startupOptions)
@@ -50,19 +44,42 @@ internal sealed class AppResolver
             startupOptions.DotNetCommand);
     }
 
-    private static IAppIntegration CreateAppIntegration(string assemblyPath)
+    private static ISqloomApplication CreateApplication(
+        string targetPath,
+        IReadOnlyList<ResolvedAssemblySelection> assemblySelections)
+    {
+        List<SqloomApplicationTypeSelection> appTypes = [];
+        foreach (var assemblySelection in assemblySelections)
+        {
+            var assembly = LoadAppAssembly(assemblySelection.AssemblyPath);
+            appTypes.AddRange(GetSqloomApplicationTypes(
+                assembly,
+                assemblySelection.AssemblyPath));
+        }
+
+        var selectedType = appTypes.Count switch
+        {
+            0 => throw new AppResolutionException(
+                $"The Sqloom target '{Path.GetFullPath(targetPath)}' does not contain an {nameof(ISqloomApplication)} implementation."),
+            > 1 => throw new AppResolutionException(
+                $"The Sqloom target '{Path.GetFullPath(targetPath)}' contains multiple public {nameof(ISqloomApplication)} implementations: {string.Join(", ", appTypes.Select(static item => item.Type.FullName))}. Pass a narrower target in v1."),
+            _ => appTypes[0],
+        };
+
+        return CreateApplication(selectedType);
+    }
+
+    private static ISqloomApplication CreateApplication(SqloomApplicationTypeSelection appType)
     {
         try
         {
-            var assembly = LoadAppAssembly(assemblyPath);
-            var appType = SelectAppIntegrationType(assembly, assemblyPath);
-            if (Activator.CreateInstance(appType) is not IAppIntegration appIntegration)
+            if (Activator.CreateInstance(appType.Type) is not ISqloomApplication application)
             {
                 throw new AppResolutionException(
-                    $"Could not create an {nameof(IAppIntegration)} from '{appType.FullName}' in '{assemblyPath}'.");
+                    $"Could not create an {nameof(ISqloomApplication)} from '{appType.Type.FullName}' in '{appType.AssemblyPath}'.");
             }
 
-            return appIntegration;
+            return application;
         }
         catch (AppResolutionException)
         {
@@ -76,7 +93,7 @@ internal sealed class AppResolver
                 or TargetInvocationException)
         {
             throw new AppResolutionException(
-                $"Failed to load the Sqloom app integration assembly '{assemblyPath}': {exception.Message}",
+                $"Failed to load the Sqloom harness assembly '{appType.AssemblyPath}': {exception.Message}",
                 exception);
         }
     }
@@ -89,7 +106,7 @@ internal sealed class AppResolver
         }
 
         throw new AppResolutionException(
-            "Sqloom now requires an explicit target path after the stage verb. Use tune <path>, replay <path>, or observe <path> so the standalone host can resolve an app integration.");
+            "Sqloom now requires an explicit harness target path after the stage verb. Use tune <path>, replay <path>, or observe <path> so the standalone host can resolve an app harness.");
     }
 
     private static Assembly LoadAppAssembly(string assemblyPath)
@@ -103,7 +120,7 @@ internal sealed class AppResolver
     private static void RegisterDefaultAssemblyProbe(string assemblyPath)
     {
         var assemblyDirectory = Path.GetDirectoryName(assemblyPath)
-            ?? throw new InvalidOperationException($"The app integration assembly path '{assemblyPath}' has no parent directory.");
+            ?? throw new InvalidOperationException($"The Sqloom harness assembly path '{assemblyPath}' has no parent directory.");
         AssemblyProbe assemblyProbe = new(
             assemblyPath,
             assemblyDirectory,
@@ -181,24 +198,20 @@ internal sealed class AppResolver
                     StringComparison.OrdinalIgnoreCase));
     }
 
-    private static Type SelectAppIntegrationType(Assembly assembly, string assemblyPath)
+    private static IReadOnlyList<SqloomApplicationTypeSelection> GetSqloomApplicationTypes(
+        Assembly assembly,
+        string assemblyPath)
     {
-        var appTypes = GetLoadableTypes(assembly, assemblyPath)
+        return GetLoadableTypes(assembly, assemblyPath)
             .Where(static type =>
                 !type.IsAbstract
                 && !type.IsInterface
                 && (type.IsPublic || type.IsNestedPublic)
-                && typeof(IAppIntegration).IsAssignableFrom(type))
+                && typeof(ISqloomApplication).IsAssignableFrom(type))
+            .Select(type => new SqloomApplicationTypeSelection(
+                type,
+                assemblyPath))
             .ToArray();
-
-        return appTypes.Length switch
-        {
-            0 => throw new AppResolutionException(
-                $"The app integration assembly '{assemblyPath}' does not contain a public {nameof(IAppIntegration)} implementation."),
-            > 1 => throw new AppResolutionException(
-                $"The app integration assembly '{assemblyPath}' contains multiple public {nameof(IAppIntegration)} implementations: {string.Join(", ", appTypes.Select(static type => type.FullName))}."),
-            _ => appTypes[0],
-        };
     }
 
     private static Type[] GetLoadableTypes(Assembly assembly, string assemblyPath)
@@ -214,7 +227,7 @@ internal sealed class AppResolver
                 .Message
                 ?? "Unknown loader error.";
             throw new AppResolutionException(
-                $"Failed to inspect the app integration assembly '{assemblyPath}': {loaderMessage}",
+                $"Failed to inspect the Sqloom harness assembly '{assemblyPath}': {loaderMessage}",
                 exception);
         }
     }
@@ -238,10 +251,13 @@ internal sealed class AppResolver
         string AssemblyDirectory,
         AssemblyDependencyResolver DependencyResolver);
 
+    private sealed record SqloomApplicationTypeSelection(
+        Type Type,
+        string AssemblyPath);
 }
 
 /// <summary>
-/// Represents an error while resolving a Sqloom app integration.
+/// Represents an error while resolving a Sqloom app harness.
 /// </summary>
 internal sealed class AppResolutionException : Exception
 {

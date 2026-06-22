@@ -12,31 +12,52 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sqloom.AspNetCore.Capture;
-using Sqloom.Core.Contracts;
 using Sqloom.Core.Execution;
 using Sqloom.QueryStore.QueryStore;
+using Sqloom.Testing;
 using SqloomTestApp = global::Sqloom.TestApp;
 
-namespace Sqloom.TestApp.IntegrationTests;
+namespace Sqloom.TestApp.Harness;
 
 /// <summary>
-/// Provides shared replay integration behavior for the sample Sqloom test app.
+/// Provides shared harness behavior for the sample Sqloom test app.
 /// </summary>
-public abstract class TestAppIntegrationBase : IAppIntegration, IQueryStoreAppIntegration
+public abstract class TestAppApplicationBase : ISqloomApplication
 {
     private static readonly Lazy<string> _openApiDocumentPath = new(CreateOpenApiDocumentPath);
 
-    public virtual string AppName => "Sqloom Test App";
-
-    public QueryStoreWorkloadProfile GetQueryStoreWorkloadProfile()
+    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
     {
-        return new QueryStoreWorkloadProfile
+        ArgumentNullException.ThrowIfNull(context);
+
+        return new SqloomApplicationDescriptor
         {
-            Name = "SqloomTestApp",
+            Name = "Sqloom Test App",
+            ReplayProfile = CreateReplayProfile(),
+            QueryStoreWorkloadProfile = new QueryStoreWorkloadProfile
+            {
+                Name = "SqloomTestApp",
+            },
+            SqlServerSchemaPath = ResolveHarnessFilePath(TestAppReplayConstants.SqlServerSchemaFileName),
         };
     }
 
-    public ReplayProfile GetReplayProfile()
+    public async ValueTask<ISqloomApplicationSession> StartAsync(
+        SqloomApplicationContext context,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        TestAppReplayHostFactory replayHostFactory = new();
+        var replayHost = await replayHostFactory
+            .CreateAsync(
+                CreateEffectiveLaunchOptions(context.ReplayLaunchOptions),
+                cancellationToken)
+            .ConfigureAwait(false);
+        return new TestAppApplicationSession(replayHost);
+    }
+
+    private static ReplayProfile CreateReplayProfile()
     {
         return new ReplayProfile
         {
@@ -63,11 +84,6 @@ public abstract class TestAppIntegrationBase : IAppIntegration, IQueryStoreAppIn
                 },
             ],
         };
-    }
-
-    public IReplayHostFactory CreateReplayHostFactory()
-    {
-        return new TestAppReplayHostFactory();
     }
 
     private static string CreateOpenApiDocumentPath()
@@ -125,6 +141,53 @@ public abstract class TestAppIntegrationBase : IAppIntegration, IQueryStoreAppIn
             """);
 
         return documentPath;
+    }
+
+    private static ReplayLaunchOptions CreateEffectiveLaunchOptions(ReplayLaunchOptions requestedOptions)
+    {
+        return new ReplayLaunchOptions
+        {
+            SqlServerDacpacPath = requestedOptions.SqlServerDacpacPath
+                ?? ResolveHarnessFilePath(TestAppReplayConstants.SqlServerDacpacFileName),
+            SqlServerSeedSqlPath = requestedOptions.SqlServerSeedSqlPath
+                ?? ResolveHarnessFilePath(TestAppReplayConstants.SqlServerSeedSqlFileName),
+        };
+    }
+
+    private static string ResolveHarnessFilePath(string fileName)
+    {
+        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
+            ?? RepositoryRootLocator.TryFind(Directory.GetCurrentDirectory())
+            ?? throw new InvalidOperationException("Could not locate the repository root for the Sqloom Test App harness.");
+        return Path.Combine(
+            repositoryRoot,
+            "tests",
+            "Sqloom.TestApp.Harness",
+            fileName);
+    }
+
+    private sealed class TestAppApplicationSession : ISqloomApplicationSession
+    {
+        private readonly IReplayHost _replayHost;
+
+        public TestAppApplicationSession(IReplayHost replayHost)
+        {
+            _replayHost = replayHost ?? throw new ArgumentNullException(nameof(replayHost));
+        }
+
+        public IReplayHost ReplayHost => _replayHost;
+
+        public string? ReadOnlyConnectionString =>
+            _replayHost is TestAppReplayHost testAppReplayHost
+                ? testAppReplayHost.ReadOnlyConnectionString
+                : null;
+
+        public ReplayBootstrapReport Bootstrap => _replayHost.Bootstrap;
+
+        public async ValueTask DisposeAsync()
+        {
+            await _replayHost.DisposeAsync().ConfigureAwait(false);
+        }
     }
 
     internal static async Task<WebApplication> CreateReplayApplicationAsync(

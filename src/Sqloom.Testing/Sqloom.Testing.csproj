@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+    <Authors>Sqloom contributors</Authors>
+    <Description>Application harness contracts for loading apps under test with Sqloom.</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/jgador/sqloom</PackageProjectUrl>
+    <PackageTags>sqloom;performance;tuning;testing;harness</PackageTags>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <RepositoryUrl>https://github.com/jgador/sqloom</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
+    <ProjectReference Include="..\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
+  </ItemGroup>
+</Project>
