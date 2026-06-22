@@ -449,7 +449,7 @@ public sealed class HostProductCatalogAdviceTests
         {
             var exitCode = await HostRuntime
                 .RunAsync(
-                    new StandaloneTestAppApplication(),
+                    new TestAppApplication(),
                     state.Args,
                     state.CurrentDirectory)
                 .ConfigureAwait(false);

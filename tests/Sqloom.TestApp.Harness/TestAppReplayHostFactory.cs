@@ -126,7 +126,7 @@ internal sealed class TestAppReplayHost : IReplayHost
         ReplayBootstrapReport bootstrap,
         CancellationToken cancellationToken)
     {
-        var application = await TestAppApplicationBase
+        var application = await TestAppApplication
             .CreateReplayApplicationAsync(
                 applicationConnectionString,
                 cancellationToken)

@@ -189,7 +189,7 @@ public sealed class HostRuntimeTests
         {
             return await HostRuntime
                 .RunAsync(
-                    new StandaloneTestAppApplication(),
+                    new TestAppApplication(),
                     [
                         "observe",
                     ],
@@ -442,7 +442,7 @@ public sealed class HostRuntimeTests
         {
             return await HostRuntime
                 .RunAsync(
-                    new StandaloneTestAppApplication(),
+                    new TestAppApplication(),
                     [
                         "replay",
                         state.ProjectPath,
@@ -504,13 +504,6 @@ public sealed class HostRuntimeTests
 public sealed class ConsoleHostRuntimeCollection
 {
     internal static SemaphoreSlim Gate { get; } = new(1, 1);
-}
-
-/// <summary>
-/// Supplies a direct-bound sample app harness for host runtime tests.
-/// </summary>
-internal sealed class StandaloneTestAppApplication : TestAppApplicationBase
-{
 }
 
 /// <summary>
