@@ -19,7 +19,7 @@ internal static class SqloomRepositoryPaths
     {
         return Path.Combine(
             GetRepositoryRoot(),
-            "Sqloom.sln");
+            "Sqloom.slnx");
     }
 
     public static string GetTestAppProjectPath()

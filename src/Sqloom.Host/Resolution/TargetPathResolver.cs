@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Xml;
+using System.Xml.Linq;
 
 namespace Sqloom.Host;
 
@@ -51,7 +53,7 @@ internal sealed class TargetPathResolver
         }
 
         throw new AppResolutionException(
-            $"The specified Sqloom target '{fullTargetPath}' is not supported. Use a directory, .sln, .slnf, .csproj, .fsproj, or .vbproj path.");
+            $"The specified Sqloom target '{fullTargetPath}' is not supported. Use a directory, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
     }
 
     private IReadOnlyCollection<string> ResolveProjectPathsFromDirectory(string directoryPath)
@@ -101,7 +103,7 @@ internal sealed class TargetPathResolver
         }
 
         throw new AppResolutionException(
-            $"The specified Sqloom target '{filePath}' is not supported. Use a directory, .sln, .slnf, .csproj, .fsproj, or .vbproj path.");
+            $"The specified Sqloom target '{filePath}' is not supported. Use a directory, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
     }
 
     private static string ResolveCandidateProjectPath(
@@ -128,6 +130,13 @@ internal sealed class TargetPathResolver
 
     private IReadOnlyCollection<string> ResolveProjectsFromSolution(string solutionPath)
     {
+        return IsXmlSolutionPath(solutionPath)
+            ? ResolveProjectsFromXmlSolution(solutionPath)
+            : ResolveProjectsFromClassicSolution(solutionPath);
+    }
+
+    private IReadOnlyCollection<string> ResolveProjectsFromClassicSolution(string solutionPath)
+    {
         var solutionDirectory = Path.GetDirectoryName(solutionPath)
             ?? throw new InvalidOperationException($"The solution path '{solutionPath}' has no parent directory.");
 
@@ -141,6 +150,36 @@ internal sealed class TargetPathResolver
             .Where(_companionProjectLocator.IsSqloomCapableProject)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
+    }
+
+    private IReadOnlyCollection<string> ResolveProjectsFromXmlSolution(string solutionPath)
+    {
+        try
+        {
+            var solutionDirectory = Path.GetDirectoryName(solutionPath)
+                ?? throw new InvalidOperationException($"The solution path '{solutionPath}' has no parent directory.");
+            var document = XDocument.Load(solutionPath);
+
+            return document
+                .Descendants("Project")
+                .Select(static element => element.Attribute("Path")?.Value)
+                .OfType<string>()
+                .Where(static relativeProjectPath => !string.IsNullOrWhiteSpace(relativeProjectPath))
+                .Where(IsSupportedProjectPath)
+                .Select(relativeProjectPath => Path.GetFullPath(relativeProjectPath!, solutionDirectory))
+                .Where(_companionProjectLocator.IsSqloomCapableProject)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+        catch (Exception exception) when (
+            exception is IOException
+                or UnauthorizedAccessException
+                or XmlException)
+        {
+            throw new AppResolutionException(
+                $"The solution '{solutionPath}' is not valid .slnx XML: {exception.Message}",
+                exception);
+        }
     }
 
     private IReadOnlyCollection<string> ResolveProjectsFromSolutionFilter(string solutionFilterPath)
@@ -213,9 +252,23 @@ internal sealed class TargetPathResolver
 
     private static bool IsSolutionPath(string path)
     {
+        return IsClassicSolutionPath(path)
+            || IsXmlSolutionPath(path);
+    }
+
+    private static bool IsClassicSolutionPath(string path)
+    {
         return string.Equals(
             Path.GetExtension(path),
             ".sln",
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsXmlSolutionPath(string path)
+    {
+        return string.Equals(
+            Path.GetExtension(path),
+            ".slnx",
             StringComparison.OrdinalIgnoreCase);
     }
 

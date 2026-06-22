@@ -44,6 +44,7 @@ public static class RepositoryRootLocator
         return File.Exists(Path.Combine(directoryPath, "Directory.Build.props"))
             || File.Exists(Path.Combine(directoryPath, "global.json"))
             || Directory.EnumerateFiles(directoryPath, "*.sln", SearchOption.TopDirectoryOnly).Any()
+            || Directory.EnumerateFiles(directoryPath, "*.slnx", SearchOption.TopDirectoryOnly).Any()
             || Directory.EnumerateFiles(directoryPath, "*.slnf", SearchOption.TopDirectoryOnly).Any();
     }
 }

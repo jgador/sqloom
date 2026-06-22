@@ -1,6 +1,6 @@
 # Sqloom
 
-`Sqloom.sln` is the standalone Sqloom workspace. The active user-facing runner is `Sqloom.Host` or the packaged `sqloom` tool: a host-first CLI that resolves target paths such as `Sqloom.TestApp` through companion integration libraries such as `Sqloom.TestApp.IntegrationTests`.
+`Sqloom.slnx` is the standalone Sqloom workspace. The active user-facing runner is `Sqloom.Host` or the packaged `sqloom` tool: a host-first CLI that resolves target paths such as `Sqloom.TestApp` through companion integration libraries such as `Sqloom.TestApp.IntegrationTests`.
 
 `Sqloom.TestApp` also supports an optional post-DACPAC seed script through `--sqlserver-seed-sql-file <path>` on both `replay` and `sqloom-local tune`, used together with `--sqlserver-dacpac-file <path>`. Generate that script from localhost with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.ps1` when you want the Testcontainer to mirror exported `AdventureWorksLT2025` data instead of the built-in sample seed.
 
@@ -36,7 +36,7 @@ Add `--debug` to any `sqloom` or `sqloom-local` command when you want stage-owne
 
 ```text
 .
-|-- Sqloom.sln
+|-- Sqloom.slnx
 |-- Sqloom.UnitTests.slnf
 |-- Sqloom.IntegrationTests.slnf
 |-- README.md
@@ -76,13 +76,13 @@ For the canonical repo layout, current project ownership, and dependency graph, 
 Build from the repo root:
 
 ```powershell
-dotnet restore .\Sqloom.sln
-dotnet build .\Sqloom.sln --tl:off --nologo "-clp:ErrorsOnly;NoSummary"
+dotnet restore .\Sqloom.slnx
+dotnet build .\Sqloom.slnx --tl:off --nologo "-clp:ErrorsOnly;NoSummary"
 ```
 
-Build `Sqloom.sln` before using either the standalone `sqloom` tool or the non-packed `Sqloom.Host` wrapper. When you run `replay <path>` or `observe <path>`, the host resolves that target path down to one or more distinct library harnesses, resolves each harness project's `TargetPath` through `dotnet msbuild`, and builds those harnesses automatically unless you add `--no-build`. Pass `--dotnet-command <command>` explicitly when that nested resolution should use a non-default dotnet executable. Supported target paths are project files, solution files, solution filters, and directories. Composite replay targets run every distinct integration they resolve to in order; when you pass `--artifact-dir` to a composite replay, Sqloom creates one child artifact directory per app under that root.
+Build `Sqloom.slnx` before using either the standalone `sqloom` tool or the non-packed `Sqloom.Host` wrapper. When you run `replay <path>` or `observe <path>`, the host resolves that target path down to one or more distinct library harnesses, resolves each harness project's `TargetPath` through `dotnet msbuild`, and builds those harnesses automatically unless you add `--no-build`. Pass `--dotnet-command <command>` explicitly when that nested resolution should use a non-default dotnet executable. Supported target paths are project files, solution files, solution filters, and directories. Composite replay targets run every distinct integration they resolve to in order; when you pass `--artifact-dir` to a composite replay, Sqloom creates one child artifact directory per app under that root.
 
-`Sqloom.sln` stays the main Sqloom workspace solution. The repo-root `global.json` opts this workspace into the Microsoft Testing Platform runner, so run the Sqloom xUnit lanes from the repo root:
+`Sqloom.slnx` stays the main Sqloom workspace solution. The repo-root `global.json` opts this workspace into the Microsoft Testing Platform runner, so run the Sqloom xUnit lanes from the repo root:
 
 ```powershell
 dotnet test --solution .\Sqloom.UnitTests.slnf
@@ -131,7 +131,7 @@ When you want a clean package-prep pass before a manual `nuget.org` push, use:
 pwsh .\scripts\prepare-sqloom-packages.ps1
 ```
 
-That script restores and builds `.\Sqloom.sln`, repacks the full `Sqloom.*` feed under `.\artifacts\packages\sqloom`, verifies a clean tool-path install from that folder feed, and prints the exact `dotnet nuget push` commands without pushing anything.
+That script restores and builds `.\Sqloom.slnx`, repacks the full `Sqloom.*` feed under `.\artifacts\packages\sqloom`, verifies a clean tool-path install from that folder feed, and prints the exact `dotnet nuget push` commands without pushing anything.
 
 During development, the equivalent non-packed host command is:
 

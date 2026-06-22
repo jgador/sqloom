@@ -175,6 +175,7 @@ internal sealed class HostStartupCommandLine
             ".fsproj" => true,
             ".vbproj" => true,
             ".sln" => true,
+            ".slnx" => true,
             ".slnf" => true,
             _ => false,
         };

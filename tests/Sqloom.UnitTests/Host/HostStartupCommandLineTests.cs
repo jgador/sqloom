@@ -78,7 +78,7 @@ public sealed class HostStartupCommandLineTests
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeSolutionPath = @".\Sqloom.sln";
+        const string relativeSolutionPath = @".\Sqloom.slnx";
 
         var startupOptions = commandLine.Parse(
             [

@@ -2,12 +2,12 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "build: Sqloom.sln",
+      "label": "build: Sqloom.slnx",
       "type": "process",
       "command": "dotnet",
       "args": [
         "build",
-        ".\\Sqloom.sln",
+        ".\\Sqloom.slnx",
         "--tl:off",
         "--nologo",
         "-clp:ErrorsOnly;NoSummary"

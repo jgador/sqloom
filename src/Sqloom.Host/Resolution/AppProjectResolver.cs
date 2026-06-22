@@ -60,8 +60,7 @@ internal sealed class AppProjectResolver
 
         var fullTargetPath = Path.GetFullPath(targetPath);
         var fullProjectPaths = _targetPathResolver.ResolveProjectPaths(fullTargetPath);
-        List<ResolvedProjectSelection> projectSelections = [];
-        HashSet<string> resolvedIntegrationProjects = new(StringComparer.OrdinalIgnoreCase);
+        Dictionary<string, ResolvedProjectSelection> projectSelectionsByIntegrationPath = new(StringComparer.OrdinalIgnoreCase);
 
         foreach (var fullProjectPath in fullProjectPaths)
         {
@@ -74,16 +73,28 @@ internal sealed class AppProjectResolver
                 _companionProjectLocator,
                 validatedProjectPath,
                 projectDirectory);
-            if (!resolvedIntegrationProjects.Add(integrationProjectPath))
+            var projectSelection = new ResolvedProjectSelection(
+                fullTargetPath,
+                validatedProjectPath,
+                integrationProjectPath);
+
+            if (projectSelectionsByIntegrationPath.TryGetValue(integrationProjectPath, out var existingSelection))
             {
+                if (!existingSelection.UsesCompanionIntegrationProject
+                    && projectSelection.UsesCompanionIntegrationProject)
+                {
+                    projectSelectionsByIntegrationPath[integrationProjectPath] = projectSelection;
+                }
+
                 continue;
             }
 
-            projectSelections.Add(new ResolvedProjectSelection(
-                fullTargetPath,
-                validatedProjectPath,
-                integrationProjectPath));
+            projectSelectionsByIntegrationPath.Add(
+                integrationProjectPath,
+                projectSelection);
         }
+
+        var projectSelections = projectSelectionsByIntegrationPath.Values.ToList();
 
         if (projectSelections.Count == 0)
         {
