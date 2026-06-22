@@ -47,13 +47,13 @@ sqloom replay .\src\MyApi\MyApi.csproj --target "GET /api/orders/{id}"
 
 ## Install from a local feed
 
-Pack the required `Sqloom.*` packages into one local folder feed, then install the tool from that feed:
+Install the tool from a local folder feed:
 
 ```powershell
 dotnet tool install --tool-path <tool-path> sqloom --add-source <local-feed-path> --ignore-failed-sources
 ```
 
-The `sqloom` tool package depends on `Sqloom.Core`, `Sqloom.QueryStore`, `Sqloom.AzureSql`, and `Sqloom.AspNetCore`, so those packages must be present in the same folder feed for local installs. Public NuGet.org installs resolve that same dependency set after all five packages are published.
+The published `sqloom` tool package is sufficient for both local folder-feed installs and public NuGet.org installs.
 
 See the repository README for the full end-to-end sample and maintainer workflow:
 

@@ -6,12 +6,8 @@ Run every command from the repo root.
 
 ## What gets published
 
-The public tool install depends on one version-aligned package set:
+The public release uploads one NuGet package:
 
-- `Sqloom.Core`
-- `Sqloom.QueryStore`
-- `Sqloom.AzureSql`
-- `Sqloom.AspNetCore`
 - `sqloom`
 
 The release version comes from `Directory.Build.props`. The tool package metadata lives in `src/Sqloom.Host/Sqloom.Host.csproj`, and the package readme comes from `src/Sqloom.Host/PackageReadme.md`.
@@ -53,12 +49,12 @@ That script is the main release gate for packaging. It:
 1. Restores `.\Sqloom.slnx`.
 2. Builds `.\Sqloom.slnx` in `Release`.
 3. Recreates the local package feed at `.\artifacts\packages\sqloom`.
-4. Packs the five publishable projects into that folder feed.
-5. Verifies that every expected `.nupkg` exists.
+4. Packs the tool project and the supporting internal projects into that folder feed for local verification.
+5. Verifies that every expected `.nupkg` exists for the local pack step.
 6. Installs `sqloom` from that local feed into `.\artifacts\tools\sqloom-verify`.
 7. Runs `sqloom.exe --help`.
 8. Runs a sample `replay` smoke test unless `-SkipSmoke` is passed.
-9. Prints the exact `dotnet nuget push` commands for the produced packages.
+9. Prints the exact `dotnet nuget push` command for the public `sqloom` package.
 
 Use `-SkipSmoke` only when the sample replay cannot run in the current environment and you are intentionally accepting a weaker release gate:
 
@@ -68,13 +64,11 @@ pwsh .\scripts\prepare-sqloom-packages.ps1 -SkipSmoke
 
 ## 4. Inspect the release output
 
-After the script succeeds, confirm these packages exist under `.\artifacts\packages\sqloom` with the same version number:
+After the script succeeds, confirm the public package exists under `.\artifacts\packages\sqloom`:
 
-- `Sqloom.Core.<version>.nupkg`
-- `Sqloom.QueryStore.<version>.nupkg`
-- `Sqloom.AzureSql.<version>.nupkg`
-- `Sqloom.AspNetCore.<version>.nupkg`
 - `sqloom.<version>.nupkg`
+
+The current pack script may also produce additional `Sqloom.*.nupkg` files as local build artifacts, but they are not part of the public release upload.
 
 The verification install should also exist under `.\artifacts\tools\sqloom-verify`.
 
@@ -87,17 +81,11 @@ If you want one more explicit local check before upload, run:
 
 ## 5. Upload the packages manually to NuGet.org
 
-The packaging script already prints `dotnet nuget push` commands. For a manual browser upload flow, use those printed paths as a package manifest and upload the `.nupkg` files yourself instead of running the push commands.
+The packaging script already prints the `dotnet nuget push` command for the public tool package. For a manual browser upload flow, use that printed path as the package manifest and upload the `.nupkg` file yourself instead of running the push command.
 
-Upload in this order:
+Upload:
 
-1. `Sqloom.Core.<version>.nupkg`
-2. `Sqloom.QueryStore.<version>.nupkg`
-3. `Sqloom.AzureSql.<version>.nupkg`
-4. `Sqloom.AspNetCore.<version>.nupkg`
-5. `sqloom.<version>.nupkg`
-
-Upload the tool package last because it depends on the other four packages being available from the public feed.
+1. `sqloom.<version>.nupkg`
 
 ## 6. Verify install from the public feed
 
@@ -117,7 +105,7 @@ dotnet tool install --tool-path $toolPath sqloom --version $version
 & (Join-Path $toolPath "sqloom.exe") --help
 ```
 
-If this fails because a dependency package is not visible yet, wait for NuGet indexing to finish and try again.
+If this fails immediately after upload, wait for NuGet indexing to finish and try again.
 
 ## 7. If something is wrong after upload
 

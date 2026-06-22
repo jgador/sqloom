@@ -26,6 +26,12 @@ Sqloom.IntegrationTests -> production projects, Sqloom.TestApp, Sqloom.TestApp.I
 - `Sqloom.Host` stays generic and loads app-owned companion harnesses through project discovery and `SqloomTargetProject` mappings.
 - App-specific replay harnesses belong with the apps they support, not in the core `Sqloom.*` production graph.
 
+## Packaging and Publication
+
+- This document describes internal project references, not a public NuGet package split.
+- The public release artifact is the `sqloom` .NET tool produced from `Sqloom.Host`.
+- `Sqloom.Core`, `Sqloom.QueryStore`, `Sqloom.AzureSql`, and `Sqloom.AspNetCore` remain internal production projects in this repository and are not part of the normal public NuGet publish flow as separate packages.
+
 ## Boundary Rules
 
 - No production project may reference anything under `tests/`.

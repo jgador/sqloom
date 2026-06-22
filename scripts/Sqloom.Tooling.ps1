@@ -77,6 +77,16 @@ function Get-SqloomPackagePaths
     )
 }
 
+function Get-SqloomPublicPackagePath
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Context
+    )
+
+    return Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
+}
+
 function Assert-PathUnderRoot
 {
     param(
@@ -358,10 +368,7 @@ function Show-SqloomPublishCommands
     )
 
     Write-Host ""
-    Write-Host "Manual NuGet.org publish commands:"
-
-    foreach ($packagePath in (Get-SqloomPackagePaths -Context $Context))
-    {
-        Write-Host "dotnet nuget push `"$packagePath`" --source https://api.nuget.org/v3/index.json --api-key <nuget-api-key>"
-    }
+    Write-Host "Manual NuGet.org publish command for the public tool package:"
+    $packagePath = Get-SqloomPublicPackagePath -Context $Context
+    Write-Host "dotnet nuget push `"$packagePath`" --source https://api.nuget.org/v3/index.json --api-key <nuget-api-key>"
 }
