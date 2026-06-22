@@ -14,18 +14,18 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class HostApplication
 {
-    private readonly IAppIntegration? _boundAppIntegration;
-    private readonly AppResolver _appResolver;
     private readonly CommandRegistry _commandRegistry;
     private readonly HostConsoleWriter _consoleWriter;
+    private readonly HostCommandExecutionContextFactory _contextFactory;
+    private readonly HostCommandIntegrationResolver _integrationResolver;
 
     public HostApplication(
         AppResolver appResolver,
         HostConsoleWriter consoleWriter)
         : this(
-            appResolver,
+            new HostCommandIntegrationResolver(appResolver),
+            new HostCommandExecutionContextFactory(consoleWriter),
             consoleWriter,
-            null,
             CreateDefaultRegistry())
     {
     }
@@ -35,9 +35,9 @@ internal sealed class HostApplication
         HostConsoleWriter consoleWriter,
         CommandRegistry commandRegistry)
         : this(
-            appResolver,
+            new HostCommandIntegrationResolver(appResolver),
+            new HostCommandExecutionContextFactory(consoleWriter),
             consoleWriter,
-            null,
             commandRegistry)
     {
     }
@@ -46,9 +46,9 @@ internal sealed class HostApplication
         IAppIntegration appIntegration,
         HostConsoleWriter consoleWriter)
         : this(
-            new AppResolver(),
+            new HostCommandIntegrationResolver(appIntegration),
+            new HostCommandExecutionContextFactory(consoleWriter),
             consoleWriter,
-            appIntegration,
             CreateDefaultRegistry())
     {
     }
@@ -58,82 +58,51 @@ internal sealed class HostApplication
         HostConsoleWriter consoleWriter,
         CommandRegistry commandRegistry)
         : this(
-            new AppResolver(),
+            new HostCommandIntegrationResolver(appIntegration),
+            new HostCommandExecutionContextFactory(consoleWriter),
             consoleWriter,
-            appIntegration,
             commandRegistry)
     {
     }
 
-    private HostApplication(
-        AppResolver appResolver,
+    internal HostApplication(
+        HostCommandIntegrationResolver integrationResolver,
+        HostCommandExecutionContextFactory contextFactory,
         HostConsoleWriter consoleWriter,
-        IAppIntegration? boundAppIntegration,
         CommandRegistry commandRegistry)
     {
-        _appResolver = appResolver;
+        _integrationResolver = integrationResolver ?? throw new ArgumentNullException(nameof(integrationResolver));
+        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
         _consoleWriter = consoleWriter;
-        _boundAppIntegration = boundAppIntegration;
-        _commandRegistry = commandRegistry;
+        _commandRegistry = commandRegistry ?? throw new ArgumentNullException(nameof(commandRegistry));
     }
 
     public async Task<int> RunAsync(
         HostStartupOptions startupOptions,
         string currentDirectory)
     {
-        var args = startupOptions.ApplicationArguments;
-        var commandKind = CommandRegistry.GetCommandKind(args);
+        ArgumentNullException.ThrowIfNull(startupOptions);
+        ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
+
+        var commandKind = CommandRegistry.GetCommandKind(startupOptions.ApplicationArguments);
 
         switch (commandKind)
         {
             case HostCommandKind.Help:
                 _consoleWriter.PrintUsage();
                 return 0;
-            case HostCommandKind.Observe:
-                return await RunHandlerAsync(
-                        commandKind,
-                        startupOptions,
-                        args,
-                        currentDirectory,
-                        ResolveObserveIntegration(startupOptions))
-                    .ConfigureAwait(false);
-            case HostCommandKind.Tune:
-                return await RunHandlerAsync(
-                        commandKind,
-                        startupOptions,
-                        args,
-                        currentDirectory,
-                        ResolveTuneIntegration(startupOptions))
-                    .ConfigureAwait(false);
-            case HostCommandKind.Replay:
-                return await RunHandlerAsync(
-                        commandKind,
-                        startupOptions,
-                        args,
-                        currentDirectory,
-                        null,
-                        ResolveReplayIntegrations(startupOptions))
-                    .ConfigureAwait(false);
             case HostCommandKind.Correlate:
+            case HostCommandKind.Observe:
+            case HostCommandKind.Replay:
+            case HostCommandKind.Tune:
             case HostCommandKind.Advise:
                 return await RunHandlerAsync(
                         commandKind,
                         startupOptions,
-                        args,
-                        currentDirectory,
-                        _boundAppIntegration)
+                        currentDirectory)
                     .ConfigureAwait(false);
             default:
-                if (args.Length > 0)
-                {
-                    throw new ArgumentException(
-                        "Sqloom now requires an explicit stage verb. Use tune, observe, replay, correlate, or advise.");
-                }
-
-                PrintBanner(ResolveObserveIntegration(startupOptions));
-                _consoleWriter.PrintNoCommandHint();
-
-                return 0;
+                return HandleNoCommand(startupOptions);
         }
     }
 
@@ -171,25 +140,14 @@ internal sealed class HostApplication
     private async Task<int> RunHandlerAsync(
         HostCommandKind commandKind,
         HostStartupOptions startupOptions,
-        string[] args,
-        string currentDirectory,
-        IAppIntegration? appIntegration = null,
-        IReadOnlyList<IAppIntegration>? appIntegrations = null)
+        string currentDirectory)
     {
-        // The startup parser stays separate from command parsing so each stage
-        // can keep its own argument rules and execution boundary.
-        CommandExecutionContext context = new()
-        {
-            StartupOptions = startupOptions,
-            Arguments = args,
-            CurrentDirectory = currentDirectory,
-            ConsoleWriter = _consoleWriter,
-            DebugWriter = startupOptions.DebugEnabled
-                ? new HostDebugWriter(isEnabled: true)
-                : HostDebugWriter.Disabled,
-            AppIntegration = appIntegration,
-            AppIntegrations = appIntegrations ?? Array.Empty<IAppIntegration>(),
-        };
+        var bindings = _integrationResolver.Resolve(commandKind, startupOptions);
+        var context = _contextFactory.Create(
+            startupOptions,
+            currentDirectory,
+            bindings.AppIntegration,
+            bindings.AppIntegrations);
 
         return await _commandRegistry
             .GetRequiredHandler(commandKind)
@@ -197,46 +155,24 @@ internal sealed class HostApplication
             .ConfigureAwait(false);
     }
 
+    private int HandleNoCommand(HostStartupOptions startupOptions)
+    {
+        if (startupOptions.ApplicationArguments.Length > 0)
+        {
+            throw new ArgumentException(
+                "Sqloom now requires an explicit stage verb. Use tune, observe, replay, correlate, or advise.");
+        }
+
+        PrintBanner(_integrationResolver.ResolveBannerIntegration(startupOptions));
+        _consoleWriter.PrintNoCommandHint();
+        return 0;
+    }
+
     private void PrintBanner(IAppIntegration? appIntegration)
     {
         _consoleWriter.PrintBanner(
             appIntegration?.AppName,
             GetProjectNames(appIntegration));
-    }
-
-    private IAppIntegration? ResolveObserveIntegration(HostStartupOptions startupOptions)
-    {
-        if (_boundAppIntegration is not null)
-        {
-            return _boundAppIntegration;
-        }
-
-        if (!startupOptions.HasTargetSelection)
-        {
-            return null;
-        }
-
-        return _appResolver.Resolve(startupOptions);
-    }
-
-    private IReadOnlyList<IAppIntegration> ResolveReplayIntegrations(HostStartupOptions startupOptions)
-    {
-        if (_boundAppIntegration is not null)
-        {
-            return [_boundAppIntegration];
-        }
-
-        return _appResolver.ResolveReplayIntegrations(startupOptions);
-    }
-
-    private IAppIntegration ResolveTuneIntegration(HostStartupOptions startupOptions)
-    {
-        if (_boundAppIntegration is not null)
-        {
-            return _boundAppIntegration;
-        }
-
-        return _appResolver.Resolve(startupOptions);
     }
 
     private static CommandRegistry CreateDefaultRegistry()

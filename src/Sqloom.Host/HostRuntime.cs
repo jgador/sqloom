@@ -19,45 +19,11 @@ public static class HostRuntime
         string[] args,
         string currentDirectory)
     {
-        HostConsoleWriter consoleWriter = new();
-        HostStartupCommandLine startupCommandLine = new();
-
-        try
-        {
-            var startupOptions = startupCommandLine.Parse(args, currentDirectory);
-            if (startupOptions.ShowVersion)
-            {
-                consoleWriter.PrintVersion(GetDisplayVersion());
-                return 0;
-            }
-
-            if (startupOptions.ShowHelp)
-            {
-                consoleWriter.PrintUsage();
-                return 0;
-            }
-
-            HostApplication application = new(
-                new AppResolver(),
-                consoleWriter);
-            return await application
-                .RunAsync(
-                    startupOptions,
-                    currentDirectory)
-                .ConfigureAwait(false);
-        }
-        catch (ArgumentException exception)
-        {
-            Console.Error.WriteLine(exception.Message);
-            consoleWriter.PrintUsage();
-            return 1;
-        }
-        catch (AppResolutionException exception)
-        {
-            Console.Error.WriteLine(exception.Message);
-            consoleWriter.PrintUsage();
-            return 1;
-        }
+        return await RunCoreAsync(
+                null,
+                args,
+                currentDirectory)
+            .ConfigureAwait(false);
     }
 
     public static Task<int> RunAsync(
@@ -77,31 +43,34 @@ public static class HostRuntime
     {
         ArgumentNullException.ThrowIfNull(appIntegration);
 
+        return await RunCoreAsync(
+                appIntegration,
+                args,
+                currentDirectory)
+            .ConfigureAwait(false);
+    }
+
+    private static async Task<int> RunCoreAsync(
+        IAppIntegration? appIntegration,
+        string[] args,
+        string currentDirectory)
+    {
         HostConsoleWriter consoleWriter = new();
         HostStartupCommandLine startupCommandLine = new();
 
         try
         {
             var startupOptions = startupCommandLine.Parse(args, currentDirectory);
-            if (startupOptions.ShowVersion)
+            if (TryHandleStartupAction(
+                startupOptions,
+                appIntegration is not null,
+                consoleWriter,
+                out var exitCode))
             {
-                consoleWriter.PrintVersion(GetDisplayVersion());
-                return 0;
+                return exitCode;
             }
 
-            if (startupOptions.ShowHelp)
-            {
-                consoleWriter.PrintUsage();
-                return 0;
-            }
-
-            if (startupOptions.HasTargetSelection)
-            {
-                throw new ArgumentException(
-                    "This app-owned Sqloom host already provides its integration. Remove the explicit target path selection and use the generic Sqloom.Host executable when you need runtime app selection.");
-            }
-
-            HostApplication application = new(
+            var application = CreateApplication(
                 appIntegration,
                 consoleWriter);
             return await application
@@ -112,15 +81,11 @@ public static class HostRuntime
         }
         catch (ArgumentException exception)
         {
-            Console.Error.WriteLine(exception.Message);
-            consoleWriter.PrintUsage();
-            return 1;
+            return HandleStartupFailure(exception.Message, consoleWriter);
         }
         catch (AppResolutionException exception)
         {
-            Console.Error.WriteLine(exception.Message);
-            consoleWriter.PrintUsage();
-            return 1;
+            return HandleStartupFailure(exception.Message, consoleWriter);
         }
     }
 
@@ -140,5 +105,57 @@ public static class HostRuntime
 
         return assembly.GetName().Version?.ToString()
             ?? "unknown";
+    }
+
+    private static HostApplication CreateApplication(
+        IAppIntegration? appIntegration,
+        HostConsoleWriter consoleWriter)
+    {
+        return appIntegration is null
+            ? new HostApplication(
+                new AppResolver(),
+                consoleWriter)
+            : new HostApplication(
+                appIntegration,
+                consoleWriter);
+    }
+
+    private static int HandleStartupFailure(
+        string message,
+        HostConsoleWriter consoleWriter)
+    {
+        Console.Error.WriteLine(message);
+        consoleWriter.PrintUsage();
+        return 1;
+    }
+
+    private static bool TryHandleStartupAction(
+        HostStartupOptions startupOptions,
+        bool hasBoundAppIntegration,
+        HostConsoleWriter consoleWriter,
+        out int exitCode)
+    {
+        if (startupOptions.ShowVersion)
+        {
+            consoleWriter.PrintVersion(GetDisplayVersion());
+            exitCode = 0;
+            return true;
+        }
+
+        if (startupOptions.ShowHelp)
+        {
+            consoleWriter.PrintUsage();
+            exitCode = 0;
+            return true;
+        }
+
+        if (hasBoundAppIntegration && startupOptions.HasTargetSelection)
+        {
+            throw new ArgumentException(
+                "This app-owned Sqloom host already provides its integration. Remove the explicit target path selection and use the generic Sqloom.Host executable when you need runtime app selection.");
+        }
+
+        exitCode = 0;
+        return false;
     }
 }

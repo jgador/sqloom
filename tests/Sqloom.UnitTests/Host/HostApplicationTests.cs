@@ -38,9 +38,10 @@ public sealed class HostApplicationTests
     [Fact]
     public async Task RunAsync_WithTuneVerb_InvokesMatchingHandler()
     {
+        var appIntegration = new MultipleTestAppIntegrationA();
         StubCommandHandler handler = new(HostCommandKind.Tune, 23);
         HostApplication application = new(
-            new MultipleTestAppIntegrationA(),
+            appIntegration,
             new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
@@ -59,6 +60,7 @@ public sealed class HostApplicationTests
 
         Assert.Equal(23, result);
         Assert.NotNull(handler.LastContext);
+        Assert.Same(appIntegration, handler.LastContext!.AppIntegration);
         Assert.Collection(
             handler.LastContext!.Arguments,
             item => Assert.Equal("tune", item),
@@ -87,6 +89,32 @@ public sealed class HostApplicationTests
         Assert.Equal(19, result);
         Assert.NotNull(handler.LastContext);
         Assert.True(handler.LastContext!.DebugWriter.IsEnabled);
+    }
+
+    [Fact]
+    public async Task RunAsync_WithReplayVerb_UsesBoundIntegrationAsOnlyReplayTarget()
+    {
+        var appIntegration = new MultipleTestAppIntegrationA();
+        StubCommandHandler handler = new(HostCommandKind.Replay, 29);
+        HostApplication application = new(
+            appIntegration,
+            new HostConsoleWriter(),
+            new CommandRegistry(handler));
+        HostStartupOptions startupOptions = new()
+        {
+            ApplicationArguments = ["replay"],
+        };
+
+        var result = await application.RunAsync(
+            startupOptions,
+            Directory.GetCurrentDirectory());
+
+        Assert.Equal(29, result);
+        Assert.NotNull(handler.LastContext);
+        Assert.Null(handler.LastContext!.AppIntegration);
+        Assert.Collection(
+            handler.LastContext.AppIntegrations,
+            item => Assert.Same(appIntegration, item));
     }
 
     [Fact]
