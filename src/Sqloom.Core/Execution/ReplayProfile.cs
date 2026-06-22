@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -31,8 +32,10 @@ public interface IReplayHost : IAsyncDisposable
 /// </summary>
 public sealed class ReplayLaunchOptions
 {
+    [JsonPropertyName("sqlServerDacpacPath")]
     public string? SqlServerDacpacPath { get; init; }
 
+    [JsonPropertyName("sqlServerSeedSqlPath")]
     public string? SqlServerSeedSqlPath { get; init; }
 }
 
@@ -41,8 +44,10 @@ public sealed class ReplayLaunchOptions
 /// </summary>
 public sealed class ReplayBootstrapReport
 {
+    [JsonPropertyName("sqlServerDacpac")]
     public SqlServerDacpacArtifact? SqlServerDacpac { get; init; }
 
+    [JsonPropertyName("sqlServerSeedSql")]
     public SqlServerSeedSqlArtifact? SqlServerSeedSql { get; init; }
 }
 
@@ -51,10 +56,13 @@ public sealed class ReplayBootstrapReport
 /// </summary>
 public sealed class SqlServerDacpacArtifact
 {
+    [JsonPropertyName("sourcePath")]
     public required string SourcePath { get; init; }
 
+    [JsonPropertyName("fileName")]
     public required string FileName { get; init; }
 
+    [JsonPropertyName("sha256")]
     public required string Sha256 { get; init; }
 }
 
@@ -63,10 +71,13 @@ public sealed class SqlServerDacpacArtifact
 /// </summary>
 public sealed class SqlServerSeedSqlArtifact
 {
+    [JsonPropertyName("sourcePath")]
     public required string SourcePath { get; init; }
 
+    [JsonPropertyName("fileName")]
     public required string FileName { get; init; }
 
+    [JsonPropertyName("sha256")]
     public required string Sha256 { get; init; }
 }
 
@@ -75,13 +86,17 @@ public sealed class SqlServerSeedSqlArtifact
 /// </summary>
 public sealed class ReplayProfile
 {
+    [JsonPropertyName("defaultOpenApiDocumentPath")]
     public required string DefaultOpenApiDocumentPath { get; init; }
 
+    [JsonPropertyName("includeAuthenticatedGetOperationsByDefault")]
     public bool IncludeAuthenticatedGetOperationsByDefault { get; init; } = true;
 
+    [JsonPropertyName("personas")]
     public IReadOnlyList<ReplayPersonaDefinition> Personas { get; init; } =
         Array.Empty<ReplayPersonaDefinition>();
 
+    [JsonPropertyName("operationOverlays")]
     public IReadOnlyList<ReplayOperationOverlayDefinition> OperationOverlays { get; init; } =
         Array.Empty<ReplayOperationOverlayDefinition>();
 }
@@ -91,10 +106,13 @@ public sealed class ReplayProfile
 /// </summary>
 public sealed class ReplayPersonaDefinition
 {
+    [JsonPropertyName("name")]
     public required string Name { get; init; }
 
+    [JsonPropertyName("requiresAuthentication")]
     public bool RequiresAuthentication { get; init; } = true;
 
+    [JsonPropertyName("notes")]
     public string Notes { get; init; } = string.Empty;
 }
 
@@ -103,27 +121,37 @@ public sealed class ReplayPersonaDefinition
 /// </summary>
 public sealed class ReplayOperationOverlayDefinition
 {
+    [JsonPropertyName("operationKey")]
     public required string OperationKey { get; init; }
 
+    [JsonPropertyName("persona")]
     public string? Persona { get; init; }
 
+    [JsonPropertyName("replayByDefault")]
     public bool ReplayByDefault { get; init; } = true;
 
+    [JsonPropertyName("allowNonGetReplay")]
     public bool AllowNonGetReplay { get; init; }
 
+    [JsonPropertyName("skipReason")]
     public string? SkipReason { get; init; }
 
+    [JsonPropertyName("requestBodyJson")]
     public string? RequestBodyJson { get; init; }
 
+    [JsonPropertyName("pathValues")]
     public IReadOnlyDictionary<string, string> PathValues { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+    [JsonPropertyName("queryValues")]
     public IReadOnlyDictionary<string, string> QueryValues { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+    [JsonPropertyName("headerValues")]
     public IReadOnlyDictionary<string, string> HeaderValues { get; init; } =
         new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
+    [JsonPropertyName("notes")]
     public string Notes { get; init; } = string.Empty;
 }
 

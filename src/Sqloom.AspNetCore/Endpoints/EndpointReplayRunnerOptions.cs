@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using Sqloom.AspNetCore.OpenApi;
 using Sqloom.Core.Execution;
 
@@ -33,25 +34,36 @@ public sealed class EndpointReplayRunnerOptions
 /// </summary>
 public sealed class EndpointReplayRunResult
 {
+    [JsonPropertyName("appName")]
     public required string AppName { get; init; }
 
+    [JsonPropertyName("replayArtifactDirectory")]
     public required string ReplayArtifactDirectory { get; init; }
 
+    [JsonPropertyName("openApiDocumentPath")]
     public required string OpenApiDocumentPath { get; init; }
 
+    [JsonPropertyName("discoveredOperationsArtifactPath")]
     public required string DiscoveredOperationsArtifactPath { get; init; }
 
+    [JsonPropertyName("replayPlanArtifactPath")]
     public required string ReplayPlanArtifactPath { get; init; }
 
+    [JsonPropertyName("summaryArtifactPath")]
     public required string SummaryArtifactPath { get; init; }
 
+    [JsonPropertyName("discoveredOperations")]
     public required IReadOnlyList<DiscoveredOpenApiOperation> DiscoveredOperations { get; init; }
 
+    [JsonPropertyName("replayPlan")]
     public required EndpointReplayPlan ReplayPlan { get; init; }
 
+    [JsonPropertyName("pipeline")]
     public required PipelineReport Pipeline { get; init; }
 
+    [JsonPropertyName("replayBootstrap")]
     public ReplayBootstrapReport ReplayBootstrap { get; init; } = new();
 
+    [JsonPropertyName("results")]
     public required IReadOnlyList<EndpointReplayResult> Results { get; init; }
 }

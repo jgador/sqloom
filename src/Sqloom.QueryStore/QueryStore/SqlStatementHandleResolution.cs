@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Sqloom.QueryStore.QueryStore;
 
@@ -8,15 +9,20 @@ namespace Sqloom.QueryStore.QueryStore;
 /// </summary>
 public sealed class SqlStatementHandleResolution
 {
+    [JsonPropertyName("sqlText")]
     public required string SqlText { get; init; }
 
+    [JsonPropertyName("comparableSqlText")]
     public required string ComparableSqlText { get; init; }
 
+    [JsonPropertyName("statementSqlHandle")]
     public string? StatementSqlHandle { get; init; }
 
+    [JsonPropertyName("candidates")]
     public IReadOnlyList<SqlStatementHandleCandidate> Candidates { get; init; } =
         Array.Empty<SqlStatementHandleCandidate>();
 
+    [JsonPropertyName("errorMessage")]
     public string? ErrorMessage { get; init; }
 }
 
@@ -25,11 +31,15 @@ public sealed class SqlStatementHandleResolution
 /// </summary>
 public sealed class SqlStatementHandleCandidate
 {
+    [JsonPropertyName("queryTextShape")]
     public string QueryTextShape { get; init; } = string.Empty;
 
+    [JsonPropertyName("requestedQueryParameterizationType")]
     public required string RequestedQueryParameterizationType { get; init; }
 
+    [JsonPropertyName("queryParameterizationType")]
     public int? QueryParameterizationType { get; init; }
 
+    [JsonPropertyName("statementSqlHandle")]
     public string? StatementSqlHandle { get; init; }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Sqloom.AspNetCore.OpenApi;
 
@@ -8,25 +9,35 @@ namespace Sqloom.AspNetCore.OpenApi;
 /// </summary>
 public sealed class DiscoveredOpenApiOperation
 {
+    [JsonPropertyName("stableOperationKey")]
     public required string StableOperationKey { get; init; }
 
+    [JsonPropertyName("operationId")]
     public string? OperationId { get; init; }
 
+    [JsonPropertyName("httpMethod")]
     public required string HttpMethod { get; init; }
 
+    [JsonPropertyName("route")]
     public required string Route { get; init; }
 
+    [JsonPropertyName("requiresAuthentication")]
     public bool RequiresAuthentication { get; init; }
 
+    [JsonPropertyName("tags")]
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
 
+    [JsonPropertyName("parameters")]
     public IReadOnlyList<OpenApiParameterDefinition> Parameters { get; init; } =
         Array.Empty<OpenApiParameterDefinition>();
 
+    [JsonPropertyName("hasJsonRequestBody")]
     public bool HasJsonRequestBody { get; init; }
 
+    [JsonPropertyName("requestBodyRequired")]
     public bool RequestBodyRequired { get; init; }
 
+    [JsonPropertyName("jsonRequestBodyExample")]
     public string? JsonRequestBodyExample { get; init; }
 }
 
@@ -35,13 +46,18 @@ public sealed class DiscoveredOpenApiOperation
 /// </summary>
 public sealed class OpenApiParameterDefinition
 {
+    [JsonPropertyName("name")]
     public required string Name { get; init; }
 
+    [JsonPropertyName("location")]
     public required string Location { get; init; }
 
+    [JsonPropertyName("required")]
     public bool Required { get; init; }
 
+    [JsonPropertyName("schemaType")]
     public string? SchemaType { get; init; }
 
+    [JsonPropertyName("format")]
     public string? Format { get; init; }
 }

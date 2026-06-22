@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Sqloom.QueryStore.QueryStore;
 
@@ -8,18 +9,25 @@ namespace Sqloom.QueryStore.QueryStore;
 /// </summary>
 public sealed class QueryStoreSnapshot
 {
+    [JsonPropertyName("capturedAtUtc")]
     public required DateTimeOffset CapturedAtUtc { get; init; }
 
+    [JsonPropertyName("lookbackWindow")]
     public required TimeSpan LookbackWindow { get; init; }
 
+    [JsonPropertyName("databaseOptions")]
     public required QueryStoreDatabaseOptions DatabaseOptions { get; init; }
 
+    [JsonPropertyName("workloadProfileName")]
     public string? WorkloadProfileName { get; init; }
 
+    [JsonPropertyName("discoveredObjectCatalog")]
     public DiscoveredDatabaseObjectCatalog? DiscoveredObjectCatalog { get; init; }
 
+    [JsonPropertyName("plans")]
     public required IReadOnlyList<QueryStorePlanRecord> Plans { get; init; }
 
+    [JsonPropertyName("waits")]
     public required IReadOnlyList<QueryStoreWaitStat> Waits { get; init; }
 }
 
@@ -28,14 +36,19 @@ public sealed class QueryStoreSnapshot
 /// </summary>
 public sealed class QueryStoreDatabaseOptions
 {
+    [JsonPropertyName("desiredState")]
     public required string DesiredState { get; init; }
 
+    [JsonPropertyName("actualState")]
     public required string ActualState { get; init; }
 
+    [JsonPropertyName("readOnlyReason")]
     public long ReadOnlyReason { get; init; }
 
+    [JsonPropertyName("currentStorageSizeMb")]
     public double CurrentStorageSizeMb { get; init; }
 
+    [JsonPropertyName("maxStorageSizeMb")]
     public double MaxStorageSizeMb { get; init; }
 }
 
@@ -44,15 +57,21 @@ public sealed class QueryStoreDatabaseOptions
 /// </summary>
 public sealed class QueryStoreWaitStat
 {
+    [JsonPropertyName("queryId")]
     public required long QueryId { get; init; }
 
+    [JsonPropertyName("planId")]
     public required long PlanId { get; init; }
 
+    [JsonPropertyName("waitCategory")]
     public required string WaitCategory { get; init; }
 
+    [JsonPropertyName("averageQueryWaitMilliseconds")]
     public double AverageQueryWaitMilliseconds { get; init; }
 
+    [JsonPropertyName("totalWaitMilliseconds")]
     public double TotalWaitMilliseconds { get; init; }
 
+    [JsonPropertyName("classification")]
     public QueryWorkloadClassification? Classification { get; init; }
 }
