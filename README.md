@@ -1,18 +1,21 @@
 # Sqloom
 
-`Sqloom.slnx` is the standalone Sqloom workspace. The active user-facing runner is `Sqloom.Host` or the packaged `sqloom` tool: a host-first CLI that resolves target paths such as `Sqloom.TestApp` through companion integration libraries such as `Sqloom.TestApp.IntegrationTests`.
+Sqloom is a host-first CLI for investigating and tuning database-backed application operations. It captures Query Store evidence from a live SQL Server or Azure SQL workload, replays OpenAPI operations through app-specific companion integrations, correlates captured SQL back to Query Store, and emits operation-level advice plus SQL proposal artifacts.
 
-`Sqloom.TestApp` also supports an optional post-DACPAC seed script through `--sqlserver-seed-sql-file <path>` on both `replay` and `sqloom-local tune`, used together with `--sqlserver-dacpac-file <path>`. Generate that script from localhost with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.ps1` when you want the Testcontainer to mirror exported `AdventureWorksLT2025` data instead of the built-in sample seed.
+`tune` is the end-to-end front door over `observe -> replay -> correlate -> advise`. The user-facing packaged command is `sqloom`. This repository also provides `sqloom-local`, a repo-local wrapper for local development after `pwsh .\scripts\deploy-sqloom-local.ps1`.
+
+The sample app in this repository centers on `GET /api/products/by-category` and can bootstrap a disposable SQL Server replay database from `AdventureWorksLT2025.dacpac`, with an optional post-DACPAC seed script when you want replay to mirror exported localhost data.
+
+![Sqloom tuning pipeline diagram](docs/images/sqloom-diagram.png)
 
 ## Highlight
 
-The fastest way to demo the full tuning flow today is the sample app plus `sqloom-local tune` with the committed AdventureWorks DACPAC, optional seed script, and `--debug`. That path exercises `observe -> replay -> correlate -> advise` and emits both the advice JSON and the generated SQL proposal script:
+The fastest way to demo the full tuning flow is the sample app plus `sqloom tune` with the committed AdventureWorks DACPAC, optional seed script, and `--debug`. That path exercises `observe -> replay -> correlate -> advise` and emits both the advice JSON and the generated SQL proposal script:
 
 ```powershell
 if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
 
-sqloom-local tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
-  --no-build `
+sqloom tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac `
   --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.seed.sql `
   --sqlserver-schema-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.schema.sql `
@@ -23,6 +26,8 @@ sqloom-local tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --openai-model "gpt-5.5" `
   --debug
 ```
+
+`Sqloom.TestApp` also supports an optional post-DACPAC seed script through `--sqlserver-seed-sql-file <path>` on both `replay` and `tune`, used together with `--sqlserver-dacpac-file <path>`. Generate that script from localhost with `pwsh .\tests\Sqloom.TestApp.IntegrationTests\Export-AdventureWorksLT2025SeedSql.ps1` when you want the Testcontainer to mirror exported `AdventureWorksLT2025` data instead of the built-in sample seed.
 
 The run writes artifacts under `artifacts/sqloom/tune/tune-<timestamp>/`, including:
 
@@ -58,11 +63,12 @@ Companion harnesses live beside the apps they support.
 
 ## Architecture Summary
 
-Sqloom stays host-first:
+Sqloom stays host-first and app-integration driven:
 
 - User-facing flow: `observe -> replay -> correlate -> advise`
 - Convenience front door: `tune` runs the common path and writes the same artifact chain under `artifacts/sqloom/`
-- `Sqloom.Host` is the generic CLI and runtime for target resolution, harness loading, and stage execution
+- The packaged `sqloom` command wraps `Sqloom.Host`, the generic CLI and runtime for target resolution, harness loading, and stage execution
+- Replay discovers stable OpenAPI operation keys such as `GET /api/products/by-category` and runs them through companion harnesses that own app-specific bootstrap
 - `Sqloom.TestApp.IntegrationTests` is the sample companion harness in this repository
 - Additional app-specific harnesses can follow the same companion-project model
 
@@ -80,16 +86,18 @@ dotnet restore .\Sqloom.slnx
 dotnet build .\Sqloom.slnx --tl:off --nologo "-clp:ErrorsOnly;NoSummary"
 ```
 
-Build `Sqloom.slnx` before using either the standalone `sqloom` tool or the non-packed `Sqloom.Host` wrapper. When you run `replay <path>` or `observe <path>`, the host resolves that target path down to one or more distinct library harnesses, resolves each harness project's `TargetPath` through `dotnet msbuild`, and builds those harnesses automatically unless you add `--no-build`. Pass `--dotnet-command <command>` explicitly when that nested resolution should use a non-default dotnet executable. Supported target paths are project files, solution files, solution filters, and directories. Composite replay targets run every distinct integration they resolve to in order; when you pass `--artifact-dir` to a composite replay, Sqloom creates one child artifact directory per app under that root.
+Build `Sqloom.slnx` before using the packaged `sqloom` tool or the non-packed `Sqloom.Host` wrapper. When you run `replay <path>` or `observe <path>`, the host resolves that target path down to one or more distinct library harnesses, resolves each harness project's `TargetPath` through `dotnet msbuild`, and builds those harnesses automatically unless you add `--no-build`. Pass `--dotnet-command <command>` explicitly when that nested resolution should use a non-default dotnet executable. Supported target paths are project files, solution files, solution filters, and directories. Composite replay targets run every distinct integration they resolve to in order; when you pass `--artifact-dir` to a composite replay, Sqloom creates one child artifact directory per app under that root.
 
-`Sqloom.slnx` stays the main Sqloom workspace solution. The repo-root `global.json` opts this workspace into the Microsoft Testing Platform runner, so run the Sqloom xUnit lanes from the repo root:
+`Sqloom.slnx` is the repo's main workspace solution. The repo-root `global.json` opts this workspace into the Microsoft Testing Platform runner, so run the Sqloom xUnit lanes from the repo root:
 
 ```powershell
 dotnet test --solution .\Sqloom.UnitTests.slnf
 dotnet test --solution .\Sqloom.IntegrationTests.slnf
 ```
 
-## Tool Front Door
+## CLI Entry Points
+
+Use `sqloom` in the user-facing examples throughout this README. Use `sqloom-local` only when iterating on this repository and you want a fast repo-local install that stays separate from an installed `sqloom`.
 
 From the repo root, use the repo-local deployment script when you want a fast dev install that stays separate from the published global `sqloom` command:
 
@@ -105,7 +113,7 @@ That script repacks the full `Sqloom.*` package set into `.\artifacts\packages\s
 
 The deploy script now also ensures that wrapper directory is on the current PowerShell session PATH and on the user PATH for new terminals, so a direct invocation like `.\scripts\deploy-sqloom-local.ps1` is followed immediately by `sqloom-local --version` in the same shell.
 
-The local wrapper accepts the same explicit stage-verb model as `Sqloom.Host` itself. SQL Server-backed replay harnesses can require an app-owned DACPAC path and can also accept an optional post-DACPAC seed script when they need to restore data into the fresh replay database after publish.
+The local wrapper accepts the same explicit stage-verb model as the packaged `sqloom` command and `Sqloom.Host` itself. SQL Server-backed replay harnesses can require an app-owned DACPAC path and can also accept an optional post-DACPAC seed script when they need to restore data into the fresh replay database after publish.
 
 ```powershell
 if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
@@ -214,15 +222,14 @@ The workload classifier is intentionally discovery-first. The Azure SQL Query St
 
 ## Tune Workflow
 
-From the repo root, run the full observe, replay, correlate, and advise flow in one command:
+From the repo root, run the full observe, replay, correlate, and advise flow in one command with the packaged `sqloom` tool:
 
 Recommended first run:
 
 ```powershell
 if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
 
-sqloom-local tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
-  --no-build `
+sqloom tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
   --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac `
   --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.seed.sql `
   --sqlserver-schema-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.schema.sql `
@@ -235,6 +242,8 @@ sqloom-local tune .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj `
 ```
 
 That command is the easiest way to see the tuning pipeline produce both an advice report and a SQL proposal script from the sample AdventureWorks product query.
+
+If you are iterating on this repository itself, the repo-local equivalent is the `sqloom-local tune` example in the `CLI Entry Points` section above.
 
 Supported `tune` switches are the union of the main observe, replay, and advice knobs that affect behavior rather than file locations:
 
@@ -262,7 +271,7 @@ dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqlo
 dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.seed.sql --target "GET /api/products/by-category"
 ```
 
-The standalone `Sqloom.Host` executable uses the same explicit form, for example `replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"`.
+The `Sqloom.Host` executable uses the same explicit form, for example `replay .\tests\Sqloom.TestApp\Sqloom.TestApp.csproj --sqlserver-dacpac-file .\tests\Sqloom.TestApp.IntegrationTests\AdventureWorksLT2025.dacpac --target "GET /api/products/by-category"`.
 
 Supported replay switches:
 
@@ -353,7 +362,7 @@ The OpenAI advisor keeps the same correlation artifact input, sends the operatio
 
 ## Companion Project Model
 
-`Sqloom.Host` does not reference app code directly. The standalone host stays generic and requires explicit stage verbs plus verb-scoped target paths such as `observe <path>` and `replay <path>`, where the path can be a project, solution, solution filter, or directory. `Sqloom.Host` owns the generic target resolution, app loading, and command pipeline.
+`Sqloom.Host` does not reference app code directly. The host stays generic and requires explicit stage verbs plus verb-scoped target paths such as `observe <path>` and `replay <path>`, where the path can be a project, solution, solution filter, or directory. `Sqloom.Host` owns the generic target resolution, app loading, and command pipeline.
 
 App-specific replay bootstrap, personas, operation overlays, and `WebApplicationFactory` setup belong in companion integration projects such as `Sqloom.TestApp.IntegrationTests`. The host discovers those projects through the companion-project contract instead of hard-coding app-specific dependencies.
 
