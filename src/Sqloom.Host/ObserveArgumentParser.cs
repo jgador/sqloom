@@ -39,7 +39,7 @@ internal sealed class ObserveArgumentParser
 
     public ObserveArguments Parse(
         string[] args,
-        SqloomApplicationDescriptor? descriptor,
+        SqloomApplicationManifest? manifest,
         string readOnlyConnectionString,
         string currentDirectory)
     {
@@ -63,7 +63,7 @@ internal sealed class ObserveArgumentParser
         {
             ReadOnlyConnectionString = readOnlyConnectionString,
             ObservationOptions = observationOptions,
-            BaseWorkloadProfile = descriptor?.QueryStoreWorkloadProfile
+            BaseWorkloadProfile = manifest?.QueryStoreWorkloadProfile
                 ?? QueryStoreWorkloadProfile.Empty,
             AppOnly = appOnly,
             ShowClassification = showClassification,

@@ -9,7 +9,7 @@ namespace Sqloom.Testing;
 /// </summary>
 public interface ISqloomApplication
 {
-    SqloomApplicationDescriptor Describe(SqloomApplicationContext context);
+    SqloomApplicationManifest Describe(SqloomApplicationContext context);
 
     ValueTask<ISqloomApplicationSession> StartAsync(
         SqloomApplicationContext context,

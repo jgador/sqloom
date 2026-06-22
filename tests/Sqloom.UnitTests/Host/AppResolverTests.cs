@@ -23,12 +23,12 @@ public sealed class AppResolverTests
         };
 
         var application = resolver.Resolve(startupOptions);
-        var descriptor = application.Describe(new Sqloom.Testing.SqloomApplicationContext
+        var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
         {
             CurrentDirectory = SqloomRepositoryPaths.GetRepositoryRoot(),
         });
 
-        Assert.Equal("Sqloom Test App", descriptor.Name);
+        Assert.Equal("Sqloom Test App", manifest.Name);
         Assert.Equal("Sqloom.TestApp.Harness.TestAppApplication", application.GetType().FullName);
     }
 
@@ -60,9 +60,9 @@ public sealed class AppResolverTests
                 """
                 public sealed class FirstHarnessApplication : ISqloomApplication
                 {
-                    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+                    public SqloomApplicationManifest Describe(SqloomApplicationContext context)
                     {
-                        return new SqloomApplicationDescriptor
+                        return new SqloomApplicationManifest
                         {
                             Name = "First",
                             ReplayProfile = new ReplayProfile
@@ -82,9 +82,9 @@ public sealed class AppResolverTests
 
                 public sealed class SecondHarnessApplication : ISqloomApplication
                 {
-                    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+                    public SqloomApplicationManifest Describe(SqloomApplicationContext context)
                     {
-                        return new SqloomApplicationDescriptor
+                        return new SqloomApplicationManifest
                         {
                             Name = "Second",
                             ReplayProfile = new ReplayProfile
@@ -143,12 +143,12 @@ public sealed class AppResolverTests
             };
 
             var application = resolver.Resolve(startupOptions);
-            var descriptor = application.Describe(new Sqloom.Testing.SqloomApplicationContext
+            var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
             {
                 CurrentDirectory = SqloomRepositoryPaths.GetRepositoryRoot(),
             });
 
-            Assert.Equal("Sqloom Test App", descriptor.Name);
+            Assert.Equal("Sqloom Test App", manifest.Name);
         }
         finally
         {

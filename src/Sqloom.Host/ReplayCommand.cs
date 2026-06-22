@@ -32,10 +32,10 @@ internal sealed class ReplayCommand
             CurrentDirectory = context.CurrentDirectory,
             ReplayLaunchOptions = launchOptions,
         };
-        var descriptor = application.Describe(applicationContext);
+        var manifest = application.Describe(applicationContext);
 
         context.ConsoleWriter.PrintBanner(
-            descriptor.Name,
+            manifest.Name,
             HostApplication.GetProjectNames(application));
 
         await using var session = await application
@@ -43,7 +43,7 @@ internal sealed class ReplayCommand
             .ConfigureAwait(false);
         var arguments = _argumentParser.Parse(
             context.Arguments,
-            descriptor,
+            manifest,
             session.ReplayHost,
             context.CurrentDirectory,
             artifactDirectoryOverride: null);

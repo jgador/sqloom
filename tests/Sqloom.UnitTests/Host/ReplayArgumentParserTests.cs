@@ -33,7 +33,7 @@ public sealed class ReplayArgumentParserTests
                 "--target",
                 TestAppProductCatalogScenario.OperationKey,
             ],
-            TestApplicationDescriptorFactory.CreateDescriptor(),
+            TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory);
 
@@ -62,7 +62,7 @@ public sealed class ReplayArgumentParserTests
                     "--sqlserver-dacpac-file",
                     missingDacpacPath,
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory));
 
@@ -86,7 +86,7 @@ public sealed class ReplayArgumentParserTests
                     "--sqlserver-seed-sql-file",
                     missingSeedSqlPath,
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory));
 
@@ -107,7 +107,7 @@ public sealed class ReplayArgumentParserTests
                     "--sqlserver-seed-sql-file",
                     seedSqlPath,
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory));
 
@@ -128,7 +128,7 @@ public sealed class ReplayArgumentParserTests
                     legacySwitch,
                     value,
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory));
 
@@ -150,7 +150,7 @@ public sealed class ReplayArgumentParserTests
                     legacySwitch,
                     Path.Combine(currentDirectory, fileName),
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory));
 
@@ -177,7 +177,7 @@ public sealed class ReplayArgumentParserTests
                     "--target",
                     targetFilter,
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory));
 
@@ -200,7 +200,7 @@ public sealed class ReplayArgumentParserTests
                     "--target",
                     targetFilter,
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory));
 
@@ -224,7 +224,7 @@ public sealed class ReplayArgumentParserTests
                     "replay",
                     legacySwitch,
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             currentDirectory));
 

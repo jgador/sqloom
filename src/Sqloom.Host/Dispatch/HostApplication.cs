@@ -178,12 +178,12 @@ internal sealed class HostApplication
         ISqloomApplication? application,
         string currentDirectory)
     {
-        var descriptor = application?.Describe(new SqloomApplicationContext
+        var manifest = application?.Describe(new SqloomApplicationContext
         {
             CurrentDirectory = currentDirectory,
         });
         _consoleWriter.PrintBanner(
-            descriptor?.Name,
+            manifest?.Name,
             GetProjectNames(application));
     }
 

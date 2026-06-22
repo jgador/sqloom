@@ -91,7 +91,7 @@ public sealed class HostProductCatalogAdviceTests
             try
             {
                 TestAppApplication application = new();
-                var descriptor = application.Describe(new Sqloom.Testing.SqloomApplicationContext
+                var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
                 {
                     CurrentDirectory = currentDirectory,
                     ReplayLaunchOptions = new ReplayLaunchOptions
@@ -99,13 +99,13 @@ public sealed class HostProductCatalogAdviceTests
                         SqlServerDacpacPath = dacpacPath,
                     },
                 });
-                var replayProfile = descriptor.ReplayProfile;
+                var replayProfile = manifest.ReplayProfile;
                 EndpointReplayRunner replayRunner = new();
                 var replayResult = await replayRunner
                     .RunAsync(
                         new EndpointReplayRunnerOptions
                         {
-                            AppName = descriptor.Name,
+                            AppName = manifest.Name,
                             OpenApiDocumentPath = replayProfile.DefaultOpenApiDocumentPath,
                             ReplayArtifactDirectory = artifactDirectory,
                             ReplayProfile = replayProfile,

@@ -4,9 +4,9 @@ using Sqloom.QueryStore.QueryStore;
 namespace Sqloom.Testing;
 
 /// <summary>
-/// Describes the application under test and its Sqloom defaults.
+/// Declares the application under test and its Sqloom defaults.
 /// </summary>
-public sealed class SqloomApplicationDescriptor
+public sealed class SqloomApplicationManifest
 {
     public required string Name { get; init; }
 

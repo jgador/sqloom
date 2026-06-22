@@ -22,12 +22,12 @@ internal sealed class ObserveCommand
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
-        var descriptor = context.Application?.Describe(new Sqloom.Testing.SqloomApplicationContext
+        var manifest = context.Application?.Describe(new Sqloom.Testing.SqloomApplicationContext
         {
             CurrentDirectory = context.CurrentDirectory,
         });
         context.ConsoleWriter.PrintBanner(
-            descriptor?.Name,
+            manifest?.Name,
             HostApplication.GetProjectNames(context.Application));
 
         var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments);
@@ -40,7 +40,7 @@ internal sealed class ObserveCommand
 
         var arguments = _argumentParser.Parse(
             context.Arguments,
-            descriptor,
+            manifest,
             readOnlyConnectionString,
             context.CurrentDirectory);
         arguments.DebugWriter = context.DebugWriter;

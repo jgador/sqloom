@@ -26,11 +26,11 @@ public sealed class TestAppApplication : ISqloomApplication
 {
     private static readonly Lazy<string> _openApiDocumentPath = new(CreateOpenApiDocumentPath);
 
-    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+    public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        return new SqloomApplicationDescriptor
+        return new SqloomApplicationManifest
         {
             Name = "Sqloom Test App",
             ReplayProfile = CreateReplayProfile(),

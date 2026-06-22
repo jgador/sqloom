@@ -29,14 +29,14 @@ internal sealed class TuneCommand
             CurrentDirectory = context.CurrentDirectory,
             ReplayLaunchOptions = launchOptions,
         };
-        var descriptor = application.Describe(applicationContext);
+        var manifest = application.Describe(applicationContext);
 
         context.ConsoleWriter.PrintBanner(
-            descriptor.Name,
+            manifest.Name,
             HostApplication.GetProjectNames(application));
         _argumentParser.ValidateBeforeSession(
             context.Arguments,
-            descriptor,
+            manifest,
             context.CurrentDirectory);
 
         await using var session = await application
@@ -53,7 +53,7 @@ internal sealed class TuneCommand
 
         var arguments = _argumentParser.Parse(
             context.Arguments,
-            descriptor,
+            manifest,
             session.ReplayHost,
             readOnlyConnectionString,
             context.CurrentDirectory);

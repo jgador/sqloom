@@ -35,12 +35,12 @@ internal sealed class ReplayArgumentParser
 
     public ReplayArguments Parse(
         string[] args,
-        SqloomApplicationDescriptor descriptor,
+        SqloomApplicationManifest manifest,
         IReplayHost replayHost,
         string currentDirectory,
         string? artifactDirectoryOverride = null)
     {
-        ArgumentNullException.ThrowIfNull(descriptor);
+        ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
 
         CommandArgumentSupport.ValidateArguments(
@@ -49,7 +49,7 @@ internal sealed class ReplayArgumentParser
             SupportedSwitches,
             ValueSwitches);
 
-        var replayProfile = descriptor.ReplayProfile;
+        var replayProfile = manifest.ReplayProfile;
         var openApiDocumentPath = Path.GetFullPath(
             CommandArgumentSupport.GetArgumentValue(args, "--openapi-file")
             ?? replayProfile.DefaultOpenApiDocumentPath);
@@ -63,7 +63,7 @@ internal sealed class ReplayArgumentParser
         {
             RunnerOptions = new EndpointReplayRunnerOptions
             {
-                AppName = descriptor.Name,
+                AppName = manifest.Name,
                 OpenApiDocumentPath = openApiDocumentPath,
                 ReplayArtifactDirectory = replayArtifactDirectory,
                 ReplayProfile = replayProfile,

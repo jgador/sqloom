@@ -212,7 +212,7 @@ dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- observe .\tests\Sql
 
 `observe` and `correlate` both require `--read-only-connection-string <connection-string>`. This command path does not read that value from environment variables.
 
-If you pass a harness path, `observe` uses the harness descriptor's Query Store profile to decide which queries belong to the app. Sqloom also reads the live database objects from the same read-only connection instead of relying on a hard-coded list in the repo.
+If you pass a harness path, `observe` uses the harness manifest's Query Store profile to decide which queries belong to the app. Sqloom also reads the live database objects from the same read-only connection instead of relying on a hard-coded list in the repo.
 
 If you do not pass `--json-output-file`, Sqloom writes the full `QueryStoreSnapshot` to `artifacts/sqloom/query-store/` with a timestamped file name.
 
@@ -255,7 +255,7 @@ If you are iterating on this repository itself, the repo-local equivalent is the
 - `--read-only-connection-string <connection-string>`: Query Store connection for `observe` and `correlate`; in `tune`, this overrides the harness session connection string
 - `--lookback-hours <hours>`, `--max-plans <count>`, `--max-waits <count>`, `--command-timeout-seconds <seconds>`, `--app-only`, `--show-classification`: same behavior as `observe`.
 - `--openapi-file <path>`, `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--max-operations <count>`, `--target "METHOD /path/template"`, `--dotnet-command <command>`, `--no-build`: same behavior as `replay`.
-- `--model-provider openai`, `--openai-api-key <key>`, `--sqlserver-schema-file <path>`, `--openai-base-url <url>`, `--openai-model <id>`: same behavior as `advise`; in `tune`, `--sqlserver-schema-file` overrides the harness descriptor schema path
+- `--model-provider openai`, `--openai-api-key <key>`, `--sqlserver-schema-file <path>`, `--openai-base-url <url>`, `--openai-model <id>`: same behavior as `advise`; in `tune`, `--sqlserver-schema-file` overrides the harness manifest schema path
 - `--artifact-dir <path>`: choose a different output folder instead of the default timestamped tune folder
 
 If you do not pass `--artifact-dir`, `tune` writes under `artifacts/sqloom/tune/tune-<timestamp>/`. Each run writes:

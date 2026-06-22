@@ -60,7 +60,7 @@ public sealed class TuneArgumentParserTests
                 "--sqlserver-schema-file",
                 schemaPath,
             ],
-            TestApplicationDescriptorFactory.CreateDescriptor(),
+            TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
             currentDirectory);
@@ -122,7 +122,7 @@ public sealed class TuneArgumentParserTests
                     "--json-output-file",
                     Path.Combine(currentDirectory, "tune-summary.json"),
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
@@ -144,7 +144,7 @@ public sealed class TuneArgumentParserTests
                     "--read-only-connection-string",
                     "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
@@ -167,7 +167,7 @@ public sealed class TuneArgumentParserTests
                     "--model-provider",
                     "openai",
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
@@ -192,7 +192,7 @@ public sealed class TuneArgumentParserTests
                     "--openai-api-key",
                     "openai-key",
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
@@ -215,7 +215,7 @@ public sealed class TuneArgumentParserTests
                     "--advice-provider",
                     "openai",
                 ],
-                TestApplicationDescriptorFactory.CreateDescriptor(),
+                TestApplicationManifestFactory.CreateManifest(),
             new TestReplayHost(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));

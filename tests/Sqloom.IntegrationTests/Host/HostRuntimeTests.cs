@@ -507,7 +507,7 @@ public sealed class ConsoleHostRuntimeCollection
 }
 
 /// <summary>
-/// Supplies a harness descriptor without a session connection string for validation tests.
+/// Supplies a harness manifest without a session connection string for validation tests.
 /// </summary>
 internal sealed class NoConnectionTestApplication : ISqloomApplication
 {
@@ -518,12 +518,12 @@ internal sealed class NoConnectionTestApplication : ISqloomApplication
         _schemaPath = schemaPath;
     }
 
-    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+    public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
-        return new SqloomApplicationDescriptor
+        return new SqloomApplicationManifest
         {
             Name = "No Connection Test App",
-            ReplayProfile = HostRuntimeTestHarnessDescriptors.CreateReplayProfile(),
+            ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
             SqlServerSchemaPath = _schemaPath,
         };
     }
@@ -537,16 +537,16 @@ internal sealed class NoConnectionTestApplication : ISqloomApplication
 }
 
 /// <summary>
-/// Supplies a harness descriptor without a default schema for validation tests.
+/// Supplies a harness manifest without a default schema for validation tests.
 /// </summary>
 internal sealed class NoSchemaTestApplication : ISqloomApplication
 {
-    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+    public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
-        return new SqloomApplicationDescriptor
+        return new SqloomApplicationManifest
         {
             Name = "No Schema Test App",
-            ReplayProfile = HostRuntimeTestHarnessDescriptors.CreateReplayProfile(),
+            ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
         };
     }
 
@@ -573,7 +573,7 @@ internal sealed class NoConnectionSession : ISqloomApplicationSession
     }
 }
 
-internal static class HostRuntimeTestHarnessDescriptors
+internal static class HostRuntimeTestHarnessProfiles
 {
     public static ReplayProfile CreateReplayProfile()
     {

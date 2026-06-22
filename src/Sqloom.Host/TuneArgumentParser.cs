@@ -102,10 +102,10 @@ internal sealed class TuneArgumentParser
 
     public void ValidateBeforeSession(
         string[] args,
-        SqloomApplicationDescriptor descriptor,
+        SqloomApplicationManifest manifest,
         string currentDirectory)
     {
-        ArgumentNullException.ThrowIfNull(descriptor);
+        ArgumentNullException.ThrowIfNull(manifest);
 
         CommandArgumentSupport.ValidateArguments(
             args,
@@ -121,17 +121,17 @@ internal sealed class TuneArgumentParser
             currentDirectory,
             validationPath,
             validationPath,
-            descriptor.SqlServerSchemaPath);
+            manifest.SqlServerSchemaPath);
     }
 
     public TuneArguments Parse(
         string[] args,
-        SqloomApplicationDescriptor descriptor,
+        SqloomApplicationManifest manifest,
         IReplayHost replayHost,
         string readOnlyConnectionString,
         string currentDirectory)
     {
-        ArgumentNullException.ThrowIfNull(descriptor);
+        ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
 
         CommandArgumentSupport.ValidateArguments(
@@ -151,12 +151,12 @@ internal sealed class TuneArgumentParser
                 ExtractSwitchArguments(args, ObserveSwitches),
                 "--json-output-file",
                 snapshotPath),
-            descriptor,
+            manifest,
             readOnlyConnectionString,
             currentDirectory);
         var replayArguments = _replayArgumentParser.Parse(
             ExtractSwitchArguments(args, ReplaySwitches),
-            descriptor,
+            manifest,
             replayHost,
             currentDirectory,
             replayArtifactDirectory);
@@ -165,7 +165,7 @@ internal sealed class TuneArgumentParser
             replayArtifactDirectory,
             correlationPath,
             advicePath,
-            descriptor.SqlServerSchemaPath);
+            manifest.SqlServerSchemaPath);
 
         return new TuneArguments
         {

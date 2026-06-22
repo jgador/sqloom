@@ -12,12 +12,12 @@ namespace Sqloom.Host.Tests;
 /// </summary>
 internal sealed class MultipleTestApplicationA : ISqloomApplication
 {
-    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+    public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
-        return new SqloomApplicationDescriptor
+        return new SqloomApplicationManifest
         {
             Name = "MultipleTestApplicationA",
-            ReplayProfile = TestApplicationDescriptorFactory.CreateReplayProfile(),
+            ReplayProfile = TestApplicationManifestFactory.CreateReplayProfile(),
         };
     }
 
@@ -34,12 +34,12 @@ internal sealed class MultipleTestApplicationA : ISqloomApplication
 /// </summary>
 internal sealed class MultipleTestApplicationB : ISqloomApplication
 {
-    public SqloomApplicationDescriptor Describe(SqloomApplicationContext context)
+    public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
-        return new SqloomApplicationDescriptor
+        return new SqloomApplicationManifest
         {
             Name = "MultipleTestApplicationB",
-            ReplayProfile = TestApplicationDescriptorFactory.CreateReplayProfile(),
+            ReplayProfile = TestApplicationManifestFactory.CreateReplayProfile(),
         };
     }
 
@@ -52,13 +52,13 @@ internal sealed class MultipleTestApplicationB : ISqloomApplication
 }
 
 /// <summary>
-/// Provides descriptor defaults for parser and dispatch tests.
+/// Provides manifest defaults for parser and dispatch tests.
 /// </summary>
-internal static class TestApplicationDescriptorFactory
+internal static class TestApplicationManifestFactory
 {
-    public static SqloomApplicationDescriptor CreateDescriptor()
+    public static SqloomApplicationManifest CreateManifest()
     {
-        return new SqloomApplicationDescriptor
+        return new SqloomApplicationManifest
         {
             Name = "Sqloom Test Harness",
             ReplayProfile = CreateReplayProfile(),

@@ -33,7 +33,7 @@ dotnet tool update --global sqloom
 
 - `--model-provider openai`
 - `--openai-api-key <key>`
-- `--sqlserver-schema-file <path>` unless `tune` can use a schema path from the harness descriptor
+- `--sqlserver-schema-file <path>` unless `tune` can use a schema path from the harness manifest
 
 SQL Server-backed replay harnesses can provide default DACPAC, seed script, schema, replay profile, and Query Store profile values. CLI switches such as `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--sqlserver-schema-file <path>`, and `--read-only-connection-string <connection-string>` override harness defaults.
 

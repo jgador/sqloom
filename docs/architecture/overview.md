@@ -19,7 +19,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 ## Host and Harness Model
 
 - `Sqloom.Host`: generic runner for harness project, harness assembly, solution, solution-filter, or directory targets
-- `Sqloom.Testing`: public harness contract package containing `ISqloomApplication`, `ISqloomApplicationSession`, and descriptor types that external app harnesses implement
+- `Sqloom.Testing`: public harness contract package containing `ISqloomApplication`, `ISqloomApplicationSession`, and manifest types that external app harnesses implement
 - `Sqloom.TestApp`: sample target app in this repo
 - `Sqloom.TestApp.Harness`: sample harness loaded by the host for generic replay coverage, SQL Server DACPAC bootstrap, seed setup, Query Store profile, and schema defaults
 - Additional app-owned harnesses can follow the same pattern without changing the host
