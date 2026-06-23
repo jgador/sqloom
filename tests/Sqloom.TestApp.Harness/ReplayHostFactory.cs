@@ -13,9 +13,9 @@ namespace Sqloom.TestApp.Harness;
 /// <summary>
 /// Creates replay hosts for the sample Sqloom test app harness.
 /// </summary>
-public sealed class TestAppReplayHostFactory : IReplayHostFactory
+public sealed class ReplayHostFactory : IReplayHostFactory
 {
-    private readonly TestAppReplayDatabaseBootstrapper _databaseBootstrapper = new();
+    private readonly ReplayBootstrapper _databaseBootstrapper = new();
 
     public async Task<IReplayHost> CreateAsync(
         ReplayLaunchOptions? launchOptions = null,
@@ -30,7 +30,7 @@ public sealed class TestAppReplayHostFactory : IReplayHostFactory
 
         if (string.IsNullOrWhiteSpace(launchOptions?.DacpacPath))
         {
-            return await TestAppReplayHost
+            return await ReplayHost
                 .CreateAsync(
                     sqlServer: null,
                     applicationConnectionString: null,
@@ -39,16 +39,16 @@ public sealed class TestAppReplayHostFactory : IReplayHostFactory
                 .ConfigureAwait(false);
         }
 
-        var dacpacPath = TestAppReplayDacpacPathResolver.ResolveRequiredPath(launchOptions);
+        var dacpacPath = DacpacPathResolver.ResolveRequiredPath(launchOptions);
         if (!string.Equals(
             Path.GetFileName(dacpacPath),
-            TestAppReplayConstants.SqlServerDacpacFileName,
+            ReplayConstants.DacpacFileName,
             StringComparison.OrdinalIgnoreCase))
         {
             // The sample harness only provisions SQL when callers point it at the committed
             // AdventureWorks DACPAC. Other apps can still replay this endpoint through the
             // in-memory fallback when they share a generic host invocation.
-            return await TestAppReplayHost
+            return await ReplayHost
                 .CreateAsync(
                     sqlServer: null,
                     applicationConnectionString: null,
@@ -57,8 +57,8 @@ public sealed class TestAppReplayHostFactory : IReplayHostFactory
                 .ConfigureAwait(false);
         }
 
-        var sqlServer = new MsSqlBuilder(TestAppReplayConstants.SqlServerImage)
-            .WithPassword(TestAppReplayConstants.SqlServerPassword)
+        var sqlServer = new MsSqlBuilder(ReplayConstants.SqlServerImage)
+            .WithPassword(ReplayConstants.SqlServerPassword)
             .Build();
         await sqlServer.StartAsync(cancellationToken).ConfigureAwait(false);
 
@@ -71,7 +71,7 @@ public sealed class TestAppReplayHostFactory : IReplayHostFactory
                     cancellationToken)
                 .ConfigureAwait(false);
 
-            return await TestAppReplayHost
+            return await ReplayHost
                 .CreateAsync(
                     sqlServer,
                     replayBootstrap.ApplicationConnectionString,
@@ -90,7 +90,7 @@ public sealed class TestAppReplayHostFactory : IReplayHostFactory
 /// <summary>
 /// Owns the in-memory host and optional SQL Server container used by the sample replay harness.
 /// </summary>
-internal sealed class TestAppReplayHost : IReplayHost
+internal sealed class ReplayHost : IReplayHost
 {
     private readonly MsSqlContainer? _sqlServer;
     private readonly WebApplication _application;
@@ -98,7 +98,7 @@ internal sealed class TestAppReplayHost : IReplayHost
     private readonly ReplayBootstrapReport _bootstrap;
     private readonly string? _readOnlyConnectionString;
 
-    private TestAppReplayHost(
+    private ReplayHost(
         MsSqlContainer? sqlServer,
         WebApplication application,
         HttpClient client,
@@ -120,14 +120,14 @@ internal sealed class TestAppReplayHost : IReplayHost
 
     public string? ReadOnlyConnection => _readOnlyConnectionString;
 
-    public static async Task<TestAppReplayHost> CreateAsync(
+    public static async Task<ReplayHost> CreateAsync(
         MsSqlContainer? sqlServer,
         string? applicationConnectionString,
         ReplayBootstrapReport bootstrap,
         CancellationToken cancellationToken)
     {
-        var application = await TestAppApplication
-            .CreateReplayApplicationAsync(
+        var application = await SampleApplication
+            .CreateReplayAppAsync(
                 applicationConnectionString,
                 cancellationToken)
             .ConfigureAwait(false);
@@ -135,7 +135,7 @@ internal sealed class TestAppReplayHost : IReplayHost
         var client = application.GetTestClient();
         client.BaseAddress = new Uri("http://localhost");
 
-        return new TestAppReplayHost(
+        return new ReplayHost(
             sqlServer,
             application,
             client,

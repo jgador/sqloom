@@ -20,7 +20,7 @@ namespace Sqloom.Core.Tests.Artifacts;
 /// <summary>
 /// Verifies persisted JSON contracts use explicit camel-case property names.
 /// </summary>
-public sealed class JsonContractAttributeTests
+public sealed class JsonContractTests
 {
     public static TheoryData<Type, string[]> RepresentativeContracts =>
         new()
@@ -41,7 +41,7 @@ public sealed class JsonContractAttributeTests
         typeof(EndpointReplayRunResult),
         typeof(OpenAITuningAdviceRequest),
         typeof(OpenAITuningAdviceResponse),
-        typeof(ProductByCategoryResponse),
+        typeof(ProductResponse),
         typeof(QueryCorrelationReport),
         typeof(QueryStoreSnapshot),
         typeof(ReplayLaunchOptions),

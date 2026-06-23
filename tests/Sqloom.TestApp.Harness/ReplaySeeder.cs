@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 
 namespace Sqloom.TestApp.Harness;
 
-internal sealed class TestAppReplayDatabaseSeeder
+internal sealed class ReplaySeeder
 {
     private const string SeedSql = """
         IF NOT EXISTS (SELECT 1 FROM [SalesLT].[ProductCategory] WHERE [ProductCategoryID] = 1)
@@ -93,7 +93,7 @@ internal sealed class TestAppReplayDatabaseSeeder
             await using (command.ConfigureAwait(false))
             {
                 command.CommandText = SeedSql;
-                command.CommandTimeout = TestAppReplayConstants.CommandTimeoutSeconds;
+                command.CommandTimeout = ReplayConstants.CommandTimeoutSeconds;
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }

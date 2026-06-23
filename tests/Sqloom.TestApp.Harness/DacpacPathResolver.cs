@@ -7,7 +7,7 @@ namespace Sqloom.TestApp.Harness;
 /// <summary>
 /// Resolves the sample app DACPAC path required for SQL Server-backed replay bootstrap.
 /// </summary>
-internal static class TestAppReplayDacpacPathResolver
+internal static class DacpacPathResolver
 {
     public static string ResolveRequiredPath(ReplayLaunchOptions? launchOptions)
     {

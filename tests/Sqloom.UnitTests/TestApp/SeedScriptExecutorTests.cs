@@ -7,7 +7,7 @@ namespace Sqloom.UnitTests.TestApp;
 /// <summary>
 /// Exercises SQL seed script execution helpers used by the sample replay harness.
 /// </summary>
-public sealed class TestAppReplaySqlServerSeedScriptExecutorTests
+public sealed class SeedScriptExecutorTests
 {
     [Fact]
     public void SplitBatches_SplitsOnStandaloneGoLinesAndSkipsBlankBatches()
@@ -23,7 +23,7 @@ public sealed class TestAppReplaySqlServerSeedScriptExecutorTests
             SELECT 3;
             """;
 
-        IReadOnlyList<string> batches = TestAppReplaySqlServerSeedScriptExecutor.SplitBatches(sqlText);
+        IReadOnlyList<string> batches = SeedScriptExecutor.SplitBatches(sqlText);
 
         Assert.Equal(3, batches.Count);
         Assert.Equal("SELECT 1;", batches[0]);
@@ -39,7 +39,7 @@ public sealed class TestAppReplaySqlServerSeedScriptExecutorTests
             SELECT N'go home';
             """;
 
-        IReadOnlyList<string> batches = TestAppReplaySqlServerSeedScriptExecutor.SplitBatches(sqlText);
+        IReadOnlyList<string> batches = SeedScriptExecutor.SplitBatches(sqlText);
 
         var batch = Assert.Single(batches);
         Assert.Contains("VALUES (N'GO')", batch);

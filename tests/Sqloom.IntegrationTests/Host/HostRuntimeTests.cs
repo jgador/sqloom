@@ -18,7 +18,7 @@ public sealed class HostRuntimeTests
 {
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithExplicitReplayProjectWithoutBuild_ReplaysProductCatalogWorkload()
+    public async Task RunAsync_WithReplayProjectWithoutBuild_ReplaysWorkload()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();
@@ -34,7 +34,7 @@ public sealed class HostRuntimeTests
                         "dotnet",
                         "--no-build",
                         "--target",
-                        TestAppProductCatalogScenario.OperationKey,
+                        CatalogScenario.OperationKey,
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
@@ -44,7 +44,7 @@ public sealed class HostRuntimeTests
         Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("App: Sqloom Test App", result.StdOut, StringComparison.Ordinal);
         Assert.Contains(
-            $"{TestAppProductCatalogScenario.OperationKey}: status=replayed, http=200",
+            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
             result.StdOut,
             StringComparison.Ordinal);
     }
@@ -68,7 +68,7 @@ public sealed class HostRuntimeTests
                         "dotnet",
                         "--no-build",
                         "--target",
-                        TestAppProductCatalogScenario.OperationKey,
+                        CatalogScenario.OperationKey,
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
@@ -78,14 +78,14 @@ public sealed class HostRuntimeTests
         Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("[sqloom debug] [replay] resolved inputs", result.StdErr, StringComparison.Ordinal);
         Assert.Contains(
-            $"target_filter={TestAppProductCatalogScenario.OperationKey}",
+            $"target_filter={CatalogScenario.OperationKey}",
             result.StdErr,
             StringComparison.Ordinal);
     }
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithExplicitSqlServerDacpacFile_ReplaysProductCatalogWorkloadAndPrintsBootstrap()
+    public async Task RunAsync_WithSqlServerDacpacFile_ReplaysWorkloadAndPrintsBootstrap()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -104,7 +104,7 @@ public sealed class HostRuntimeTests
                         "--sqlserver-dacpac-file",
                         state.DacpacPath,
                         "--target",
-                        TestAppProductCatalogScenario.OperationKey,
+                        CatalogScenario.OperationKey,
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
@@ -117,23 +117,23 @@ public sealed class HostRuntimeTests
         Assert.Contains("SQL Server DACPAC: AdventureWorksLT2025.dacpac", result.StdOut, StringComparison.Ordinal);
         Assert.Contains($"DACPAC path: {dacpacPath}", result.StdOut, StringComparison.Ordinal);
         Assert.Contains(
-            $"{TestAppProductCatalogScenario.OperationKey}: status=replayed, http=200",
+            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
             result.StdOut,
             StringComparison.Ordinal);
     }
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithExplicitSqlSeedScript_ReplaysProductCatalogWorkloadAndPrintsSeedBootstrap()
+    public async Task RunAsync_WithSqlSeedScript_ReplaysWorkloadAndPrintsSeedBootstrap()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var currentDirectory = Directory.GetCurrentDirectory();
-        var tempDirectory = CreateTempDirectory();
+        var tempDirectory = CreateTempDir();
         var seedScriptPath = Path.Combine(tempDirectory, "AdventureWorksLT2025.seed.sql");
         File.WriteAllText(
             seedScriptPath,
-            SqloomTestAppSeedScripts.CreateCustomProductCatalogSeedScript());
+            SqloomTestAppSeedScripts.CreateCustomSeedScript());
 
         try
         {
@@ -152,7 +152,7 @@ public sealed class HostRuntimeTests
                             "--sqlserver-seed-sql-file",
                             state.SeedScriptPath,
                             "--target",
-                            TestAppProductCatalogScenario.OperationKey,
+                            CatalogScenario.OperationKey,
                         ],
                         state.CurrentDirectory)
                     .ConfigureAwait(false);
@@ -166,7 +166,7 @@ public sealed class HostRuntimeTests
             Assert.Contains("SQL seed script: AdventureWorksLT2025.seed.sql", result.StdOut, StringComparison.Ordinal);
             Assert.Contains($"Seed script path: {seedScriptPath}", result.StdOut, StringComparison.Ordinal);
             Assert.Contains(
-                $"{TestAppProductCatalogScenario.OperationKey}: status=replayed, http=200",
+                $"{CatalogScenario.OperationKey}: status=replayed, http=200",
                 result.StdOut,
                 StringComparison.Ordinal);
         }
@@ -189,7 +189,7 @@ public sealed class HostRuntimeTests
         {
             return await HostRuntime
                 .RunAsync(
-                    new TestAppApplication(),
+                    new SampleApplication(),
                     [
                         "observe",
                     ],
@@ -209,7 +209,7 @@ public sealed class HostRuntimeTests
     public async Task RunAsync_WithTuneWithoutConnectionStringSwitch_StillRequiresExplicitConnectionStringSwitch()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
-        var schemaPath = Path.Combine(CreateTempDirectory(), "schema.sql");
+        var schemaPath = Path.Combine(CreateTempDir(), "schema.sql");
         File.WriteAllText(
             schemaPath,
             """
@@ -249,7 +249,7 @@ public sealed class HostRuntimeTests
     public async Task RunAsync_WithOpenAIAdviceWithoutApiKey_StillRequiresExplicitApiKey()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         var schemaPath = Path.Combine(replayArtifactDirectory, "schema.sql");
         File.WriteAllText(
             Path.Combine(replayArtifactDirectory, "query-store-correlation.json"),
@@ -304,7 +304,7 @@ public sealed class HostRuntimeTests
     public async Task RunAsync_WithOpenAIAdviceWithoutSchemaFile_StillRequiresExplicitSchemaFile()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         File.WriteAllText(
             Path.Combine(replayArtifactDirectory, "query-store-correlation.json"),
             "{}");
@@ -442,7 +442,7 @@ public sealed class HostRuntimeTests
         {
             return await HostRuntime
                 .RunAsync(
-                    new TestAppApplication(),
+                    new SampleApplication(),
                     [
                         "replay",
                         state.ProjectPath,
@@ -485,7 +485,7 @@ public sealed class HostRuntimeTests
         string StdOut,
         string StdErr);
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directoryPath = Path.Combine(
             Path.GetTempPath(),

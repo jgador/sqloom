@@ -13,7 +13,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_ThrowsWhenCorrelationArtifactIsMissing()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
@@ -29,7 +29,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_WithOpenAIModelProvider_ResolvesExplicitOpenAIOptions()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
         var schemaPath = CreateSchemaFile(replayDirectory);
@@ -68,7 +68,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_WithOpenAIModelProvider_UsesDefaultBaseUrlAndModelWhenNotSpecified()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
         var schemaPath = CreateSchemaFile(replayDirectory);
@@ -103,7 +103,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_RequiresModelProvider()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
         var schemaPath = CreateSchemaFile(replayDirectory);
@@ -126,7 +126,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_WithOpenAIModelProvider_RequiresApiKey()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
         var schemaPath = CreateSchemaFile(replayDirectory);
@@ -151,7 +151,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_WithOpenAIModelProvider_RequiresSchemaFile()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
 
@@ -175,7 +175,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_RejectsLegacyAdviceProviderSwitch()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
 
@@ -198,7 +198,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_RejectsLegacyCorrelationSwitch()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
 
@@ -215,7 +215,7 @@ public sealed class AdviseArgumentParserTests
         Assert.Contains("--query-store-correlation", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directory = Path.Combine(
             Path.GetTempPath(),

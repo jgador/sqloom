@@ -115,7 +115,7 @@ public sealed class HostDebugWriterTests
 
     private static string CaptureStandardError(Action action)
     {
-        ConsoleCaptureGate.Semaphore.Wait();
+        ConsoleGate.Semaphore.Wait();
         var originalError = Console.Error;
         using StringWriter standardError = new();
 
@@ -128,7 +128,7 @@ public sealed class HostDebugWriterTests
         finally
         {
             Console.SetError(originalError);
-            ConsoleCaptureGate.Semaphore.Release();
+            ConsoleGate.Semaphore.Release();
         }
     }
 }

@@ -2,7 +2,7 @@ namespace Sqloom.Host.Tests;
 
 internal static class SqloomTestAppSeedScripts
 {
-    public static string CreateCustomProductCatalogSeedScript()
+    public static string CreateCustomSeedScript()
     {
         return """
             IF NOT EXISTS (SELECT 1 FROM [SalesLT].[ProductCategory] WHERE [ProductCategoryID] = 1)

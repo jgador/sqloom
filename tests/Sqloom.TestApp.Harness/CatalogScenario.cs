@@ -3,19 +3,19 @@ namespace Sqloom.TestApp.Harness;
 /// <summary>
 /// Defines the seeded product-catalog replay scenario used by the sample Sqloom harness.
 /// </summary>
-public static class TestAppProductCatalogScenario
+public static class CatalogScenario
 {
     public const string Route = "/api/products/by-category";
     public const string OperationKey = "GET /api/products/by-category";
     public const int HotCategoryId = 1;
     public const int ColdCategoryId = 2;
     public const decimal ReplayMinPrice = 900m;
-    public const string ReplayMinPriceText = "900";
+    public const string MinPriceText = "900";
     public const int HotProductCount = 4000;
     public const int ColdProductCount = 1000;
 
     public static string CreateRequestPath()
     {
-        return $"{Route}?categoryId={HotCategoryId}&minPrice={ReplayMinPriceText}";
+        return $"{Route}?categoryId={HotCategoryId}&minPrice={MinPriceText}";
     }
 }

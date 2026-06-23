@@ -18,18 +18,18 @@ public sealed class AppResolverTests
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
         {
-            AppTargetPath = SqloomRepositoryPaths.GetTestAppApplicationProjectPath(),
+            AppTargetPath = RepositoryPaths.GetSampleApplicationProjectPath(),
             NoBuild = true,
         };
 
         var application = resolver.Resolve(startupOptions);
         var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
         {
-            CurrentDirectory = SqloomRepositoryPaths.GetRepositoryRoot(),
+            CurrentDirectory = RepositoryPaths.GetRepositoryRoot(),
         });
 
         Assert.Equal("Sqloom Test App", manifest.Name);
-        Assert.Equal("Sqloom.TestApp.Harness.TestAppApplication", application.GetType().FullName);
+        Assert.Equal("Sqloom.TestApp.Harness.SampleApplication", application.GetType().FullName);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class AppResolverTests
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
         {
-            AppTargetPath = SqloomRepositoryPaths.GetTestAppProjectPath(),
+            AppTargetPath = RepositoryPaths.GetTestAppProjectPath(),
             NoBuild = true,
         };
 
@@ -51,7 +51,7 @@ public sealed class AppResolverTests
     [Fact]
     public void Resolve_ThrowsWhenHarnessProjectContainsMultipleApplications()
     {
-        var tempDirectoryPath = CreateTempDirectory();
+        var tempDirectoryPath = CreateTempDir();
 
         try
         {
@@ -124,14 +124,14 @@ public sealed class AppResolverTests
     public void Resolve_DeduplicatesRepeatedProjectsFromSolutionFilter()
     {
         AppResolver resolver = new();
-        var tempDirectoryPath = CreateTempDirectory();
+        var tempDirectoryPath = CreateTempDir();
 
         try
         {
             var solutionFilterPath = WriteSolutionFilter(
                 tempDirectoryPath,
-                SqloomRepositoryPaths.GetTestAppApplicationProjectPath(),
-                SqloomRepositoryPaths.GetTestAppApplicationProjectPath());
+                RepositoryPaths.GetSampleApplicationProjectPath(),
+                RepositoryPaths.GetSampleApplicationProjectPath());
             HostStartupOptions startupOptions = new()
             {
                 AppTargetPath = solutionFilterPath,
@@ -141,7 +141,7 @@ public sealed class AppResolverTests
             var application = resolver.Resolve(startupOptions);
             var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
             {
-                CurrentDirectory = SqloomRepositoryPaths.GetRepositoryRoot(),
+                CurrentDirectory = RepositoryPaths.GetRepositoryRoot(),
             });
 
             Assert.Equal("Sqloom Test App", manifest.Name);
@@ -158,14 +158,14 @@ public sealed class AppResolverTests
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
         {
-            AppTargetPath = SqloomRepositoryPaths.GetTestAppApplicationProjectPath(),
+            AppTargetPath = RepositoryPaths.GetSampleApplicationProjectPath(),
             NoBuild = true,
         };
 
         var assemblyPath = resolver.ResolveAssemblyPath(startupOptions);
 
         Assert.Equal(
-            SqloomRepositoryPaths.GetExpectedTestAppApplicationBuildOutputPath(),
+            RepositoryPaths.GetExpectedSampleApplicationBuildOutputPath(),
             assemblyPath,
             StringComparer.OrdinalIgnoreCase);
     }
@@ -215,7 +215,7 @@ public sealed class AppResolverTests
                 <Nullable>enable</Nullable>
               </PropertyGroup>
               <ItemGroup>
-                <ProjectReference Include="{{SqloomRepositoryPaths.GetTestingProjectPath()}}" />
+                <ProjectReference Include="{{RepositoryPaths.GetTestingProjectPath()}}" />
               </ItemGroup>
             </Project>
             """);
@@ -288,7 +288,7 @@ public sealed class AppResolverTests
             $"Temp harness build failed.{Environment.NewLine}StdOut:{Environment.NewLine}{standardOutput}{Environment.NewLine}StdErr:{Environment.NewLine}{standardError}");
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directoryPath = Path.Combine(
             Path.GetTempPath(),

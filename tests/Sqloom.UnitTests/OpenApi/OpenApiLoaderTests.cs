@@ -8,7 +8,7 @@ namespace Sqloom.AspNetCore.Tests.OpenApi;
 /// <summary>
 /// Exercises OpenAPI operation catalog loader.
 /// </summary>
-public sealed class OpenApiCatalogLoaderTests
+public sealed class OpenApiLoaderTests
 {
     [Fact]
     public async Task LoadAsync_ReadsSecurityParameterAndBodyMetadata()

@@ -11,15 +11,15 @@ namespace Sqloom.Host.Tests;
 /// <summary>
 /// Provides the first test app harness for resolver tests.
 /// </summary>
-internal sealed class MultipleTestApplicationA : ISqloomApplication
+internal sealed class TestApplicationA : ISqloomApplication
 {
     public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
         return new SqloomApplicationManifest
         {
-            Name = "MultipleTestApplicationA",
-            OpenApiPath = SqloomRepositoryPaths.GetTestAppOpenApiPath(),
-            ReplayProfile = TestApplicationManifestFactory.CreateReplayProfile(),
+            Name = "TestApplicationA",
+            OpenApiPath = RepositoryPaths.GetTestAppOpenApiPath(),
+            ReplayProfile = ManifestFactory.CreateReplayProfile(),
         };
     }
 
@@ -27,22 +27,22 @@ internal sealed class MultipleTestApplicationA : ISqloomApplication
         SqloomApplicationContext context,
         CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult<ISqloomApplicationSession>(new TestSqloomApplicationSession());
+        return ValueTask.FromResult<ISqloomApplicationSession>(new ApplicationSessionFake());
     }
 }
 
 /// <summary>
 /// Provides the second test app harness for resolver tests.
 /// </summary>
-internal sealed class MultipleTestApplicationB : ISqloomApplication
+internal sealed class TestApplicationB : ISqloomApplication
 {
     public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
         return new SqloomApplicationManifest
         {
-            Name = "MultipleTestApplicationB",
-            OpenApiPath = SqloomRepositoryPaths.GetTestAppOpenApiPath(),
-            ReplayProfile = TestApplicationManifestFactory.CreateReplayProfile(),
+            Name = "TestApplicationB",
+            OpenApiPath = RepositoryPaths.GetTestAppOpenApiPath(),
+            ReplayProfile = ManifestFactory.CreateReplayProfile(),
         };
     }
 
@@ -50,21 +50,21 @@ internal sealed class MultipleTestApplicationB : ISqloomApplication
         SqloomApplicationContext context,
         CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult<ISqloomApplicationSession>(new TestSqloomApplicationSession());
+        return ValueTask.FromResult<ISqloomApplicationSession>(new ApplicationSessionFake());
     }
 }
 
 /// <summary>
 /// Provides manifest defaults for parser and dispatch tests.
 /// </summary>
-internal static class TestApplicationManifestFactory
+internal static class ManifestFactory
 {
     public static SqloomApplicationManifest CreateManifest()
     {
         return new SqloomApplicationManifest
         {
             Name = "Sqloom Test Harness",
-            OpenApiPath = SqloomRepositoryPaths.GetTestAppOpenApiPath(),
+            OpenApiPath = RepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = CreateReplayProfile(),
         };
     }
@@ -78,9 +78,9 @@ internal static class TestApplicationManifestFactory
 /// <summary>
 /// Provides a test application session for parser and dispatch tests.
 /// </summary>
-internal sealed class TestSqloomApplicationSession : ISqloomApplicationSession
+internal sealed class ApplicationSessionFake : ISqloomApplicationSession
 {
-    public IReplayHost ReplayHost { get; } = new TestReplayHost();
+    public IReplayHost ReplayHost { get; } = new ReplayHostFake();
 
     public string? ReadOnlyConnection => "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
 
@@ -95,7 +95,7 @@ internal sealed class TestSqloomApplicationSession : ISqloomApplicationSession
 /// <summary>
 /// Provides a test replay host for parser and dispatch tests.
 /// </summary>
-internal sealed class TestReplayHost : IReplayHost
+internal sealed class ReplayHostFake : IReplayHost
 {
     public HttpClient Client { get; } = new()
     {

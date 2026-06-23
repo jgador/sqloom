@@ -8,7 +8,7 @@
     "/api/products/by-category": {
       "get": {
         "tags": [
-          "TestAppProducts"
+          "Products"
         ],
         "summary": "Returns products in one category filtered by a minimum list price.",
         "parameters": [
@@ -47,7 +47,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductByCategoryResponse"
+                    "$ref": "#/components/schemas/ProductResponse"
                   }
                 }
               },
@@ -55,7 +55,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductByCategoryResponse"
+                    "$ref": "#/components/schemas/ProductResponse"
                   }
                 }
               },
@@ -63,7 +63,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductByCategoryResponse"
+                    "$ref": "#/components/schemas/ProductResponse"
                   }
                 }
               }
@@ -75,7 +75,7 @@
   },
   "components": {
     "schemas": {
-      "ProductByCategoryResponse": {
+      "ProductResponse": {
         "type": "object",
         "properties": {
           "productId": {
@@ -118,7 +118,7 @@
   ],
   "tags": [
     {
-      "name": "TestAppProducts"
+      "name": "Products"
     }
   ]
 }

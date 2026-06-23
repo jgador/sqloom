@@ -12,7 +12,7 @@ namespace Sqloom.TestApp.Harness;
 /// <summary>
 /// Publishes the sample app DACPAC into a disposable SQL Server replay database.
 /// </summary>
-internal sealed class TestAppReplaySqlServerDacpacPublisher
+internal sealed class DacpacPublisher
 {
     public async Task<SqlServerDacpacArtifact> PublishAsync(
         string connectionString,

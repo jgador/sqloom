@@ -10,11 +10,11 @@ namespace Sqloom.Host.Tests;
 /// Exercises the Sqloom host when it resolves app harnesses through project builds.
 /// </summary>
 [Collection("ConsoleHostRuntime")]
-public sealed class HostProcessLoadingTests
+public sealed class HostProcessTests
 {
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task DotNetRun_WithSqloomHostProjectAndSqloomTestAppProject_ReplaysProductCatalogWorkload()
+    public async Task DotNetRun_WithHostAndTestAppProject_ReplaysWorkload()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
@@ -32,7 +32,7 @@ public sealed class HostProcessLoadingTests
                 "--dotnet-command",
                 "dotnet",
                 "--target",
-                TestAppProductCatalogScenario.OperationKey,
+                CatalogScenario.OperationKey,
             ]);
 
         Assert.True(
@@ -42,14 +42,14 @@ public sealed class HostProcessLoadingTests
         Assert.Contains("App: Sqloom Test App", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("Replay summary:", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains(
-            $"{TestAppProductCatalogScenario.OperationKey}: status=replayed, http=200",
+            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
             result.StandardOutput,
             StringComparison.Ordinal);
     }
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task DotNetRun_WithSqloomHostProjectAndLeadingTargetPath_FailsWithoutStageVerb()
+    public async Task DotNetRun_WithLeadingTargetPath_FailsWithoutStageVerb()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
@@ -64,7 +64,7 @@ public sealed class HostProcessLoadingTests
                 "--",
                 targetProjectPath,
                 "--target",
-                TestAppProductCatalogScenario.OperationKey,
+                CatalogScenario.OperationKey,
             ]);
 
         Assert.True(

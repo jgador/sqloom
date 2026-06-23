@@ -36,7 +36,7 @@ public sealed class CorrelateArgumentParserTests
     public void Parse_ThrowsWhenQueryStoreSnapshotIsMissing()
     {
         CorrelateArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var missingSnapshotPath = Path.Combine(replayDirectory, "missing-query-store.json");
 
         var exception = Assert.Throws<ArgumentException>(
@@ -56,7 +56,7 @@ public sealed class CorrelateArgumentParserTests
     public void Parse_RejectsLegacyQueryStoreSnapshotSwitch()
     {
         CorrelateArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var snapshotPath = CreateTempFile();
 
         var exception = Assert.Throws<ArgumentException>(
@@ -73,7 +73,7 @@ public sealed class CorrelateArgumentParserTests
         Assert.Contains("--query-store-snapshot", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directory = Path.Combine(
             Path.GetTempPath(),
@@ -86,7 +86,7 @@ public sealed class CorrelateArgumentParserTests
     private static string CreateTempFile()
     {
         var filePath = Path.Combine(
-            CreateTempDirectory(),
+            CreateTempDir(),
             "query-store-snapshot.json");
         File.WriteAllText(filePath, "{}");
         return filePath;

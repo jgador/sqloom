@@ -11,12 +11,12 @@ namespace Sqloom.TestApp;
 /// </summary>
 [ApiController]
 [Route("api/products")]
-public sealed class TestAppProductsController
+public sealed class ProductsController
     : ControllerBase
 {
-    private readonly ITestAppProductCatalogService _productCatalogService;
+    private readonly IProductCatalogService _productCatalogService;
 
-    public TestAppProductsController(ITestAppProductCatalogService productCatalogService)
+    public ProductsController(IProductCatalogService productCatalogService)
     {
         _productCatalogService = productCatalogService;
     }
@@ -25,7 +25,7 @@ public sealed class TestAppProductsController
     /// Returns products in one category filtered by a minimum list price.
     /// </summary>
     [HttpGet("by-category")]
-    public async Task<ActionResult<IReadOnlyList<ProductByCategoryResponse>>> GetByCategoryAsync(
+    public async Task<ActionResult<IReadOnlyList<ProductResponse>>> GetByCategoryAsync(
         [FromQuery] int categoryId,
         [FromQuery] decimal minPrice,
         CancellationToken cancellationToken)
@@ -40,7 +40,7 @@ public sealed class TestAppProductsController
 /// <summary>
 /// Returns one product row from the seeded sample catalog query.
 /// </summary>
-public sealed class ProductByCategoryResponse
+public sealed class ProductResponse
 {
     [JsonPropertyName("productId")]
     public int ProductId { get; init; }

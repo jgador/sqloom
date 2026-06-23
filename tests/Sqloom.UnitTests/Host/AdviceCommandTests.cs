@@ -19,7 +19,7 @@ public sealed class AdviceCommandTests
     [Fact]
     public async Task ExecuteAsync_WithOpenAIModelProvider_WritesAdviceAndSqlProposalSidecars()
     {
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
         var advicePath = ArtifactLayout.GetReplayTuningAdvicePath(replayArtifactDirectory);
         var proposalJsonPath = ArtifactLayout.GetSqlProposalPath(replayArtifactDirectory);
@@ -327,7 +327,7 @@ public sealed class AdviceCommandTests
         };
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directory = Path.Combine(
             Path.GetTempPath(),

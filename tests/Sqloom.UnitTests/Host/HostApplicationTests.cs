@@ -35,7 +35,7 @@ public sealed class HostApplicationTests
     [Fact]
     public async Task RunAsync_WithTuneVerb_InvokesMatchingHandler()
     {
-        var applicationHarness = new MultipleTestApplicationA();
+        var applicationHarness = new TestApplicationA();
         StubCommandHandler handler = new(HostCommandKind.Tune, 23);
         HostApplication application = new(
             applicationHarness,
@@ -91,7 +91,7 @@ public sealed class HostApplicationTests
     [Fact]
     public async Task RunAsync_WithReplayVerb_UsesBoundApplication()
     {
-        var applicationHarness = new MultipleTestApplicationA();
+        var applicationHarness = new TestApplicationA();
         StubCommandHandler handler = new(HostCommandKind.Replay, 29);
         HostApplication application = new(
             applicationHarness,
@@ -121,7 +121,7 @@ public sealed class HostApplicationTests
         var originalOut = Console.Out;
         using StringWriter stdOut = new();
 
-        await ConsoleCaptureGate.Semaphore.WaitAsync();
+        await ConsoleGate.Semaphore.WaitAsync();
         try
         {
             Console.SetOut(stdOut);
@@ -139,7 +139,7 @@ public sealed class HostApplicationTests
         finally
         {
             Console.SetOut(originalOut);
-            ConsoleCaptureGate.Semaphore.Release();
+            ConsoleGate.Semaphore.Release();
         }
     }
 

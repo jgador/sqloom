@@ -7,7 +7,7 @@ namespace Sqloom.TestApp.Harness;
 /// <summary>
 /// Resolves the optional SQL seed script path used for post-DACPAC sample replay bootstrap.
 /// </summary>
-internal static class TestAppReplaySeedSqlPathResolver
+internal static class SeedSqlPathResolver
 {
     public static string? ResolvePathOrNull(ReplayLaunchOptions? launchOptions)
     {

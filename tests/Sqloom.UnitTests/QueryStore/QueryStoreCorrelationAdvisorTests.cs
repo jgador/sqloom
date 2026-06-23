@@ -13,7 +13,7 @@ namespace Sqloom.Correlation.Tests.QueryStore;
 /// </summary>
 public sealed class QueryStoreCorrelationAdvisorTests
 {
-    private static string ReplayArtifactDirPath =>
+    private static string ReplayArtifactsPath =>
         Path.Combine("artifacts", "sqloom", "replay-20260609T000000000Z");
 
     private static string QueryStoreSnapshotPath =>
@@ -43,7 +43,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
             AppName = "TestHarness",
-            ReplayArtifactDir = ReplayArtifactDirPath,
+            ReplayArtifactDir = ReplayArtifactsPath,
             QueryStoreSnapshotPath = QueryStoreSnapshotPath,
             QueryStoreCapturedAtUtc = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
             Records =
@@ -143,7 +143,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
             AppName = "TestHarness",
-            ReplayArtifactDir = ReplayArtifactDirPath,
+            ReplayArtifactDir = ReplayArtifactsPath,
             QueryStoreSnapshotPath = QueryStoreSnapshotPath,
             QueryStoreCapturedAtUtc = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
             Records = Array.Empty<QueryCorrelationRecord>(),

@@ -13,7 +13,7 @@ namespace Sqloom.TestApp.Harness;
 /// <summary>
 /// Executes a post-DACPAC SQL seed script against the sample replay database.
 /// </summary>
-internal sealed class TestAppReplaySqlServerSeedScriptExecutor
+internal sealed class SeedScriptExecutor
 {
     public async Task<SqlServerSeedSqlArtifact> ExecuteAsync(
         string connectionString,
@@ -49,7 +49,7 @@ internal sealed class TestAppReplaySqlServerSeedScriptExecutor
                 await using (command.ConfigureAwait(false))
                 {
                     command.CommandText = batch;
-                    command.CommandTimeout = TestAppReplayConstants.CommandTimeoutSeconds;
+                    command.CommandTimeout = ReplayConstants.CommandTimeoutSeconds;
                     await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
                 }
             }

@@ -25,7 +25,7 @@ public sealed class OpenAIAdviceGeneratorTests
     [Fact]
     public async Task CreateReportAsync_UsesEvidenceAndSchemaWithoutBaselineHints()
     {
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
         var advicePath = Path.Combine(replayArtifactDirectory, "tuning-advice.json");
         var correlationReport = CreateCorrelationReport(replayArtifactDirectory);
@@ -67,7 +67,7 @@ public sealed class OpenAIAdviceGeneratorTests
                 }
             })
         });
-        using var handler = new FakeHttpMessageHandler(async request =>
+        using var handler = new FakeHandler(async request =>
         {
             capturedRequestBody = await request.Content!
                 .ReadAsStringAsync()
@@ -139,7 +139,7 @@ public sealed class OpenAIAdviceGeneratorTests
     [Fact]
     public async Task CreateReportAsync_PersistsFreeFormProposalWithoutRollbackAndAddsWarning()
     {
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
         var advicePath = Path.Combine(replayArtifactDirectory, "tuning-advice.json");
         var correlationReport = CreateCorrelationReport(replayArtifactDirectory);
@@ -180,7 +180,7 @@ public sealed class OpenAIAdviceGeneratorTests
                 }
             })
         });
-        using var handler = new FakeHttpMessageHandler(_ =>
+        using var handler = new FakeHandler(_ =>
         {
             return Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
@@ -229,7 +229,7 @@ public sealed class OpenAIAdviceGeneratorTests
     [Fact]
     public async Task CreateReportAsync_WithDebugWriter_PrintsRedactedRequestAndResponse()
     {
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
         var advicePath = Path.Combine(replayArtifactDirectory, "tuning-advice.json");
         var correlationReport = CreateCorrelationReport(replayArtifactDirectory);
@@ -254,7 +254,7 @@ public sealed class OpenAIAdviceGeneratorTests
                 proposals = Array.Empty<object>(),
             })
         });
-        using var handler = new FakeHttpMessageHandler(_ =>
+        using var handler = new FakeHandler(_ =>
         {
             return Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
@@ -281,7 +281,7 @@ public sealed class OpenAIAdviceGeneratorTests
             httpClient,
             debugWriter);
 
-        var result = await CaptureStandardErrorAsync(async () =>
+        var result = await CaptureStderrAsync(async () =>
         {
             return await generator
                 .CreateReportAsync(
@@ -531,7 +531,7 @@ public sealed class OpenAIAdviceGeneratorTests
     /// <summary>
     /// Fakes OpenAI HTTP responses for advice-generator tests.
     /// </summary>
-    private sealed class FakeHttpMessageHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> handler)
+    private sealed class FakeHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> handler)
         : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(
@@ -542,9 +542,9 @@ public sealed class OpenAIAdviceGeneratorTests
         }
     }
 
-    private static async Task<StandardErrorCaptureResult<T>> CaptureStandardErrorAsync<T>(Func<Task<T>> action)
+    private static async Task<StandardErrorCaptureResult<T>> CaptureStderrAsync<T>(Func<Task<T>> action)
     {
-        await ConsoleCaptureGate.Semaphore.WaitAsync().ConfigureAwait(false);
+        await ConsoleGate.Semaphore.WaitAsync().ConfigureAwait(false);
         var originalError = Console.Error;
         using StringWriter standardError = new();
 
@@ -559,11 +559,11 @@ public sealed class OpenAIAdviceGeneratorTests
         finally
         {
             Console.SetError(originalError);
-            ConsoleCaptureGate.Semaphore.Release();
+            ConsoleGate.Semaphore.Release();
         }
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directory = Path.Combine(
             Path.GetTempPath(),

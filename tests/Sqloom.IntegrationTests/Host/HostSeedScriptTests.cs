@@ -18,24 +18,24 @@ namespace Sqloom.Host.Tests;
 /// <summary>
 /// Exercises post-DACPAC SQL seed-script flows for the Sqloom sample harness.
 /// </summary>
-public sealed class HostProductCatalogSeedScriptTests
+public sealed class HostSeedScriptTests
 {
     private const string DefaultConnectionKey = "ConnectionStrings:DefaultConnection";
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task CreateAsync_WithCustomSqlSeedScript_SkipsBuiltInHotProductSeeder()
+    public async Task CreateAsync_WithCustomSeedScript_SkipsBuiltInSeeder()
     {
-        var tempDirectory = CreateTempDirectory();
+        var tempDirectory = CreateTempDir();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var seedScriptPath = Path.Combine(tempDirectory, "AdventureWorksLT2025.seed.sql");
         File.WriteAllText(
             seedScriptPath,
-            SqloomTestAppSeedScripts.CreateCustomProductCatalogSeedScript());
+            SqloomTestAppSeedScripts.CreateCustomSeedScript());
 
         try
         {
-            TestAppReplayHostFactory replayHostFactory = new();
+            ReplayHostFactory replayHostFactory = new();
             var replayHost = await replayHostFactory
                 .CreateAsync(
                     new ReplayLaunchOptions
@@ -70,16 +70,16 @@ public sealed class HostProductCatalogSeedScriptTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task CreateAsync_WithExportedSqlSeedScript_RestoresHotProductSeedIntoFreshContainer()
+    public async Task CreateAsync_WithExportedSeedScript_RestoresHotSeedIntoFreshContainer()
     {
-        var tempDirectory = CreateTempDirectory();
+        var tempDirectory = CreateTempDir();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var exportScriptPath = SqloomTestAppPaths.GetSeedExportScriptPath();
         var exportedSeedScriptPath = Path.Combine(tempDirectory, "AdventureWorksLT2025.seed.sql");
 
         try
         {
-            TestAppReplayHostFactory sourceReplayHostFactory = new();
+            ReplayHostFactory sourceReplayHostFactory = new();
             var sourceReplayHost = await sourceReplayHostFactory
                 .CreateAsync(
                     new ReplayLaunchOptions
@@ -120,7 +120,7 @@ public sealed class HostProductCatalogSeedScriptTests
             Assert.Contains("HOT-000001", exportedSeedSql, StringComparison.Ordinal);
             Assert.DoesNotContain("[dbo].[sysdiagrams]", exportedSeedSql, StringComparison.Ordinal);
 
-            TestAppReplayHostFactory restoredReplayHostFactory = new();
+            ReplayHostFactory restoredReplayHostFactory = new();
             var restoredReplayHost = await restoredReplayHostFactory
                 .CreateAsync(
                     new ReplayLaunchOptions
@@ -148,14 +148,14 @@ public sealed class HostProductCatalogSeedScriptTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task CreateAsync_WithCommittedSqlSeedScript_BootstrapsAdventureWorksExportIntoFreshContainer()
+    public async Task CreateAsync_WithCommittedSeedScript_BootstrapsAdventureWorksIntoFreshContainer()
     {
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var seedScriptPath = SqloomTestAppPaths.GetSqlServerSeedScriptPath();
         var seedScriptSql = await File.ReadAllTextAsync(seedScriptPath).ConfigureAwait(false);
         Assert.DoesNotContain("[dbo].[sysdiagrams]", seedScriptSql, StringComparison.Ordinal);
 
-        TestAppReplayHostFactory replayHostFactory = new();
+        ReplayHostFactory replayHostFactory = new();
         var replayHost = await replayHostFactory
             .CreateAsync(
                 new ReplayLaunchOptions
@@ -181,8 +181,8 @@ public sealed class HostProductCatalogSeedScriptTests
             Assert.All(
                 products,
                 product => Assert.True(
-                    product.ListPrice >= TestAppProductCatalogScenario.ReplayMinPrice,
-                    $"Expected all list prices to be >= {TestAppProductCatalogScenario.ReplayMinPrice}, but found {product.ListPrice}."));
+                    product.ListPrice >= CatalogScenario.ReplayMinPrice,
+                    $"Expected all list prices to be >= {CatalogScenario.ReplayMinPrice}, but found {product.ListPrice}."));
         }
     }
 
@@ -196,7 +196,7 @@ public sealed class HostProductCatalogSeedScriptTests
     }
 
     private static void AssertHotSeededProducts(
-        IReadOnlyList<SqloomTestApp.ProductByCategoryResponse> products)
+        IReadOnlyList<SqloomTestApp.ProductResponse> products)
     {
         Assert.True(products.Count > 300, "Expected the hot seeded product query to return a large filtered result set.");
         Assert.All(
@@ -205,11 +205,11 @@ public sealed class HostProductCatalogSeedScriptTests
         Assert.All(
             products,
             product => Assert.True(
-                product.ListPrice >= TestAppProductCatalogScenario.ReplayMinPrice,
-                $"Expected all list prices to be >= {TestAppProductCatalogScenario.ReplayMinPrice}, but found {product.ListPrice}."));
+                product.ListPrice >= CatalogScenario.ReplayMinPrice,
+                $"Expected all list prices to be >= {CatalogScenario.ReplayMinPrice}, but found {product.ListPrice}."));
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directoryPath = Path.Combine(
             Path.GetTempPath(),
@@ -229,18 +229,18 @@ public sealed class HostProductCatalogSeedScriptTests
         }
     }
 
-    private static async Task<IReadOnlyList<SqloomTestApp.ProductByCategoryResponse>> ReadProductsByCategoryAsync(
+    private static async Task<IReadOnlyList<SqloomTestApp.ProductResponse>> ReadProductsByCategoryAsync(
         IReplayHost replayHost)
     {
         using var response = await replayHost.Client
-            .GetAsync(TestAppProductCatalogScenario.CreateRequestPath())
+            .GetAsync(CatalogScenario.CreateRequestPath())
             .ConfigureAwait(false);
         response.EnsureSuccessStatusCode();
 
         var products = await response.Content
-            .ReadFromJsonAsync<List<SqloomTestApp.ProductByCategoryResponse>>()
+            .ReadFromJsonAsync<List<SqloomTestApp.ProductResponse>>()
             .ConfigureAwait(false);
-        return Assert.IsType<List<SqloomTestApp.ProductByCategoryResponse>>(products);
+        return Assert.IsType<List<SqloomTestApp.ProductResponse>>(products);
     }
 
     private static async Task<int> CountProductsAsync(

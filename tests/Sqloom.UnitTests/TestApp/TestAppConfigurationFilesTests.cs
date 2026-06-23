@@ -58,6 +58,6 @@ public sealed class TestAppConfigurationFilesTests
 
     private static string GetProjectDirectory()
     {
-        return SqloomRepositoryPaths.GetTestAppProjectDirectory();
+        return RepositoryPaths.GetTestAppProjectDirectory();
     }
 }

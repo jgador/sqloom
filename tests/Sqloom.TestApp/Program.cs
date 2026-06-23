@@ -60,7 +60,7 @@ public partial class Program
             options.SupportNonNullableReferenceTypes();
             options.NonNullableReferenceTypesAsRequired();
         });
-        builder.Services.AddScoped<ITestAppProductCatalogService, TestAppProductCatalogService>();
+        builder.Services.AddScoped<IProductCatalogService, ProductCatalogService>();
         builder.Services.AddDbContext<TestAppProductCatalogDbContext>(options =>
         {
             if (!string.IsNullOrWhiteSpace(connectionString))

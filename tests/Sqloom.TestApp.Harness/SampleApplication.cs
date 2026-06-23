@@ -22,7 +22,7 @@ namespace Sqloom.TestApp.Harness;
 /// <summary>
 /// Supplies the sample Sqloom test app harness.
 /// </summary>
-public sealed class TestAppApplication : ISqloomApplication
+public sealed class SampleApplication : ISqloomApplication
 {
     public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
@@ -38,7 +38,7 @@ public sealed class TestAppApplication : ISqloomApplication
             {
                 Name = "SqloomTestApp",
             },
-            SchemaPath = ResolveHarnessFilePath(TestAppReplayConstants.SqlServerSchemaFileName),
+            SchemaPath = ResolveHarnessFilePath(ReplayConstants.SchemaFileName),
         };
     }
 
@@ -48,13 +48,13 @@ public sealed class TestAppApplication : ISqloomApplication
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        TestAppReplayHostFactory replayHostFactory = new();
+        ReplayHostFactory replayHostFactory = new();
         var replayHost = await replayHostFactory
             .CreateAsync(
-                CreateEffectiveLaunchOptions(context.ReplayLaunchOptions),
+                ResolveLaunchOptions(context.ReplayLaunchOptions),
                 cancellationToken)
             .ConfigureAwait(false);
-        return new TestAppApplicationSession(replayHost);
+        return new SampleSession(replayHost);
     }
 
     private static ReplayProfile CreateReplayProfile()
@@ -72,12 +72,12 @@ public sealed class TestAppApplication : ISqloomApplication
             [
                 new ReplayOverlay
                 {
-                    OperationKey = TestAppProductCatalogScenario.OperationKey,
+                    OperationKey = CatalogScenario.OperationKey,
                     Persona = "sqloom-test-user",
                     QueryValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                     {
-                        ["categoryId"] = TestAppProductCatalogScenario.HotCategoryId.ToString(),
-                        ["minPrice"] = TestAppProductCatalogScenario.ReplayMinPriceText,
+                        ["categoryId"] = CatalogScenario.HotCategoryId.ToString(),
+                        ["minPrice"] = CatalogScenario.MinPriceText,
                     },
                     Notes = "AdventureWorks product query intentionally seeded without a supporting nonclustered index for tuning advice coverage.",
                 },
@@ -85,14 +85,14 @@ public sealed class TestAppApplication : ISqloomApplication
         };
     }
 
-    private static ReplayLaunchOptions CreateEffectiveLaunchOptions(ReplayLaunchOptions requestedOptions)
+    private static ReplayLaunchOptions ResolveLaunchOptions(ReplayLaunchOptions requestedOptions)
     {
         return new ReplayLaunchOptions
         {
             DacpacPath = requestedOptions.DacpacPath
-                ?? ResolveHarnessFilePath(TestAppReplayConstants.SqlServerDacpacFileName),
+                ?? ResolveHarnessFilePath(ReplayConstants.DacpacFileName),
             SeedSqlPath = requestedOptions.SeedSqlPath
-                ?? ResolveHarnessFilePath(TestAppReplayConstants.SqlServerSeedSqlFileName),
+                ?? ResolveHarnessFilePath(ReplayConstants.SeedSqlFileName),
         };
     }
 
@@ -119,11 +119,11 @@ public sealed class TestAppApplication : ISqloomApplication
             "Sqloom.TestApp");
     }
 
-    private sealed class TestAppApplicationSession : ISqloomApplicationSession
+    private sealed class SampleSession : ISqloomApplicationSession
     {
         private readonly IReplayHost _replayHost;
 
-        public TestAppApplicationSession(IReplayHost replayHost)
+        public SampleSession(IReplayHost replayHost)
         {
             _replayHost = replayHost ?? throw new ArgumentNullException(nameof(replayHost));
         }
@@ -131,7 +131,7 @@ public sealed class TestAppApplication : ISqloomApplication
         public IReplayHost ReplayHost => _replayHost;
 
         public string? ReadOnlyConnection =>
-            _replayHost is TestAppReplayHost testAppReplayHost
+            _replayHost is ReplayHost testAppReplayHost
                 ? testAppReplayHost.ReadOnlyConnection
                 : null;
 
@@ -143,7 +143,7 @@ public sealed class TestAppApplication : ISqloomApplication
         }
     }
 
-    internal static async Task<WebApplication> CreateReplayApplicationAsync(
+    internal static async Task<WebApplication> CreateReplayAppAsync(
         string? applicationConnectionString,
         CancellationToken cancellationToken)
     {
@@ -153,14 +153,14 @@ public sealed class TestAppApplication : ISqloomApplication
         {
             builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                [TestAppConfigurationKeys.DefaultConnectionString] = applicationConnectionString,
+                [ConfigKeys.DefaultConnectionKey] = applicationConnectionString,
             });
         }
 
         builder.Services
             .AddControllers()
-            .AddApplicationPart(typeof(SqloomTestApp.TestAppProductsController).Assembly);
-        builder.Services.AddScoped<SqloomTestApp.ITestAppProductCatalogService, SqloomTestApp.TestAppProductCatalogService>();
+            .AddApplicationPart(typeof(SqloomTestApp.ProductsController).Assembly);
+        builder.Services.AddScoped<SqloomTestApp.IProductCatalogService, SqloomTestApp.ProductCatalogService>();
         builder.Services.AddSingleton<ReplaySqlCaptureCollector>();
         builder.Services.AddSingleton<ReplaySqlCommandInterceptor>();
         builder.Services.AddSingleton<IStartupFilter, ReplaySqlCaptureStartupFilter>();
@@ -175,7 +175,7 @@ public sealed class TestAppApplication : ISqloomApplication
             }
             else
             {
-                options.UseInMemoryDatabase(TestAppConfigurationKeys.InMemoryDatabaseName);
+                options.UseInMemoryDatabase(ConfigKeys.InMemoryDbName);
             }
 
             if (interceptors.Length > 0)

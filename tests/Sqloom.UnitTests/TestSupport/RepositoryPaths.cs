@@ -7,7 +7,7 @@ namespace Sqloom.Tests;
 /// <summary>
 /// Resolves stable standalone-repo paths for the Sqloom unit tests.
 /// </summary>
-internal static class SqloomRepositoryPaths
+internal static class RepositoryPaths
 {
     public static string GetRepositoryRoot()
     {
@@ -55,7 +55,7 @@ internal static class SqloomRepositoryPaths
             "openapi.json");
     }
 
-    public static string GetTestAppApplicationProjectPath()
+    public static string GetSampleApplicationProjectPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
@@ -64,7 +64,7 @@ internal static class SqloomRepositoryPaths
             "Sqloom.TestApp.Harness.csproj");
     }
 
-    public static string GetExpectedTestAppApplicationBuildOutputPath()
+    public static string GetExpectedSampleApplicationBuildOutputPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),

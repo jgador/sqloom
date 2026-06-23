@@ -20,7 +20,7 @@ public sealed class RunOptionsTests
             "Server=tcp:readonly;");
 
         Assert.Equal(
-            SqloomRepositoryPaths.GetDefaultArtifactRoot(),
+            RepositoryPaths.GetDefaultArtifactRoot(),
             options.ArtifactRoot);
         Assert.True(options.ObserveQueryStore);
         Assert.False(options.ReplayOperations);

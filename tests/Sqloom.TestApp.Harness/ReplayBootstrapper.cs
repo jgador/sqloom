@@ -10,19 +10,19 @@ namespace Sqloom.TestApp.Harness;
 /// <summary>
 /// Bootstraps the disposable SQL Server database used for the sample Sqloom replay harness.
 /// </summary>
-internal sealed class TestAppReplayDatabaseBootstrapper
+internal sealed class ReplayBootstrapper
 {
-    private readonly TestAppReplaySqlServerDacpacPublisher _dacpacPublisher = new();
-    private readonly TestAppReplaySqlServerSeedScriptExecutor _seedScriptExecutor = new();
-    private readonly TestAppReplayDatabaseSeeder _databaseSeeder = new();
+    private readonly DacpacPublisher _dacpacPublisher = new();
+    private readonly SeedScriptExecutor _seedScriptExecutor = new();
+    private readonly ReplaySeeder _databaseSeeder = new();
 
-    public async Task<TestAppReplayDatabaseBootstrapResult> BootstrapAsync(
+    public async Task<ReplayBootstrapResult> BootstrapAsync(
         MsSqlContainer sqlServer,
         ReplayLaunchOptions? launchOptions,
         CancellationToken cancellationToken)
     {
-        var fullDacpacPath = TestAppReplayDacpacPathResolver.ResolveRequiredPath(launchOptions);
-        var fullSeedSqlPath = TestAppReplaySeedSqlPathResolver.ResolvePathOrNull(launchOptions);
+        var fullDacpacPath = DacpacPathResolver.ResolveRequiredPath(launchOptions);
+        var fullSeedSqlPath = SeedSqlPathResolver.ResolvePathOrNull(launchOptions);
         var applicationConnectionString = await CreateDatabaseAsync(sqlServer, cancellationToken).ConfigureAwait(false);
         var sqlServerDacpac = await _dacpacPublisher
             .PublishAsync(
@@ -49,7 +49,7 @@ internal sealed class TestAppReplayDatabaseBootstrapper
                 .ConfigureAwait(false);
         }
 
-        return new TestAppReplayDatabaseBootstrapResult
+        return new ReplayBootstrapResult
         {
             ApplicationConnectionString = applicationConnectionString,
             Bootstrap = new ReplayBootstrapReport
@@ -64,10 +64,10 @@ internal sealed class TestAppReplayDatabaseBootstrapper
         MsSqlContainer sqlServer,
         CancellationToken cancellationToken)
     {
-        var databaseName = $"{TestAppReplayConstants.DatabaseNamePrefix}_{Guid.NewGuid():N}"[..32];
+        var databaseName = $"{ReplayConstants.DbNamePrefix}_{Guid.NewGuid():N}"[..32];
         var masterConnectionString = new SqlConnectionStringBuilder(sqlServer.GetConnectionString())
         {
-            InitialCatalog = TestAppReplayConstants.MasterDatabaseName,
+            InitialCatalog = ReplayConstants.MasterDatabaseName,
             MultipleActiveResultSets = true,
             TrustServerCertificate = true,
         }.ConnectionString;
@@ -80,7 +80,7 @@ internal sealed class TestAppReplayDatabaseBootstrapper
             await using (command.ConfigureAwait(false))
             {
                 command.CommandText = $"CREATE DATABASE [{databaseName}];";
-                command.CommandTimeout = TestAppReplayConstants.CommandTimeoutSeconds;
+                command.CommandTimeout = ReplayConstants.CommandTimeoutSeconds;
                 await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
             }
         }

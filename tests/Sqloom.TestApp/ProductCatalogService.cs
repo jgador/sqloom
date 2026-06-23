@@ -6,25 +6,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Sqloom.TestApp;
 
-public interface ITestAppProductCatalogService
+public interface IProductCatalogService
 {
-    Task<IReadOnlyList<ProductByCategoryResponse>> GetByCategoryAsync(
+    Task<IReadOnlyList<ProductResponse>> GetByCategoryAsync(
         int categoryId,
         decimal minPrice,
         CancellationToken cancellationToken);
 }
 
-public sealed class TestAppProductCatalogService
-    : ITestAppProductCatalogService
+public sealed class ProductCatalogService
+    : IProductCatalogService
 {
     private readonly TestAppProductCatalogDbContext _dbContext;
 
-    public TestAppProductCatalogService(TestAppProductCatalogDbContext dbContext)
+    public ProductCatalogService(TestAppProductCatalogDbContext dbContext)
     {
         _dbContext = dbContext;
     }
 
-    public async Task<IReadOnlyList<ProductByCategoryResponse>> GetByCategoryAsync(
+    public async Task<IReadOnlyList<ProductResponse>> GetByCategoryAsync(
         int categoryId,
         decimal minPrice,
         CancellationToken cancellationToken)
@@ -33,7 +33,7 @@ public sealed class TestAppProductCatalogService
             .AsNoTracking()
             .Where(product => product.ProductCategoryId == categoryId && product.ListPrice >= minPrice)
             .OrderByDescending(product => product.ListPrice)
-            .Select(product => new ProductByCategoryResponse
+            .Select(product => new ProductResponse
             {
                 ProductId = product.ProductId,
                 Name = product.Name,

@@ -28,16 +28,16 @@ namespace Sqloom.Host.Tests;
 /// Exercises the seeded AdventureWorks sample path used for missing-index advice coverage.
 /// </summary>
 [Collection("ConsoleHostRuntime")]
-public sealed class HostProductCatalogAdviceTests
+public sealed class HostCatalogAdviceTests
 {
     private const string DefaultConnectionKey = "ConnectionStrings:DefaultConnection";
     private static readonly JsonSerializerOptions _correlationSerializerOptions = CreateCorrelationSerializerOptions();
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task CreateAsync_WithSqlServerDacpac_SeedsProductsByCategoryEndpoint()
+    public async Task CreateAsync_WithSqlServerDacpac_SeedsByCategoryEndpoint()
     {
-        TestAppReplayHostFactory replayHostFactory = new();
+        ReplayHostFactory replayHostFactory = new();
         var replayHost = await replayHostFactory
             .CreateAsync(
                 new ReplayLaunchOptions
@@ -49,12 +49,12 @@ public sealed class HostProductCatalogAdviceTests
         await using (replayHost.ConfigureAwait(false))
         {
             using var response = await replayHost.Client
-                .GetAsync(TestAppProductCatalogScenario.CreateRequestPath())
+                .GetAsync(CatalogScenario.CreateRequestPath())
                 .ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
             var products = await response.Content
-                .ReadFromJsonAsync<List<SqloomTestApp.ProductByCategoryResponse>>()
+                .ReadFromJsonAsync<List<SqloomTestApp.ProductResponse>>()
                 .ConfigureAwait(false);
 
             Assert.NotNull(products);
@@ -65,8 +65,8 @@ public sealed class HostProductCatalogAdviceTests
             Assert.All(
                 products,
                 product => Assert.True(
-                    product.ListPrice >= TestAppProductCatalogScenario.ReplayMinPrice,
-                    $"Expected all list prices to be >= {TestAppProductCatalogScenario.ReplayMinPrice}, but found {product.ListPrice}."));
+                    product.ListPrice >= CatalogScenario.ReplayMinPrice,
+                    $"Expected all list prices to be >= {CatalogScenario.ReplayMinPrice}, but found {product.ListPrice}."));
             AssertSortedByListPriceDescending(products);
         }
     }
@@ -74,13 +74,13 @@ public sealed class HostProductCatalogAdviceTests
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
     [Trait("Category", "OpenAI")]
-    public async Task HostRuntime_WithOpenAiAdviceFreeFormProposalKind_PersistsProposalForProductsByCategory()
+    public async Task HostRuntime_WithOpenAiAdvice_PersistsProposalForByCategory()
     {
-        var artifactDirectory = CreateTempDirectory();
+        var artifactDirectory = CreateTempDir();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var schemaPath = SqloomTestAppPaths.GetSchemaPath();
         var currentDirectory = Directory.GetCurrentDirectory();
-        QueryStoreEnabledTestAppReplayHostFactory replayHostFactory = new(
+        QueryStoreEnabledReplayHostFactory replayHostFactory = new(
             new ReplayLaunchOptions
             {
                 DacpacPath = dacpacPath,
@@ -90,7 +90,7 @@ public sealed class HostProductCatalogAdviceTests
         {
             try
             {
-                TestAppApplication application = new();
+                SampleApplication application = new();
                 var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
                 {
                     CurrentDirectory = currentDirectory,
@@ -114,7 +114,7 @@ public sealed class HostProductCatalogAdviceTests
                             {
                                 DacpacPath = dacpacPath,
                             },
-                            TargetFilter = TestAppProductCatalogScenario.OperationKey,
+                            TargetFilter = CatalogScenario.OperationKey,
                         })
                     .ConfigureAwait(false);
 
@@ -190,7 +190,7 @@ public sealed class HostProductCatalogAdviceTests
 
                     var adviceOperation = Assert.Single(adviceReport.Operations);
                     var proposalOperation = Assert.Single(proposalReport.Operations);
-                    Assert.Equal(TestAppProductCatalogScenario.OperationKey, adviceOperation.OperationKey);
+                    Assert.Equal(CatalogScenario.OperationKey, adviceOperation.OperationKey);
                     Assert.True(
                         HasSurvivingProductProposal(adviceOperation),
                         FormatAdviceFailureMessage(adviceReport));
@@ -282,7 +282,7 @@ public sealed class HostProductCatalogAdviceTests
         for (var iteration = 0; iteration < 6; iteration++)
         {
             using var response = await client
-                .GetAsync(TestAppProductCatalogScenario.CreateRequestPath())
+                .GetAsync(CatalogScenario.CreateRequestPath())
                 .ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
         }
@@ -314,7 +314,7 @@ public sealed class HostProductCatalogAdviceTests
     private static bool HasMatchedProductCorrelation(QueryCorrelationReport report)
     {
         return report.Records.Any(record =>
-            string.Equals(record.OperationKey, TestAppProductCatalogScenario.OperationKey, StringComparison.OrdinalIgnoreCase)
+            string.Equals(record.OperationKey, CatalogScenario.OperationKey, StringComparison.OrdinalIgnoreCase)
             && record.CapturedCommand.SourceKind == CapturedSqlSourceKind.EntityFramework
             && record.MatchKind != CorrelationMatchKind.Unmatched
             && record.MatchedPlans.Count > 0);
@@ -449,7 +449,7 @@ public sealed class HostProductCatalogAdviceTests
         {
             var exitCode = await HostRuntime
                 .RunAsync(
-                    new TestAppApplication(),
+                    new SampleApplication(),
                     state.Args,
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
@@ -499,7 +499,7 @@ public sealed class HostProductCatalogAdviceTests
         }
     }
 
-    private static void AssertSortedByListPriceDescending(IReadOnlyList<SqloomTestApp.ProductByCategoryResponse> products)
+    private static void AssertSortedByListPriceDescending(IReadOnlyList<SqloomTestApp.ProductResponse> products)
     {
         for (var index = 1; index < products.Count; index++)
         {
@@ -527,7 +527,7 @@ public sealed class HostProductCatalogAdviceTests
                 $"{record.OperationKey}:{record.MatchKind}:{record.MatchedPlans.Count}:{Truncate(record.ComparableSqlText)}")
             .ToArray();
         return
-            $"Expected a matched Query Store record for '{TestAppProductCatalogScenario.OperationKey}', but found: {string.Join(" | ", summaries)}.";
+            $"Expected a matched Query Store record for '{CatalogScenario.OperationKey}', but found: {string.Join(" | ", summaries)}.";
     }
 
     private static string FormatAdviceFailureMessage(AdviceReport report)
@@ -554,7 +554,7 @@ public sealed class HostProductCatalogAdviceTests
             .ToArray();
 
         return
-            $"Expected the SQL proposal sidecars to keep an index proposal for '{TestAppProductCatalogScenario.OperationKey}', but proposals were [{string.Join(" | ", proposalSummaries)}] and script was [{Truncate(proposalScript)}].";
+            $"Expected the SQL proposal sidecars to keep an index proposal for '{CatalogScenario.OperationKey}', but proposals were [{string.Join(" | ", proposalSummaries)}] and script was [{Truncate(proposalScript)}].";
     }
 
     private static string Truncate(string value)
@@ -564,7 +564,7 @@ public sealed class HostProductCatalogAdviceTests
             : value[..177] + "...";
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directoryPath = Path.Combine(
             Path.GetTempPath(),
@@ -587,13 +587,13 @@ public sealed class HostProductCatalogAdviceTests
     /// <summary>
     /// Retains the inner SQL-backed replay host so Query Store stages can run against the same container.
     /// </summary>
-    private sealed class QueryStoreEnabledTestAppReplayHostFactory : IReplayHostFactory, IAsyncDisposable
+    private sealed class QueryStoreEnabledReplayHostFactory : IReplayHostFactory, IAsyncDisposable
     {
-        private readonly TestAppReplayHostFactory _inner = new();
+        private readonly ReplayHostFactory _inner = new();
         private readonly ReplayLaunchOptions _launchOptions;
         private RetainedReplayHost? _retainedHost;
 
-        public QueryStoreEnabledTestAppReplayHostFactory(ReplayLaunchOptions launchOptions)
+        public QueryStoreEnabledReplayHostFactory(ReplayLaunchOptions launchOptions)
         {
             _launchOptions = launchOptions;
         }

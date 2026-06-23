@@ -2,7 +2,7 @@ using Sqloom.Core.Execution;
 
 namespace Sqloom.TestApp.Harness;
 
-internal sealed class TestAppReplayDatabaseBootstrapResult
+internal sealed class ReplayBootstrapResult
 {
     public required string ApplicationConnectionString { get; init; }
 
