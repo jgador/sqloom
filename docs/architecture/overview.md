@@ -28,10 +28,11 @@ This is the canonical repo-layout and project-ownership document for the standal
 
 ## Current Project Roles
 
-- `Sqloom.Core`: shared contracts, options, artifact layout, pipeline models, generic helpers, and merged Showplan/OpenAI advice contracts
+- `Sqloom.Core`: shared contracts, options, artifact layout, pipeline models, replay evidence models, generic helpers, and merged Showplan/OpenAI advice contracts
 - `Sqloom.QueryStore`: Query Store models, workload classification, and discovery-first catalog logic that can stay independent from live SQL connectivity
 - `Sqloom.SqlServer`: SQL Server and Azure SQL connectivity, Query Store collection, statement-handle resolution, replay support, and statistics capture
-- `Sqloom.AspNetCore`: OpenAPI discovery, request resolution, replay planning, ASP.NET Core replay orchestration, request-scoped SQL capture hooks, and Query Store correlation types
+- `Sqloom.AspNetCore`: OpenAPI discovery, request resolution, replay planning, ASP.NET Core replay orchestration, and request-scoped SQL capture hooks
+- `Sqloom.Correlation`: replay evidence to Query Store matching, correlation reports, match summaries, and baseline correlation-driven advice heuristics
 - `Sqloom.Testing`: public app-harness runner contracts used by external harness projects and the sample harness
 - `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, library-harness loading, and the composition root
 - `Sqloom.TestApp`: sample target app for generic host coverage
@@ -39,7 +40,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 - `Sqloom.UnitTests`: unit-test lane for core libraries and host-adjacent logic
 - `Sqloom.IntegrationTests`: process and host integration lane for the standalone repository
 
-Retired runtime boundaries stay merged into adjacent survivors: `Sqloom.Showplan -> Sqloom.Core`, `Sqloom.OpenAI -> Sqloom.Core`, and `Sqloom.Correlation -> Sqloom.AspNetCore`.
+Retired runtime boundaries stay merged into adjacent survivors: `Sqloom.Showplan -> Sqloom.Core` and `Sqloom.OpenAI -> Sqloom.Core`.
 
 ## Current Repo Direction
 

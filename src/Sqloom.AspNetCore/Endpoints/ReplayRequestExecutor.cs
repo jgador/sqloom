@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.AspNetCore.Capture;
+using Sqloom.Core.Execution;
 
 namespace Sqloom.AspNetCore.Endpoints;
 

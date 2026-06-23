@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.AspNetCore.OpenApi;
 using Sqloom.Core.Artifacts;
+using Sqloom.Core.Execution;
 
 namespace Sqloom.AspNetCore.Endpoints;
 

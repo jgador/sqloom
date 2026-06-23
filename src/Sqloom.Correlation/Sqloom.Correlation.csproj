@@ -3,20 +3,16 @@
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>true</IsPackable>
     <Authors>Sqloom contributors</Authors>
-    <Description>ASP.NET Core OpenAPI discovery and replay pipeline services for Sqloom.</Description>
+    <Description>Replay-to-Query Store correlation services and artifacts for Sqloom.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/jgador/sqloom</PackageProjectUrl>
-    <PackageTags>sqloom;performance;tuning;aspnetcore;openapi</PackageTags>
+    <PackageTags>sqloom;performance;tuning;query-store;correlation</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/jgador/sqloom</RepositoryUrl>
   </PropertyGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
+    <ProjectReference Include="..\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
   </ItemGroup>
 </Project>

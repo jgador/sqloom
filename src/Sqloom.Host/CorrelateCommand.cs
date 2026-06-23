@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Correlation.QueryStore;
 using Sqloom.SqlServer.QueryStore;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
 using Sqloom.QueryStore.QueryStore;
 
 namespace Sqloom.Host;

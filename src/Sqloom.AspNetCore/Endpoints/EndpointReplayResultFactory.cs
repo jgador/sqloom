@@ -1,3 +1,5 @@
+using Sqloom.Core.Execution;
+
 namespace Sqloom.AspNetCore.Endpoints;
 
 /// <summary>

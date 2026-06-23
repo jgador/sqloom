@@ -3,7 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Sqloom.AspNetCore.Capture;
+namespace Sqloom.Core.Execution;
 
 /// <summary>
 /// Normalizes replay-captured SQL so it can be compared against Query Store text.

@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Sqloom.AspNetCore.Endpoints;
 using Sqloom.Core.Execution;
 using Sqloom.Correlation.QueryStore;
 using Sqloom.QueryStore.QueryStore;

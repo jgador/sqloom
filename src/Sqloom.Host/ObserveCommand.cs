@@ -59,7 +59,8 @@ internal sealed class ObserveCommand
     {
         var discoveredObjectCatalog = await CaptureDbCatalogAsync(
                 arguments.ReadOnlyConnection,
-                arguments.ObservationOptions)
+                arguments.ObservationOptions,
+                cancellationToken)
             .ConfigureAwait(false);
         var workloadProfile = arguments.BaseWorkloadProfile.WithDiscoveredObjectCatalog(
             discoveredObjectCatalog);
@@ -68,7 +69,8 @@ internal sealed class ObserveCommand
         var rawSnapshot = await collector
             .CaptureAsync(
                 arguments.ReadOnlyConnection,
-                arguments.ObservationOptions)
+                arguments.ObservationOptions,
+                cancellationToken)
             .ConfigureAwait(false);
         QueryStoreSnapshot snapshotWithDiscovery = new()
         {
@@ -112,7 +114,8 @@ internal sealed class ObserveCommand
 
     private static async Task<DbObjectCatalog> CaptureDbCatalogAsync(
         string readOnlyConnectionString,
-        QueryStoreOptions options)
+        QueryStoreOptions options,
+        CancellationToken cancellationToken)
     {
         SqlServerDiscoveredObjectCollector collector = new();
         DbObjectScanOptions discoveryOptions = new()
@@ -123,7 +126,10 @@ internal sealed class ObserveCommand
         try
         {
             return await collector
-                .CaptureAsync(readOnlyConnectionString, discoveryOptions)
+                .CaptureAsync(
+                    readOnlyConnectionString,
+                    discoveryOptions,
+                    cancellationToken)
                 .ConfigureAwait(false);
         }
         catch (SqlException sqlException)

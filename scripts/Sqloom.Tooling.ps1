@@ -57,6 +57,7 @@ function Get-SqloomPackProjects
         Join-Path $RepoRoot "src\Sqloom.QueryStore\Sqloom.QueryStore.csproj"
         Join-Path $RepoRoot "src\Sqloom.SqlServer\Sqloom.SqlServer.csproj"
         Join-Path $RepoRoot "src\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj"
+        Join-Path $RepoRoot "src\Sqloom.Correlation\Sqloom.Correlation.csproj"
         Join-Path $RepoRoot "src\Sqloom.Testing\Sqloom.Testing.csproj"
         Join-Path $RepoRoot "src\Sqloom.Host\Sqloom.Host.csproj"
     )
@@ -74,6 +75,7 @@ function Get-SqloomPackagePaths
         Join-Path $Context.PackageFeedPath "Sqloom.QueryStore.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.SqlServer.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.AspNetCore.$($Context.PackageVersion).nupkg"
+        Join-Path $Context.PackageFeedPath "Sqloom.Correlation.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.Testing.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
     )

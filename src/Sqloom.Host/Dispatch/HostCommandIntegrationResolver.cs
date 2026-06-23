@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Sqloom.Testing;
 
 namespace Sqloom.Host;
@@ -29,44 +31,57 @@ internal sealed class HostCommandIntegrationResolver
         _boundApplication = boundApplication;
     }
 
-    public HostCommandBindings Resolve(
+    public async Task<HostCommandBindings> ResolveAsync(
         HostCommandKind commandKind,
-        HostStartupOptions startupOptions)
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
 
-        return commandKind switch
+        switch (commandKind)
         {
-            HostCommandKind.Observe => new HostCommandBindings
-            {
-                Application = ResolveObserveApplication(startupOptions),
-            },
-            HostCommandKind.Tune => new HostCommandBindings
-            {
-                Application = ResolveRequiredApplication(startupOptions),
-            },
-            HostCommandKind.Replay => new HostCommandBindings
-            {
-                Application = ResolveRequiredApplication(startupOptions),
-            },
-            HostCommandKind.Correlate or HostCommandKind.Advise => new HostCommandBindings
-            {
-                Application = _boundApplication,
-            },
-            _ => throw new ArgumentOutOfRangeException(
+            case HostCommandKind.Observe:
+                return new HostCommandBindings
+                {
+                    Application = await ResolveObserveApplicationAsync(
+                            startupOptions,
+                            cancellationToken)
+                        .ConfigureAwait(false),
+                };
+            case HostCommandKind.Tune:
+            case HostCommandKind.Replay:
+                return new HostCommandBindings
+                {
+                    Application = await ResolveRequiredApplicationAsync(
+                            startupOptions,
+                            cancellationToken)
+                        .ConfigureAwait(false),
+                };
+            case HostCommandKind.Correlate:
+            case HostCommandKind.Advise:
+                return new HostCommandBindings
+                {
+                    Application = _boundApplication,
+                };
+            default:
+                throw new ArgumentOutOfRangeException(
                 nameof(commandKind),
                 commandKind,
-                "Sqloom could not resolve an app harness for the selected command kind."),
-        };
+                "Sqloom could not resolve an app harness for the selected command kind.");
+        }
     }
 
-    public ISqloomApplication? ResolveBannerApplication(HostStartupOptions startupOptions)
+    public Task<ISqloomApplication?> ResolveBannerApplicationAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
-        return ResolveObserveApplication(startupOptions);
+        return ResolveObserveApplicationAsync(startupOptions, cancellationToken);
     }
 
-    private ISqloomApplication? ResolveObserveApplication(HostStartupOptions startupOptions)
+    private async Task<ISqloomApplication?> ResolveObserveApplicationAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken)
     {
         if (_boundApplication is not null)
         {
@@ -78,12 +93,22 @@ internal sealed class HostCommandIntegrationResolver
             return null;
         }
 
-        return _appResolver.Resolve(startupOptions);
+        return await _appResolver
+            .ResolveAsync(startupOptions, cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    private ISqloomApplication ResolveRequiredApplication(HostStartupOptions startupOptions)
+    private async Task<ISqloomApplication> ResolveRequiredApplicationAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken)
     {
-        return _boundApplication
-            ?? _appResolver.Resolve(startupOptions);
+        if (_boundApplication is not null)
+        {
+            return _boundApplication;
+        }
+
+        return await _appResolver
+            .ResolveAsync(startupOptions, cancellationToken)
+            .ConfigureAwait(false);
     }
 }

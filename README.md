@@ -61,6 +61,7 @@ Add `--debug` to any `sqloom` or `sqloom-local` command when you want step-by-st
 |   |-- Sqloom.QueryStore/
 |   |-- Sqloom.SqlServer/
 |   |-- Sqloom.AspNetCore/
+|   |-- Sqloom.Correlation/
 |   |-- Sqloom.Testing/
 |   `-- Sqloom.Host/
 `-- tests/
@@ -207,7 +208,7 @@ Use `observe` to read recent Query Store data from SQL Server or Azure SQL. Quer
 From the repo root, run this command with a read-only connection string and the sample harness path:
 
 ```powershell
-dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- observe .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" --lookback-hours 24 --max-plans 100 --max-waits 10 --json-output-file ".\artifacts\query-store-snapshot.json" --app-only --show-classification
+dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- observe .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" --lookback-hours 24 --max-plans 100 --max-waits 10 --json-output-file ".\artifacts\sqloom\query-store\query-store-snapshot.json" --app-only --show-classification
 ```
 
 `observe` and `correlate` both require `--read-only-connection-string <connection-string>`. This command path does not read that value from environment variables.

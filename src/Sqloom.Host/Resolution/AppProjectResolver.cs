@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Sqloom.Host;
@@ -15,15 +16,18 @@ internal sealed class AppProjectResolver
 {
     private readonly TargetPathResolver _targetPathResolver = new();
 
-    public string ResolveAssemblyPath(
+    public async Task<string> ResolveAssemblyPathAsync(
         string targetPath,
         bool noBuild,
-        string dotNetCommand)
+        string dotNetCommand,
+        CancellationToken cancellationToken = default)
     {
-        var assemblySelections = ResolveAssemblySelections(
-            targetPath,
-            noBuild,
-            dotNetCommand);
+        var assemblySelections = await ResolveAssemblySelectionsAsync(
+                targetPath,
+                noBuild,
+                dotNetCommand,
+                cancellationToken)
+            .ConfigureAwait(false);
         return assemblySelections.Count switch
         {
             1 => assemblySelections[0].AssemblyPath,
@@ -31,19 +35,26 @@ internal sealed class AppProjectResolver
         };
     }
 
-    internal IReadOnlyList<ResolvedAssemblySelection> ResolveAssemblySelections(
+    internal async Task<IReadOnlyList<ResolvedAssemblySelection>> ResolveAssemblySelectionsAsync(
         string targetPath,
         bool noBuild,
-        string dotNetCommand)
+        string dotNetCommand,
+        CancellationToken cancellationToken = default)
     {
-        return _targetPathResolver
-            .ResolveTargetSelections(targetPath)
-            .Select(selection => new ResolvedAssemblySelection(
+        List<ResolvedAssemblySelection> assemblySelections = [];
+        foreach (var selection in _targetPathResolver.ResolveTargetSelections(targetPath))
+        {
+            assemblySelections.Add(new ResolvedAssemblySelection(
                 selection,
-                ResolveAssemblyPath(
-                    selection,
-                    noBuild,
-                    dotNetCommand)))
+                await ResolveAssemblyPathAsync(
+                        selection,
+                        noBuild,
+                        dotNetCommand,
+                        cancellationToken)
+                    .ConfigureAwait(false)));
+        }
+
+        return assemblySelections
             .DistinctBy(static selection => selection.AssemblyPath, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
@@ -56,10 +67,11 @@ internal sealed class AppProjectResolver
             $"The Sqloom target '{Path.GetFullPath(targetPath)}' resolved to multiple harness assembly candidates: {string.Join(", ", assemblySelections.Select(static selection => selection.AssemblyPath))}. Pass a narrower target in v1.");
     }
 
-    private string ResolveAssemblyPath(
+    private async Task<string> ResolveAssemblyPathAsync(
         ResolvedTargetSelection targetSelection,
         bool noBuild,
-        string dotNetCommand)
+        string dotNetCommand,
+        CancellationToken cancellationToken)
     {
         if (targetSelection.Kind == ResolvedTargetKind.Assembly)
         {
@@ -71,17 +83,21 @@ internal sealed class AppProjectResolver
             "harness project");
         var projectDirectory = Path.GetDirectoryName(projectPath)
             ?? throw new InvalidOperationException($"The harness project path '{projectPath}' has no parent directory.");
-        var resolvedAssemblyPath = ResolveTargetPath(
-            projectPath,
-            projectDirectory,
-            dotNetCommand);
+        var resolvedAssemblyPath = await ResolveTargetPathAsync(
+                projectPath,
+                projectDirectory,
+                dotNetCommand,
+                cancellationToken)
+            .ConfigureAwait(false);
 
         if (!noBuild)
         {
-            BuildProject(
-                projectPath,
-                projectDirectory,
-                dotNetCommand);
+            await BuildProjectAsync(
+                    projectPath,
+                    projectDirectory,
+                    dotNetCommand,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
 
         if (!File.Exists(resolvedAssemblyPath))
@@ -95,18 +111,21 @@ internal sealed class AppProjectResolver
         return resolvedAssemblyPath;
     }
 
-    private static string ResolveTargetPath(
+    private static async Task<string> ResolveTargetPathAsync(
         string projectPath,
         string workingDirectory,
-        string dotNetCommand)
+        string dotNetCommand,
+        CancellationToken cancellationToken)
     {
-        var result = ExecuteDotNetCommand(
-            dotNetCommand,
-            workingDirectory,
-            "msbuild",
-            projectPath,
-            "-nologo",
-            "-getProperty:TargetPath");
+        var result = await ExecuteDotNetCommandAsync(
+                dotNetCommand,
+                workingDirectory,
+                cancellationToken,
+                "msbuild",
+                projectPath,
+                "-nologo",
+                "-getProperty:TargetPath")
+            .ConfigureAwait(false);
         if (result.ExitCode != 0)
         {
             throw new AppResolutionException(
@@ -132,19 +151,22 @@ internal sealed class AppProjectResolver
             workingDirectory);
     }
 
-    private static void BuildProject(
+    private static async Task BuildProjectAsync(
         string projectPath,
         string workingDirectory,
-        string dotNetCommand)
+        string dotNetCommand,
+        CancellationToken cancellationToken)
     {
-        var result = ExecuteDotNetCommand(
-            dotNetCommand,
-            workingDirectory,
-            "build",
-            projectPath,
-            "--tl:off",
-            "--nologo",
-            "-clp:ErrorsOnly;NoSummary");
+        var result = await ExecuteDotNetCommandAsync(
+                dotNetCommand,
+                workingDirectory,
+                cancellationToken,
+                "build",
+                projectPath,
+                "--tl:off",
+                "--nologo",
+                "-clp:ErrorsOnly;NoSummary")
+            .ConfigureAwait(false);
         if (result.ExitCode != 0)
         {
             throw new AppResolutionException(
@@ -152,9 +174,10 @@ internal sealed class AppProjectResolver
         }
     }
 
-    private static DotNetCommandResult ExecuteDotNetCommand(
+    private static async Task<DotNetCommandResult> ExecuteDotNetCommandAsync(
         string dotNetCommand,
         string workingDirectory,
+        CancellationToken cancellationToken,
         params string[] arguments)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(dotNetCommand);
@@ -196,15 +219,42 @@ internal sealed class AppProjectResolver
 
         var standardOutputTask = process.StandardOutput.ReadToEndAsync();
         var standardErrorTask = process.StandardError.ReadToEndAsync();
-        process.WaitForExit();
-        Task.WaitAll(
-            standardOutputTask,
-            standardErrorTask);
+        try
+        {
+            await process
+                .WaitForExitAsync(cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            TryKillProcess(process);
+            throw;
+        }
+
+        var standardOutput = await standardOutputTask.ConfigureAwait(false);
+        var standardError = await standardErrorTask.ConfigureAwait(false);
 
         return new DotNetCommandResult(
             process.ExitCode,
-            standardOutputTask.Result,
-            standardErrorTask.Result);
+            standardOutput,
+            standardError);
+    }
+
+    private static void TryKillProcess(Process process)
+    {
+        try
+        {
+            if (!process.HasExited)
+            {
+                process.Kill(entireProcessTree: true);
+            }
+        }
+        catch (InvalidOperationException)
+        {
+        }
+        catch (Win32Exception)
+        {
+        }
     }
 
     private static string FormatCommandOutput(

@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Sqloom.AspNetCore.Endpoints;
+namespace Sqloom.Core.Execution;
 
 /// <summary>
 /// Captures the HTTP response and SQL evidence for one replayed operation.

@@ -7,6 +7,7 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Core.Execution;
 using Sqloom.Core.Artifacts;
 using Sqloom.Correlation.QueryStore;
 using Sqloom.QueryStore.QueryStore;

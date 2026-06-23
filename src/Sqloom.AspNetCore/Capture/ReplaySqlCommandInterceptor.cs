@@ -5,7 +5,7 @@ using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Core.Execution;
 
 namespace Sqloom.AspNetCore.Capture;
 

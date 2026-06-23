@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Correlation.QueryStore;
 using Sqloom.SqlServer.Capture;
 using Sqloom.Core.Execution;
 using Sqloom.QueryStore.QueryStore;
@@ -79,7 +81,8 @@ internal sealed class HostApplication
 
     public async Task<int> RunAsync(
         HostStartupOptions startupOptions,
-        string currentDirectory)
+        string currentDirectory,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
         ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
@@ -99,25 +102,29 @@ internal sealed class HostApplication
                 return await RunHandlerAsync(
                         commandKind,
                         startupOptions,
-                        currentDirectory)
+                        currentDirectory,
+                        cancellationToken)
                     .ConfigureAwait(false);
             default:
-                return HandleNoCommand(
-                    startupOptions,
-                    currentDirectory);
+                return await HandleNoCommandAsync(
+                        startupOptions,
+                        currentDirectory,
+                        cancellationToken)
+                    .ConfigureAwait(false);
         }
     }
 
     public async Task<int> RunAsync(
         string[] args,
-        string currentDirectory)
+        string currentDirectory,
+        CancellationToken cancellationToken = default)
     {
         HostStartupOptions startupOptions = new()
         {
             ApplicationArguments = args,
         };
 
-        return await RunAsync(startupOptions, currentDirectory).ConfigureAwait(false);
+        return await RunAsync(startupOptions, currentDirectory, cancellationToken).ConfigureAwait(false);
     }
 
     internal static IReadOnlyList<string> GetProjectNames(ISqloomApplication? application)
@@ -127,7 +134,8 @@ internal sealed class HostApplication
             typeof(RunOptions).Assembly.GetName().Name ?? "Sqloom.Core",
             typeof(QueryStoreSnapshot).Assembly.GetName().Name ?? "Sqloom.QueryStore",
             typeof(SqlServerObservationOptions).Assembly.GetName().Name ?? "Sqloom.SqlServer",
-            typeof(EndpointReplayRequest).Assembly.GetName().Name ?? "Sqloom.AspNetCore",
+            typeof(ReplayRunnerOptions).Assembly.GetName().Name ?? "Sqloom.AspNetCore",
+            typeof(QueryCorrelationReport).Assembly.GetName().Name ?? "Sqloom.Correlation",
             typeof(ISqloomApplication).Assembly.GetName().Name ?? "Sqloom.Testing",
             typeof(HostApplication).Assembly.GetName().Name ?? "Sqloom.Host",
         ];
@@ -143,9 +151,12 @@ internal sealed class HostApplication
     private async Task<int> RunHandlerAsync(
         HostCommandKind commandKind,
         HostStartupOptions startupOptions,
-        string currentDirectory)
+        string currentDirectory,
+        CancellationToken cancellationToken)
     {
-        var bindings = _integrationResolver.Resolve(commandKind, startupOptions);
+        var bindings = await _integrationResolver
+            .ResolveAsync(commandKind, startupOptions, cancellationToken)
+            .ConfigureAwait(false);
         var context = _contextFactory.Create(
             startupOptions,
             currentDirectory,
@@ -157,9 +168,10 @@ internal sealed class HostApplication
             .ConfigureAwait(false);
     }
 
-    private int HandleNoCommand(
+    private async Task<int> HandleNoCommandAsync(
         HostStartupOptions startupOptions,
-        string currentDirectory)
+        string currentDirectory,
+        CancellationToken cancellationToken)
     {
         if (startupOptions.ApplicationArguments.Length > 0)
         {
@@ -167,9 +179,10 @@ internal sealed class HostApplication
                 "Sqloom now requires an explicit stage verb. Use tune, observe, replay, correlate, or advise.");
         }
 
-        PrintBanner(
-            _integrationResolver.ResolveBannerApplication(startupOptions),
-            currentDirectory);
+        var application = await _integrationResolver
+            .ResolveBannerApplicationAsync(startupOptions, cancellationToken)
+            .ConfigureAwait(false);
+        PrintBanner(application, currentDirectory);
         _consoleWriter.PrintNoCommandHint();
         return 0;
     }

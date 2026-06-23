@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.Threading;
+using System.Threading.Tasks;
 using Sqloom.Testing;
 
 namespace Sqloom.Host;
@@ -18,30 +20,36 @@ internal sealed class AppResolver
     private static bool _defaultAssemblyResolverRegistered;
     private readonly AppProjectResolver _projectResolver = new();
 
-    public ISqloomApplication Resolve(
-        HostStartupOptions startupOptions)
+    public async Task<ISqloomApplication> ResolveAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
 
         var targetPath = GetRequiredTargetPath(startupOptions);
-        var assemblySelections = _projectResolver
-            .ResolveAssemblySelections(
+        var assemblySelections = await _projectResolver
+            .ResolveAssemblySelectionsAsync(
                 targetPath,
                 startupOptions.NoBuild,
-                startupOptions.DotNetCommand);
+                startupOptions.DotNetCommand,
+                cancellationToken)
+            .ConfigureAwait(false);
         return CreateApplication(
             targetPath,
             assemblySelections);
     }
 
-    public string ResolveAssemblyPath(HostStartupOptions startupOptions)
+    public Task<string> ResolveAssemblyPathAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
 
-        return _projectResolver.ResolveAssemblyPath(
+        return _projectResolver.ResolveAssemblyPathAsync(
             GetRequiredTargetPath(startupOptions),
             startupOptions.NoBuild,
-            startupOptions.DotNetCommand);
+            startupOptions.DotNetCommand,
+            cancellationToken);
     }
 
     private static ISqloomApplication CreateApplication(

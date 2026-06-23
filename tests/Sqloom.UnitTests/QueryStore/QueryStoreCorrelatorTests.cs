@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.Capture;
-using Sqloom.AspNetCore.Endpoints;
 using Sqloom.Core.Execution;
 using Sqloom.Correlation.QueryStore;
 using Sqloom.QueryStore.QueryStore;

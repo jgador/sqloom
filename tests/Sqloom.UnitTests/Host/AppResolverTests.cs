@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Sqloom.Tests;
 using Xunit;
 
@@ -13,7 +14,7 @@ namespace Sqloom.Host.Tests;
 public sealed class AppResolverTests
 {
     [Fact]
-    public void Resolve_LoadsApplicationFromExplicitHarnessProjectPathWithoutBuild()
+    public async Task Resolve_LoadsApplicationFromExplicitHarnessProjectPathWithoutBuild()
     {
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
@@ -22,7 +23,7 @@ public sealed class AppResolverTests
             NoBuild = true,
         };
 
-        var application = resolver.Resolve(startupOptions);
+        var application = await resolver.ResolveAsync(startupOptions);
         var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
         {
             CurrentDirectory = RepositoryPaths.GetRepositoryRoot(),
@@ -33,7 +34,7 @@ public sealed class AppResolverTests
     }
 
     [Fact]
-    public void Resolve_ThrowsWhenTargetDoesNotContainSqloomApplication()
+    public async Task Resolve_ThrowsWhenTargetDoesNotContainSqloomApplication()
     {
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
@@ -42,14 +43,14 @@ public sealed class AppResolverTests
             NoBuild = true,
         };
 
-        var exception = Assert.Throws<AppResolutionException>(
-            () => resolver.Resolve(startupOptions));
+        var exception = await Assert.ThrowsAsync<AppResolutionException>(
+            () => resolver.ResolveAsync(startupOptions));
 
         Assert.Contains("does not contain an ISqloomApplication implementation", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void Resolve_ThrowsWhenHarnessProjectContainsMultipleApplications()
+    public async Task Resolve_ThrowsWhenHarnessProjectContainsMultipleApplications()
     {
         var tempDirectoryPath = CreateTempDir();
 
@@ -107,8 +108,8 @@ public sealed class AppResolverTests
                 NoBuild = true,
             };
 
-            var exception = Assert.Throws<AppResolutionException>(
-                () => resolver.Resolve(startupOptions));
+            var exception = await Assert.ThrowsAsync<AppResolutionException>(
+                () => resolver.ResolveAsync(startupOptions));
 
             Assert.Contains("multiple public ISqloomApplication implementations", exception.Message, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("FirstHarnessApplication", exception.Message, StringComparison.Ordinal);
@@ -121,7 +122,7 @@ public sealed class AppResolverTests
     }
 
     [Fact]
-    public void Resolve_DeduplicatesRepeatedProjectsFromSolutionFilter()
+    public async Task Resolve_DeduplicatesRepeatedProjectsFromSolutionFilter()
     {
         AppResolver resolver = new();
         var tempDirectoryPath = CreateTempDir();
@@ -138,7 +139,7 @@ public sealed class AppResolverTests
                 NoBuild = true,
             };
 
-            var application = resolver.Resolve(startupOptions);
+            var application = await resolver.ResolveAsync(startupOptions);
             var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
             {
                 CurrentDirectory = RepositoryPaths.GetRepositoryRoot(),
@@ -153,7 +154,7 @@ public sealed class AppResolverTests
     }
 
     [Fact]
-    public void ResolveAssemblyPath_WithHarnessProjectPathWithoutBuild_ReturnsBuildOutputPath()
+    public async Task ResolveAssemblyPath_WithHarnessProjectPathWithoutBuild_ReturnsBuildOutputPath()
     {
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
@@ -162,7 +163,7 @@ public sealed class AppResolverTests
             NoBuild = true,
         };
 
-        var assemblyPath = resolver.ResolveAssemblyPath(startupOptions);
+        var assemblyPath = await resolver.ResolveAssemblyPathAsync(startupOptions);
 
         Assert.Equal(
             RepositoryPaths.GetExpectedSampleApplicationBuildOutputPath(),
@@ -171,7 +172,7 @@ public sealed class AppResolverTests
     }
 
     [Fact]
-    public void Resolve_ThrowsWhenProjectPathIsMissing()
+    public async Task Resolve_ThrowsWhenProjectPathIsMissing()
     {
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
@@ -183,19 +184,19 @@ public sealed class AppResolverTests
                 "MissingApp.csproj"),
         };
 
-        var exception = Assert.Throws<AppResolutionException>(
-            () => resolver.Resolve(startupOptions));
+        var exception = await Assert.ThrowsAsync<AppResolutionException>(
+            () => resolver.ResolveAsync(startupOptions));
 
         Assert.Contains("does not exist", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void Resolve_ThrowsWhenTargetPathIsMissing()
+    public async Task Resolve_ThrowsWhenTargetPathIsMissing()
     {
         AppResolver resolver = new();
 
-        var exception = Assert.Throws<AppResolutionException>(
-            () => resolver.Resolve(new HostStartupOptions()));
+        var exception = await Assert.ThrowsAsync<AppResolutionException>(
+            () => resolver.ResolveAsync(new HostStartupOptions()));
 
         Assert.Contains("requires an explicit harness target path", exception.Message, StringComparison.OrdinalIgnoreCase);
     }

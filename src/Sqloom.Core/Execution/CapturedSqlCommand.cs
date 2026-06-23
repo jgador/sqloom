@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace Sqloom.AspNetCore.Endpoints;
+namespace Sqloom.Core.Execution;
 
 /// <summary>
 /// Captures one SQL command observed during replay.
@@ -33,34 +33,4 @@ public sealed class CapturedSqlCommand
 
     [JsonPropertyName("recordsAffected")]
     public int? RecordsAffected { get; init; }
-}
-
-public enum CapturedSqlSourceKind
-{
-    EntityFramework = 0,
-    AdoNet = 1
-}
-
-/// <summary>
-/// Captures one SQL parameter observed during replay.
-/// </summary>
-public sealed class CapturedSqlParameter
-{
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
-
-    [JsonPropertyName("dbType")]
-    public string? DbType { get; init; }
-
-    [JsonPropertyName("size")]
-    public int? Size { get; init; }
-
-    [JsonPropertyName("precision")]
-    public byte? Precision { get; init; }
-
-    [JsonPropertyName("scale")]
-    public byte? Scale { get; init; }
-
-    [JsonPropertyName("value")]
-    public string? Value { get; init; }
 }

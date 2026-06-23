@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj" />
+    <ProjectReference Include="..\Sqloom.Correlation\Sqloom.Correlation.csproj" />
     <ProjectReference Include="..\Sqloom.SqlServer\Sqloom.SqlServer.csproj" />
     <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
     <ProjectReference Include="..\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
