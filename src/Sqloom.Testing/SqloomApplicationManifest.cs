@@ -10,12 +10,12 @@ public sealed class SqloomApplicationManifest
 {
     public required string Name { get; init; }
 
-    public required string OpenApiDocumentPath { get; init; }
+    public required string OpenApiPath { get; init; }
 
     public required ReplayProfile ReplayProfile { get; init; }
 
-    public QueryStoreWorkloadProfile QueryStoreWorkloadProfile { get; init; } =
-        QueryStoreWorkloadProfile.Empty;
+    public WorkloadProfile WorkloadProfile { get; init; } =
+        WorkloadProfile.Empty;
 
-    public string? SqlServerSchemaPath { get; init; }
+    public string? SchemaPath { get; init; }
 }

@@ -13,7 +13,7 @@ namespace Sqloom.SqlServer.QueryStore;
 /// <summary>
 /// Discovers user-defined database objects from SQL Server or Azure SQL using a readonly connection.
 /// </summary>
-public sealed class SqlServerDiscoveredObjectCollector : IDiscoveredDatabaseObjectCollector
+public sealed class SqlServerDiscoveredObjectCollector : IDbObjectCollector
 {
     private const string UserTablesAndViewsSql = """
         SELECT
@@ -68,9 +68,9 @@ public sealed class SqlServerDiscoveredObjectCollector : IDiscoveredDatabaseObje
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
     }
 
-    public async Task<DiscoveredDatabaseObjectCatalog> CaptureAsync(
+    public async Task<DbObjectCatalog> CaptureAsync(
         string readOnlyConnectionString,
-        DiscoveredDatabaseObjectObservationOptions options,
+        DbObjectScanOptions options,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(readOnlyConnectionString);
@@ -112,7 +112,7 @@ public sealed class SqlServerDiscoveredObjectCollector : IDiscoveredDatabaseObje
         }
     }
 
-    internal static void ValidateOptions(DiscoveredDatabaseObjectObservationOptions options)
+    internal static void ValidateOptions(DbObjectScanOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -145,7 +145,7 @@ public sealed class SqlServerDiscoveredObjectCollector : IDiscoveredDatabaseObje
         return reader.GetBoolean(reader.GetOrdinal("has_view_definition"));
     }
 
-    internal static DiscoveredDatabaseObjectCatalog FinalizeCatalog(
+    internal static DbObjectCatalog FinalizeCatalog(
         string sourceName,
         IReadOnlyList<DiscoveredDatabaseObject> objects,
         bool isComplete,
@@ -162,7 +162,7 @@ public sealed class SqlServerDiscoveredObjectCollector : IDiscoveredDatabaseObje
             .ThenBy(static item => item.ObjectName, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        return new DiscoveredDatabaseObjectCatalog
+        return new DbObjectCatalog
         {
             CapturedAtUtc = capturedAtUtc ?? DateTimeOffset.UtcNow,
             SourceName = sourceName,
@@ -172,13 +172,13 @@ public sealed class SqlServerDiscoveredObjectCollector : IDiscoveredDatabaseObje
         };
     }
 
-    private static DiscoveredDatabaseObjectKind ParseKind(string objectKind)
+    private static DbObjectKind ParseKind(string objectKind)
     {
         return objectKind switch
         {
-            "Table" => DiscoveredDatabaseObjectKind.Table,
-            "View" => DiscoveredDatabaseObjectKind.View,
-            "Module" => DiscoveredDatabaseObjectKind.Module,
+            "Table" => DbObjectKind.Table,
+            "View" => DbObjectKind.View,
+            "Module" => DbObjectKind.Module,
             _ => throw new InvalidOperationException($"Unsupported discovered object kind: {objectKind}."),
         };
     }

@@ -4,10 +4,10 @@ using System.Threading.Tasks;
 
 namespace Sqloom.QueryStore.QueryStore;
 
-public interface IStatementSqlHandleResolver
+public interface ISqlHandleResolver
 {
-    Task<SqlStatementHandleResolution> ResolveAsync(
+    Task<SqlHandleResolution> ResolveAsync(
         string sqlText,
-        IReadOnlyList<SqlStatementHandleParameterDescriptor> parameters,
+        IReadOnlyList<SqlHandleParameter> parameters,
         CancellationToken cancellationToken = default);
 }

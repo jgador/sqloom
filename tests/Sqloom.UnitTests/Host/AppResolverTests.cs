@@ -65,7 +65,7 @@ public sealed class AppResolverTests
                         return new SqloomApplicationManifest
                         {
                             Name = "First",
-                            OpenApiDocumentPath = System.IO.Path.GetFullPath("openapi.json"),
+                            OpenApiPath = System.IO.Path.GetFullPath("openapi.json"),
                             ReplayProfile = new ReplayProfile(),
                         };
                     }
@@ -85,7 +85,7 @@ public sealed class AppResolverTests
                         return new SqloomApplicationManifest
                         {
                             Name = "Second",
-                            OpenApiDocumentPath = System.IO.Path.GetFullPath("openapi.json"),
+                            OpenApiPath = System.IO.Path.GetFullPath("openapi.json"),
                             ReplayProfile = new ReplayProfile(),
                         };
                     }

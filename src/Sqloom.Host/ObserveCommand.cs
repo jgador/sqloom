@@ -57,8 +57,8 @@ internal sealed class ObserveCommand
         ObserveArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        var discoveredObjectCatalog = await CaptureDiscoveredObjectCatalogAsync(
-                arguments.ReadOnlyConnectionString,
+        var discoveredObjectCatalog = await CaptureDbCatalogAsync(
+                arguments.ReadOnlyConnection,
                 arguments.ObservationOptions)
             .ConfigureAwait(false);
         var workloadProfile = arguments.BaseWorkloadProfile.WithDiscoveredObjectCatalog(
@@ -67,7 +67,7 @@ internal sealed class ObserveCommand
         SqlServerQueryStoreCollector collector = new();
         var rawSnapshot = await collector
             .CaptureAsync(
-                arguments.ReadOnlyConnectionString,
+                arguments.ReadOnlyConnection,
                 arguments.ObservationOptions)
             .ConfigureAwait(false);
         QueryStoreSnapshot snapshotWithDiscovery = new()
@@ -81,7 +81,7 @@ internal sealed class ObserveCommand
             Waits = rawSnapshot.Waits,
         };
 
-        QueryStoreWorkloadClassifier classifier = new();
+        WorkloadClassifier classifier = new();
         var snapshot = classifier.ApplyClassification(
             snapshotWithDiscovery,
             workloadProfile);
@@ -110,12 +110,12 @@ internal sealed class ObserveCommand
         };
     }
 
-    private static async Task<DiscoveredDatabaseObjectCatalog> CaptureDiscoveredObjectCatalogAsync(
+    private static async Task<DbObjectCatalog> CaptureDbCatalogAsync(
         string readOnlyConnectionString,
-        QueryStoreObservationOptions options)
+        QueryStoreOptions options)
     {
         SqlServerDiscoveredObjectCollector collector = new();
-        DiscoveredDatabaseObjectObservationOptions discoveryOptions = new()
+        DbObjectScanOptions discoveryOptions = new()
         {
             CommandTimeoutSeconds = options.CommandTimeoutSeconds,
         };
@@ -128,7 +128,7 @@ internal sealed class ObserveCommand
         }
         catch (SqlException sqlException)
         {
-            return new DiscoveredDatabaseObjectCatalog
+            return new DbObjectCatalog
             {
                 CapturedAtUtc = DateTimeOffset.UtcNow,
                 SourceName = GetDiscoverySourceName(readOnlyConnectionString),
@@ -162,7 +162,7 @@ internal sealed class ObserveCommand
 
         var artifactRoot = ArtifactRootResolver.Resolve(currentDirectory);
 
-        return ArtifactLayout.GetDefaultQueryStoreSnapshotPath(
+        return ArtifactLayout.GetQueryStoreSnapshotPath(
             artifactRoot,
             capturedAtUtc);
     }

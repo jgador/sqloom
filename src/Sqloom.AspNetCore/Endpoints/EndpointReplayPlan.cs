@@ -12,8 +12,8 @@ public sealed class EndpointReplayPlan
     [JsonPropertyName("appName")]
     public required string AppName { get; init; }
 
-    [JsonPropertyName("openApiDocumentPath")]
-    public required string OpenApiDocumentPath { get; init; }
+    [JsonPropertyName("openApiPath")]
+    public required string OpenApiPath { get; init; }
 
     [JsonPropertyName("plannedAtUtc")]
     public DateTimeOffset PlannedAtUtc { get; init; }

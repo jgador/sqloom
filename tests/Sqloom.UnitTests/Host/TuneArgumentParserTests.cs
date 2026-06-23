@@ -66,14 +66,14 @@ public sealed class TuneArgumentParserTests
             currentDirectory);
 
         var expectedWorkflowRoot = Path.GetFullPath(workflowRoot, currentDirectory);
-        var expectedReplayDirectory = ArtifactLayout.GetTuneReplayArtifactDirectory(expectedWorkflowRoot);
+        var expectedReplayDirectory = ArtifactLayout.GetTuneReplayArtifactDir(expectedWorkflowRoot);
         var expectedSnapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(expectedWorkflowRoot);
-        var expectedCorrelationPath = ArtifactLayout.GetReplayQueryStoreCorrelationPath(expectedReplayDirectory);
+        var expectedCorrelationPath = ArtifactLayout.GetCorrelationPath(expectedReplayDirectory);
         var expectedAdvicePath = ArtifactLayout.GetReplayTuningAdvicePath(expectedReplayDirectory);
 
-        Assert.Equal(expectedWorkflowRoot, arguments.WorkflowArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(expectedWorkflowRoot, arguments.WorkflowArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedSnapshotPath, arguments.ObserveArguments.JsonOutputPathOverride, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(expectedReplayDirectory, arguments.ReplayArguments.RunnerOptions.ReplayArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(expectedReplayDirectory, arguments.ReplayArguments.RunnerOptions.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(TimeSpan.FromHours(6), arguments.ObserveArguments.ObservationOptions.LookbackWindow);
         Assert.Equal(100, arguments.ObserveArguments.ObservationOptions.MaxPlans);
         Assert.Equal(10, arguments.ObserveArguments.ObservationOptions.MaxWaits);
@@ -82,23 +82,23 @@ public sealed class TuneArgumentParserTests
         Assert.True(arguments.ObserveArguments.ShowClassification);
         Assert.Equal(
             Path.GetFullPath(openApiPath),
-            arguments.ReplayArguments.RunnerOptions.OpenApiDocumentPath,
+            arguments.ReplayArguments.RunnerOptions.OpenApiPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
             Path.GetFullPath(dacpacPath),
-            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.SqlServerDacpacPath,
+            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.DacpacPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
             Path.GetFullPath(seedSqlPath),
-            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.SqlServerSeedSqlPath,
+            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.SeedSqlPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(TestAppProductCatalogScenario.OperationKey, arguments.ReplayArguments.RunnerOptions.TargetFilter);
         Assert.Equal(expectedSnapshotPath, arguments.CorrelateArguments.QueryStoreSnapshotPath, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(expectedReplayDirectory, arguments.CorrelateArguments.ReplayArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(expectedReplayDirectory, arguments.CorrelateArguments.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedCorrelationPath, arguments.CorrelateArguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(expectedReplayDirectory, arguments.AdviseArguments.ReplayArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(expectedReplayDirectory, arguments.AdviseArguments.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedCorrelationPath, arguments.AdviseArguments.QueryStoreCorrelationPath, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(Path.GetFullPath(schemaPath), arguments.AdviseArguments.SqlServerSchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(Path.GetFullPath(schemaPath), arguments.AdviseArguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedAdvicePath, arguments.AdviseArguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(ModelProviderKind.OpenAI, arguments.AdviseArguments.ModelProvider);
         Assert.NotNull(arguments.AdviseArguments.OpenAIOptions);

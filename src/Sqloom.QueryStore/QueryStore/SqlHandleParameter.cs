@@ -3,7 +3,7 @@ namespace Sqloom.QueryStore.QueryStore;
 /// <summary>
 /// Describes one SQL parameter passed to statement_sql_handle resolution.
 /// </summary>
-public sealed class SqlStatementHandleParameterDescriptor
+public sealed class SqlHandleParameter
 {
     public required string Name { get; init; }
 

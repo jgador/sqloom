@@ -294,7 +294,7 @@ Sqloom plays it safe by default. Authenticated `GET` requests can be replayed au
 
 For the sample app, the SQL Server replay path is self-contained. `Sqloom.TestApp.Harness` starts the app in-process, starts a throwaway local SQL Server container, applies the AdventureWorks DACPAC, runs the seed script, and loads only the data needed for the replay. You do not need a pre-built Docker image or local SQL setup beyond the committed harness files.
 
-The app under test owns its OpenAPI document. By default, the harness manifest points Sqloom at that app-owned `openapi.json` using an absolute `OpenApiDocumentPath`. Pass `--openapi-file` to use a different document for one run.
+The app under test owns its OpenAPI document. By default, the harness manifest points Sqloom at that app-owned `openapi.json` using an absolute `OpenApiPath`. Pass `--openapi-file` to use a different document for one run.
 
 If you do not pass `--artifact-dir`, replay output goes under `artifacts/sqloom/replay/<timestamp>/`. Each run writes:
 

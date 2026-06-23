@@ -7,7 +7,7 @@ namespace Sqloom.AspNetCore.Endpoints;
 /// <summary>
 /// Validates replay targets that must match an exact discovered HTTP operation key.
 /// </summary>
-public static class EndpointReplayTargetSyntax
+public static class ReplayTargetSyntax
 {
     private static readonly string[] KnownHttpMethods =
     [

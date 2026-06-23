@@ -7,11 +7,11 @@ namespace Sqloom.AspNetCore.Endpoints;
 /// <summary>
 /// Resolves resolved replay operation.
 /// </summary>
-internal static class ResolvedReplayOperationResolver
+internal static class ReplayOperationResolver
 {
     public static ResolvedReplayOperation Resolve(
-        DiscoveredOpenApiOperation discoveredOperation,
-        ReplayOperationOverlayDefinition? overlay)
+        OpenApiOperation discoveredOperation,
+        ReplayOverlay? overlay)
     {
         return new ResolvedReplayOperation
         {

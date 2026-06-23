@@ -59,12 +59,12 @@ internal sealed class CorrelateArgumentParser
 
         var jsonOutputPath = CommandArgumentSupport.GetArgumentValue(args, "--json-output-file") is { } jsonOutputPathOverride
             ? Path.GetFullPath(jsonOutputPathOverride)
-            : ArtifactLayout.GetReplayQueryStoreCorrelationPath(replayArtifactDirectory);
+            : ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
 
         return new CorrelateArguments
         {
             ConnectionString = connectionString,
-            ReplayArtifactDirectory = replayArtifactDirectory,
+            ReplayArtifactDir = replayArtifactDirectory,
             QueryStoreSnapshotPath = queryStoreSnapshotPath,
             JsonOutputPath = jsonOutputPath,
         };

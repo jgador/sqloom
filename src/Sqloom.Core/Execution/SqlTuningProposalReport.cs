@@ -15,8 +15,8 @@ public sealed class SqlTuningProposalReport
     [JsonPropertyName("appName")]
     public required string AppName { get; init; }
 
-    [JsonPropertyName("replayArtifactDirectory")]
-    public required string ReplayArtifactDirectory { get; init; }
+    [JsonPropertyName("replayArtifactDir")]
+    public required string ReplayArtifactDir { get; init; }
 
     [JsonPropertyName("queryStoreCorrelationPath")]
     public required string QueryStoreCorrelationPath { get; init; }

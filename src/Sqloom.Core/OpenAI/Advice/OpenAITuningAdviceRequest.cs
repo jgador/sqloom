@@ -25,6 +25,6 @@ public sealed class OpenAITuningAdviceRequest
     [JsonPropertyName("sourceEvidenceJson")]
     public required string SourceEvidenceJson { get; init; }
 
-    [JsonPropertyName("sqlServerSchemaText")]
-    public required string SqlServerSchemaText { get; init; }
+    [JsonPropertyName("schemaSql")]
+    public required string SchemaSql { get; init; }
 }

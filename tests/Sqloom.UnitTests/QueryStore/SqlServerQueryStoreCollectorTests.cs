@@ -14,7 +14,7 @@ public sealed class SqlServerQueryStoreCollectorTests
     [Fact]
     public void ValidateOptions_RejectsNonPositiveValues()
     {
-        QueryStoreObservationOptions options = new()
+        QueryStoreOptions options = new()
         {
             LookbackWindow = TimeSpan.Zero,
             MaxPlans = 10,
@@ -59,7 +59,7 @@ public sealed class SqlServerQueryStoreCollectorTests
         Assert.Equal("SELECT 1", record.QueryText);
         Assert.Equal("[dbo].[Expenses]", record.ObjectName);
         Assert.Equal(2, record.QueryParameterizationType);
-        Assert.Equal("Simple", record.QueryParameterizationTypeDescription);
+        Assert.Equal("Simple", record.ParamTypeDescription);
         Assert.Equal(12L, record.ExecutionCount);
         Assert.Equal(TimeSpan.FromMilliseconds(2.5), record.MeanDuration);
         Assert.Equal(TimeSpan.FromMilliseconds(11), record.MaxDuration);
@@ -83,7 +83,7 @@ public sealed class SqlServerQueryStoreCollectorTests
         Assert.Equal(84L, wait.PlanId);
         Assert.Equal("Lock", wait.WaitCategory);
         Assert.Equal(87.5d, wait.TotalWaitMilliseconds);
-        Assert.Equal(7.25d, wait.AverageQueryWaitMilliseconds);
+        Assert.Equal(7.25d, wait.AvgWaitMs);
     }
 
     private static DataTable CreateDatabaseOptionsTable()

@@ -50,7 +50,7 @@ internal sealed class AdviceCommand
         CancellationToken cancellationToken = default)
     {
         var correlationReport = await JsonFileReader
-            .ReadAsync<QueryStoreCorrelationReport>(
+            .ReadAsync<QueryCorrelationReport>(
                 arguments.QueryStoreCorrelationPath,
                 static serializerOptions => serializerOptions.Converters.Add(new JsonStringEnumConverter()),
                 cancellationToken)
@@ -67,7 +67,7 @@ internal sealed class AdviceCommand
 
     internal async Task<AdviceCommandResult> ExecuteAsync(
         AdviseArguments arguments,
-        QueryStoreCorrelationReport correlationReport,
+        QueryCorrelationReport correlationReport,
         CancellationToken cancellationToken = default)
     {
         arguments.DebugWriter.PrintAdviceRun(arguments);
@@ -83,7 +83,7 @@ internal sealed class AdviceCommand
                 correlationReport,
                 arguments.QueryStoreCorrelationPath,
                 arguments.JsonOutputPath,
-                arguments.SqlServerSchemaPath,
+                arguments.SchemaPath,
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -147,7 +147,7 @@ internal sealed class AdviceCommand
 internal interface IAdviceReportGenerator : IDisposable
 {
     Task<AdviceReport> CreateReportAsync(
-        QueryStoreCorrelationReport correlationReport,
+        QueryCorrelationReport correlationReport,
         string queryStoreCorrelationPath,
         string adviceOutputPath,
         string sqlServerSchemaPath,

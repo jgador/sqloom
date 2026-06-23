@@ -60,7 +60,7 @@ public sealed class AdviseArgumentParserTests
         Assert.Equal("openai-key", arguments.OpenAIOptions!.ApiKey);
         Assert.Equal("https://api.openai.com", arguments.OpenAIOptions.BaseUrl);
         Assert.Equal("gpt-5.4-mini", arguments.OpenAIOptions.Model);
-        Assert.Equal(schemaPath, arguments.SqlServerSchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(schemaPath, arguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(jsonOutputPath, arguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -95,7 +95,7 @@ public sealed class AdviseArgumentParserTests
         Assert.Equal("openai-key", arguments.OpenAIOptions!.ApiKey);
         Assert.Equal("https://api.openai.com", arguments.OpenAIOptions.BaseUrl);
         Assert.Equal("gpt-5.4-mini", arguments.OpenAIOptions.Model);
-        Assert.Equal(schemaPath, arguments.SqlServerSchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(schemaPath, arguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(jsonOutputPath, arguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
     }
 

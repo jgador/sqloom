@@ -49,7 +49,7 @@ internal sealed class ObserveArgumentParser
             SupportedSwitches,
             ValueSwitches);
 
-        QueryStoreObservationOptions observationOptions = new()
+        QueryStoreOptions observationOptions = new()
         {
             LookbackWindow = TimeSpan.FromHours(CommandArgumentSupport.GetDoubleArgumentValue(args, "--lookback-hours") ?? 24d),
             MaxPlans = CommandArgumentSupport.GetIntArgumentValue(args, "--max-plans") ?? 100,
@@ -61,10 +61,10 @@ internal sealed class ObserveArgumentParser
 
         return new ObserveArguments
         {
-            ReadOnlyConnectionString = readOnlyConnectionString,
+            ReadOnlyConnection = readOnlyConnectionString,
             ObservationOptions = observationOptions,
-            BaseWorkloadProfile = manifest?.QueryStoreWorkloadProfile
-                ?? QueryStoreWorkloadProfile.Empty,
+            BaseWorkloadProfile = manifest?.WorkloadProfile
+                ?? WorkloadProfile.Empty,
             AppOnly = appOnly,
             ShowClassification = showClassification,
             JsonOutputPathOverride = CommandArgumentSupport.GetArgumentValue(args, "--json-output-file"),

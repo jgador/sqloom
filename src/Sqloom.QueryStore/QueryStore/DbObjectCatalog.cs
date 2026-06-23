@@ -7,7 +7,7 @@ namespace Sqloom.QueryStore.QueryStore;
 /// <summary>
 /// Captures the discovered database object catalog used for classification.
 /// </summary>
-public sealed class DiscoveredDatabaseObjectCatalog
+public sealed class DbObjectCatalog
 {
     [JsonPropertyName("capturedAtUtc")]
     public required DateTimeOffset CapturedAtUtc { get; init; }

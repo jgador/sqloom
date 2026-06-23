@@ -18,15 +18,15 @@ public sealed class ArtifactLayoutTests
     private static string TuneArtifactDirectory =>
         Path.Combine(ArtifactRoot, "tune", "tune-20260608T040506000Z");
 
-    private static string ReplayArtifactDirectory =>
+    private static string ReplayArtifactDir =>
         Path.Combine(ArtifactRoot, "replay", "replay-20260608T040506000Z");
 
     [Fact]
-    public void GetDefaultQueryStoreSnapshotPath_UsesQueryStoreFolderAndTimestampedFileName()
+    public void GetQueryStoreSnapshotPath_UsesQueryStoreFolderAndTimestampedFileName()
     {
         DateTimeOffset capturedAtUtc = new(2026, 6, 7, 13, 39, 58, TimeSpan.Zero);
 
-        var path = ArtifactLayout.GetDefaultQueryStoreSnapshotPath(
+        var path = ArtifactLayout.GetQueryStoreSnapshotPath(
             ArtifactRoot,
             capturedAtUtc);
 
@@ -39,11 +39,11 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
-    public void GetDefaultReplayArtifactDirectory_UsesReplayFolderAndTimestampedDirectory()
+    public void GetReplayArtifactDir_UsesReplayFolderAndTimestampedDirectory()
     {
         DateTimeOffset startedAtUtc = new(2026, 6, 8, 4, 5, 6, TimeSpan.Zero);
 
-        var path = ArtifactLayout.GetDefaultReplayArtifactDirectory(
+        var path = ArtifactLayout.GetReplayArtifactDir(
             ArtifactRoot,
             startedAtUtc);
 
@@ -56,11 +56,11 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
-    public void GetDefaultTuneArtifactDirectory_UsesTuneFolderAndTimestampedDirectory()
+    public void GetTuneArtifactDir_UsesTuneFolderAndTimestampedDirectory()
     {
         DateTimeOffset startedAtUtc = new(2026, 6, 8, 4, 5, 6, TimeSpan.Zero);
 
-        var path = ArtifactLayout.GetDefaultTuneArtifactDirectory(
+        var path = ArtifactLayout.GetTuneArtifactDir(
             ArtifactRoot,
             startedAtUtc);
 
@@ -85,9 +85,9 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
-    public void GetTuneReplayArtifactDirectory_UsesTuneArtifactDirectory()
+    public void GetTuneReplayArtifactDir_UsesTuneArtifactDirectory()
     {
-        var path = ArtifactLayout.GetTuneReplayArtifactDirectory(TuneArtifactDirectory);
+        var path = ArtifactLayout.GetTuneReplayArtifactDir(TuneArtifactDirectory);
 
         Assert.Equal(
             Path.Combine(
@@ -97,49 +97,49 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
-    public void GetReplayQueryStoreCorrelationPath_UsesReplayArtifactDirectory()
+    public void GetCorrelationPath_UsesReplayArtifactDir()
     {
-        var path = ArtifactLayout.GetReplayQueryStoreCorrelationPath(ReplayArtifactDirectory);
+        var path = ArtifactLayout.GetCorrelationPath(ReplayArtifactDir);
 
         Assert.Equal(
             Path.Combine(
-                ReplayArtifactDirectory,
+                ReplayArtifactDir,
                 "query-store-correlation.json"),
             path);
     }
 
     [Fact]
-    public void GetReplayTuningAdvicePath_UsesReplayArtifactDirectory()
+    public void GetReplayTuningAdvicePath_UsesReplayArtifactDir()
     {
-        var path = ArtifactLayout.GetReplayTuningAdvicePath(ReplayArtifactDirectory);
+        var path = ArtifactLayout.GetReplayTuningAdvicePath(ReplayArtifactDir);
 
         Assert.Equal(
             Path.Combine(
-                ReplayArtifactDirectory,
+                ReplayArtifactDir,
                 "tuning-advice.json"),
             path);
     }
 
     [Fact]
-    public void GetReplaySqlTuningProposalPath_UsesReplayArtifactDirectory()
+    public void GetSqlProposalPath_UsesReplayArtifactDir()
     {
-        var path = ArtifactLayout.GetReplaySqlTuningProposalPath(ReplayArtifactDirectory);
+        var path = ArtifactLayout.GetSqlProposalPath(ReplayArtifactDir);
 
         Assert.Equal(
             Path.Combine(
-                ReplayArtifactDirectory,
+                ReplayArtifactDir,
                 "sql-tuning-proposal.json"),
             path);
     }
 
     [Fact]
-    public void GetReplaySqlTuningProposalScriptPath_UsesReplayArtifactDirectory()
+    public void GetSqlProposalScriptPath_UsesReplayArtifactDir()
     {
-        var path = ArtifactLayout.GetReplaySqlTuningProposalScriptPath(ReplayArtifactDirectory);
+        var path = ArtifactLayout.GetSqlProposalScriptPath(ReplayArtifactDir);
 
         Assert.Equal(
             Path.Combine(
-                ReplayArtifactDirectory,
+                ReplayArtifactDir,
                 "sql-tuning-proposal.sql"),
             path);
     }

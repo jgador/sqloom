@@ -31,14 +31,14 @@ public sealed class TestAppApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "Sqloom Test App",
-            OpenApiDocumentPath = SqloomOpenApiDocument.FindRequired(
+            OpenApiPath = OpenApiDoc.FindRequired(
                 ResolveTestAppDirectory()),
             ReplayProfile = CreateReplayProfile(),
-            QueryStoreWorkloadProfile = new QueryStoreWorkloadProfile
+            WorkloadProfile = new WorkloadProfile
             {
                 Name = "SqloomTestApp",
             },
-            SqlServerSchemaPath = ResolveHarnessFilePath(TestAppReplayConstants.SqlServerSchemaFileName),
+            SchemaPath = ResolveHarnessFilePath(TestAppReplayConstants.SqlServerSchemaFileName),
         };
     }
 
@@ -70,7 +70,7 @@ public sealed class TestAppApplication : ISqloomApplication
             ],
             OperationOverlays =
             [
-                new ReplayOperationOverlayDefinition
+                new ReplayOverlay
                 {
                     OperationKey = TestAppProductCatalogScenario.OperationKey,
                     Persona = "sqloom-test-user",
@@ -89,9 +89,9 @@ public sealed class TestAppApplication : ISqloomApplication
     {
         return new ReplayLaunchOptions
         {
-            SqlServerDacpacPath = requestedOptions.SqlServerDacpacPath
+            DacpacPath = requestedOptions.DacpacPath
                 ?? ResolveHarnessFilePath(TestAppReplayConstants.SqlServerDacpacFileName),
-            SqlServerSeedSqlPath = requestedOptions.SqlServerSeedSqlPath
+            SeedSqlPath = requestedOptions.SeedSqlPath
                 ?? ResolveHarnessFilePath(TestAppReplayConstants.SqlServerSeedSqlFileName),
         };
     }
@@ -130,9 +130,9 @@ public sealed class TestAppApplication : ISqloomApplication
 
         public IReplayHost ReplayHost => _replayHost;
 
-        public string? ReadOnlyConnectionString =>
+        public string? ReadOnlyConnection =>
             _replayHost is TestAppReplayHost testAppReplayHost
-                ? testAppReplayHost.ReadOnlyConnectionString
+                ? testAppReplayHost.ReadOnlyConnection
                 : null;
 
         public ReplayBootstrapReport Bootstrap => _replayHost.Bootstrap;

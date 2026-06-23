@@ -16,32 +16,32 @@ namespace Sqloom.AspNetCore.Endpoints;
 /// </summary>
 public sealed class EndpointReplayRunner
 {
-    private readonly OpenApiOperationCatalogLoader _catalogLoader = new();
-    private readonly EndpointReplayArtifactWriter _artifactWriter = new();
-    private readonly EndpointReplayPlanBuilder _planBuilder = new();
-    private readonly EndpointReplayRequestExecutor _requestExecutor = new();
-    private readonly EndpointReplayRequestResolver _requestResolver = new();
+    private readonly OpenApiCatalogLoader _catalogLoader = new();
+    private readonly ReplayArtifactWriter _artifactWriter = new();
+    private readonly ReplayPlanBuilder _planBuilder = new();
+    private readonly ReplayRequestExecutor _requestExecutor = new();
+    private readonly ReplayRequestResolver _requestResolver = new();
 
     public async Task<EndpointReplayRunResult> RunAsync(
-        EndpointReplayRunnerOptions options,
+        ReplayRunnerOptions options,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(options);
 
         var discoveredOperations = await _catalogLoader
-            .LoadAsync(options.OpenApiDocumentPath, cancellationToken)
+            .LoadAsync(options.OpenApiPath, cancellationToken)
             .ConfigureAwait(false);
 
-        var discoveredOperationsPath = _artifactWriter.GetDiscoveredOperationsPath(options.ReplayArtifactDirectory);
+        var discoveredOperationsPath = _artifactWriter.GetDiscoveredOpsPath(options.ReplayArtifactDir);
         await _artifactWriter
-            .WriteDiscoveredOperationsAsync(
+            .WriteDiscoveredOpsAsync(
                 discoveredOperationsPath,
                 discoveredOperations,
                 cancellationToken)
             .ConfigureAwait(false);
 
         var initialPlan = _planBuilder.BuildInitialPlan(options, discoveredOperations);
-        var replayPlanPath = _artifactWriter.GetPlanPath(options.ReplayArtifactDirectory);
+        var replayPlanPath = _artifactWriter.GetPlanPath(options.ReplayArtifactDir);
         await _artifactWriter
             .WritePlanAsync(replayPlanPath, initialPlan, cancellationToken)
             .ConfigureAwait(false);
@@ -84,7 +84,7 @@ public sealed class EndpointReplayRunner
         var finalPlan = new EndpointReplayPlan()
         {
             AppName = initialPlan.AppName,
-            OpenApiDocumentPath = initialPlan.OpenApiDocumentPath,
+            OpenApiPath = initialPlan.OpenApiPath,
             PlannedAtUtc = initialPlan.PlannedAtUtc,
             Operations = finalizedPlanItems,
         };
@@ -92,18 +92,18 @@ public sealed class EndpointReplayRunner
             .WritePlanAsync(replayPlanPath, finalPlan, cancellationToken)
             .ConfigureAwait(false);
 
-        var summaryPath = _artifactWriter.GetSummaryPath(options.ReplayArtifactDirectory);
+        var summaryPath = _artifactWriter.GetSummaryPath(options.ReplayArtifactDir);
         var runResult = new EndpointReplayRunResult()
         {
             AppName = options.AppName,
-            ReplayArtifactDirectory = options.ReplayArtifactDirectory,
-            OpenApiDocumentPath = options.OpenApiDocumentPath,
-            DiscoveredOperationsArtifactPath = discoveredOperationsPath,
+            ReplayArtifactDir = options.ReplayArtifactDir,
+            OpenApiPath = options.OpenApiPath,
+            DiscoveredOpsPath = discoveredOperationsPath,
             ReplayPlanArtifactPath = replayPlanPath,
             SummaryArtifactPath = summaryPath,
             DiscoveredOperations = discoveredOperations,
             ReplayPlan = finalPlan,
-            Pipeline = CreatePipeline(options.ReplayArtifactDirectory, summaryPath, results),
+            Pipeline = CreatePipeline(options.ReplayArtifactDir, summaryPath, results),
             ReplayBootstrap = replayBootstrap,
             Results = results,
         };
@@ -115,7 +115,7 @@ public sealed class EndpointReplayRunner
     }
 
     private static async Task<IReplayHost> CreateReplayHostAsync(
-        EndpointReplayRunnerOptions options,
+        ReplayRunnerOptions options,
         CancellationToken cancellationToken)
     {
         if (options.ReplayHostFactory is null)
@@ -130,11 +130,11 @@ public sealed class EndpointReplayRunner
     }
 
     private async Task ExecuteReplayPlanAsync(
-        EndpointReplayRunnerOptions options,
+        ReplayRunnerOptions options,
         IReplayHost replayHost,
         EndpointReplayPlan initialPlan,
-        IReadOnlyDictionary<string, DiscoveredOpenApiOperation> discoveredByKey,
-        IReadOnlyDictionary<string, ReplayOperationOverlayDefinition> overlays,
+        IReadOnlyDictionary<string, OpenApiOperation> discoveredByKey,
+        IReadOnlyDictionary<string, ReplayOverlay> overlays,
         ICollection<EndpointReplayResult> results,
         ICollection<EndpointReplayPlanItem> finalizedPlanItems,
         CancellationToken cancellationToken)
@@ -154,11 +154,11 @@ public sealed class EndpointReplayRunner
             ordinal++;
             var discoveredOperation = discoveredByKey[planItem.OperationKey];
             overlays.TryGetValue(planItem.OperationKey, out var overlay);
-            var resolvedOperation = ResolvedReplayOperationResolver.Resolve(
+            var resolvedOperation = ReplayOperationResolver.Resolve(
                 discoveredOperation,
                 overlay);
             var artifactPath = _artifactWriter.GetOperationArtifactPath(
-                options.ReplayArtifactDirectory,
+                options.ReplayArtifactDir,
                 ordinal,
                 planItem.OperationKey);
 
@@ -204,7 +204,7 @@ public sealed class EndpointReplayRunner
         IReadOnlyList<EndpointReplayResult> results)
     {
         var capturedCommandCount = results.Sum(static result => result.CapturedSqlCommands.Count);
-        var correlationArtifactPath = ArtifactLayout.GetReplayQueryStoreCorrelationPath(replayArtifactDirectory);
+        var correlationArtifactPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
         var adviceArtifactPath = ArtifactLayout.GetReplayTuningAdvicePath(replayArtifactDirectory);
 
         return new PipelineReport

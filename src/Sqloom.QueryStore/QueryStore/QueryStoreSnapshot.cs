@@ -22,7 +22,7 @@ public sealed class QueryStoreSnapshot
     public string? WorkloadProfileName { get; init; }
 
     [JsonPropertyName("discoveredObjectCatalog")]
-    public DiscoveredDatabaseObjectCatalog? DiscoveredObjectCatalog { get; init; }
+    public DbObjectCatalog? DiscoveredObjectCatalog { get; init; }
 
     [JsonPropertyName("plans")]
     public required IReadOnlyList<QueryStorePlanRecord> Plans { get; init; }
@@ -66,8 +66,8 @@ public sealed class QueryStoreWaitStat
     [JsonPropertyName("waitCategory")]
     public required string WaitCategory { get; init; }
 
-    [JsonPropertyName("averageQueryWaitMilliseconds")]
-    public double AverageQueryWaitMilliseconds { get; init; }
+    [JsonPropertyName("avgWaitMs")]
+    public double AvgWaitMs { get; init; }
 
     [JsonPropertyName("totalWaitMilliseconds")]
     public double TotalWaitMilliseconds { get; init; }

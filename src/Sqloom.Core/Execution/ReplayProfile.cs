@@ -32,11 +32,11 @@ public interface IReplayHost : IAsyncDisposable
 /// </summary>
 public sealed class ReplayLaunchOptions
 {
-    [JsonPropertyName("sqlServerDacpacPath")]
-    public string? SqlServerDacpacPath { get; init; }
+    [JsonPropertyName("dacpacPath")]
+    public string? DacpacPath { get; init; }
 
-    [JsonPropertyName("sqlServerSeedSqlPath")]
-    public string? SqlServerSeedSqlPath { get; init; }
+    [JsonPropertyName("seedSqlPath")]
+    public string? SeedSqlPath { get; init; }
 }
 
 /// <summary>
@@ -86,16 +86,16 @@ public sealed class SqlServerSeedSqlArtifact
 /// </summary>
 public sealed class ReplayProfile
 {
-    [JsonPropertyName("includeAuthenticatedGetOperationsByDefault")]
-    public bool IncludeAuthenticatedGetOperationsByDefault { get; init; } = true;
+    [JsonPropertyName("includeAuthGetOps")]
+    public bool IncludeAuthGetOps { get; init; } = true;
 
     [JsonPropertyName("personas")]
     public IReadOnlyList<ReplayPersonaDefinition> Personas { get; init; } =
         Array.Empty<ReplayPersonaDefinition>();
 
     [JsonPropertyName("operationOverlays")]
-    public IReadOnlyList<ReplayOperationOverlayDefinition> OperationOverlays { get; init; } =
-        Array.Empty<ReplayOperationOverlayDefinition>();
+    public IReadOnlyList<ReplayOverlay> OperationOverlays { get; init; } =
+        Array.Empty<ReplayOverlay>();
 }
 
 /// <summary>
@@ -116,7 +116,7 @@ public sealed class ReplayPersonaDefinition
 /// <summary>
 /// Describes replay operation overlay.
 /// </summary>
-public sealed class ReplayOperationOverlayDefinition
+public sealed class ReplayOverlay
 {
     [JsonPropertyName("operationKey")]
     public required string OperationKey { get; init; }

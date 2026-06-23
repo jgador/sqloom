@@ -3,7 +3,6 @@ using System.IO;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
-using System.Threading;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -13,8 +12,6 @@ namespace Sqloom.Host.Tests;
 /// </summary>
 public sealed class HostDebugWriterTests
 {
-    private static readonly SemaphoreSlim ConsoleGate = new(1, 1);
-
     [Fact]
     public void PrintOpenAIRequest_DecodesReadableStringBlocks()
     {
@@ -118,7 +115,7 @@ public sealed class HostDebugWriterTests
 
     private static string CaptureStandardError(Action action)
     {
-        ConsoleGate.Wait();
+        ConsoleCaptureGate.Semaphore.Wait();
         var originalError = Console.Error;
         using StringWriter standardError = new();
 
@@ -131,7 +128,7 @@ public sealed class HostDebugWriterTests
         finally
         {
             Console.SetError(originalError);
-            ConsoleGate.Release();
+            ConsoleCaptureGate.Semaphore.Release();
         }
     }
 }

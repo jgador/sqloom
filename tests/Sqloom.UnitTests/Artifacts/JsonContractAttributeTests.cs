@@ -35,14 +35,14 @@ public sealed class JsonContractAttributeTests
     private static readonly Type[] JsonContractRoots =
     [
         typeof(AdviceReport),
-        typeof(DiscoveredOpenApiOperation),
+        typeof(OpenApiOperation),
         typeof(EndpointReplayPlan),
         typeof(EndpointReplayResult),
         typeof(EndpointReplayRunResult),
         typeof(OpenAITuningAdviceRequest),
         typeof(OpenAITuningAdviceResponse),
         typeof(ProductByCategoryResponse),
-        typeof(QueryStoreCorrelationReport),
+        typeof(QueryCorrelationReport),
         typeof(QueryStoreSnapshot),
         typeof(ReplayLaunchOptions),
         typeof(ReplayProfile),

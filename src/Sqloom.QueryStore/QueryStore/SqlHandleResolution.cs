@@ -7,7 +7,7 @@ namespace Sqloom.QueryStore.QueryStore;
 /// <summary>
 /// Captures the outcome of a statement_sql_handle resolution attempt.
 /// </summary>
-public sealed class SqlStatementHandleResolution
+public sealed class SqlHandleResolution
 {
     [JsonPropertyName("sqlText")]
     public required string SqlText { get; init; }
@@ -19,8 +19,8 @@ public sealed class SqlStatementHandleResolution
     public string? StatementSqlHandle { get; init; }
 
     [JsonPropertyName("candidates")]
-    public IReadOnlyList<SqlStatementHandleCandidate> Candidates { get; init; } =
-        Array.Empty<SqlStatementHandleCandidate>();
+    public IReadOnlyList<SqlHandleCandidate> Candidates { get; init; } =
+        Array.Empty<SqlHandleCandidate>();
 
     [JsonPropertyName("errorMessage")]
     public string? ErrorMessage { get; init; }
@@ -29,13 +29,13 @@ public sealed class SqlStatementHandleResolution
 /// <summary>
 /// Describes one candidate returned during statement_sql_handle resolution.
 /// </summary>
-public sealed class SqlStatementHandleCandidate
+public sealed class SqlHandleCandidate
 {
     [JsonPropertyName("queryTextShape")]
     public string QueryTextShape { get; init; } = string.Empty;
 
-    [JsonPropertyName("requestedQueryParameterizationType")]
-    public required string RequestedQueryParameterizationType { get; init; }
+    [JsonPropertyName("requestedParamType")]
+    public required string RequestedParamType { get; init; }
 
     [JsonPropertyName("queryParameterizationType")]
     public int? QueryParameterizationType { get; init; }

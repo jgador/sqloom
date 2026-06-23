@@ -88,7 +88,7 @@ public sealed class HostRuntimeTests
     public async Task RunAsync_WithExplicitSqlServerDacpacFile_ReplaysProductCatalogWorkloadAndPrintsBootstrap()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
-        var dacpacPath = SqloomTestAppPaths.GetSqlServerDacpacPath();
+        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var currentDirectory = Directory.GetCurrentDirectory();
 
         var result = await CaptureConsoleAsync(static async state =>
@@ -127,7 +127,7 @@ public sealed class HostRuntimeTests
     public async Task RunAsync_WithExplicitSqlSeedScript_ReplaysProductCatalogWorkloadAndPrintsSeedBootstrap()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
-        var dacpacPath = SqloomTestAppPaths.GetSqlServerDacpacPath();
+        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var currentDirectory = Directory.GetCurrentDirectory();
         var tempDirectory = CreateTempDirectory();
         var seedScriptPath = Path.Combine(tempDirectory, "AdventureWorksLT2025.seed.sql");
@@ -272,7 +272,7 @@ public sealed class HostRuntimeTests
                         [
                             "advise",
                             "--replay-artifact-dir",
-                            state.ReplayArtifactDirectory,
+                            state.ReplayArtifactDir,
                             "--model-provider",
                             "openai",
                             "--sqlserver-schema-file",
@@ -280,7 +280,7 @@ public sealed class HostRuntimeTests
                         ],
                         state.CurrentDirectory)
                     .ConfigureAwait(false);
-            }, (ReplayArtifactDirectory: replayArtifactDirectory, SchemaPath: schemaPath, CurrentDirectory: currentDirectory));
+            }, (ReplayArtifactDir: replayArtifactDirectory, SchemaPath: schemaPath, CurrentDirectory: currentDirectory));
 
             Assert.Equal(1, result.ExitCode);
             Assert.Contains(
@@ -318,7 +318,7 @@ public sealed class HostRuntimeTests
                         [
                             "advise",
                             "--replay-artifact-dir",
-                            state.ReplayArtifactDirectory,
+                            state.ReplayArtifactDir,
                             "--model-provider",
                             "openai",
                             "--openai-api-key",
@@ -326,7 +326,7 @@ public sealed class HostRuntimeTests
                         ],
                         state.CurrentDirectory)
                     .ConfigureAwait(false);
-            }, (ReplayArtifactDirectory: replayArtifactDirectory, CurrentDirectory: currentDirectory));
+            }, (ReplayArtifactDir: replayArtifactDirectory, CurrentDirectory: currentDirectory));
 
             Assert.Equal(1, result.ExitCode);
             Assert.Contains(
@@ -523,9 +523,9 @@ internal sealed class NoConnectionTestApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "No Connection Test App",
-            OpenApiDocumentPath = SqloomTestAppPaths.GetOpenApiDocumentPath(),
+            OpenApiPath = SqloomTestAppPaths.GetOpenApiPath(),
             ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
-            SqlServerSchemaPath = _schemaPath,
+            SchemaPath = _schemaPath,
         };
     }
 
@@ -547,7 +547,7 @@ internal sealed class NoSchemaTestApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "No Schema Test App",
-            OpenApiDocumentPath = SqloomTestAppPaths.GetOpenApiDocumentPath(),
+            OpenApiPath = SqloomTestAppPaths.GetOpenApiPath(),
             ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
         };
     }
@@ -565,7 +565,7 @@ internal sealed class NoConnectionSession : ISqloomApplicationSession
     public IReplayHost ReplayHost =>
         throw new NotSupportedException("Replay should not start when the harness does not supply a connection string.");
 
-    public string? ReadOnlyConnectionString => null;
+    public string? ReadOnlyConnection => null;
 
     public ReplayBootstrapReport Bootstrap { get; } = new();
 

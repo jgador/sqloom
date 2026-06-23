@@ -16,14 +16,14 @@ internal sealed class TuneWorkflowReport
     [JsonPropertyName("appName")]
     public required string AppName { get; init; }
 
-    [JsonPropertyName("workflowArtifactDirectory")]
-    public required string WorkflowArtifactDirectory { get; init; }
+    [JsonPropertyName("workflowArtifactDir")]
+    public required string WorkflowArtifactDir { get; init; }
 
     [JsonPropertyName("queryStoreSnapshotPath")]
     public required string QueryStoreSnapshotPath { get; init; }
 
-    [JsonPropertyName("replayArtifactDirectory")]
-    public required string ReplayArtifactDirectory { get; init; }
+    [JsonPropertyName("replayArtifactDir")]
+    public required string ReplayArtifactDir { get; init; }
 
     [JsonPropertyName("queryStoreCorrelationPath")]
     public required string QueryStoreCorrelationPath { get; init; }

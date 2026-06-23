@@ -19,15 +19,15 @@ public sealed class QueryStoreCorrelator
     private const double FingerprintFallbackConfidence = 0.40d;
     private const double QueryTextExactConfidence = 0.92d;
     private const double StatementHandleExactConfidence = 1.00d;
-    private readonly IStatementSqlHandleResolver _statementHandleResolver;
+    private readonly ISqlHandleResolver _statementHandleResolver;
 
-    public QueryStoreCorrelator(IStatementSqlHandleResolver statementHandleResolver)
+    public QueryStoreCorrelator(ISqlHandleResolver statementHandleResolver)
     {
         _statementHandleResolver = statementHandleResolver
             ?? throw new ArgumentNullException(nameof(statementHandleResolver));
     }
 
-    public async Task<QueryStoreCorrelationReport> CorrelateAsync(
+    public async Task<QueryCorrelationReport> CorrelateAsync(
         QueryStoreSnapshot snapshot,
         IReadOnlyList<EndpointReplayResult> replayResults,
         string replayArtifactDirectory,
@@ -49,9 +49,9 @@ public sealed class QueryStoreCorrelator
             snapshot.Plans,
             static plan => ComputeCorrelationFingerprint(plan.QueryText));
 
-        Dictionary<string, SqlStatementHandleResolution> resolutionCache =
+        Dictionary<string, SqlHandleResolution> resolutionCache =
             new(StringComparer.Ordinal);
-        List<QueryStoreCorrelationRecord> records = new();
+        List<QueryCorrelationRecord> records = new();
         HashSet<string> warnings = new(StringComparer.Ordinal);
 
         foreach (var replayResult in replayResults)
@@ -81,11 +81,11 @@ public sealed class QueryStoreCorrelator
         }
 
         var summary = BuildSummary(replayResults, records);
-        return new QueryStoreCorrelationReport
+        return new QueryCorrelationReport
         {
             GeneratedAtUtc = DateTimeOffset.UtcNow,
             AppName = appName,
-            ReplayArtifactDirectory = replayArtifactDirectory,
+            ReplayArtifactDir = replayArtifactDirectory,
             QueryStoreSnapshotPath = queryStoreSnapshotPath,
             QueryStoreCapturedAtUtc = snapshot.CapturedAtUtc,
             Records = records,
@@ -100,7 +100,7 @@ public sealed class QueryStoreCorrelator
         string? queryStoreSnapshotPath)
     {
         var replaySummaryPath = ArtifactLayout.GetReplaySummaryPath(replayArtifactDirectory);
-        var correlationArtifactPath = ArtifactLayout.GetReplayQueryStoreCorrelationPath(replayArtifactDirectory);
+        var correlationArtifactPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
         var adviceArtifactPath = ArtifactLayout.GetReplayTuningAdvicePath(replayArtifactDirectory);
 
         return new PipelineReport
@@ -171,9 +171,9 @@ public sealed class QueryStoreCorrelator
         return lookup;
     }
 
-    private async Task<SqlStatementHandleResolution> ResolveAsync(
+    private async Task<SqlHandleResolution> ResolveAsync(
         CapturedSqlCommand capturedCommand,
-        IDictionary<string, SqlStatementHandleResolution> cache,
+        IDictionary<string, SqlHandleResolution> cache,
         CancellationToken cancellationToken)
     {
         var cacheKey = string.Concat(
@@ -191,7 +191,7 @@ public sealed class QueryStoreCorrelator
         var resolution = await _statementHandleResolver
             .ResolveAsync(
                 capturedCommand.CommandText,
-                capturedCommand.Parameters.Select(static parameter => new SqlStatementHandleParameterDescriptor
+                capturedCommand.Parameters.Select(static parameter => new SqlHandleParameter
                 {
                     Name = parameter.Name,
                     DbType = parameter.DbType,
@@ -205,11 +205,11 @@ public sealed class QueryStoreCorrelator
         return resolution;
     }
 
-    private static QueryStoreCorrelationRecord CreateRecord(
+    private static QueryCorrelationRecord CreateRecord(
         EndpointReplayResult replayResult,
         CapturedSqlCommand capturedCommand,
         int commandOrdinal,
-        SqlStatementHandleResolution resolution,
+        SqlHandleResolution resolution,
         IReadOnlyDictionary<string, List<QueryStorePlanRecord>> plansByStatementHandle,
         IReadOnlyDictionary<string, List<QueryStorePlanRecord>> plansByExactText,
         IReadOnlyDictionary<string, List<QueryStorePlanRecord>> plansByFingerprint)
@@ -218,20 +218,20 @@ public sealed class QueryStoreCorrelator
         var matchedPlans = FindStatementHandleMatches(
             resolution,
             plansByStatementHandle);
-        QueryStoreCorrelationMatchKind matchKind;
+        CorrelationMatchKind matchKind;
         double confidence;
         string[] notes;
 
         if (matchedPlans.Count > 0)
         {
-            matchKind = QueryStoreCorrelationMatchKind.StatementHandleExact;
+            matchKind = CorrelationMatchKind.StatementHandleExact;
             confidence = StatementHandleExactConfidence;
             notes = BuildNotes(resolution, matchedPlans, "Matched Query Store statement_sql_handle exactly.");
         }
         else if (TryFindPlanMatches(comparableStatements, plansByExactText, out var exactTextMatches))
         {
             matchedPlans = exactTextMatches;
-            matchKind = QueryStoreCorrelationMatchKind.QueryTextExact;
+            matchKind = CorrelationMatchKind.QueryTextExact;
             confidence = QueryTextExactConfidence;
             notes = BuildNotes(
                 resolution,
@@ -244,7 +244,7 @@ public sealed class QueryStoreCorrelator
             out var fingerprintMatches))
         {
             matchedPlans = fingerprintMatches;
-            matchKind = QueryStoreCorrelationMatchKind.FingerprintFallback;
+            matchKind = CorrelationMatchKind.FingerprintFallback;
             confidence = FingerprintFallbackConfidence;
             notes = BuildNotes(
                 resolution,
@@ -254,12 +254,12 @@ public sealed class QueryStoreCorrelator
         else
         {
             matchedPlans = Array.Empty<QueryStorePlanRecord>();
-            matchKind = QueryStoreCorrelationMatchKind.Unmatched;
+            matchKind = CorrelationMatchKind.Unmatched;
             confidence = 0d;
             notes = BuildNotes(resolution, matchedPlans, "No safe Query Store correlation matched this captured SQL.");
         }
 
-        return new QueryStoreCorrelationRecord
+        return new QueryCorrelationRecord
         {
             OperationKey = replayResult.OperationKey,
             HttpMethod = replayResult.HttpMethod,
@@ -270,7 +270,7 @@ public sealed class QueryStoreCorrelator
             CapturedCommand = capturedCommand,
             ComparableSqlText = resolution.ComparableSqlText,
             StatementSqlHandle = resolution.StatementSqlHandle,
-            StatementSqlHandleCandidates = resolution.Candidates,
+            SqlHandleCandidates = resolution.Candidates,
             MatchKind = matchKind,
             Confidence = confidence,
             MatchedPlans = matchedPlans,
@@ -279,7 +279,7 @@ public sealed class QueryStoreCorrelator
     }
 
     private static IReadOnlyList<QueryStorePlanRecord> FindStatementHandleMatches(
-        SqlStatementHandleResolution resolution,
+        SqlHandleResolution resolution,
         IReadOnlyDictionary<string, List<QueryStorePlanRecord>> plansByStatementHandle)
     {
         HashSet<(long QueryId, long PlanId)> seen = new();
@@ -334,7 +334,7 @@ public sealed class QueryStoreCorrelator
     }
 
     private static string[] BuildNotes(
-        SqlStatementHandleResolution resolution,
+        SqlHandleResolution resolution,
         IReadOnlyList<QueryStorePlanRecord> matchedPlans,
         string primaryNote)
     {
@@ -356,17 +356,17 @@ public sealed class QueryStoreCorrelator
         return notes.ToArray();
     }
 
-    private static QueryStoreCorrelationSummary BuildSummary(
+    private static QueryCorrelationSummary BuildSummary(
         IReadOnlyList<EndpointReplayResult> replayResults,
-        IReadOnlyList<QueryStoreCorrelationRecord> records)
+        IReadOnlyList<QueryCorrelationRecord> records)
     {
-        Dictionary<string, List<QueryStoreCorrelationRecord>> recordsByOperationKey =
+        Dictionary<string, List<QueryCorrelationRecord>> recordsByOperationKey =
             new(StringComparer.OrdinalIgnoreCase);
         foreach (var record in records)
         {
             if (!recordsByOperationKey.TryGetValue(record.OperationKey, out var operationRecords))
             {
-                operationRecords = new List<QueryStoreCorrelationRecord>();
+                operationRecords = new List<QueryCorrelationRecord>();
                 recordsByOperationKey[record.OperationKey] = operationRecords;
             }
 
@@ -382,7 +382,7 @@ public sealed class QueryStoreCorrelator
                     ? capturedRecords
                     : [];
 
-                return new QueryStoreCorrelationOperationSummary
+                return new OperationCorrelationSummary
                 {
                     OperationKey = replayResult.OperationKey,
                     HttpMethod = replayResult.HttpMethod,
@@ -391,11 +391,11 @@ public sealed class QueryStoreCorrelator
                     ReplayStatus = replayResult.Status,
                     OperationArtifactPath = replayResult.ArtifactPath,
                     CapturedCommandCount = operationRecords.Count,
-                    MatchedCommandCount = operationRecords.Count(static record => record.MatchKind is not QueryStoreCorrelationMatchKind.Unmatched),
-                    StatementHandleExactCount = operationRecords.Count(static record => record.MatchKind == QueryStoreCorrelationMatchKind.StatementHandleExact),
-                    QueryTextExactCount = operationRecords.Count(static record => record.MatchKind == QueryStoreCorrelationMatchKind.QueryTextExact),
-                    FingerprintFallbackCount = operationRecords.Count(static record => record.MatchKind == QueryStoreCorrelationMatchKind.FingerprintFallback),
-                    UnmatchedCount = operationRecords.Count(static record => record.MatchKind == QueryStoreCorrelationMatchKind.Unmatched),
+                    MatchedCommandCount = operationRecords.Count(static record => record.MatchKind is not CorrelationMatchKind.Unmatched),
+                    HandleExactCount = operationRecords.Count(static record => record.MatchKind == CorrelationMatchKind.StatementHandleExact),
+                    QueryTextExactCount = operationRecords.Count(static record => record.MatchKind == CorrelationMatchKind.QueryTextExact),
+                    FingerprintFallbackCount = operationRecords.Count(static record => record.MatchKind == CorrelationMatchKind.FingerprintFallback),
+                    UnmatchedCount = operationRecords.Count(static record => record.MatchKind == CorrelationMatchKind.Unmatched),
                     MatchedQueryIds = operationRecords
                         .SelectMany(static record => record.MatchedPlans)
                         .Select(static plan => plan.QueryId)
@@ -412,15 +412,15 @@ public sealed class QueryStoreCorrelator
             })
             .ToArray();
 
-        return new QueryStoreCorrelationSummary
+        return new QueryCorrelationSummary
         {
             OperationCount = replayResults.Count,
             CapturedCommandCount = records.Count,
-            MatchedCommandCount = records.Count(static record => record.MatchKind is not QueryStoreCorrelationMatchKind.Unmatched),
-            StatementHandleExactCount = records.Count(static record => record.MatchKind == QueryStoreCorrelationMatchKind.StatementHandleExact),
-            QueryTextExactCount = records.Count(static record => record.MatchKind == QueryStoreCorrelationMatchKind.QueryTextExact),
-            FingerprintFallbackCount = records.Count(static record => record.MatchKind == QueryStoreCorrelationMatchKind.FingerprintFallback),
-            UnmatchedCount = records.Count(static record => record.MatchKind == QueryStoreCorrelationMatchKind.Unmatched),
+            MatchedCommandCount = records.Count(static record => record.MatchKind is not CorrelationMatchKind.Unmatched),
+            HandleExactCount = records.Count(static record => record.MatchKind == CorrelationMatchKind.StatementHandleExact),
+            QueryTextExactCount = records.Count(static record => record.MatchKind == CorrelationMatchKind.QueryTextExact),
+            FingerprintFallbackCount = records.Count(static record => record.MatchKind == CorrelationMatchKind.FingerprintFallback),
+            UnmatchedCount = records.Count(static record => record.MatchKind == CorrelationMatchKind.Unmatched),
             Operations = operations,
         };
     }

@@ -25,7 +25,7 @@ public sealed class RunOptionsTests
         Assert.True(options.ObserveQueryStore);
         Assert.False(options.ReplayOperations);
         Assert.True(options.CaptureSqlDuringReplay);
-        Assert.True(options.CorrelateReplayToQueryStore);
+        Assert.True(options.CorrelateReplay);
         Assert.True(options.GenerateTuningAdvice);
         Assert.Equal(25, options.MaxOperations);
     }

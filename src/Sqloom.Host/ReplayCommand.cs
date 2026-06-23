@@ -38,10 +38,10 @@ internal sealed class ReplayCommand
             manifest.Name,
             HostApplication.GetProjectNames(application));
 
-        var replayArtifactDirectory = _argumentParser.GetReplayArtifactDirectory(
+        var replayArtifactDirectory = _argumentParser.GetReplayArtifactDir(
             context.Arguments,
             context.CurrentDirectory);
-        var openApiDocumentPath = _argumentParser.GetOpenApiDocumentPath(
+        var openApiPath = _argumentParser.GetOpenApiPath(
             context.Arguments,
             manifest,
             context.CurrentDirectory);
@@ -55,7 +55,7 @@ internal sealed class ReplayCommand
             session.ReplayHost,
             context.CurrentDirectory,
             artifactDirectoryOverride: replayArtifactDirectory,
-            openApiDocumentPathOverride: openApiDocumentPath);
+            openApiPathOverride: openApiPath);
         arguments.DebugWriter = context.DebugWriter;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
         context.ConsoleWriter.PrintReplaySummary(
@@ -90,7 +90,7 @@ internal sealed class ReplayCommand
         return new RunReport
         {
             AppName = replayResult.AppName,
-            ArtifactRoot = replayResult.ReplayArtifactDirectory,
+            ArtifactRoot = replayResult.ReplayArtifactDir,
             DiscoveredOperationCount = replayResult.DiscoveredOperations.Count,
             PlannedOperationCount = replayResult.ReplayPlan.Operations.Count(item =>
                 !string.Equals(item.Status, "skipped", StringComparison.OrdinalIgnoreCase)),

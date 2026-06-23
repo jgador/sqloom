@@ -7,12 +7,12 @@ namespace Sqloom.QueryStore.Tests.QueryStore;
 /// <summary>
 /// Exercises Query Store workload classifier.
 /// </summary>
-public sealed class QueryStoreWorkloadClassifierTests
+public sealed class WorkloadClassifierTests
 {
-    private static readonly QueryStoreWorkloadProfile _sampleProfile = new()
+    private static readonly WorkloadProfile _sampleProfile = new()
     {
         Name = "SqloomTestApp",
-        DiscoveredObjectCatalog = new DiscoveredDatabaseObjectCatalog
+        DiscoveredObjectCatalog = new DbObjectCatalog
         {
             CapturedAtUtc = new DateTimeOffset(2026, 6, 8, 0, 0, 0, TimeSpan.Zero),
             SourceName = "sqloom-local",
@@ -20,9 +20,9 @@ public sealed class QueryStoreWorkloadClassifierTests
             Warnings = Array.Empty<string>(),
             Objects =
             [
-                CreateDiscoveredObject("dbo", "ExpenseRecord", DiscoveredDatabaseObjectKind.Table),
-                CreateDiscoveredObject("reporting", "ExpenseSummary", DiscoveredDatabaseObjectKind.View),
-                CreateDiscoveredObject("dbo", "RebuildExpenseCache", DiscoveredDatabaseObjectKind.Module),
+                CreateDiscoveredObject("dbo", "ExpenseRecord", DbObjectKind.Table),
+                CreateDiscoveredObject("reporting", "ExpenseSummary", DbObjectKind.View),
+                CreateDiscoveredObject("dbo", "RebuildExpenseCache", DbObjectKind.Module),
             ],
         },
     };
@@ -41,7 +41,7 @@ public sealed class QueryStoreWorkloadClassifierTests
         string queryText,
         QueryWorkloadKind expectedKind)
     {
-        QueryStoreWorkloadClassifier classifier = new();
+        WorkloadClassifier classifier = new();
 
         var classification = classifier.ClassifyPlan(
             CreatePlan(queryText),
@@ -55,11 +55,11 @@ public sealed class QueryStoreWorkloadClassifierTests
     [Fact]
     public void ClassifyPlan_LeavesAppLookingQueryUnknown_WhenCatalogIsMissing()
     {
-        QueryStoreWorkloadClassifier classifier = new();
+        WorkloadClassifier classifier = new();
 
         var classification = classifier.ClassifyPlan(
             CreatePlan("SELECT [e].[Id] FROM [ExpenseRecord] AS [e] WHERE [e].[UserId] = @userId"),
-            new QueryStoreWorkloadProfile
+            new WorkloadProfile
             {
                 Name = "NoDiscovery",
             });
@@ -72,14 +72,14 @@ public sealed class QueryStoreWorkloadClassifierTests
     [Fact]
     public void ClassifyPlan_ReportsPartialCatalog_WhenNoRuleMatches()
     {
-        QueryStoreWorkloadClassifier classifier = new();
+        WorkloadClassifier classifier = new();
 
         var classification = classifier.ClassifyPlan(
             CreatePlan("SELECT [x].[Id] FROM [dbo].[UnknownTable] AS [x]"),
-            new QueryStoreWorkloadProfile
+            new WorkloadProfile
             {
                 Name = "PartialDiscovery",
-                DiscoveredObjectCatalog = new DiscoveredDatabaseObjectCatalog
+                DiscoveredObjectCatalog = new DbObjectCatalog
                 {
                     CapturedAtUtc = new DateTimeOffset(2026, 6, 8, 0, 0, 0, TimeSpan.Zero),
                     SourceName = "sqloom-local",
@@ -90,7 +90,7 @@ public sealed class QueryStoreWorkloadClassifierTests
                     ],
                     Objects =
                     [
-                        CreateDiscoveredObject("dbo", "ExpenseRecord", DiscoveredDatabaseObjectKind.Table),
+                        CreateDiscoveredObject("dbo", "ExpenseRecord", DbObjectKind.Table),
                     ],
                 },
             });
@@ -102,7 +102,7 @@ public sealed class QueryStoreWorkloadClassifierTests
     [Fact]
     public void ClassifyPlan_DoesNotTreatSeparatedSchemaAndObjectTokensAsQualifiedReference()
     {
-        QueryStoreWorkloadClassifier classifier = new();
+        WorkloadClassifier classifier = new();
         var classification = classifier.ClassifyPlan(
             CreatePlan("SELECT @schema = N'dbo', @target = N'ExpenseRecord'; SELECT @schema, @target;"),
             _sampleProfile);
@@ -113,7 +113,7 @@ public sealed class QueryStoreWorkloadClassifierTests
     [Fact]
     public void ApplyClassification_AnnotatesPlansSnapshotMetadataAndInheritedWaits()
     {
-        QueryStoreWorkloadClassifier classifier = new();
+        WorkloadClassifier classifier = new();
         QueryStoreSnapshot snapshot = new()
         {
             CapturedAtUtc = new DateTimeOffset(2026, 6, 7, 14, 3, 52, TimeSpan.Zero),
@@ -138,7 +138,7 @@ public sealed class QueryStoreWorkloadClassifierTests
                     QueryId = 142L,
                     PlanId = 14L,
                     WaitCategory = "CPU",
-                    AverageQueryWaitMilliseconds = 1.2d,
+                    AvgWaitMs = 1.2d,
                     TotalWaitMilliseconds = 4.8d,
                 },
                 new QueryStoreWaitStat
@@ -146,7 +146,7 @@ public sealed class QueryStoreWorkloadClassifierTests
                     QueryId = 20L,
                     PlanId = 2L,
                     WaitCategory = "Unknown",
-                    AverageQueryWaitMilliseconds = 45d,
+                    AvgWaitMs = 45d,
                     TotalWaitMilliseconds = 90d,
                 },
             ],
@@ -173,7 +173,7 @@ public sealed class QueryStoreWorkloadClassifierTests
     private static DiscoveredDatabaseObject CreateDiscoveredObject(
         string schemaName,
         string objectName,
-        DiscoveredDatabaseObjectKind kind)
+        DbObjectKind kind)
     {
         return new DiscoveredDatabaseObject
         {
@@ -197,7 +197,7 @@ public sealed class QueryStoreWorkloadClassifierTests
             QueryText = queryText,
             ObjectName = null,
             QueryParameterizationType = 0,
-            QueryParameterizationTypeDescription = "None",
+            ParamTypeDescription = "None",
             ExecutionCount = 1,
             MeanDuration = TimeSpan.FromMilliseconds(1),
             MaxDuration = TimeSpan.FromMilliseconds(1),

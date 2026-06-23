@@ -9,10 +9,10 @@ namespace Sqloom.AspNetCore.Endpoints;
 /// <summary>
 /// Builds replayable HTTP requests from OpenAPI operations and prepared inputs.
 /// </summary>
-internal sealed class EndpointReplayRequestResolver
+internal sealed class ReplayRequestResolver
 {
     public EndpointReplayRequest Resolve(
-        DiscoveredOpenApiOperation discoveredOperation,
+        OpenApiOperation discoveredOperation,
         ResolvedReplayOperation resolvedOperation,
         PreparedReplayOperation preparedOperation)
     {
@@ -28,7 +28,7 @@ internal sealed class EndpointReplayRequestResolver
         var requestBodyJson =
             preparedOperation.RequestBodyJson
             ?? resolvedOperation.RequestBodyJson
-            ?? discoveredOperation.JsonRequestBodyExample;
+            ?? discoveredOperation.JsonBodyExample;
 
         foreach (var parameter in discoveredOperation.Parameters)
         {

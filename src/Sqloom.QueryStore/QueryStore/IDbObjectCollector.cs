@@ -3,10 +3,10 @@ using System.Threading.Tasks;
 
 namespace Sqloom.QueryStore.QueryStore;
 
-public interface IDiscoveredDatabaseObjectCollector
+public interface IDbObjectCollector
 {
-    Task<DiscoveredDatabaseObjectCatalog> CaptureAsync(
+    Task<DbObjectCatalog> CaptureAsync(
         string readOnlyConnectionString,
-        DiscoveredDatabaseObjectObservationOptions options,
+        DbObjectScanOptions options,
         CancellationToken cancellationToken = default);
 }

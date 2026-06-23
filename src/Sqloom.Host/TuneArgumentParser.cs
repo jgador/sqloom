@@ -121,15 +121,15 @@ internal sealed class TuneArgumentParser
             currentDirectory,
             validationPath,
             validationPath,
-            manifest.SqlServerSchemaPath);
+            manifest.SchemaPath);
     }
 
-    public string GetOpenApiDocumentPath(
+    public string GetOpenApiPath(
         string[] args,
         SqloomApplicationManifest manifest,
         string currentDirectory)
     {
-        return _replayArgumentParser.GetOpenApiDocumentPath(
+        return _replayArgumentParser.GetOpenApiPath(
             ExtractSwitchArguments(args, ReplaySwitches),
             manifest,
             currentDirectory);
@@ -141,7 +141,7 @@ internal sealed class TuneArgumentParser
         IReplayHost replayHost,
         string readOnlyConnectionString,
         string currentDirectory,
-        string? openApiDocumentPathOverride = null)
+        string? openApiPathOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
@@ -152,10 +152,10 @@ internal sealed class TuneArgumentParser
             SupportedSwitches,
             ValueSwitches);
 
-        var workflowArtifactDirectory = GetWorkflowArtifactDirectory(args, currentDirectory);
-        var snapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(workflowArtifactDirectory);
-        var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDirectory(workflowArtifactDirectory);
-        var correlationPath = ArtifactLayout.GetReplayQueryStoreCorrelationPath(replayArtifactDirectory);
+        var workflowArtifactDir = GetWorkflowArtifactDir(args, currentDirectory);
+        var snapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(workflowArtifactDir);
+        var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDir(workflowArtifactDir);
+        var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
         var advicePath = ArtifactLayout.GetReplayTuningAdvicePath(replayArtifactDirectory);
 
         var observeArguments = _observeArgumentParser.Parse(
@@ -172,31 +172,31 @@ internal sealed class TuneArgumentParser
             replayHost,
             currentDirectory,
             replayArtifactDirectory,
-            openApiDocumentPathOverride);
+            openApiPathOverride);
         var adviseArguments = _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             replayArtifactDirectory,
             correlationPath,
             advicePath,
-            manifest.SqlServerSchemaPath);
+            manifest.SchemaPath);
 
         return new TuneArguments
         {
-            WorkflowArtifactDirectory = workflowArtifactDirectory,
+            WorkflowArtifactDir = workflowArtifactDir,
             ObserveArguments = observeArguments,
             ReplayArguments = replayArguments,
             CorrelateArguments = new CorrelateArguments
             {
                 ConnectionString = readOnlyConnectionString,
                 QueryStoreSnapshotPath = snapshotPath,
-                ReplayArtifactDirectory = replayArtifactDirectory,
+                ReplayArtifactDir = replayArtifactDirectory,
                 JsonOutputPath = correlationPath,
             },
             AdviseArguments = adviseArguments,
         };
     }
 
-    internal string GetWorkflowArtifactDirectory(string[] args, string currentDirectory)
+    internal string GetWorkflowArtifactDir(string[] args, string currentDirectory)
     {
         var artifactDirectory = CommandArgumentSupport.GetArgumentValue(args, "--artifact-dir");
         if (!string.IsNullOrWhiteSpace(artifactDirectory))
@@ -207,7 +207,7 @@ internal sealed class TuneArgumentParser
         }
 
         var artifactRoot = ArtifactRootResolver.Resolve(currentDirectory);
-        return ArtifactLayout.GetDefaultTuneArtifactDirectory(
+        return ArtifactLayout.GetTuneArtifactDir(
             artifactRoot,
             DateTimeOffset.UtcNow);
     }

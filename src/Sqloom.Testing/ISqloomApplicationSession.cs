@@ -10,7 +10,7 @@ public interface ISqloomApplicationSession : IAsyncDisposable
 {
     IReplayHost ReplayHost { get; }
 
-    string? ReadOnlyConnectionString { get; }
+    string? ReadOnlyConnection { get; }
 
     ReplayBootstrapReport Bootstrap { get; }
 }

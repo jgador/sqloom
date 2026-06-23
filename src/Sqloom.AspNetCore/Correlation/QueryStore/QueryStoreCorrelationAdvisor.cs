@@ -12,16 +12,16 @@ namespace Sqloom.Correlation.QueryStore;
 /// </summary>
 public sealed class QueryStoreCorrelationAdvisor
 {
-    private const double ElevatedMeanCpuMilliseconds = 100d;
-    private const double ElevatedMeanDurationMilliseconds = 200d;
-    private const double ElevatedMeanLogicalReads = 1000d;
+    private const double HighCpuMs = 100d;
+    private const double HighDurationMs = 200d;
+    private const double HighReads = 1000d;
     private const string StrategyName = "query-store-correlation-heuristics";
 
     /// <summary>
     /// Builds a baseline heuristic advice report from a completed Query Store correlation artifact.
     /// </summary>
     public AdviceReport CreateReport(
-        QueryStoreCorrelationReport correlationReport,
+        QueryCorrelationReport correlationReport,
         string queryStoreCorrelationPath,
         string adviceOutputPath)
     {
@@ -35,14 +35,14 @@ public sealed class QueryStoreCorrelationAdvisor
                 correlationReport.Records.Where(record =>
                     string.Equals(record.OperationKey, operation.OperationKey, StringComparison.OrdinalIgnoreCase))))
             .ToArray();
-        var sqlProposalJsonPath = ArtifactLayout.GetReplaySqlTuningProposalPath(correlationReport.ReplayArtifactDirectory);
-        var sqlProposalScriptPath = ArtifactLayout.GetReplaySqlTuningProposalScriptPath(correlationReport.ReplayArtifactDirectory);
+        var sqlProposalJsonPath = ArtifactLayout.GetSqlProposalPath(correlationReport.ReplayArtifactDir);
+        var sqlProposalScriptPath = ArtifactLayout.GetSqlProposalScriptPath(correlationReport.ReplayArtifactDir);
 
         return new AdviceReport
         {
             GeneratedAtUtc = DateTimeOffset.UtcNow,
             AppName = correlationReport.AppName ?? "unknown",
-            ReplayArtifactDirectory = correlationReport.ReplayArtifactDirectory,
+            ReplayArtifactDir = correlationReport.ReplayArtifactDir,
             QueryStoreCorrelationPath = queryStoreCorrelationPath,
             StrategyName = StrategyName,
             SqlProposalJsonPath = sqlProposalJsonPath,
@@ -60,11 +60,11 @@ public sealed class QueryStoreCorrelationAdvisor
     }
 
     private static PipelineReport CreatePipeline(
-        QueryStoreCorrelationReport correlationReport,
+        QueryCorrelationReport correlationReport,
         string queryStoreCorrelationPath,
         string adviceOutputPath)
     {
-        var replaySummaryPath = ArtifactLayout.GetReplaySummaryPath(correlationReport.ReplayArtifactDirectory);
+        var replaySummaryPath = ArtifactLayout.GetReplaySummaryPath(correlationReport.ReplayArtifactDir);
 
         return new PipelineReport
         {
@@ -89,7 +89,7 @@ public sealed class QueryStoreCorrelationAdvisor
                     Name = PipelineStageNames.Capture,
                     Status = PipelineStageStatuses.Completed,
                     Summary = "Captured replay SQL fed the advice run.",
-                    ArtifactPath = correlationReport.ReplayArtifactDirectory,
+                    ArtifactPath = correlationReport.ReplayArtifactDir,
                 },
                 new PipelineStageReport
                 {
@@ -110,8 +110,8 @@ public sealed class QueryStoreCorrelationAdvisor
     }
 
     private AdviceOperationReport CreateOperationReport(
-        QueryStoreCorrelationOperationSummary operation,
-        IEnumerable<QueryStoreCorrelationRecord> operationRecords)
+        OperationCorrelationSummary operation,
+        IEnumerable<QueryCorrelationRecord> operationRecords)
     {
         var records = operationRecords.ToList();
         var recommendations = BuildRecommendations(operation, records);
@@ -130,8 +130,8 @@ public sealed class QueryStoreCorrelationAdvisor
     }
 
     private static List<SqlTuningRecommendation> BuildRecommendations(
-        QueryStoreCorrelationOperationSummary operation,
-        IReadOnlyList<QueryStoreCorrelationRecord> records)
+        OperationCorrelationSummary operation,
+        IReadOnlyList<QueryCorrelationRecord> records)
     {
         var recommendations = new List<SqlTuningRecommendation>();
 
@@ -178,7 +178,7 @@ public sealed class QueryStoreCorrelationAdvisor
                 Title = $"Replace fingerprint fallback matches for {operation.OperationKey}",
                 RootCause = $"{operation.FingerprintFallbackCount} captured command(s) matched only by local SQL fingerprint instead of exact Query Store ownership.",
                 SuggestedChange = "Prefer statement_sql_handle or exact text correlation by collecting a fresh Query Store snapshot and confirming the readonly principal can resolve statement handles.",
-                VerificationMetric = "StatementHandleExactCount + QueryTextExactCount increases while FingerprintFallbackCount decreases for this operation.",
+                VerificationMetric = "HandleExactCount + QueryTextExactCount increases while FingerprintFallbackCount decreases for this operation.",
             });
         }
 
@@ -228,7 +228,7 @@ public sealed class QueryStoreCorrelationAdvisor
     }
 
     private static IReadOnlyList<QueryStorePlanRecord> GetDistinctMatchedPlans(
-        IReadOnlyList<QueryStoreCorrelationRecord> records)
+        IReadOnlyList<QueryCorrelationRecord> records)
     {
         return records
             .SelectMany(static record => record.MatchedPlans)
@@ -239,9 +239,9 @@ public sealed class QueryStoreCorrelationAdvisor
 
     private static bool IsElevated(QueryStorePlanRecord plan)
     {
-        return plan.MeanDuration.TotalMilliseconds >= ElevatedMeanDurationMilliseconds
-            || plan.MeanCpuMilliseconds >= ElevatedMeanCpuMilliseconds
-            || plan.MeanLogicalReads >= ElevatedMeanLogicalReads;
+        return plan.MeanDuration.TotalMilliseconds >= HighDurationMs
+            || plan.MeanCpuMilliseconds >= HighCpuMs
+            || plan.MeanLogicalReads >= HighReads;
     }
 
     private static double ScorePlan(QueryStorePlanRecord plan)

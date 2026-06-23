@@ -9,13 +9,13 @@ namespace Sqloom.AspNetCore.Endpoints;
 /// <summary>
 /// Builds the initial replay plan from discovered operations and app overlays.
 /// </summary>
-internal sealed class EndpointReplayPlanBuilder
+internal sealed class ReplayPlanBuilder
 {
     public EndpointReplayPlan BuildInitialPlan(
-        EndpointReplayRunnerOptions options,
-        IReadOnlyList<DiscoveredOpenApiOperation> discoveredOperations)
+        ReplayRunnerOptions options,
+        IReadOnlyList<OpenApiOperation> discoveredOperations)
     {
-        var targetFilter = EndpointReplayTargetSyntax.ValidateOperationKeyOrNull(options.TargetFilter);
+        var targetFilter = ReplayTargetSyntax.ValidateOperationKeyOrNull(options.TargetFilter);
         var overlays = options.ReplayProfile.OperationOverlays.ToDictionary(
             operation => operation.OperationKey,
             StringComparer.OrdinalIgnoreCase);
@@ -25,7 +25,7 @@ internal sealed class EndpointReplayPlanBuilder
                 overlays.TryGetValue(
                     discoveredOperation.StableOperationKey,
                     out var overlay);
-                var resolvedOperation = ResolvedReplayOperationResolver.Resolve(
+                var resolvedOperation = ReplayOperationResolver.Resolve(
                     discoveredOperation,
                     overlay);
                 var replaySafe = IsReplaySafe(discoveredOperation, overlay, options.ReplayProfile);
@@ -103,7 +103,7 @@ internal sealed class EndpointReplayPlanBuilder
         return new EndpointReplayPlan
         {
             AppName = options.AppName,
-            OpenApiDocumentPath = options.OpenApiDocumentPath,
+            OpenApiPath = options.OpenApiPath,
             PlannedAtUtc = DateTimeOffset.UtcNow,
             Operations = planItems,
         };
@@ -111,7 +111,7 @@ internal sealed class EndpointReplayPlanBuilder
 
     private static bool IsFilteredOut(
         string? targetFilter,
-        DiscoveredOpenApiOperation operation)
+        OpenApiOperation operation)
     {
         return !string.IsNullOrWhiteSpace(targetFilter)
             && !MatchesTarget(targetFilter, operation);
@@ -141,7 +141,7 @@ internal sealed class EndpointReplayPlanBuilder
 
     private static bool MatchesTarget(
         string? targetFilter,
-        DiscoveredOpenApiOperation operation)
+        OpenApiOperation operation)
     {
         if (string.IsNullOrWhiteSpace(targetFilter))
         {
@@ -275,8 +275,8 @@ internal sealed class EndpointReplayPlanBuilder
     }
 
     private static bool IsReplaySafe(
-        DiscoveredOpenApiOperation operation,
-        ReplayOperationOverlayDefinition? overlay,
+        OpenApiOperation operation,
+        ReplayOverlay? overlay,
         ReplayProfile replayProfile)
     {
         if (overlay?.AllowNonGetReplay == true)
@@ -284,14 +284,14 @@ internal sealed class EndpointReplayPlanBuilder
             return true;
         }
 
-        return replayProfile.IncludeAuthenticatedGetOperationsByDefault
+        return replayProfile.IncludeAuthGetOps
             && operation.RequiresAuthentication
             && string.Equals(operation.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase);
     }
 
     private static string BuildUnsafeReason(
-        DiscoveredOpenApiOperation operation,
-        ReplayOperationOverlayDefinition? overlay)
+        OpenApiOperation operation,
+        ReplayOverlay? overlay)
     {
         if (!operation.RequiresAuthentication)
         {
@@ -308,8 +308,8 @@ internal sealed class EndpointReplayPlanBuilder
     }
 
     private sealed record ReplayPlanCandidate(
-        DiscoveredOpenApiOperation DiscoveredOperation,
-        ReplayOperationOverlayDefinition? Overlay,
+        OpenApiOperation DiscoveredOperation,
+        ReplayOverlay? Overlay,
         ResolvedReplayOperation ResolvedOperation,
         bool ReplaySafe);
 }

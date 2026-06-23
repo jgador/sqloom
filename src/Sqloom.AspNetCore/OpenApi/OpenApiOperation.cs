@@ -7,7 +7,7 @@ namespace Sqloom.AspNetCore.OpenApi;
 /// <summary>
 /// Describes one OpenAPI operation discovered for replay.
 /// </summary>
-public sealed class DiscoveredOpenApiOperation
+public sealed class OpenApiOperation
 {
     [JsonPropertyName("stableOperationKey")]
     public required string StableOperationKey { get; init; }
@@ -28,8 +28,8 @@ public sealed class DiscoveredOpenApiOperation
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
 
     [JsonPropertyName("parameters")]
-    public IReadOnlyList<OpenApiParameterDefinition> Parameters { get; init; } =
-        Array.Empty<OpenApiParameterDefinition>();
+    public IReadOnlyList<OpenApiParameter> Parameters { get; init; } =
+        Array.Empty<OpenApiParameter>();
 
     [JsonPropertyName("hasJsonRequestBody")]
     public bool HasJsonRequestBody { get; init; }
@@ -37,14 +37,14 @@ public sealed class DiscoveredOpenApiOperation
     [JsonPropertyName("requestBodyRequired")]
     public bool RequestBodyRequired { get; init; }
 
-    [JsonPropertyName("jsonRequestBodyExample")]
-    public string? JsonRequestBodyExample { get; init; }
+    [JsonPropertyName("jsonBodyExample")]
+    public string? JsonBodyExample { get; init; }
 }
 
 /// <summary>
 /// Describes one OpenAPI parameter used during replay.
 /// </summary>
-public sealed class OpenApiParameterDefinition
+public sealed class OpenApiParameter
 {
     [JsonPropertyName("name")]
     public required string Name { get; init; }

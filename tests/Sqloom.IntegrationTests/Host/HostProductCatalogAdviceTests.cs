@@ -42,7 +42,7 @@ public sealed class HostProductCatalogAdviceTests
             .CreateAsync(
                 new ReplayLaunchOptions
                 {
-                    SqlServerDacpacPath = SqloomTestAppPaths.GetSqlServerDacpacPath(),
+                    DacpacPath = SqloomTestAppPaths.GetDacpacPath(),
                 })
             .ConfigureAwait(false);
 
@@ -77,13 +77,13 @@ public sealed class HostProductCatalogAdviceTests
     public async Task HostRuntime_WithOpenAiAdviceFreeFormProposalKind_PersistsProposalForProductsByCategory()
     {
         var artifactDirectory = CreateTempDirectory();
-        var dacpacPath = SqloomTestAppPaths.GetSqlServerDacpacPath();
-        var schemaPath = SqloomTestAppPaths.GetSqlServerSchemaPath();
+        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
+        var schemaPath = SqloomTestAppPaths.GetSchemaPath();
         var currentDirectory = Directory.GetCurrentDirectory();
         QueryStoreEnabledTestAppReplayHostFactory replayHostFactory = new(
             new ReplayLaunchOptions
             {
-                SqlServerDacpacPath = dacpacPath,
+                DacpacPath = dacpacPath,
             });
 
         await using (replayHostFactory.ConfigureAwait(false))
@@ -96,23 +96,23 @@ public sealed class HostProductCatalogAdviceTests
                     CurrentDirectory = currentDirectory,
                     ReplayLaunchOptions = new ReplayLaunchOptions
                     {
-                        SqlServerDacpacPath = dacpacPath,
+                        DacpacPath = dacpacPath,
                     },
                 });
                 var replayProfile = manifest.ReplayProfile;
                 EndpointReplayRunner replayRunner = new();
                 var replayResult = await replayRunner
                     .RunAsync(
-                        new EndpointReplayRunnerOptions
+                        new ReplayRunnerOptions
                         {
                             AppName = manifest.Name,
-                            OpenApiDocumentPath = manifest.OpenApiDocumentPath,
-                            ReplayArtifactDirectory = artifactDirectory,
+                            OpenApiPath = manifest.OpenApiPath,
+                            ReplayArtifactDir = artifactDirectory,
                             ReplayProfile = replayProfile,
                             ReplayHostFactory = replayHostFactory,
                             ReplayLaunchOptions = new ReplayLaunchOptions
                             {
-                                SqlServerDacpacPath = dacpacPath,
+                                DacpacPath = dacpacPath,
                             },
                             TargetFilter = TestAppProductCatalogScenario.OperationKey,
                         })
@@ -178,11 +178,11 @@ public sealed class HostProductCatalogAdviceTests
                             ArtifactLayout.GetReplayTuningAdvicePath(artifactDirectory))
                         .ConfigureAwait(false);
                     var proposalReport = await ReadProposalReportAsync(
-                            ArtifactLayout.GetReplaySqlTuningProposalPath(artifactDirectory))
+                            ArtifactLayout.GetSqlProposalPath(artifactDirectory))
                         .ConfigureAwait(false);
                     var proposalScript = await File
                         .ReadAllTextAsync(
-                            ArtifactLayout.GetReplaySqlTuningProposalScriptPath(artifactDirectory))
+                            ArtifactLayout.GetSqlProposalScriptPath(artifactDirectory))
                         .ConfigureAwait(false);
                     Assert.True(
                         string.Equals(adviceReport.ModelProvider, "openai", StringComparison.OrdinalIgnoreCase),
@@ -214,13 +214,13 @@ public sealed class HostProductCatalogAdviceTests
         }
     }
 
-    private static async Task<QueryStoreCorrelationReport> CaptureCorrelationWithRetriesAsync(
+    private static async Task<QueryCorrelationReport> CaptureCorrelationWithRetriesAsync(
         string currentDirectory,
         string artifactDirectory,
         string applicationConnectionString)
     {
         var snapshotPath = Path.Combine(artifactDirectory, "query-store-snapshot.json");
-        QueryStoreCorrelationReport? lastReport = null;
+        QueryCorrelationReport? lastReport = null;
 
         for (var attempt = 0; attempt < 5; attempt++)
         {
@@ -261,7 +261,7 @@ public sealed class HostProductCatalogAdviceTests
             AssertCommandSucceeded("correlate", correlateResult.ExitCode, correlateResult.StdOut, correlateResult.StdErr);
 
             lastReport = await ReadCorrelationReportAsync(
-                    ArtifactLayout.GetReplayQueryStoreCorrelationPath(artifactDirectory))
+                    ArtifactLayout.GetCorrelationPath(artifactDirectory))
                 .ConfigureAwait(false);
             if (HasMatchedProductCorrelation(lastReport))
             {
@@ -288,10 +288,10 @@ public sealed class HostProductCatalogAdviceTests
         }
     }
 
-    private static async Task<QueryStoreCorrelationReport> ReadCorrelationReportAsync(string path)
+    private static async Task<QueryCorrelationReport> ReadCorrelationReportAsync(string path)
     {
         var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
-        return JsonSerializer.Deserialize<QueryStoreCorrelationReport>(
+        return JsonSerializer.Deserialize<QueryCorrelationReport>(
                 json,
                 _correlationSerializerOptions)
             ?? throw new InvalidOperationException($"Could not deserialize the Query Store correlation report at '{path}'.");
@@ -311,12 +311,12 @@ public sealed class HostProductCatalogAdviceTests
             ?? throw new InvalidOperationException($"Could not deserialize the SQL proposal report at '{path}'.");
     }
 
-    private static bool HasMatchedProductCorrelation(QueryStoreCorrelationReport report)
+    private static bool HasMatchedProductCorrelation(QueryCorrelationReport report)
     {
         return report.Records.Any(record =>
             string.Equals(record.OperationKey, TestAppProductCatalogScenario.OperationKey, StringComparison.OrdinalIgnoreCase)
             && record.CapturedCommand.SourceKind == CapturedSqlSourceKind.EntityFramework
-            && record.MatchKind != QueryStoreCorrelationMatchKind.Unmatched
+            && record.MatchKind != CorrelationMatchKind.Unmatched
             && record.MatchedPlans.Count > 0);
     }
 
@@ -520,7 +520,7 @@ public sealed class HostProductCatalogAdviceTests
             $"Sqloom {stageName} failed.{Environment.NewLine}ExitCode: {exitCode}{Environment.NewLine}StdOut:{Environment.NewLine}{standardOutput}{Environment.NewLine}StdErr:{Environment.NewLine}{standardError}");
     }
 
-    private static string FormatCorrelationFailureMessage(QueryStoreCorrelationReport report)
+    private static string FormatCorrelationFailureMessage(QueryCorrelationReport report)
     {
         var summaries = report.Records
             .Select(record =>
@@ -608,7 +608,7 @@ public sealed class HostProductCatalogAdviceTests
             CancellationToken cancellationToken = default)
         {
             var effectiveLaunchOptions = launchOptions is null
-                || string.IsNullOrWhiteSpace(launchOptions.SqlServerDacpacPath)
+                || string.IsNullOrWhiteSpace(launchOptions.DacpacPath)
                     ? _launchOptions
                     : launchOptions;
             var replayHost = await _inner

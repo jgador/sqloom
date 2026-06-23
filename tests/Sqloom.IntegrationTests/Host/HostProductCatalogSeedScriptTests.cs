@@ -27,7 +27,7 @@ public sealed class HostProductCatalogSeedScriptTests
     public async Task CreateAsync_WithCustomSqlSeedScript_SkipsBuiltInHotProductSeeder()
     {
         var tempDirectory = CreateTempDirectory();
-        var dacpacPath = SqloomTestAppPaths.GetSqlServerDacpacPath();
+        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var seedScriptPath = Path.Combine(tempDirectory, "AdventureWorksLT2025.seed.sql");
         File.WriteAllText(
             seedScriptPath,
@@ -40,8 +40,8 @@ public sealed class HostProductCatalogSeedScriptTests
                 .CreateAsync(
                     new ReplayLaunchOptions
                     {
-                        SqlServerDacpacPath = dacpacPath,
-                        SqlServerSeedSqlPath = seedScriptPath,
+                        DacpacPath = dacpacPath,
+                        SeedSqlPath = seedScriptPath,
                     })
                 .ConfigureAwait(false);
 
@@ -73,7 +73,7 @@ public sealed class HostProductCatalogSeedScriptTests
     public async Task CreateAsync_WithExportedSqlSeedScript_RestoresHotProductSeedIntoFreshContainer()
     {
         var tempDirectory = CreateTempDirectory();
-        var dacpacPath = SqloomTestAppPaths.GetSqlServerDacpacPath();
+        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var exportScriptPath = SqloomTestAppPaths.GetSeedExportScriptPath();
         var exportedSeedScriptPath = Path.Combine(tempDirectory, "AdventureWorksLT2025.seed.sql");
 
@@ -84,7 +84,7 @@ public sealed class HostProductCatalogSeedScriptTests
                 .CreateAsync(
                     new ReplayLaunchOptions
                     {
-                        SqlServerDacpacPath = dacpacPath,
+                        DacpacPath = dacpacPath,
                     })
                 .ConfigureAwait(false);
 
@@ -125,8 +125,8 @@ public sealed class HostProductCatalogSeedScriptTests
                 .CreateAsync(
                     new ReplayLaunchOptions
                     {
-                        SqlServerDacpacPath = dacpacPath,
-                        SqlServerSeedSqlPath = exportedSeedScriptPath,
+                        DacpacPath = dacpacPath,
+                        SeedSqlPath = exportedSeedScriptPath,
                     })
                 .ConfigureAwait(false);
 
@@ -150,7 +150,7 @@ public sealed class HostProductCatalogSeedScriptTests
     [Trait("Category", "Integration")]
     public async Task CreateAsync_WithCommittedSqlSeedScript_BootstrapsAdventureWorksExportIntoFreshContainer()
     {
-        var dacpacPath = SqloomTestAppPaths.GetSqlServerDacpacPath();
+        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var seedScriptPath = SqloomTestAppPaths.GetSqlServerSeedScriptPath();
         var seedScriptSql = await File.ReadAllTextAsync(seedScriptPath).ConfigureAwait(false);
         Assert.DoesNotContain("[dbo].[sysdiagrams]", seedScriptSql, StringComparison.Ordinal);
@@ -160,8 +160,8 @@ public sealed class HostProductCatalogSeedScriptTests
             .CreateAsync(
                 new ReplayLaunchOptions
                 {
-                    SqlServerDacpacPath = dacpacPath,
-                    SqlServerSeedSqlPath = seedScriptPath,
+                    DacpacPath = dacpacPath,
+                    SeedSqlPath = seedScriptPath,
                 })
             .ConfigureAwait(false);
 

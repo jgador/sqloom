@@ -5,7 +5,7 @@ namespace Sqloom.SqlServer.Capture;
 /// </summary>
 public sealed class SqlServerObservationOptions
 {
-    public required string ReadOnlyConnectionString { get; init; }
+    public required string ReadOnlyConnection { get; init; }
 
     public bool CaptureStatisticsXml { get; init; } = true;
 

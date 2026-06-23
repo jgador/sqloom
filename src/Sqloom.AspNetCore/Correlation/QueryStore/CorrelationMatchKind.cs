@@ -1,6 +1,6 @@
 namespace Sqloom.Correlation.QueryStore;
 
-public enum QueryStoreCorrelationMatchKind
+public enum CorrelationMatchKind
 {
     StatementHandleExact = 0,
     QueryTextExact = 1,

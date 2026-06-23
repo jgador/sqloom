@@ -10,7 +10,7 @@ namespace Sqloom.Host.Tests;
 public sealed class CorrelateArgumentParserTests
 {
     [Fact]
-    public void Parse_ThrowsWhenReplayArtifactDirectoryIsMissing()
+    public void Parse_ThrowsWhenReplayArtifactDirIsMissing()
     {
         CorrelateArgumentParser parser = new();
         var missingReplayDirectory = Path.Combine(

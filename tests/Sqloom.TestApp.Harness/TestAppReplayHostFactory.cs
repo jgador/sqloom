@@ -21,14 +21,14 @@ public sealed class TestAppReplayHostFactory : IReplayHostFactory
         ReplayLaunchOptions? launchOptions = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(launchOptions?.SqlServerDacpacPath)
-            && !string.IsNullOrWhiteSpace(launchOptions?.SqlServerSeedSqlPath))
+        if (string.IsNullOrWhiteSpace(launchOptions?.DacpacPath)
+            && !string.IsNullOrWhiteSpace(launchOptions?.SeedSqlPath))
         {
             throw new ArgumentException(
                 "Sqloom Test App replay requires --sqlserver-dacpac-file <path> when --sqlserver-seed-sql-file <path> is supplied.");
         }
 
-        if (string.IsNullOrWhiteSpace(launchOptions?.SqlServerDacpacPath))
+        if (string.IsNullOrWhiteSpace(launchOptions?.DacpacPath))
         {
             return await TestAppReplayHost
                 .CreateAsync(
@@ -39,9 +39,9 @@ public sealed class TestAppReplayHostFactory : IReplayHostFactory
                 .ConfigureAwait(false);
         }
 
-        var sqlServerDacpacPath = TestAppReplaySqlServerDacpacPathResolver.ResolveRequiredPath(launchOptions);
+        var dacpacPath = TestAppReplayDacpacPathResolver.ResolveRequiredPath(launchOptions);
         if (!string.Equals(
-            Path.GetFileName(sqlServerDacpacPath),
+            Path.GetFileName(dacpacPath),
             TestAppReplayConstants.SqlServerDacpacFileName,
             StringComparison.OrdinalIgnoreCase))
         {
@@ -118,7 +118,7 @@ internal sealed class TestAppReplayHost : IReplayHost
 
     public ReplayBootstrapReport Bootstrap => _bootstrap;
 
-    public string? ReadOnlyConnectionString => _readOnlyConnectionString;
+    public string? ReadOnlyConnection => _readOnlyConnectionString;
 
     public static async Task<TestAppReplayHost> CreateAsync(
         MsSqlContainer? sqlServer,

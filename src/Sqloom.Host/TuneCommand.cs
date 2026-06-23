@@ -39,7 +39,7 @@ internal sealed class TuneCommand
             manifest,
             context.CurrentDirectory);
 
-        var openApiDocumentPath = _argumentParser.GetOpenApiDocumentPath(
+        var openApiPath = _argumentParser.GetOpenApiPath(
             context.Arguments,
             manifest,
             context.CurrentDirectory);
@@ -48,7 +48,7 @@ internal sealed class TuneCommand
             .StartAsync(applicationContext)
             .ConfigureAwait(false);
         var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments)
-            ?? session.ReadOnlyConnectionString;
+            ?? session.ReadOnlyConnection;
         if (string.IsNullOrWhiteSpace(readOnlyConnectionString))
         {
             Console.Error.WriteLine(
@@ -62,7 +62,7 @@ internal sealed class TuneCommand
             session.ReplayHost,
             readOnlyConnectionString,
             context.CurrentDirectory,
-            openApiDocumentPath);
+            openApiPath);
         arguments.DebugWriter = context.DebugWriter;
         arguments.ObserveArguments.DebugWriter = context.DebugWriter;
         arguments.ReplayArguments.DebugWriter = context.DebugWriter;

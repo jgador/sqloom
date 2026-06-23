@@ -14,7 +14,7 @@ namespace Sqloom.AspNetCore.Endpoints;
 /// <summary>
 /// Executes replay requests and captures the resulting HTTP and SQL evidence.
 /// </summary>
-internal sealed class EndpointReplayRequestExecutor
+internal sealed class ReplayRequestExecutor
 {
     public async Task<EndpointReplayResult> ExecuteAsync(
         HttpClient httpClient,

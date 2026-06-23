@@ -14,7 +14,7 @@ namespace Sqloom.SqlServer.QueryStore;
 /// <summary>
 /// Resolves SQL statement_sql_handle values for captured commands.
 /// </summary>
-public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleResolver
+public sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
 {
     private const int DefaultCommandTimeoutSeconds = 30;
     private const string ResolveStatementHandleSql = """
@@ -23,9 +23,9 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
             CONVERT(varchar(130), resolved.statement_sql_handle, 1) AS statement_sql_handle
         FROM sys.fn_stmt_sql_handle_from_sql_stmt(
             @QuerySqlText,
-            @RequestedQueryParameterizationType) AS resolved;
+            @RequestedParamType) AS resolved;
         """;
-    private static readonly RequestedQueryParameterizationType[] _requestedQueryParameterizationTypes =
+    private static readonly RequestedParamType[] _requestedParamTypes =
     [
         new(null, "Default"),
         new(0, "None"),
@@ -55,9 +55,9 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
                 "The command timeout must be positive.");
     }
 
-    public async Task<SqlStatementHandleResolution> ResolveAsync(
+    public async Task<SqlHandleResolution> ResolveAsync(
         string sqlText,
-        IReadOnlyList<SqlStatementHandleParameterDescriptor> parameters,
+        IReadOnlyList<SqlHandleParameter> parameters,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sqlText);
@@ -79,22 +79,22 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
                 command.CommandTimeout = _commandTimeoutSeconds;
                 var querySqlTextParameter = command.Parameters.Add(
                     new SqlParameter("@QuerySqlText", System.Data.SqlDbType.NVarChar, -1));
-                var requestedQueryParameterizationTypeParameter = command.Parameters.Add(
-                    new SqlParameter("@RequestedQueryParameterizationType", System.Data.SqlDbType.TinyInt)
+                var requestedParamTypeParameter = command.Parameters.Add(
+                    new SqlParameter("@RequestedParamType", System.Data.SqlDbType.TinyInt)
                     {
                         IsNullable = true,
                     });
 
-                List<SqlStatementHandleCandidateRecord> records = new();
+                List<SqlHandleCandidateRecord> records = new();
                 foreach (var queryTextCandidate in queryTextCandidates)
                 {
                     querySqlTextParameter.Value = queryTextCandidate.QuerySqlText;
-                    foreach (var requestedQueryParameterizationType in _requestedQueryParameterizationTypes)
+                    foreach (var requestedParamType in _requestedParamTypes)
                     {
-                        requestedQueryParameterizationTypeParameter.Value =
-                            requestedQueryParameterizationType.Value is null
+                        requestedParamTypeParameter.Value =
+                            requestedParamType.Value is null
                                 ? DBNull.Value
-                                : requestedQueryParameterizationType.Value.Value;
+                                : requestedParamType.Value.Value;
 
                         DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
                         await using (reader.ConfigureAwait(false))
@@ -104,13 +104,13 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
                                 records.Add(ReadCandidateRecord(
                                     reader,
                                     queryTextCandidate.QueryTextShape,
-                                    requestedQueryParameterizationType.Description));
+                                    requestedParamType.Description));
                             }
                             else
                             {
-                                records.Add(new SqlStatementHandleCandidateRecord(
+                                records.Add(new SqlHandleCandidateRecord(
                                     queryTextCandidate.QueryTextShape,
-                                    requestedQueryParameterizationType.Description,
+                                    requestedParamType.Description,
                                     null,
                                     null));
                             }
@@ -123,33 +123,33 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
         }
         catch (SqlException sqlException)
         {
-            return BuildResolution(sqlText, comparableSqlText, Array.Empty<SqlStatementHandleCandidateRecord>(), sqlException.Message);
+            return BuildResolution(sqlText, comparableSqlText, Array.Empty<SqlHandleCandidateRecord>(), sqlException.Message);
         }
         catch (InvalidOperationException invalidOperationException)
         {
             return BuildResolution(
                 sqlText,
                 comparableSqlText,
-                Array.Empty<SqlStatementHandleCandidateRecord>(),
+                Array.Empty<SqlHandleCandidateRecord>(),
                 invalidOperationException.Message);
         }
     }
 
-    internal static SqlStatementHandleCandidateRecord ReadCandidateRecord(
+    internal static SqlHandleCandidateRecord ReadCandidateRecord(
         DbDataReader reader,
         string queryTextShape,
-        string requestedQueryParameterizationType)
+        string requestedParamType)
     {
-        return new SqlStatementHandleCandidateRecord(
+        return new SqlHandleCandidateRecord(
             queryTextShape,
-            requestedQueryParameterizationType,
+            requestedParamType,
             GetNullableInt32(reader, "query_parameterization_type"),
             GetNullableString(reader, "statement_sql_handle"));
     }
 
     internal static IReadOnlyList<SqlStatementQueryTextCandidate> BuildQueryTextCandidates(
         string comparableSqlText,
-        IReadOnlyList<SqlStatementHandleParameterDescriptor> parameters)
+        IReadOnlyList<SqlHandleParameter> parameters)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(comparableSqlText);
         ArgumentNullException.ThrowIfNull(parameters);
@@ -193,25 +193,25 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
         return fallbackCandidates;
     }
 
-    internal static SqlStatementHandleResolution BuildResolution(
+    internal static SqlHandleResolution BuildResolution(
         string sqlText,
         string comparableSqlText,
-        IReadOnlyList<SqlStatementHandleCandidateRecord> records,
+        IReadOnlyList<SqlHandleCandidateRecord> records,
         string? errorMessage = null)
     {
         var statementSqlHandle = records
             .Select(static record => record.StatementSqlHandle)
             .FirstOrDefault(static handle => !string.IsNullOrWhiteSpace(handle));
 
-        return new SqlStatementHandleResolution
+        return new SqlHandleResolution
         {
             SqlText = sqlText,
             ComparableSqlText = comparableSqlText,
             StatementSqlHandle = statementSqlHandle,
-            Candidates = records.Select(static record => new SqlStatementHandleCandidate
+            Candidates = records.Select(static record => new SqlHandleCandidate
             {
                 QueryTextShape = record.QueryTextShape,
-                RequestedQueryParameterizationType = record.RequestedQueryParameterizationType,
+                RequestedParamType = record.RequestedParamType,
                 QueryParameterizationType = record.QueryParameterizationType,
                 StatementSqlHandle = record.StatementSqlHandle,
             }).ToArray(),
@@ -233,7 +233,7 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
 
     private static string? TryBuildParameterPrefixedQueryText(
         string comparableSqlText,
-        IReadOnlyList<SqlStatementHandleParameterDescriptor> parameters)
+        IReadOnlyList<SqlHandleParameter> parameters)
     {
         if (parameters.Count == 0)
         {
@@ -263,11 +263,11 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
         return builder.ToString();
     }
 
-    private static IReadOnlyList<SqlStatementHandleParameterDescriptor> FilterParametersForStatement(
+    private static IReadOnlyList<SqlHandleParameter> FilterParametersForStatement(
         string statementText,
-        IReadOnlyList<SqlStatementHandleParameterDescriptor> parameters)
+        IReadOnlyList<SqlHandleParameter> parameters)
     {
-        List<SqlStatementHandleParameterDescriptor> matchingParameters = new();
+        List<SqlHandleParameter> matchingParameters = new();
         foreach (var parameter in parameters)
         {
             if (StatementUsesParameter(statementText, parameter.Name))
@@ -315,7 +315,7 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
     }
 
     private static bool TryFormatParameterDefinition(
-        SqlStatementHandleParameterDescriptor parameter,
+        SqlHandleParameter parameter,
         out string? parameterDefinition)
     {
         parameterDefinition = null;
@@ -334,7 +334,7 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
         return true;
     }
 
-    private static string? TryMapSqlType(SqlStatementHandleParameterDescriptor parameter)
+    private static string? TryMapSqlType(SqlHandleParameter parameter)
     {
         var dbType = parameter.DbType?.Trim() ?? string.Empty;
         if (dbType.Length == 0)
@@ -389,9 +389,9 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
         return value is > 0 ? value.Value : fallback;
     }
 
-    internal sealed record SqlStatementHandleCandidateRecord(
+    internal sealed record SqlHandleCandidateRecord(
         string QueryTextShape,
-        string RequestedQueryParameterizationType,
+        string RequestedParamType,
         int? QueryParameterizationType,
         string? StatementSqlHandle);
 
@@ -399,7 +399,7 @@ public sealed partial class SqlStatementHandleResolver : IStatementSqlHandleReso
         string QueryTextShape,
         string QuerySqlText);
 
-    private sealed record RequestedQueryParameterizationType(
+    private sealed record RequestedParamType(
         byte? Value,
         string Description);
 }

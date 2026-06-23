@@ -17,5 +17,5 @@ public sealed class DiscoveredDatabaseObject
     public required string FullyQualifiedName { get; init; }
 
     [JsonPropertyName("kind")]
-    public required DiscoveredDatabaseObjectKind Kind { get; init; }
+    public required DbObjectKind Kind { get; init; }
 }

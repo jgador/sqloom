@@ -18,7 +18,7 @@ internal sealed class MultipleTestApplicationA : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "MultipleTestApplicationA",
-            OpenApiDocumentPath = SqloomRepositoryPaths.GetTestAppOpenApiDocumentPath(),
+            OpenApiPath = SqloomRepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = TestApplicationManifestFactory.CreateReplayProfile(),
         };
     }
@@ -41,7 +41,7 @@ internal sealed class MultipleTestApplicationB : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "MultipleTestApplicationB",
-            OpenApiDocumentPath = SqloomRepositoryPaths.GetTestAppOpenApiDocumentPath(),
+            OpenApiPath = SqloomRepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = TestApplicationManifestFactory.CreateReplayProfile(),
         };
     }
@@ -64,7 +64,7 @@ internal static class TestApplicationManifestFactory
         return new SqloomApplicationManifest
         {
             Name = "Sqloom Test Harness",
-            OpenApiDocumentPath = SqloomRepositoryPaths.GetTestAppOpenApiDocumentPath(),
+            OpenApiPath = SqloomRepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = CreateReplayProfile(),
         };
     }
@@ -82,7 +82,7 @@ internal sealed class TestSqloomApplicationSession : ISqloomApplicationSession
 {
     public IReplayHost ReplayHost { get; } = new TestReplayHost();
 
-    public string? ReadOnlyConnectionString => "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
+    public string? ReadOnlyConnection => "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
 
     public ReplayBootstrapReport Bootstrap => ReplayHost.Bootstrap;
 

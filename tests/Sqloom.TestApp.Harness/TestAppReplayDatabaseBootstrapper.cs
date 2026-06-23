@@ -21,8 +21,8 @@ internal sealed class TestAppReplayDatabaseBootstrapper
         ReplayLaunchOptions? launchOptions,
         CancellationToken cancellationToken)
     {
-        var fullDacpacPath = TestAppReplaySqlServerDacpacPathResolver.ResolveRequiredPath(launchOptions);
-        var fullSeedSqlPath = TestAppReplaySqlServerSeedSqlPathResolver.ResolvePathOrNull(launchOptions);
+        var fullDacpacPath = TestAppReplayDacpacPathResolver.ResolveRequiredPath(launchOptions);
+        var fullSeedSqlPath = TestAppReplaySeedSqlPathResolver.ResolvePathOrNull(launchOptions);
         var applicationConnectionString = await CreateDatabaseAsync(sqlServer, cancellationToken).ConfigureAwait(false);
         var sqlServerDacpac = await _dacpacPublisher
             .PublishAsync(

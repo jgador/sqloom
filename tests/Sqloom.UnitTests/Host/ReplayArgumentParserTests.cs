@@ -42,18 +42,18 @@ public sealed class ReplayArgumentParserTests
 
         Assert.Equal(
             Path.GetFullPath(openApiPath),
-            arguments.RunnerOptions.OpenApiDocumentPath);
+            arguments.RunnerOptions.OpenApiPath);
         Assert.Equal(TestAppProductCatalogScenario.OperationKey, arguments.RunnerOptions.TargetFilter);
         Assert.Equal(
             Path.GetFullPath(dacpacPath),
-            arguments.RunnerOptions.ReplayLaunchOptions.SqlServerDacpacPath);
+            arguments.RunnerOptions.ReplayLaunchOptions.DacpacPath);
         Assert.Equal(
             Path.GetFullPath(seedSqlPath),
-            arguments.RunnerOptions.ReplayLaunchOptions.SqlServerSeedSqlPath);
+            arguments.RunnerOptions.ReplayLaunchOptions.SeedSqlPath);
     }
 
     [Fact]
-    public void Parse_UsesManifestOpenApiDocumentPathByDefault()
+    public void Parse_UsesManifestOpenApiPathByDefault()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDirectory();
@@ -65,20 +65,20 @@ public sealed class ReplayArgumentParserTests
             currentDirectory);
 
         Assert.Equal(
-            SqloomRepositoryPaths.GetTestAppOpenApiDocumentPath(),
-            arguments.RunnerOptions.OpenApiDocumentPath,
+            SqloomRepositoryPaths.GetTestAppOpenApiPath(),
+            arguments.RunnerOptions.OpenApiPath,
             StringComparer.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void Parse_ThrowsWhenManifestOpenApiDocumentPathIsRelative()
+    public void Parse_ThrowsWhenManifestOpenApiPathIsRelative()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDirectory();
         SqloomApplicationManifest manifest = new()
         {
             Name = "Relative OpenAPI Test App",
-            OpenApiDocumentPath = "openapi.json",
+            OpenApiPath = "openapi.json",
             ReplayProfile = new ReplayProfile(),
         };
 
@@ -89,7 +89,7 @@ public sealed class ReplayArgumentParserTests
                 new TestReplayHost(),
                 currentDirectory));
 
-        Assert.Contains("OpenApiDocumentPath", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("OpenApiPath", exception.Message, StringComparison.Ordinal);
         Assert.Contains("absolute", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 

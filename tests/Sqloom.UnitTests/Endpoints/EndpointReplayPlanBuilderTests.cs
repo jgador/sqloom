@@ -11,12 +11,12 @@ namespace Sqloom.AspNetCore.Tests.Endpoints;
 /// <summary>
 /// Exercises endpoint replay plan builder.
 /// </summary>
-public sealed class EndpointReplayPlanBuilderTests
+public sealed class ReplayPlanBuilderTests
 {
     [Fact]
     public void BuildInitialPlan_PlansAuthenticatedGetOperationsWithoutAppOverlays()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile()),
@@ -33,7 +33,7 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_SkipsUnsafeOperationsWithoutReplayOverlays()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile()),
@@ -59,14 +59,14 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_SkipsOptInReplayWhenItWasNotSelectedExplicitly()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile
                 {
                     OperationOverlays =
                     [
-                        new ReplayOperationOverlayDefinition
+                        new ReplayOverlay
                         {
                             OperationKey = "POST /api/advisor/query",
                             ReplayByDefault = false,
@@ -92,14 +92,14 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_AllowsOptInReplayWhenTargetMatchesOperationKey()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile
                 {
                     OperationOverlays =
                     [
-                        new ReplayOperationOverlayDefinition
+                        new ReplayOverlay
                         {
                             OperationKey = "POST /api/advisor/query",
                             ReplayByDefault = false,
@@ -124,7 +124,7 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_ThrowsWhenTargetMatchesOperationIdInsteadOfOperationKey()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var exception = Assert.Throws<ArgumentException>(
             () => builder.BuildInitialPlan(
                 CreateOptions(
@@ -146,7 +146,7 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_ThrowsWhenTargetDoesNotMatchAnyOperation()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var exception = Assert.Throws<ArgumentException>(
             () => builder.BuildInitialPlan(
                 CreateOptions(
@@ -169,7 +169,7 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_ThrowsWhenTargetUsesInvalidOperationKeySyntax()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
 
         var exception = Assert.Throws<ArgumentException>(
             () => builder.BuildInitialPlan(
@@ -186,29 +186,29 @@ public sealed class EndpointReplayPlanBuilderTests
         Assert.Contains("Did you mean 'GET /api/secure'?", exception.Message, StringComparison.Ordinal);
     }
 
-    private static EndpointReplayRunnerOptions CreateOptions(
+    private static ReplayRunnerOptions CreateOptions(
         ReplayProfile replayProfile,
         string? targetFilter = null)
     {
-        return new EndpointReplayRunnerOptions
+        return new ReplayRunnerOptions
         {
             AppName = "TestApp",
-            OpenApiDocumentPath = "openapi.json",
-            ReplayArtifactDirectory = "artifacts",
+            OpenApiPath = "openapi.json",
+            ReplayArtifactDir = "artifacts",
             ReplayProfile = replayProfile,
             ReplayHostFactory = new UnusedReplayHostFactory(),
             TargetFilter = targetFilter,
         };
     }
 
-    private static DiscoveredOpenApiOperation CreateOperation(
+    private static OpenApiOperation CreateOperation(
         string httpMethod,
         string route,
         bool requiresAuthentication,
         bool requestBodyRequired = false,
         string? operationId = null)
     {
-        return new DiscoveredOpenApiOperation
+        return new OpenApiOperation
         {
             StableOperationKey = $"{httpMethod} {route}",
             OperationId = operationId,

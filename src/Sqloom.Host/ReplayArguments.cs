@@ -7,7 +7,7 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class ReplayArguments
 {
-    public required EndpointReplayRunnerOptions RunnerOptions { get; init; }
+    public required ReplayRunnerOptions RunnerOptions { get; init; }
 
     public HostDebugWriter DebugWriter { get; set; } = HostDebugWriter.Disabled;
 }

@@ -20,10 +20,10 @@ public sealed class AdviceCommandTests
     public async Task ExecuteAsync_WithOpenAIModelProvider_WritesAdviceAndSqlProposalSidecars()
     {
         var replayArtifactDirectory = CreateTempDirectory();
-        var correlationPath = ArtifactLayout.GetReplayQueryStoreCorrelationPath(replayArtifactDirectory);
+        var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
         var advicePath = ArtifactLayout.GetReplayTuningAdvicePath(replayArtifactDirectory);
-        var proposalJsonPath = ArtifactLayout.GetReplaySqlTuningProposalPath(replayArtifactDirectory);
-        var proposalScriptPath = ArtifactLayout.GetReplaySqlTuningProposalScriptPath(replayArtifactDirectory);
+        var proposalJsonPath = ArtifactLayout.GetSqlProposalPath(replayArtifactDirectory);
+        var proposalScriptPath = ArtifactLayout.GetSqlProposalScriptPath(replayArtifactDirectory);
         var schemaPath = Path.Combine(replayArtifactDirectory, "schema.sql");
         var correlationReport = CreateCorrelationReport(replayArtifactDirectory);
         var expectedReport = CreateAdviceReport(
@@ -63,9 +63,9 @@ public sealed class AdviceCommandTests
             .ExecuteAsync(
                 new AdviseArguments
                 {
-                    ReplayArtifactDirectory = replayArtifactDirectory,
+                    ReplayArtifactDir = replayArtifactDirectory,
                     QueryStoreCorrelationPath = correlationPath,
-                    SqlServerSchemaPath = schemaPath,
+                    SchemaPath = schemaPath,
                     JsonOutputPath = advicePath,
                     ModelProvider = ModelProviderKind.OpenAI,
                     OpenAIOptions = new OpenAIAdviceOptions
@@ -147,7 +147,7 @@ public sealed class AdviceCommandTests
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
             AppName = "SqloomTestApp",
-            ReplayArtifactDirectory = replayArtifactDirectory,
+            ReplayArtifactDir = replayArtifactDirectory,
             QueryStoreCorrelationPath = correlationPath,
             ModelProvider = "openai",
             ModelName = "gpt-5.4-mini",
@@ -218,18 +218,18 @@ public sealed class AdviceCommandTests
         };
     }
 
-    private static QueryStoreCorrelationReport CreateCorrelationReport(string replayArtifactDirectory)
+    private static QueryCorrelationReport CreateCorrelationReport(string replayArtifactDirectory)
     {
-        return new QueryStoreCorrelationReport
+        return new QueryCorrelationReport
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
             AppName = "SqloomTestApp",
-            ReplayArtifactDirectory = replayArtifactDirectory,
+            ReplayArtifactDir = replayArtifactDirectory,
             QueryStoreSnapshotPath = Path.Combine(replayArtifactDirectory, "query-store-20260614T000000000Z.json"),
             QueryStoreCapturedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
             Records =
             [
-                new QueryStoreCorrelationRecord
+                new QueryCorrelationRecord
                 {
                     OperationKey = "GET /api/expenses/dashboard",
                     HttpMethod = "GET",
@@ -238,7 +238,7 @@ public sealed class AdviceCommandTests
                     CommandOrdinal = 1,
                     CapturedCommand = CreateCommand("SELECT TOP(@p) [e].[Id], [e].[CaptureId], [e].[SourceProposalId], [e].[Amount], [e].[CurrencyCode], [e].[OccurredAtLocal], [e].[Category], [e].[Subcategory], [e].[Merchant], [e].[Note], [e].[ConfirmedAtUtc], [e].[UpdatedAtUtc] FROM [ExpenseRecord] AS [e] WHERE [e].[UserId] = @userId ORDER BY [e].[OccurredAtLocal] DESC, [e].[Id] DESC"),
                     ComparableSqlText = "SELECT TOP(@p) [e].[Id], [e].[CaptureId], [e].[SourceProposalId], [e].[Amount], [e].[CurrencyCode], [e].[OccurredAtLocal], [e].[Category], [e].[Subcategory], [e].[Merchant], [e].[Note], [e].[ConfirmedAtUtc], [e].[UpdatedAtUtc] FROM [ExpenseRecord] AS [e] WHERE [e].[UserId] = @userId ORDER BY [e].[OccurredAtLocal] DESC, [e].[Id] DESC",
-                    MatchKind = QueryStoreCorrelationMatchKind.StatementHandleExact,
+                    MatchKind = CorrelationMatchKind.StatementHandleExact,
                     Confidence = 1.0d,
                     MatchedPlans =
                     [
@@ -247,18 +247,18 @@ public sealed class AdviceCommandTests
                     Notes = ["Matched Query Store statement_sql_handle exactly."],
                 },
             ],
-            Summary = new QueryStoreCorrelationSummary
+            Summary = new QueryCorrelationSummary
             {
                 OperationCount = 1,
                 CapturedCommandCount = 1,
                 MatchedCommandCount = 1,
-                StatementHandleExactCount = 1,
+                HandleExactCount = 1,
                 QueryTextExactCount = 0,
                 FingerprintFallbackCount = 0,
                 UnmatchedCount = 0,
                 Operations =
                 [
-                    new QueryStoreCorrelationOperationSummary
+                    new OperationCorrelationSummary
                     {
                         OperationKey = "GET /api/expenses/dashboard",
                         HttpMethod = "GET",
@@ -267,7 +267,7 @@ public sealed class AdviceCommandTests
                         OperationArtifactPath = Path.Combine(replayArtifactDirectory, "operations", "01-expenses-dashboard.json"),
                         CapturedCommandCount = 1,
                         MatchedCommandCount = 1,
-                        StatementHandleExactCount = 1,
+                        HandleExactCount = 1,
                         QueryTextExactCount = 0,
                         FingerprintFallbackCount = 0,
                         UnmatchedCount = 0,
@@ -303,7 +303,7 @@ public sealed class AdviceCommandTests
             QueryText = "SELECT TOP(@p) [e].[Id], [e].[CaptureId], [e].[SourceProposalId], [e].[Amount], [e].[CurrencyCode], [e].[OccurredAtLocal], [e].[Category], [e].[Subcategory], [e].[Merchant], [e].[Note], [e].[ConfirmedAtUtc], [e].[UpdatedAtUtc] FROM [ExpenseRecord] AS [e] WHERE [e].[UserId] = @userId ORDER BY [e].[OccurredAtLocal] DESC, [e].[Id] DESC",
             ObjectName = "[dbo].[ExpenseRecord]",
             QueryParameterizationType = 0,
-            QueryParameterizationTypeDescription = "None",
+            ParamTypeDescription = "None",
             ExecutionCount = 4,
             MeanDuration = TimeSpan.FromMilliseconds(240),
             MaxDuration = TimeSpan.FromMilliseconds(300),
@@ -342,7 +342,7 @@ public sealed class AdviceCommandTests
         Action<string> captureSchemaPath) : IAdviceReportGenerator
     {
         public Task<AdviceReport> CreateReportAsync(
-            QueryStoreCorrelationReport correlationReport,
+            QueryCorrelationReport correlationReport,
             string queryStoreCorrelationPath,
             string adviceOutputPath,
             string sqlServerSchemaPath,

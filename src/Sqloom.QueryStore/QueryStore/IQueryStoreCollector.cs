@@ -10,6 +10,6 @@ public interface IQueryStoreCollector
 {
     Task<QueryStoreSnapshot> CaptureAsync(
         string readOnlyConnectionString,
-        QueryStoreObservationOptions options,
+        QueryStoreOptions options,
         CancellationToken cancellationToken = default);
 }

@@ -13,7 +13,7 @@ namespace Sqloom.Correlation.Tests.QueryStore;
 /// </summary>
 public sealed class QueryStoreCorrelationAdvisorTests
 {
-    private static string ReplayArtifactDirectoryPath =>
+    private static string ReplayArtifactDirPath =>
         Path.Combine("artifacts", "sqloom", "replay-20260609T000000000Z");
 
     private static string QueryStoreSnapshotPath =>
@@ -39,16 +39,16 @@ public sealed class QueryStoreCorrelationAdvisorTests
             """;
 
         QueryStoreCorrelationAdvisor advisor = new();
-        QueryStoreCorrelationReport correlationReport = new()
+        QueryCorrelationReport correlationReport = new()
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
             AppName = "TestHarness",
-            ReplayArtifactDirectory = ReplayArtifactDirectoryPath,
+            ReplayArtifactDir = ReplayArtifactDirPath,
             QueryStoreSnapshotPath = QueryStoreSnapshotPath,
             QueryStoreCapturedAtUtc = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
             Records =
             [
-                new QueryStoreCorrelationRecord
+                new QueryCorrelationRecord
                 {
                     OperationKey = "GET /api/expenses/dashboard",
                     HttpMethod = "GET",
@@ -57,7 +57,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
                     CommandOrdinal = 1,
                     CapturedCommand = CreateCommand(matchedHotspotSql),
                     ComparableSqlText = matchedHotspotSql,
-                    MatchKind = QueryStoreCorrelationMatchKind.FingerprintFallback,
+                    MatchKind = CorrelationMatchKind.FingerprintFallback,
                     Confidence = 0.40d,
                     MatchedPlans =
                     [
@@ -67,18 +67,18 @@ public sealed class QueryStoreCorrelationAdvisorTests
                     Notes = ["Matched only by local fingerprint."],
                 },
             ],
-            Summary = new QueryStoreCorrelationSummary
+            Summary = new QueryCorrelationSummary
             {
                 OperationCount = 1,
                 CapturedCommandCount = 1,
                 MatchedCommandCount = 1,
-                StatementHandleExactCount = 0,
+                HandleExactCount = 0,
                 QueryTextExactCount = 0,
                 FingerprintFallbackCount = 1,
                 UnmatchedCount = 0,
                 Operations =
                 [
-                    new QueryStoreCorrelationOperationSummary
+                    new OperationCorrelationSummary
                     {
                         OperationKey = "GET /api/expenses/dashboard",
                         HttpMethod = "GET",
@@ -87,7 +87,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
                         OperationArtifactPath = OperationArtifactPath,
                         CapturedCommandCount = 1,
                         MatchedCommandCount = 1,
-                        StatementHandleExactCount = 0,
+                        HandleExactCount = 0,
                         QueryTextExactCount = 0,
                         FingerprintFallbackCount = 1,
                         UnmatchedCount = 0,
@@ -108,10 +108,10 @@ public sealed class QueryStoreCorrelationAdvisorTests
         Assert.Equal(1, report.Summary.OperationCount);
         Assert.Equal(3, report.Summary.RecommendationCount);
         Assert.Equal(
-            Path.Combine(correlationReport.ReplayArtifactDirectory, "sql-tuning-proposal.json"),
+            Path.Combine(correlationReport.ReplayArtifactDir, "sql-tuning-proposal.json"),
             report.SqlProposalJsonPath);
         Assert.Equal(
-            Path.Combine(correlationReport.ReplayArtifactDirectory, "sql-tuning-proposal.sql"),
+            Path.Combine(correlationReport.ReplayArtifactDir, "sql-tuning-proposal.sql"),
             report.SqlProposalScriptPath);
 
         var operation = Assert.Single(report.Operations);
@@ -139,15 +139,15 @@ public sealed class QueryStoreCorrelationAdvisorTests
     public void CreateReport_UsesRecoveryAdviceWhenReplayEvidenceIsIncomplete()
     {
         QueryStoreCorrelationAdvisor advisor = new();
-        QueryStoreCorrelationReport correlationReport = new()
+        QueryCorrelationReport correlationReport = new()
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
             AppName = "TestHarness",
-            ReplayArtifactDirectory = ReplayArtifactDirectoryPath,
+            ReplayArtifactDir = ReplayArtifactDirPath,
             QueryStoreSnapshotPath = QueryStoreSnapshotPath,
             QueryStoreCapturedAtUtc = new DateTimeOffset(2026, 6, 9, 0, 0, 0, TimeSpan.Zero),
-            Records = Array.Empty<QueryStoreCorrelationRecord>(),
-            Summary = new QueryStoreCorrelationSummary
+            Records = Array.Empty<QueryCorrelationRecord>(),
+            Summary = new QueryCorrelationSummary
             {
                 OperationCount = 1,
                 CapturedCommandCount = 0,
@@ -155,7 +155,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
                 UnmatchedCount = 0,
                 Operations =
                 [
-                    new QueryStoreCorrelationOperationSummary
+                    new OperationCorrelationSummary
                     {
                         OperationKey = "GET /api/expenses/dashboard",
                         HttpMethod = "GET",
@@ -164,7 +164,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
                         OperationArtifactPath = OperationArtifactPath,
                         CapturedCommandCount = 0,
                         MatchedCommandCount = 0,
-                        StatementHandleExactCount = 0,
+                        HandleExactCount = 0,
                         QueryTextExactCount = 0,
                         FingerprintFallbackCount = 0,
                         UnmatchedCount = 0,
@@ -220,7 +220,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
             QueryText = queryText,
             ObjectName = "[dbo].[ExpenseRecord]",
             QueryParameterizationType = 0,
-            QueryParameterizationTypeDescription = "None",
+            ParamTypeDescription = "None",
             ExecutionCount = 3,
             MeanDuration = TimeSpan.FromMilliseconds(meanDurationMilliseconds),
             MaxDuration = TimeSpan.FromMilliseconds(meanDurationMilliseconds * 1.2d),

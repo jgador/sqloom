@@ -86,7 +86,7 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
     }
 
     public async Task<AdviceReport> CreateReportAsync(
-        QueryStoreCorrelationReport correlationReport,
+        QueryCorrelationReport correlationReport,
         string queryStoreCorrelationPath,
         string adviceOutputPath,
         string sqlServerSchemaPath,
@@ -98,11 +98,11 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
         ArgumentException.ThrowIfNullOrWhiteSpace(sqlServerSchemaPath);
 
         var appName = correlationReport.AppName ?? "unknown";
-        var sqlProposalJsonPath = ArtifactLayout.GetReplaySqlTuningProposalPath(
-            correlationReport.ReplayArtifactDirectory);
-        var sqlProposalScriptPath = ArtifactLayout.GetReplaySqlTuningProposalScriptPath(
-            correlationReport.ReplayArtifactDirectory);
-        var sqlServerSchemaText = await File
+        var sqlProposalJsonPath = ArtifactLayout.GetSqlProposalPath(
+            correlationReport.ReplayArtifactDir);
+        var sqlProposalScriptPath = ArtifactLayout.GetSqlProposalScriptPath(
+            correlationReport.ReplayArtifactDir);
+        var schemaSql = await File
             .ReadAllTextAsync(
                 sqlServerSchemaPath,
                 cancellationToken)
@@ -111,7 +111,7 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
             .CreateAsync(
                 queryStoreCorrelationPath,
                 sqlServerSchemaPath,
-                sqlServerSchemaText,
+                schemaSql,
                 correlationReport.QueryStoreSnapshotPath,
                 cancellationToken)
             .ConfigureAwait(false);
@@ -152,7 +152,7 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
                 operation,
                 evidencePack.ArtifactManifestJson,
                 evidencePack.SourceEvidenceJson,
-                evidencePack.SqlServerSchemaText);
+                evidencePack.SchemaSql);
             var response = await client
                 .CreateAdviceAsync(request, cancellationToken)
                 .ConfigureAwait(false);
@@ -178,7 +178,7 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
         {
             GeneratedAtUtc = DateTimeOffset.UtcNow,
             AppName = appName,
-            ReplayArtifactDirectory = correlationReport.ReplayArtifactDirectory,
+            ReplayArtifactDir = correlationReport.ReplayArtifactDir,
             QueryStoreCorrelationPath = queryStoreCorrelationPath,
             ModelProvider = "openai",
             ModelName = _options.Model,
@@ -225,12 +225,12 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
     }
 
     private static PipelineReport CreatePipeline(
-        QueryStoreCorrelationReport correlationReport,
+        QueryCorrelationReport correlationReport,
         string queryStoreCorrelationPath,
         string adviceOutputPath)
     {
         var replaySummaryPath = ArtifactLayout.GetReplaySummaryPath(
-            correlationReport.ReplayArtifactDirectory);
+            correlationReport.ReplayArtifactDir);
 
         return new PipelineReport
         {
@@ -255,7 +255,7 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
                     Name = PipelineStageNames.Capture,
                     Status = PipelineStageStatuses.Completed,
                     Summary = "Captured replay SQL fed the advice run.",
-                    ArtifactPath = correlationReport.ReplayArtifactDirectory,
+                    ArtifactPath = correlationReport.ReplayArtifactDir,
                 },
                 new PipelineStageReport
                 {
@@ -295,16 +295,16 @@ internal static class OpenAIAdviceRequestBuilder
 {
     public static OpenAITuningAdviceRequest Build(
         string appName,
-        QueryStoreCorrelationOperationSummary operation,
+        OperationCorrelationSummary operation,
         string artifactManifestJson,
         string sourceEvidenceJson,
-        string sqlServerSchemaText)
+        string schemaSql)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(appName);
         ArgumentNullException.ThrowIfNull(operation);
         ArgumentException.ThrowIfNullOrWhiteSpace(artifactManifestJson);
         ArgumentException.ThrowIfNullOrWhiteSpace(sourceEvidenceJson);
-        ArgumentException.ThrowIfNullOrWhiteSpace(sqlServerSchemaText);
+        ArgumentException.ThrowIfNullOrWhiteSpace(schemaSql);
 
         return new OpenAITuningAdviceRequest
         {
@@ -314,7 +314,7 @@ internal static class OpenAIAdviceRequestBuilder
             Route = operation.Route,
             ArtifactManifestJson = artifactManifestJson,
             SourceEvidenceJson = sourceEvidenceJson,
-            SqlServerSchemaText = sqlServerSchemaText,
+            SchemaSql = schemaSql,
         };
     }
 }
@@ -460,7 +460,7 @@ internal sealed class OpenAIAdviceClient
             $"App: {request.AppName}\nOperation: {request.OperationKey}\nHTTP: {request.HttpMethod} {request.Route}",
             $"artifact_manifest_json:\n{request.ArtifactManifestJson}",
             $"source_evidence_json:\n{request.SourceEvidenceJson}",
-            $"sql_server_schema_sql:\n{request.SqlServerSchemaText}");
+            $"sql_server_schema_sql:\n{request.SchemaSql}");
     }
 
     private static object BuildResponseSchema()

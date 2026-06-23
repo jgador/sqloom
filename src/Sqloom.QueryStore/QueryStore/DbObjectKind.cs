@@ -1,6 +1,6 @@
 namespace Sqloom.QueryStore.QueryStore;
 
-public enum DiscoveredDatabaseObjectKind
+public enum DbObjectKind
 {
     Table = 0,
     View = 1,

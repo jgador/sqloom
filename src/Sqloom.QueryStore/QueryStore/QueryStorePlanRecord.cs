@@ -35,8 +35,8 @@ public sealed class QueryStorePlanRecord
     [JsonPropertyName("queryParameterizationType")]
     public int QueryParameterizationType { get; init; }
 
-    [JsonPropertyName("queryParameterizationTypeDescription")]
-    public string QueryParameterizationTypeDescription { get; init; } = string.Empty;
+    [JsonPropertyName("paramTypeDescription")]
+    public string ParamTypeDescription { get; init; } = string.Empty;
 
     [JsonPropertyName("executionCount")]
     public long ExecutionCount { get; init; }

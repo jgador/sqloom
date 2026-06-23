@@ -8,7 +8,7 @@ namespace Sqloom.AspNetCore.Tests.OpenApi;
 /// <summary>
 /// Exercises OpenAPI operation catalog loader.
 /// </summary>
-public sealed class OpenApiOperationCatalogLoaderTests
+public sealed class OpenApiCatalogLoaderTests
 {
     [Fact]
     public async Task LoadAsync_ReadsSecurityParameterAndBodyMetadata()
@@ -60,7 +60,7 @@ public sealed class OpenApiOperationCatalogLoaderTests
             }
             """);
 
-        OpenApiOperationCatalogLoader loader = new();
+        OpenApiCatalogLoader loader = new();
 
         var operations = await loader.LoadAsync(documentPath);
 
@@ -69,7 +69,7 @@ public sealed class OpenApiOperationCatalogLoaderTests
         Assert.False(login.RequiresAuthentication);
         Assert.True(login.HasJsonRequestBody);
         Assert.True(login.RequestBodyRequired);
-        Assert.Contains("\"email\": \"user@example.com\"", login.JsonRequestBodyExample);
+        Assert.Contains("\"email\": \"user@example.com\"", login.JsonBodyExample);
 
         var dashboard = Assert.Single(operations, operation => operation.Route == "/api/expenses/dashboard");
         Assert.True(dashboard.RequiresAuthentication);

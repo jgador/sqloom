@@ -161,7 +161,7 @@ public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
 
     public async Task<QueryStoreSnapshot> CaptureAsync(
         string readOnlyConnectionString,
-        QueryStoreObservationOptions options,
+        QueryStoreOptions options,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(readOnlyConnectionString);
@@ -206,7 +206,7 @@ public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
         }
     }
 
-    internal static void ValidateOptions(QueryStoreObservationOptions options)
+    internal static void ValidateOptions(QueryStoreOptions options)
     {
         ArgumentNullException.ThrowIfNull(options);
 
@@ -259,7 +259,7 @@ public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
             QueryText = reader.GetString(reader.GetOrdinal("query_sql_text")),
             ObjectName = GetNullableString(reader, "object_name"),
             QueryParameterizationType = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("query_parameterization_type"))),
-            QueryParameterizationTypeDescription = reader.GetString(reader.GetOrdinal("query_parameterization_type_desc")),
+            ParamTypeDescription = reader.GetString(reader.GetOrdinal("query_parameterization_type_desc")),
             ExecutionCount = reader.GetInt64(reader.GetOrdinal("execution_count")),
             MeanDuration = FromMicroseconds(Convert.ToDouble(reader.GetValue(reader.GetOrdinal("mean_duration_us")))),
             MaxDuration = FromMicroseconds(Convert.ToDouble(reader.GetValue(reader.GetOrdinal("max_duration_us")))),
@@ -276,7 +276,7 @@ public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
             QueryId = reader.GetInt64(reader.GetOrdinal("query_id")),
             PlanId = reader.GetInt64(reader.GetOrdinal("plan_id")),
             WaitCategory = reader.GetString(reader.GetOrdinal("wait_category_desc")),
-            AverageQueryWaitMilliseconds = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("avg_query_wait_time_ms"))),
+            AvgWaitMs = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("avg_query_wait_time_ms"))),
             TotalWaitMilliseconds = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("total_query_wait_time_ms"))),
         };
     }
@@ -306,7 +306,7 @@ public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
 
     private static async Task<QueryStoreDatabaseOptions> ReadDatabaseOptionsAsync(
         SqlConnection connection,
-        QueryStoreObservationOptions options,
+        QueryStoreOptions options,
         CancellationToken cancellationToken)
     {
         using var command = CreateCommand(connection, QueryStoreOptionsSql, options.CommandTimeoutSeconds);
@@ -324,7 +324,7 @@ public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
 
     private static async Task<IReadOnlyList<QueryStorePlanRecord>> ReadPlansAsync(
         SqlConnection connection,
-        QueryStoreObservationOptions options,
+        QueryStoreOptions options,
         DateTimeOffset startTimeUtc,
         CancellationToken cancellationToken)
     {
@@ -337,7 +337,7 @@ public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
 
     private static async Task<IReadOnlyList<QueryStoreWaitStat>> ReadWaitsAsync(
         SqlConnection connection,
-        QueryStoreObservationOptions options,
+        QueryStoreOptions options,
         DateTimeOffset startTimeUtc,
         CancellationToken cancellationToken)
     {

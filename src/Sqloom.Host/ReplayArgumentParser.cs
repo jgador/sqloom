@@ -39,7 +39,7 @@ internal sealed class ReplayArgumentParser
         IReplayHost replayHost,
         string currentDirectory,
         string? artifactDirectoryOverride = null,
-        string? openApiDocumentPathOverride = null)
+        string? openApiPathOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
@@ -51,24 +51,24 @@ internal sealed class ReplayArgumentParser
             ValueSwitches);
 
         var replayProfile = manifest.ReplayProfile;
-        var openApiDocumentPath = openApiDocumentPathOverride
-            ?? GetOpenApiDocumentPath(
+        var openApiPath = openApiPathOverride
+            ?? GetOpenApiPath(
                 args,
                 manifest,
                 currentDirectory);
-        var targetFilter = EndpointReplayTargetSyntax.ValidateOperationKeyOrNull(
+        var targetFilter = ReplayTargetSyntax.ValidateOperationKeyOrNull(
             CommandArgumentSupport.GetArgumentValue(args, "--target"));
         var replayArtifactDirectory = artifactDirectoryOverride
-            ?? GetReplayArtifactDirectory(args, currentDirectory);
+            ?? GetReplayArtifactDir(args, currentDirectory);
         var replayLaunchOptions = CreateReplayLaunchOptions(args, currentDirectory);
 
         return new ReplayArguments
         {
-            RunnerOptions = new EndpointReplayRunnerOptions
+            RunnerOptions = new ReplayRunnerOptions
             {
                 AppName = manifest.Name,
-                OpenApiDocumentPath = openApiDocumentPath,
-                ReplayArtifactDirectory = replayArtifactDirectory,
+                OpenApiPath = openApiPath,
+                ReplayArtifactDir = replayArtifactDirectory,
                 ReplayProfile = replayProfile,
                 ReplayHost = replayHost,
                 ReplayLaunchOptions = replayLaunchOptions,
@@ -78,7 +78,7 @@ internal sealed class ReplayArgumentParser
         };
     }
 
-    public string GetOpenApiDocumentPath(
+    public string GetOpenApiPath(
         string[] args,
         SqloomApplicationManifest manifest,
         string currentDirectory)
@@ -86,32 +86,32 @@ internal sealed class ReplayArgumentParser
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
 
-        var openApiDocumentPath = CommandArgumentSupport.GetArgumentValue(args, "--openapi-file");
-        if (!string.IsNullOrWhiteSpace(openApiDocumentPath))
+        var openApiPath = CommandArgumentSupport.GetArgumentValue(args, "--openapi-file");
+        if (!string.IsNullOrWhiteSpace(openApiPath))
         {
-            return RequireOpenApiDocumentPath(
-                Path.GetFullPath(openApiDocumentPath, currentDirectory),
+            return RequireOpenApiPath(
+                Path.GetFullPath(openApiPath, currentDirectory),
                 "--openapi-file");
         }
 
-        if (string.IsNullOrWhiteSpace(manifest.OpenApiDocumentPath))
+        if (string.IsNullOrWhiteSpace(manifest.OpenApiPath))
         {
             throw new ArgumentException(
-                "The Sqloom application manifest must set OpenApiDocumentPath to the absolute path of the app-owned OpenAPI document.");
+                "The Sqloom application manifest must set OpenApiPath to the absolute path of the app-owned OpenAPI document.");
         }
 
-        if (!Path.IsPathFullyQualified(manifest.OpenApiDocumentPath))
+        if (!Path.IsPathFullyQualified(manifest.OpenApiPath))
         {
             throw new ArgumentException(
-                $"The Sqloom application manifest OpenApiDocumentPath must be absolute: '{manifest.OpenApiDocumentPath}'.");
+                $"The Sqloom application manifest OpenApiPath must be absolute: '{manifest.OpenApiPath}'.");
         }
 
-        return RequireOpenApiDocumentPath(
-            Path.GetFullPath(manifest.OpenApiDocumentPath),
-            "Sqloom application manifest OpenApiDocumentPath");
+        return RequireOpenApiPath(
+            Path.GetFullPath(manifest.OpenApiPath),
+            "Sqloom application manifest OpenApiPath");
     }
 
-    public string GetReplayArtifactDirectory(string[] args, string currentDirectory)
+    public string GetReplayArtifactDir(string[] args, string currentDirectory)
     {
         var artifactDirectory = CommandArgumentSupport.GetArgumentValue(args, "--artifact-dir");
         if (!string.IsNullOrWhiteSpace(artifactDirectory))
@@ -122,45 +122,45 @@ internal sealed class ReplayArgumentParser
         }
 
         var artifactRoot = ArtifactRootResolver.Resolve(currentDirectory);
-        return ArtifactLayout.GetDefaultReplayArtifactDirectory(
+        return ArtifactLayout.GetReplayArtifactDir(
             artifactRoot,
             DateTimeOffset.UtcNow);
     }
 
-    private static string RequireOpenApiDocumentPath(
-        string openApiDocumentPath,
+    private static string RequireOpenApiPath(
+        string openApiPath,
         string source)
     {
-        if (!File.Exists(openApiDocumentPath))
+        if (!File.Exists(openApiPath))
         {
             throw new ArgumentException(
-                $"The OpenAPI document from {source} does not exist: '{openApiDocumentPath}'.");
+                $"The OpenAPI document from {source} does not exist: '{openApiPath}'.");
         }
 
-        return openApiDocumentPath;
+        return openApiPath;
     }
 
     internal ReplayLaunchOptions CreateReplayLaunchOptions(
         string[] args,
         string currentDirectory)
     {
-        var sqlServerDacpacPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-dacpac-file");
-        var sqlServerSeedSqlPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-seed-sql-file");
+        var dacpacPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-dacpac-file");
+        var seedSqlPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-seed-sql-file");
 
-        if (string.IsNullOrWhiteSpace(sqlServerDacpacPath)
-            && string.IsNullOrWhiteSpace(sqlServerSeedSqlPath))
+        if (string.IsNullOrWhiteSpace(dacpacPath)
+            && string.IsNullOrWhiteSpace(seedSqlPath))
         {
             return new ReplayLaunchOptions();
         }
 
-        if (string.IsNullOrWhiteSpace(sqlServerDacpacPath)
-            && !string.IsNullOrWhiteSpace(sqlServerSeedSqlPath))
+        if (string.IsNullOrWhiteSpace(dacpacPath)
+            && !string.IsNullOrWhiteSpace(seedSqlPath))
         {
             throw new ArgumentException(
                 "The post-DACPAC SQL seed script requires --sqlserver-dacpac-file <path>.");
         }
 
-        var fullDacpacPath = Path.GetFullPath(sqlServerDacpacPath!, currentDirectory);
+        var fullDacpacPath = Path.GetFullPath(dacpacPath!, currentDirectory);
         if (!File.Exists(fullDacpacPath))
         {
             throw new ArgumentException(
@@ -168,9 +168,9 @@ internal sealed class ReplayArgumentParser
         }
 
         string? fullSeedSqlPath = null;
-        if (!string.IsNullOrWhiteSpace(sqlServerSeedSqlPath))
+        if (!string.IsNullOrWhiteSpace(seedSqlPath))
         {
-            fullSeedSqlPath = Path.GetFullPath(sqlServerSeedSqlPath, currentDirectory);
+            fullSeedSqlPath = Path.GetFullPath(seedSqlPath, currentDirectory);
             if (!File.Exists(fullSeedSqlPath))
             {
                 throw new ArgumentException(
@@ -180,8 +180,8 @@ internal sealed class ReplayArgumentParser
 
         return new ReplayLaunchOptions
         {
-            SqlServerDacpacPath = fullDacpacPath,
-            SqlServerSeedSqlPath = fullSeedSqlPath,
+            DacpacPath = fullDacpacPath,
+            SeedSqlPath = fullSeedSqlPath,
         };
     }
 }

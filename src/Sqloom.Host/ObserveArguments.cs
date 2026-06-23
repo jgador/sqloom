@@ -7,11 +7,11 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class ObserveArguments
 {
-    public required string ReadOnlyConnectionString { get; init; }
+    public required string ReadOnlyConnection { get; init; }
 
-    public required QueryStoreObservationOptions ObservationOptions { get; init; }
+    public required QueryStoreOptions ObservationOptions { get; init; }
 
-    public required QueryStoreWorkloadProfile BaseWorkloadProfile { get; init; }
+    public required WorkloadProfile BaseWorkloadProfile { get; init; }
 
     public string? JsonOutputPathOverride { get; init; }
 

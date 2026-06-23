@@ -9,11 +9,11 @@ namespace Sqloom.AspNetCore.Endpoints;
 /// <summary>
 /// Writes discovered operation, plan, and replay artifacts to disk.
 /// </summary>
-internal sealed class EndpointReplayArtifactWriter
+internal sealed class ReplayArtifactWriter
 {
-    public string GetDiscoveredOperationsPath(string replayArtifactDirectory)
+    public string GetDiscoveredOpsPath(string replayArtifactDirectory)
     {
-        return ArtifactLayout.GetReplayDiscoveredOperationsPath(replayArtifactDirectory);
+        return ArtifactLayout.GetDiscoveredOpsPath(replayArtifactDirectory);
     }
 
     public string GetPlanPath(string replayArtifactDirectory)
@@ -31,15 +31,15 @@ internal sealed class EndpointReplayArtifactWriter
         int ordinal,
         string operationKey)
     {
-        return ArtifactLayout.GetReplayOperationArtifactPath(
+        return ArtifactLayout.GetOperationArtifactPath(
             replayArtifactDirectory,
             ordinal,
             operationKey);
     }
 
-    public Task WriteDiscoveredOperationsAsync(
+    public Task WriteDiscoveredOpsAsync(
         string path,
-        IReadOnlyList<DiscoveredOpenApiOperation> discoveredOperations,
+        IReadOnlyList<OpenApiOperation> discoveredOperations,
         CancellationToken cancellationToken)
     {
         return JsonFileWriter.WriteAsync(path, discoveredOperations, cancellationToken);

@@ -107,7 +107,7 @@ internal sealed class HostConsoleWriter
             $"- State: {snapshot.DatabaseOptions.ActualState} (desired {snapshot.DatabaseOptions.DesiredState})");
         Console.WriteLine(
             $"- Storage: {snapshot.DatabaseOptions.CurrentStorageSizeMb:F1} MB / {snapshot.DatabaseOptions.MaxStorageSizeMb:F1} MB");
-        Console.WriteLine($"- Profile: {snapshot.WorkloadProfileName ?? QueryStoreWorkloadProfile.Empty.Name}");
+        Console.WriteLine($"- Profile: {snapshot.WorkloadProfileName ?? WorkloadProfile.Empty.Name}");
         Console.WriteLine(appOnly
             ? $"- Plans: {displayedPlans.Count} shown / {snapshot.Plans.Count} captured"
             : $"- Plans: {snapshot.Plans.Count}");
@@ -163,7 +163,7 @@ internal sealed class HostConsoleWriter
             foreach (var wait in displayedWaits)
             {
                 Console.WriteLine(
-                    $"- query_id={wait.QueryId}, plan_id={wait.PlanId}, wait={wait.WaitCategory}, total_ms={wait.TotalWaitMilliseconds:F2}, avg_ms={wait.AverageQueryWaitMilliseconds:F2}");
+                    $"- query_id={wait.QueryId}, plan_id={wait.PlanId}, wait={wait.WaitCategory}, total_ms={wait.TotalWaitMilliseconds:F2}, avg_ms={wait.AvgWaitMs:F2}");
                 if (showClassification)
                 {
                     PrintClassification(wait.Classification);
@@ -183,8 +183,8 @@ internal sealed class HostConsoleWriter
     {
         Console.WriteLine("Replay summary:");
         Console.WriteLine($"- App: {runReport.AppName}");
-        Console.WriteLine($"- OpenAPI document: {replayResult.OpenApiDocumentPath}");
-        Console.WriteLine($"- Artifact directory: {replayResult.ReplayArtifactDirectory}");
+        Console.WriteLine($"- OpenAPI document: {replayResult.OpenApiPath}");
+        Console.WriteLine($"- Artifact directory: {replayResult.ReplayArtifactDir}");
         Console.WriteLine($"- Discovered operations: {runReport.DiscoveredOperationCount}");
         Console.WriteLine($"- Planned operations: {runReport.PlannedOperationCount}");
         Console.WriteLine($"- Replayed operations: {replayResult.Results.Count(result => string.Equals(result.Status, "replayed", StringComparison.OrdinalIgnoreCase))}");
@@ -204,7 +204,7 @@ internal sealed class HostConsoleWriter
             Console.WriteLine($"- Seed script sha256: {sqlServerSeedSql.Sha256}");
         }
 
-        Console.WriteLine($"- Discovery artifact: {replayResult.DiscoveredOperationsArtifactPath}");
+        Console.WriteLine($"- Discovery artifact: {replayResult.DiscoveredOpsPath}");
         Console.WriteLine($"- Replay plan artifact: {replayResult.ReplayPlanArtifactPath}");
         Console.WriteLine($"- Summary artifact: {replayResult.SummaryArtifactPath}");
         PrintPipeline(runReport.Pipeline);
@@ -253,19 +253,19 @@ internal sealed class HostConsoleWriter
     }
 
     public void PrintCorrelationSummary(
-        QueryStoreCorrelationReport report,
+        QueryCorrelationReport report,
         string jsonOutputPath)
     {
         Console.WriteLine("Query Store correlation:");
         Console.WriteLine($"- App: {report.AppName ?? "unknown"}");
-        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDirectory}");
+        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
         Console.WriteLine($"- Query Store snapshot: {report.QueryStoreSnapshotPath ?? "n/a"}");
         Console.WriteLine($"- Query Store captured at: {report.QueryStoreCapturedAtUtc:O}");
         Console.WriteLine($"- Output path: {jsonOutputPath}");
         Console.WriteLine($"- Operations: {report.Summary.OperationCount}");
         Console.WriteLine($"- Captured SQL commands: {report.Summary.CapturedCommandCount}");
         Console.WriteLine($"- Matched commands: {report.Summary.MatchedCommandCount}");
-        Console.WriteLine($"- StatementHandleExact: {report.Summary.StatementHandleExactCount}");
+        Console.WriteLine($"- StatementHandleExact: {report.Summary.HandleExactCount}");
         Console.WriteLine($"- QueryTextExact: {report.Summary.QueryTextExactCount}");
         Console.WriteLine($"- FingerprintFallback: {report.Summary.FingerprintFallbackCount}");
         Console.WriteLine($"- Unmatched: {report.Summary.UnmatchedCount}");
@@ -281,7 +281,7 @@ internal sealed class HostConsoleWriter
         foreach (var operation in report.Summary.Operations)
         {
             Console.WriteLine(
-                $"- {operation.OperationKey}: status={operation.ReplayStatus}, sql={operation.CapturedCommandCount}, matched={operation.MatchedCommandCount}, handle={operation.StatementHandleExactCount}, text={operation.QueryTextExactCount}, fingerprint={operation.FingerprintFallbackCount}, unmatched={operation.UnmatchedCount}");
+                $"- {operation.OperationKey}: status={operation.ReplayStatus}, sql={operation.CapturedCommandCount}, matched={operation.MatchedCommandCount}, handle={operation.HandleExactCount}, text={operation.QueryTextExactCount}, fingerprint={operation.FingerprintFallbackCount}, unmatched={operation.UnmatchedCount}");
             if (operation.MatchedQueryIds.Count > 0)
             {
                 Console.WriteLine($"  query_ids={string.Join(", ", operation.MatchedQueryIds)}");
@@ -295,7 +295,7 @@ internal sealed class HostConsoleWriter
     {
         Console.WriteLine("Tuning advice:");
         Console.WriteLine($"- App: {report.AppName}");
-        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDirectory}");
+        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
         Console.WriteLine($"- Correlation artifact: {report.QueryStoreCorrelationPath}");
         Console.WriteLine($"- Output path: {jsonOutputPath}");
         Console.WriteLine($"- SQL proposal JSON: {report.SqlProposalJsonPath}");
@@ -346,9 +346,9 @@ internal sealed class HostConsoleWriter
     {
         Console.WriteLine("Tune summary:");
         Console.WriteLine($"- App: {report.AppName}");
-        Console.WriteLine($"- Workflow artifact directory: {report.WorkflowArtifactDirectory}");
+        Console.WriteLine($"- Workflow artifact directory: {report.WorkflowArtifactDir}");
         Console.WriteLine($"- Query Store snapshot: {report.QueryStoreSnapshotPath}");
-        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDirectory}");
+        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
         Console.WriteLine($"- Correlation artifact: {report.QueryStoreCorrelationPath}");
         Console.WriteLine($"- Advice artifact: {report.TuningAdvicePath}");
         Console.WriteLine($"- SQL proposal JSON: {report.SqlProposalJsonPath}");

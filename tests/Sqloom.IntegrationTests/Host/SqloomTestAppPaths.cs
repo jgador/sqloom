@@ -24,7 +24,7 @@ internal static class SqloomTestAppPaths
             "Sqloom.TestApp.Harness.csproj");
     }
 
-    public static string GetSqlServerDacpacPath()
+    public static string GetDacpacPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
@@ -51,7 +51,7 @@ internal static class SqloomTestAppPaths
             "AdventureWorksLT2025.seed.sql");
     }
 
-    public static string GetSqlServerSchemaPath()
+    public static string GetSchemaPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
@@ -60,7 +60,7 @@ internal static class SqloomTestAppPaths
             "AdventureWorksLT2025.schema.sql");
     }
 
-    public static string GetOpenApiDocumentPath()
+    public static string GetOpenApiPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),

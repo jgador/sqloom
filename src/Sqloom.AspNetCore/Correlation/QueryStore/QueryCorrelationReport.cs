@@ -10,7 +10,7 @@ namespace Sqloom.Correlation.QueryStore;
 /// <summary>
 /// Captures the output of a replay-to-Query Store correlation run.
 /// </summary>
-public sealed class QueryStoreCorrelationReport
+public sealed class QueryCorrelationReport
 {
     [JsonPropertyName("generatedAtUtc")]
     public required DateTimeOffset GeneratedAtUtc { get; init; }
@@ -18,8 +18,8 @@ public sealed class QueryStoreCorrelationReport
     [JsonPropertyName("appName")]
     public string? AppName { get; init; }
 
-    [JsonPropertyName("replayArtifactDirectory")]
-    public required string ReplayArtifactDirectory { get; init; }
+    [JsonPropertyName("replayArtifactDir")]
+    public required string ReplayArtifactDir { get; init; }
 
     [JsonPropertyName("queryStoreSnapshotPath")]
     public string? QueryStoreSnapshotPath { get; init; }
@@ -28,11 +28,11 @@ public sealed class QueryStoreCorrelationReport
     public required DateTimeOffset QueryStoreCapturedAtUtc { get; init; }
 
     [JsonPropertyName("records")]
-    public IReadOnlyList<QueryStoreCorrelationRecord> Records { get; init; } =
-        Array.Empty<QueryStoreCorrelationRecord>();
+    public IReadOnlyList<QueryCorrelationRecord> Records { get; init; } =
+        Array.Empty<QueryCorrelationRecord>();
 
     [JsonPropertyName("summary")]
-    public required QueryStoreCorrelationSummary Summary { get; init; }
+    public required QueryCorrelationSummary Summary { get; init; }
 
     [JsonPropertyName("pipeline")]
     public required PipelineReport Pipeline { get; init; }
@@ -45,7 +45,7 @@ public sealed class QueryStoreCorrelationReport
 /// <summary>
 /// Captures one captured-SQL-to-Query Store correlation record.
 /// </summary>
-public sealed class QueryStoreCorrelationRecord
+public sealed class QueryCorrelationRecord
 {
     [JsonPropertyName("operationKey")]
     public required string OperationKey { get; init; }
@@ -74,12 +74,12 @@ public sealed class QueryStoreCorrelationRecord
     [JsonPropertyName("statementSqlHandle")]
     public string? StatementSqlHandle { get; init; }
 
-    [JsonPropertyName("statementSqlHandleCandidates")]
-    public IReadOnlyList<SqlStatementHandleCandidate> StatementSqlHandleCandidates { get; init; } =
-        Array.Empty<SqlStatementHandleCandidate>();
+    [JsonPropertyName("sqlHandleCandidates")]
+    public IReadOnlyList<SqlHandleCandidate> SqlHandleCandidates { get; init; } =
+        Array.Empty<SqlHandleCandidate>();
 
     [JsonPropertyName("matchKind")]
-    public QueryStoreCorrelationMatchKind MatchKind { get; init; }
+    public CorrelationMatchKind MatchKind { get; init; }
 
     [JsonPropertyName("confidence")]
     public double Confidence { get; init; }
@@ -96,7 +96,7 @@ public sealed class QueryStoreCorrelationRecord
 /// <summary>
 /// Summarizes the matches produced by a correlation run.
 /// </summary>
-public sealed class QueryStoreCorrelationSummary
+public sealed class QueryCorrelationSummary
 {
     [JsonPropertyName("operationCount")]
     public int OperationCount { get; init; }
@@ -107,8 +107,8 @@ public sealed class QueryStoreCorrelationSummary
     [JsonPropertyName("matchedCommandCount")]
     public int MatchedCommandCount { get; init; }
 
-    [JsonPropertyName("statementHandleExactCount")]
-    public int StatementHandleExactCount { get; init; }
+    [JsonPropertyName("handleExactCount")]
+    public int HandleExactCount { get; init; }
 
     [JsonPropertyName("queryTextExactCount")]
     public int QueryTextExactCount { get; init; }
@@ -120,14 +120,14 @@ public sealed class QueryStoreCorrelationSummary
     public int UnmatchedCount { get; init; }
 
     [JsonPropertyName("operations")]
-    public IReadOnlyList<QueryStoreCorrelationOperationSummary> Operations { get; init; } =
-        Array.Empty<QueryStoreCorrelationOperationSummary>();
+    public IReadOnlyList<OperationCorrelationSummary> Operations { get; init; } =
+        Array.Empty<OperationCorrelationSummary>();
 }
 
 /// <summary>
 /// Summarizes Query Store matches for one replayed operation.
 /// </summary>
-public sealed class QueryStoreCorrelationOperationSummary
+public sealed class OperationCorrelationSummary
 {
     [JsonPropertyName("operationKey")]
     public required string OperationKey { get; init; }
@@ -153,8 +153,8 @@ public sealed class QueryStoreCorrelationOperationSummary
     [JsonPropertyName("matchedCommandCount")]
     public int MatchedCommandCount { get; init; }
 
-    [JsonPropertyName("statementHandleExactCount")]
-    public int StatementHandleExactCount { get; init; }
+    [JsonPropertyName("handleExactCount")]
+    public int HandleExactCount { get; init; }
 
     [JsonPropertyName("queryTextExactCount")]
     public int QueryTextExactCount { get; init; }

@@ -6,7 +6,7 @@ namespace Sqloom.Testing;
 /// <summary>
 /// Resolves OpenAPI documents owned by the application under test.
 /// </summary>
-public static class SqloomOpenApiDocument
+public static class OpenApiDoc
 {
     public const string DefaultFileName = "openapi.json";
 

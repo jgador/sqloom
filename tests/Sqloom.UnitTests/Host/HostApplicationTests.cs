@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -11,8 +10,6 @@ namespace Sqloom.Host.Tests;
 /// </summary>
 public sealed class HostApplicationTests
 {
-    private static readonly SemaphoreSlim ConsoleGate = new(1, 1);
-
     [Fact]
     public async Task RunAsync_WithAdviseVerb_InvokesMatchingHandler()
     {
@@ -124,7 +121,7 @@ public sealed class HostApplicationTests
         var originalOut = Console.Out;
         using StringWriter stdOut = new();
 
-        await ConsoleGate.WaitAsync();
+        await ConsoleCaptureGate.Semaphore.WaitAsync();
         try
         {
             Console.SetOut(stdOut);
@@ -142,7 +139,7 @@ public sealed class HostApplicationTests
         finally
         {
             Console.SetOut(originalOut);
-            ConsoleGate.Release();
+            ConsoleCaptureGate.Semaphore.Release();
         }
     }
 

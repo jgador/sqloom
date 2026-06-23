@@ -5,11 +5,11 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class AdviseArguments
 {
-    public required string ReplayArtifactDirectory { get; init; }
+    public required string ReplayArtifactDir { get; init; }
 
     public required string QueryStoreCorrelationPath { get; init; }
 
-    public required string SqlServerSchemaPath { get; init; }
+    public required string SchemaPath { get; init; }
 
     public required string JsonOutputPath { get; init; }
 

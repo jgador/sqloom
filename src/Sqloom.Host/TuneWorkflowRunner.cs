@@ -79,7 +79,7 @@ internal sealed class TuneWorkflowRunner
             replayResult,
             correlateResult,
             adviceResult);
-        var summaryOutputPath = ArtifactLayout.GetTuneSummaryPath(arguments.WorkflowArtifactDirectory);
+        var summaryOutputPath = ArtifactLayout.GetTuneSummaryPath(arguments.WorkflowArtifactDir);
         await JsonFileWriter.WriteAsync(
                 summaryOutputPath,
                 report,
@@ -128,9 +128,9 @@ internal sealed class TuneWorkflowRunner
         {
             GeneratedAtUtc = adviceResult.Report.GeneratedAtUtc,
             AppName = adviceResult.Report.AppName,
-            WorkflowArtifactDirectory = arguments.WorkflowArtifactDirectory,
+            WorkflowArtifactDir = arguments.WorkflowArtifactDir,
             QueryStoreSnapshotPath = observeResult.JsonOutputPath,
-            ReplayArtifactDirectory = replayResult.ReplayResult.ReplayArtifactDirectory,
+            ReplayArtifactDir = replayResult.ReplayResult.ReplayArtifactDir,
             QueryStoreCorrelationPath = correlateResult.JsonOutputPath,
             TuningAdvicePath = adviceResult.JsonOutputPath,
             SqlProposalJsonPath = adviceResult.Report.SqlProposalJsonPath,

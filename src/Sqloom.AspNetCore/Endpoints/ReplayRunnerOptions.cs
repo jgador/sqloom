@@ -8,13 +8,13 @@ namespace Sqloom.AspNetCore.Endpoints;
 /// <summary>
 /// Carries the inputs required to execute an endpoint replay run.
 /// </summary>
-public sealed class EndpointReplayRunnerOptions
+public sealed class ReplayRunnerOptions
 {
     public required string AppName { get; init; }
 
-    public required string OpenApiDocumentPath { get; init; }
+    public required string OpenApiPath { get; init; }
 
-    public required string ReplayArtifactDirectory { get; init; }
+    public required string ReplayArtifactDir { get; init; }
 
     public required ReplayProfile ReplayProfile { get; init; }
 
@@ -37,14 +37,14 @@ public sealed class EndpointReplayRunResult
     [JsonPropertyName("appName")]
     public required string AppName { get; init; }
 
-    [JsonPropertyName("replayArtifactDirectory")]
-    public required string ReplayArtifactDirectory { get; init; }
+    [JsonPropertyName("replayArtifactDir")]
+    public required string ReplayArtifactDir { get; init; }
 
-    [JsonPropertyName("openApiDocumentPath")]
-    public required string OpenApiDocumentPath { get; init; }
+    [JsonPropertyName("openApiPath")]
+    public required string OpenApiPath { get; init; }
 
-    [JsonPropertyName("discoveredOperationsArtifactPath")]
-    public required string DiscoveredOperationsArtifactPath { get; init; }
+    [JsonPropertyName("discoveredOpsPath")]
+    public required string DiscoveredOpsPath { get; init; }
 
     [JsonPropertyName("replayPlanArtifactPath")]
     public required string ReplayPlanArtifactPath { get; init; }
@@ -53,7 +53,7 @@ public sealed class EndpointReplayRunResult
     public required string SummaryArtifactPath { get; init; }
 
     [JsonPropertyName("discoveredOperations")]
-    public required IReadOnlyList<DiscoveredOpenApiOperation> DiscoveredOperations { get; init; }
+    public required IReadOnlyList<OpenApiOperation> DiscoveredOperations { get; init; }
 
     [JsonPropertyName("replayPlan")]
     public required EndpointReplayPlan ReplayPlan { get; init; }

@@ -8,7 +8,7 @@ namespace Sqloom.QueryStore.QueryStore;
 /// <summary>
 /// Classifies Query Store rows against an app-owned workload profile.
 /// </summary>
-public sealed class QueryStoreWorkloadClassifier
+public sealed class WorkloadClassifier
 {
     private static readonly string[] _defaultToolingPatterns =
     [
@@ -31,11 +31,11 @@ public sealed class QueryStoreWorkloadClassifier
 
     public QueryStoreSnapshot ApplyClassification(
         QueryStoreSnapshot snapshot,
-        QueryStoreWorkloadProfile? profile = null)
+        WorkloadProfile? profile = null)
     {
         ArgumentNullException.ThrowIfNull(snapshot);
 
-        var effectiveProfile = profile ?? QueryStoreWorkloadProfile.Empty;
+        var effectiveProfile = profile ?? WorkloadProfile.Empty;
         Dictionary<(long QueryId, long PlanId), QueryWorkloadClassification> planClassifications = new();
         var classifiedPlans = new List<QueryStorePlanRecord>(snapshot.Plans.Count);
 
@@ -54,7 +54,7 @@ public sealed class QueryStoreWorkloadClassifier
                 QueryText = plan.QueryText,
                 ObjectName = plan.ObjectName,
                 QueryParameterizationType = plan.QueryParameterizationType,
-                QueryParameterizationTypeDescription = plan.QueryParameterizationTypeDescription,
+                ParamTypeDescription = plan.ParamTypeDescription,
                 ExecutionCount = plan.ExecutionCount,
                 MeanDuration = plan.MeanDuration,
                 MaxDuration = plan.MaxDuration,
@@ -81,7 +81,7 @@ public sealed class QueryStoreWorkloadClassifier
                 QueryId = wait.QueryId,
                 PlanId = wait.PlanId,
                 WaitCategory = wait.WaitCategory,
-                AverageQueryWaitMilliseconds = wait.AverageQueryWaitMilliseconds,
+                AvgWaitMs = wait.AvgWaitMs,
                 TotalWaitMilliseconds = wait.TotalWaitMilliseconds,
                 Classification = classification,
             });
@@ -101,11 +101,11 @@ public sealed class QueryStoreWorkloadClassifier
 
     public QueryWorkloadClassification ClassifyPlan(
         QueryStorePlanRecord plan,
-        QueryStoreWorkloadProfile? profile = null)
+        WorkloadProfile? profile = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
 
-        var effectiveProfile = profile ?? QueryStoreWorkloadProfile.Empty;
+        var effectiveProfile = profile ?? WorkloadProfile.Empty;
         var textView = new QueryTextView(plan.QueryText);
         var objectNameView = new QueryTextView(plan.ObjectName);
         var reasons = new List<string>();
@@ -124,7 +124,7 @@ public sealed class QueryStoreWorkloadClassifier
         }
 
         reasons.Clear();
-        CollectDiscoveredObjectReasons(reasons, effectiveProfile.DiscoveredObjectCatalog, textView, objectNameView);
+        CollectDbObjectReasons(reasons, effectiveProfile.DiscoveredObjectCatalog, textView, objectNameView);
         if (reasons.Count > 0)
         {
             return CreateClassification(QueryWorkloadKind.App, 0.94d, includeInAppOnly: true, reasons);
@@ -137,9 +137,9 @@ public sealed class QueryStoreWorkloadClassifier
             BuildUnknownReason(effectiveProfile.DiscoveredObjectCatalog));
     }
 
-    private static void CollectDiscoveredObjectReasons(
+    private static void CollectDbObjectReasons(
         ICollection<string> reasons,
-        DiscoveredDatabaseObjectCatalog? catalog,
+        DbObjectCatalog? catalog,
         QueryTextView queryText,
         QueryTextView objectName)
     {
@@ -175,10 +175,10 @@ public sealed class QueryStoreWorkloadClassifier
         var normalizedObjectName = NormalizeIdentifier(discoveredObject.ObjectName);
         return discoveredObject.Kind switch
         {
-            DiscoveredDatabaseObjectKind.Table or DiscoveredDatabaseObjectKind.View =>
+            DbObjectKind.Table or DbObjectKind.View =>
                 queryText.ContainsTableLikeReference(normalizedObjectName)
                 || objectName.ContainsToken(normalizedObjectName),
-            DiscoveredDatabaseObjectKind.Module =>
+            DbObjectKind.Module =>
                 queryText.ContainsExecutionReference(normalizedObjectName)
                 || objectName.ContainsToken(normalizedObjectName),
             _ => false,
@@ -227,7 +227,7 @@ public sealed class QueryStoreWorkloadClassifier
         };
     }
 
-    private static string BuildUnknownReason(DiscoveredDatabaseObjectCatalog? catalog)
+    private static string BuildUnknownReason(DbObjectCatalog? catalog)
     {
         if (catalog is null)
         {

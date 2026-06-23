@@ -5,7 +5,7 @@ namespace Sqloom.QueryStore.QueryStore;
 /// <summary>
 /// Controls how much Query Store history is pulled into a snapshot.
 /// </summary>
-public sealed class QueryStoreObservationOptions
+public sealed class QueryStoreOptions
 {
     public TimeSpan LookbackWindow { get; init; } = TimeSpan.FromDays(7);
 

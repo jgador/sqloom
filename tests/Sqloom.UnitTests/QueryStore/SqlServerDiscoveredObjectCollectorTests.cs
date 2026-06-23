@@ -14,7 +14,7 @@ public sealed class SqlServerDiscoveredObjectCollectorTests
     [Fact]
     public void ValidateOptions_RejectsNonPositiveCommandTimeout()
     {
-        DiscoveredDatabaseObjectObservationOptions options = new()
+        DbObjectScanOptions options = new()
         {
             CommandTimeoutSeconds = 0,
         };
@@ -23,14 +23,14 @@ public sealed class SqlServerDiscoveredObjectCollectorTests
     }
 
     [Theory]
-    [InlineData("dbo", "ExpenseRecord", "Table", DiscoveredDatabaseObjectKind.Table)]
-    [InlineData("reporting", "ExpenseSummary", "View", DiscoveredDatabaseObjectKind.View)]
-    [InlineData("dbo", "RebuildExpenseCache", "Module", DiscoveredDatabaseObjectKind.Module)]
+    [InlineData("dbo", "ExpenseRecord", "Table", DbObjectKind.Table)]
+    [InlineData("reporting", "ExpenseSummary", "View", DbObjectKind.View)]
+    [InlineData("dbo", "RebuildExpenseCache", "Module", DbObjectKind.Module)]
     public void ReadDiscoveredObjectRecord_MapsExpectedColumns(
         string schemaName,
         string objectName,
         string objectKind,
-        DiscoveredDatabaseObjectKind expectedKind)
+        DbObjectKind expectedKind)
     {
         using var table = CreateDiscoveredObjectTable();
         table.Rows.Add(schemaName, objectName, objectKind);
@@ -72,14 +72,14 @@ public sealed class SqlServerDiscoveredObjectCollectorTests
                     SchemaName = "dbo",
                     ObjectName = "ExpenseSummary",
                     FullyQualifiedName = "[dbo].[ExpenseSummary]",
-                    Kind = DiscoveredDatabaseObjectKind.View,
+                    Kind = DbObjectKind.View,
                 },
                 new DiscoveredDatabaseObject
                 {
                     SchemaName = "dbo",
                     ObjectName = "ExpenseRecord",
                     FullyQualifiedName = "[dbo].[ExpenseRecord]",
-                    Kind = DiscoveredDatabaseObjectKind.Table,
+                    Kind = DbObjectKind.Table,
                 },
             ],
             isComplete: false,
@@ -93,9 +93,9 @@ public sealed class SqlServerDiscoveredObjectCollectorTests
         Assert.False(catalog.IsComplete);
         Assert.Single(catalog.Warnings);
         Assert.Equal("ExpenseRecord", catalog.Objects[0].ObjectName);
-        Assert.Equal(DiscoveredDatabaseObjectKind.Table, catalog.Objects[0].Kind);
+        Assert.Equal(DbObjectKind.Table, catalog.Objects[0].Kind);
         Assert.Equal("ExpenseSummary", catalog.Objects[1].ObjectName);
-        Assert.Equal(DiscoveredDatabaseObjectKind.View, catalog.Objects[1].Kind);
+        Assert.Equal(DbObjectKind.View, catalog.Objects[1].Kind);
     }
 
     private static DataTable CreateDiscoveredObjectTable()

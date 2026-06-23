@@ -11,7 +11,7 @@ namespace Sqloom.AspNetCore.OpenApi;
 /// <summary>
 /// Loads the replayable operation catalog from an OpenAPI document.
 /// </summary>
-public sealed class OpenApiOperationCatalogLoader
+public sealed class OpenApiCatalogLoader
 {
     private static readonly string[] _supportedHttpMethods =
     [
@@ -24,13 +24,13 @@ public sealed class OpenApiOperationCatalogLoader
         "options"
     ];
 
-    public async Task<IReadOnlyList<DiscoveredOpenApiOperation>> LoadAsync(
-        string openApiDocumentPath,
+    public async Task<IReadOnlyList<OpenApiOperation>> LoadAsync(
+        string openApiPath,
         CancellationToken cancellationToken = default)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(openApiDocumentPath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(openApiPath);
 
-        var json = await File.ReadAllTextAsync(openApiDocumentPath, cancellationToken).ConfigureAwait(false);
+        var json = await File.ReadAllTextAsync(openApiPath, cancellationToken).ConfigureAwait(false);
         using var document = JsonDocument.Parse(json);
 
         var root = document.RootElement;
@@ -38,10 +38,10 @@ public sealed class OpenApiOperationCatalogLoader
         if (!root.TryGetProperty("paths", out var pathsElement)
             || pathsElement.ValueKind != JsonValueKind.Object)
         {
-            return Array.Empty<DiscoveredOpenApiOperation>();
+            return Array.Empty<OpenApiOperation>();
         }
 
-        var operations = new List<DiscoveredOpenApiOperation>();
+        var operations = new List<OpenApiOperation>();
         foreach (var pathProperty in pathsElement.EnumerateObject())
         {
             var route = pathProperty.Name;
@@ -61,7 +61,7 @@ public sealed class OpenApiOperationCatalogLoader
                 var parameters = ReadParameters(pathItem, operationElement);
                 var hasJsonRequestBody = TryGetJsonRequestBody(operationElement, out var requestBodyRequired, out var bodyExample);
 
-                operations.Add(new DiscoveredOpenApiOperation
+                operations.Add(new OpenApiOperation
                 {
                     StableOperationKey = BuildStableOperationKey(httpMethod, route),
                     OperationId = ReadOptionalString(operationElement, "operationId"),
@@ -72,7 +72,7 @@ public sealed class OpenApiOperationCatalogLoader
                     Parameters = parameters,
                     HasJsonRequestBody = hasJsonRequestBody,
                     RequestBodyRequired = requestBodyRequired,
-                    JsonRequestBodyExample = bodyExample
+                    JsonBodyExample = bodyExample
                 });
             }
         }
@@ -106,18 +106,18 @@ public sealed class OpenApiOperationCatalogLoader
             .ToArray();
     }
 
-    private static IReadOnlyList<OpenApiParameterDefinition> ReadParameters(
+    private static IReadOnlyList<OpenApiParameter> ReadParameters(
         JsonElement pathItem,
         JsonElement operationElement)
     {
-        var parameters = new Dictionary<string, OpenApiParameterDefinition>(StringComparer.OrdinalIgnoreCase);
+        var parameters = new Dictionary<string, OpenApiParameter>(StringComparer.OrdinalIgnoreCase);
         AddParameters(parameters, pathItem);
         AddParameters(parameters, operationElement);
         return parameters.Values.ToArray();
     }
 
     private static void AddParameters(
-        IDictionary<string, OpenApiParameterDefinition> parameters,
+        IDictionary<string, OpenApiParameter> parameters,
         JsonElement container)
     {
         if (!container.TryGetProperty("parameters", out var parametersElement)
@@ -144,7 +144,7 @@ public sealed class OpenApiOperationCatalogLoader
                 ? foundSchema
                 : default;
             var key = $"{location}:{name}";
-            parameters[key] = new OpenApiParameterDefinition
+            parameters[key] = new OpenApiParameter
             {
                 Name = name,
                 Location = location,
