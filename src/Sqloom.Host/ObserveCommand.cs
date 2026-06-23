@@ -4,9 +4,9 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
-using Sqloom.SqlServer.QueryStore;
+using Sqloom.Host.QueryStore;
 using Sqloom.Core.Artifacts;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
 
 namespace Sqloom.Host;
 

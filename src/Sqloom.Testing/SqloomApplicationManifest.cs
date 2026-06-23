@@ -1,5 +1,5 @@
 using Sqloom.Core.Execution;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
 
 namespace Sqloom.Testing;
 

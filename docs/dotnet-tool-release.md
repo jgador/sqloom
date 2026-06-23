@@ -10,16 +10,15 @@ The public release uploads these NuGet packages:
 
 - `sqloom`
 - `Sqloom.Core`
-- `Sqloom.QueryStore`
 - `Sqloom.Testing`
 
-The release version comes from `Directory.Build.props`. The tool package metadata lives in `src/Sqloom.Host/Sqloom.Host.csproj`, and the package readme comes from `src/Sqloom.Host/PackageReadme.md`. The harness contract package metadata lives in `src/Sqloom.Testing/Sqloom.Testing.csproj`. `Sqloom.Core` and `Sqloom.QueryStore` are published because `Sqloom.Testing` has public API dependencies on their shared runner and Query Store profile types.
+The release version comes from `Directory.Build.props`. The tool package metadata lives in `src/Sqloom.Host/Sqloom.Host.csproj`, and the package readme comes from `src/Sqloom.Host/PackageReadme.md`. The harness contract package metadata lives in `src/Sqloom.Testing/Sqloom.Testing.csproj`. `Sqloom.Core` is published because `Sqloom.Testing` has public API dependencies on shared runner and Query Store profile types.
 
 ## 1. Update release metadata
 
 1. Set the new `<Version>` in `Directory.Build.props` using a bare NuGet version such as `0.1.0`. Use the leading `v` only for Git tags or release titles such as `v0.1.0`.
 2. Confirm `src/Sqloom.Host/Sqloom.Host.csproj` still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
-3. Confirm `src/Sqloom.Core/Sqloom.Core.csproj`, `src/Sqloom.QueryStore/Sqloom.QueryStore.csproj`, and `src/Sqloom.Testing/Sqloom.Testing.csproj` still have correct public package metadata for the harness contract dependency graph.
+3. Confirm `src/Sqloom.Core/Sqloom.Core.csproj` and `src/Sqloom.Testing/Sqloom.Testing.csproj` still have correct public package metadata for the harness contract dependency graph.
 4. Confirm `src/Sqloom.Host/PackageReadme.md` still matches the current CLI behavior and install story.
 5. If the public CLI surface, harness contract surface, or documented workflow changed, update `README.md` in the same change.
 
@@ -53,7 +52,7 @@ That script is the main release gate for packaging. It:
 1. Restores `.\Sqloom.slnx`.
 2. Builds `.\Sqloom.slnx` in `Release`.
 3. Recreates the local package feed at `.\artifacts\packages\sqloom`.
-4. Packs the tool project, `Sqloom.Testing`, and supporting projects into that folder feed for local verification.
+4. Packs the tool project, `Sqloom.Core`, and `Sqloom.Testing` into that folder feed for local verification.
 5. Verifies that every expected `.nupkg` exists for the local pack step.
 6. Installs `sqloom` from that local feed into `.\artifacts\tools\sqloom-verify`.
 7. Runs `sqloom.exe --help`.
@@ -72,10 +71,7 @@ After the script succeeds, confirm the public packages exist under `.\artifacts\
 
 - `sqloom.<version>.nupkg`
 - `Sqloom.Core.<version>.nupkg`
-- `Sqloom.QueryStore.<version>.nupkg`
 - `Sqloom.Testing.<version>.nupkg`
-
-The current pack script may also produce additional `Sqloom.*.nupkg` files as supporting local build artifacts, but the intended public harness contract surface for external projects is still `Sqloom.Testing`.
 
 The verification install should also exist under `.\artifacts\tools\sqloom-verify`.
 
@@ -93,9 +89,8 @@ The packaging script already prints the `dotnet nuget push` commands for the pub
 Upload:
 
 1. `Sqloom.Core.<version>.nupkg`
-2. `Sqloom.QueryStore.<version>.nupkg`
-3. `Sqloom.Testing.<version>.nupkg`
-4. `sqloom.<version>.nupkg`
+2. `Sqloom.Testing.<version>.nupkg`
+3. `sqloom.<version>.nupkg`
 
 ## 6. Verify install from the public feed
 

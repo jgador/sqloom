@@ -2,11 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.Endpoints;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.SqlServer.Capture;
 using Sqloom.Core.Execution;
-using Sqloom.QueryStore.QueryStore;
 using Sqloom.Testing;
 
 namespace Sqloom.Host;
@@ -132,10 +128,6 @@ internal sealed class HostApplication
         List<string> projectNames =
         [
             typeof(RunOptions).Assembly.GetName().Name ?? "Sqloom.Core",
-            typeof(QueryStoreSnapshot).Assembly.GetName().Name ?? "Sqloom.QueryStore",
-            typeof(SqlServerObservationOptions).Assembly.GetName().Name ?? "Sqloom.SqlServer",
-            typeof(ReplayRunnerOptions).Assembly.GetName().Name ?? "Sqloom.AspNetCore",
-            typeof(QueryCorrelationReport).Assembly.GetName().Name ?? "Sqloom.Correlation",
             typeof(ISqloomApplication).Assembly.GetName().Name ?? "Sqloom.Testing",
             typeof(HostApplication).Assembly.GetName().Name ?? "Sqloom.Host",
         ];

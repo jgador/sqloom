@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
-using Sqloom.AspNetCore.Endpoints;
-using Sqloom.AspNetCore.OpenApi;
+using Sqloom.Host.Replay;
 using Sqloom.Core.Execution;
 using Xunit;
 
-namespace Sqloom.AspNetCore.Tests.Endpoints;
+namespace Sqloom.Host.Tests.Replay;
 
 /// <summary>
 /// Exercises endpoint replay request resolver.

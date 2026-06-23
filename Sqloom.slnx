@@ -4,12 +4,8 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="src/Sqloom.AspNetCore/Sqloom.AspNetCore.csproj" />
-  <Project Path="src/Sqloom.Correlation/Sqloom.Correlation.csproj" />
-  <Project Path="src/Sqloom.SqlServer/Sqloom.SqlServer.csproj" />
   <Project Path="src/Sqloom.Core/Sqloom.Core.csproj" />
   <Project Path="src/Sqloom.Host/Sqloom.Host.csproj" />
-  <Project Path="src/Sqloom.QueryStore/Sqloom.QueryStore.csproj" />
   <Project Path="src/Sqloom.Testing/Sqloom.Testing.csproj" />
   <Project Path="tests/Sqloom.IntegrationTests/Sqloom.IntegrationTests.csproj" />
   <Project Path="tests/Sqloom.TestApp.Harness/Sqloom.TestApp.Harness.csproj" />

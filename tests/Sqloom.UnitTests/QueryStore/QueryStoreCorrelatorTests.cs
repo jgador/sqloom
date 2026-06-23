@@ -4,11 +4,11 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
+using Sqloom.Host.QueryStore;
 using Xunit;
 
-namespace Sqloom.Correlation.Tests.QueryStore;
+namespace Sqloom.Host.Tests.QueryStore;
 
 /// <summary>
 /// Exercises Query Store correlator.

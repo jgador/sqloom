@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Correlation.QueryStore;
+using Sqloom.Core.QueryStore;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
 using Sqloom.OpenAI.Advice;

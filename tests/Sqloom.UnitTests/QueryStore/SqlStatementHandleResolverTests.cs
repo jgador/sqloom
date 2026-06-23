@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Sqloom.SqlServer.QueryStore;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Host.QueryStore;
+using Sqloom.Core.QueryStore;
 using Xunit;
 
-namespace Sqloom.SqlServer.Tests.QueryStore;
+namespace Sqloom.Host.Tests.QueryStore;
 
 /// <summary>
 /// Exercises SQL statement handle resolver.

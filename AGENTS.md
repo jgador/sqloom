@@ -83,7 +83,7 @@ Before any commit or push:
 
 Follow the existing style in touched files. Keep 4-space indentation, file-scoped namespaces when already used, explicit `using` directives, and nullable-aware code. Avoid broad refactors unless the task requires them.
 
-- Preserve the current `Sqloom.*` project names and follow the repo-specific ownership and boundary docs instead of inventing a new project split.
+- Preserve the current surviving `Sqloom.*` project names and follow the repo-specific ownership and boundary docs instead of inventing a new project split.
 - Keep comments sparse. Prefer clear names first and add only short comments for non-obvious behavior.
 - For public-facing ASP.NET Core contracts, prefer `Request` and `Response` suffixes over `Dto`.
 - Use structured logging, typed options, and pass `CancellationToken` last and downstream.

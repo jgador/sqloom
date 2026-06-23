@@ -1,9 +1,10 @@
 using System.IO;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.OpenApi;
+using Sqloom.Core.Execution;
+using Sqloom.Host.Replay;
 using Xunit;
 
-namespace Sqloom.AspNetCore.Tests.OpenApi;
+namespace Sqloom.Host.Tests.Replay;
 
 /// <summary>
 /// Exercises OpenAPI operation catalog loader.

@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
+using Sqloom.Core.QueryStore;
 
 namespace Sqloom.Host;
 

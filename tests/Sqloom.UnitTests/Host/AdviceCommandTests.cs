@@ -4,8 +4,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
 using Xunit;
 
 namespace Sqloom.Host.Tests;

@@ -58,10 +58,6 @@ Add `--debug` to any `sqloom` or `sqloom-local` command when you want step-by-st
 |-- README.md
 |-- src/
 |   |-- Sqloom.Core/
-|   |-- Sqloom.QueryStore/
-|   |-- Sqloom.SqlServer/
-|   |-- Sqloom.AspNetCore/
-|   |-- Sqloom.Correlation/
 |   |-- Sqloom.Testing/
 |   `-- Sqloom.Host/
 `-- tests/

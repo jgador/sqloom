@@ -6,21 +6,17 @@ This is the canonical project-graph and boundary-rules document for the standalo
 
 ```text
 Sqloom.Core
-Sqloom.QueryStore -> Sqloom.Core
-Sqloom.SqlServer -> Sqloom.Core, Sqloom.QueryStore
-Sqloom.AspNetCore -> Sqloom.Core
-Sqloom.Correlation -> Sqloom.Core, Sqloom.QueryStore
-Sqloom.Testing -> Sqloom.Core, Sqloom.QueryStore
-Sqloom.Host -> Sqloom.Core, Sqloom.QueryStore, Sqloom.SqlServer, Sqloom.AspNetCore, Sqloom.Correlation, Sqloom.Testing
+Sqloom.Testing -> Sqloom.Core
+Sqloom.Host -> Sqloom.Core, Sqloom.Testing
 ```
 
 ## Test and Harness Graph
 
 ```text
 Sqloom.TestApp
-Sqloom.TestApp.Harness -> Sqloom.TestApp, Sqloom.AspNetCore, Sqloom.QueryStore, Sqloom.Testing
-Sqloom.UnitTests -> production projects, Sqloom.TestApp.Harness
-Sqloom.IntegrationTests -> production projects, Sqloom.TestApp, Sqloom.TestApp.Harness
+Sqloom.TestApp.Harness -> Sqloom.TestApp, Sqloom.Core, Sqloom.Testing
+Sqloom.UnitTests -> Sqloom.Core, Sqloom.Testing, Sqloom.Host, Sqloom.TestApp.Harness
+Sqloom.IntegrationTests -> Sqloom.Core, Sqloom.Testing, Sqloom.Host, Sqloom.TestApp, Sqloom.TestApp.Harness
 ```
 
 ## External Composition
@@ -32,17 +28,15 @@ Sqloom.IntegrationTests -> production projects, Sqloom.TestApp, Sqloom.TestApp.H
 ## Packaging and Publication
 
 - This document describes project references first, then the public package surfaces.
-- The public release artifacts are the `sqloom` .NET tool produced from `Sqloom.Host`, the `Sqloom.Testing` harness contract package, and the `Sqloom.Core` / `Sqloom.QueryStore` packages required by the `Sqloom.Testing` package dependency graph.
-- `Sqloom.SqlServer`, `Sqloom.AspNetCore`, and `Sqloom.Correlation` remain repo production projects. Package automation may pack them as supporting local-feed artifacts, but external harnesses should compile against `Sqloom.Testing`.
+- The public release artifacts are the `sqloom` .NET tool produced from `Sqloom.Host`, the `Sqloom.Testing` harness contract package, and the `Sqloom.Core` package required by the `Sqloom.Testing` package dependency graph.
+- SQL Server observation, ASP.NET Core replay, Query Store correlation, and advice stage implementations live in `Sqloom.Host`; external harnesses should compile against `Sqloom.Testing`.
 
 ## Boundary Rules
 
 - No production project may reference anything under `tests/`.
 - Keep `Sqloom.Core` free of ASP.NET Core, live SQL connectivity, Testcontainers, and CLI orchestration.
-- Keep `Sqloom.QueryStore` free of connection management, app-host bootstrapping, and CLI orchestration.
-- Keep `Sqloom.Correlation` focused on matching replay evidence to Query Store data; keep ASP.NET Core hosting, live SQL Server connection handling, and CLI orchestration out of it.
-- Keep `Sqloom.Testing` limited to public harness contracts and shared runner types needed by external harness projects.
-- Keep CLI argument parsing and stage orchestration inside `Sqloom.Host`.
-- Keep provider-specific database concerns out of `Sqloom.AspNetCore` unless they are required at the ASP.NET Core replay boundary.
+- Keep `Sqloom.Core` limited to provider-neutral contracts, persisted artifact schemas, replay evidence models, Query Store evidence models, correlation report models, and shared pure helpers.
+- Keep `Sqloom.Testing` limited to public harness contracts and harness-facing ASP.NET Core capture helpers needed by external harness projects.
+- Keep CLI argument parsing, stage orchestration, ASP.NET Core replay, live SQL Server connectivity, Query Store collection, correlation implementation, and advice implementation inside `Sqloom.Host`.
 - Keep project references acyclic and minimal.
 - If a capability must support multiple concrete providers or hosts, extract a dedicated abstraction or provider-specific project instead of broadening `Sqloom.Core`.

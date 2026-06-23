@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Host.Replay;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
 using Sqloom.Testing;

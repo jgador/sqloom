@@ -12,7 +12,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
-    <ProjectReference Include="..\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
   </ItemGroup>
 </Project>
