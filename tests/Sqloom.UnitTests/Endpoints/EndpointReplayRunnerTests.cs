@@ -114,7 +114,6 @@ public sealed class EndpointReplayRunnerTests
                 ReplayArtifactDirectory = tempDirectory,
                 ReplayProfile = new ReplayProfile
                 {
-                    DefaultOpenApiDocumentPath = documentPath,
                     OperationOverlays =
                     [
                         new ReplayOperationOverlayDefinition

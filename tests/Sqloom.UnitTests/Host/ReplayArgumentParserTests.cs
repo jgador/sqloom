@@ -1,6 +1,9 @@
 using System;
 using System.IO;
+using Sqloom.Core.Execution;
+using Sqloom.Testing;
 using Sqloom.TestApp.Harness;
+using Sqloom.Tests;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -47,6 +50,47 @@ public sealed class ReplayArgumentParserTests
         Assert.Equal(
             Path.GetFullPath(seedSqlPath),
             arguments.RunnerOptions.ReplayLaunchOptions.SqlServerSeedSqlPath);
+    }
+
+    [Fact]
+    public void Parse_UsesManifestOpenApiDocumentPathByDefault()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDirectory();
+
+        var arguments = parser.Parse(
+            [],
+            TestApplicationManifestFactory.CreateManifest(),
+            new TestReplayHost(),
+            currentDirectory);
+
+        Assert.Equal(
+            SqloomRepositoryPaths.GetTestAppOpenApiDocumentPath(),
+            arguments.RunnerOptions.OpenApiDocumentPath,
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_ThrowsWhenManifestOpenApiDocumentPathIsRelative()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDirectory();
+        SqloomApplicationManifest manifest = new()
+        {
+            Name = "Relative OpenAPI Test App",
+            OpenApiDocumentPath = "openapi.json",
+            ReplayProfile = new ReplayProfile(),
+        };
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.Parse(
+                [],
+                manifest,
+                new TestReplayHost(),
+                currentDirectory));
+
+        Assert.Contains("OpenApiDocumentPath", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("absolute", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

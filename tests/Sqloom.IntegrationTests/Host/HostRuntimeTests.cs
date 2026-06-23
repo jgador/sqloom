@@ -523,6 +523,7 @@ internal sealed class NoConnectionTestApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "No Connection Test App",
+            OpenApiDocumentPath = SqloomTestAppPaths.GetOpenApiDocumentPath(),
             ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
             SqlServerSchemaPath = _schemaPath,
         };
@@ -546,6 +547,7 @@ internal sealed class NoSchemaTestApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "No Schema Test App",
+            OpenApiDocumentPath = SqloomTestAppPaths.GetOpenApiDocumentPath(),
             ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
         };
     }
@@ -577,9 +579,6 @@ internal static class HostRuntimeTestHarnessProfiles
 {
     public static ReplayProfile CreateReplayProfile()
     {
-        return new ReplayProfile
-        {
-            DefaultOpenApiDocumentPath = "openapi.json",
-        };
+        return new ReplayProfile();
     }
 }

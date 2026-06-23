@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Core.Execution;
+using Sqloom.Tests;
 using Sqloom.Testing;
 
 namespace Sqloom.Host.Tests;
@@ -17,6 +18,7 @@ internal sealed class MultipleTestApplicationA : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "MultipleTestApplicationA",
+            OpenApiDocumentPath = SqloomRepositoryPaths.GetTestAppOpenApiDocumentPath(),
             ReplayProfile = TestApplicationManifestFactory.CreateReplayProfile(),
         };
     }
@@ -39,6 +41,7 @@ internal sealed class MultipleTestApplicationB : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "MultipleTestApplicationB",
+            OpenApiDocumentPath = SqloomRepositoryPaths.GetTestAppOpenApiDocumentPath(),
             ReplayProfile = TestApplicationManifestFactory.CreateReplayProfile(),
         };
     }
@@ -61,16 +64,14 @@ internal static class TestApplicationManifestFactory
         return new SqloomApplicationManifest
         {
             Name = "Sqloom Test Harness",
+            OpenApiDocumentPath = SqloomRepositoryPaths.GetTestAppOpenApiDocumentPath(),
             ReplayProfile = CreateReplayProfile(),
         };
     }
 
     public static ReplayProfile CreateReplayProfile()
     {
-        return new ReplayProfile
-        {
-            DefaultOpenApiDocumentPath = "openapi.json",
-        };
+        return new ReplayProfile();
     }
 }
 

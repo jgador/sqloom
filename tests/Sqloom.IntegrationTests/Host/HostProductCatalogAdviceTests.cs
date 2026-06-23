@@ -106,7 +106,7 @@ public sealed class HostProductCatalogAdviceTests
                         new EndpointReplayRunnerOptions
                         {
                             AppName = manifest.Name,
-                            OpenApiDocumentPath = replayProfile.DefaultOpenApiDocumentPath,
+                            OpenApiDocumentPath = manifest.OpenApiDocumentPath,
                             ReplayArtifactDirectory = artifactDirectory,
                             ReplayProfile = replayProfile,
                             ReplayHostFactory = replayHostFactory,

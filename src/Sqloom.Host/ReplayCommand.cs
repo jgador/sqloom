@@ -38,6 +38,14 @@ internal sealed class ReplayCommand
             manifest.Name,
             HostApplication.GetProjectNames(application));
 
+        var replayArtifactDirectory = _argumentParser.GetReplayArtifactDirectory(
+            context.Arguments,
+            context.CurrentDirectory);
+        var openApiDocumentPath = _argumentParser.GetOpenApiDocumentPath(
+            context.Arguments,
+            manifest,
+            context.CurrentDirectory);
+
         await using var session = await application
             .StartAsync(applicationContext)
             .ConfigureAwait(false);
@@ -46,7 +54,8 @@ internal sealed class ReplayCommand
             manifest,
             session.ReplayHost,
             context.CurrentDirectory,
-            artifactDirectoryOverride: null);
+            artifactDirectoryOverride: replayArtifactDirectory,
+            openApiDocumentPathOverride: openApiDocumentPath);
         arguments.DebugWriter = context.DebugWriter;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
         context.ConsoleWriter.PrintReplaySummary(

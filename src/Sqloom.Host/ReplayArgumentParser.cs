@@ -38,7 +38,8 @@ internal sealed class ReplayArgumentParser
         SqloomApplicationManifest manifest,
         IReplayHost replayHost,
         string currentDirectory,
-        string? artifactDirectoryOverride = null)
+        string? artifactDirectoryOverride = null,
+        string? openApiDocumentPathOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
@@ -50,9 +51,11 @@ internal sealed class ReplayArgumentParser
             ValueSwitches);
 
         var replayProfile = manifest.ReplayProfile;
-        var openApiDocumentPath = Path.GetFullPath(
-            CommandArgumentSupport.GetArgumentValue(args, "--openapi-file")
-            ?? replayProfile.DefaultOpenApiDocumentPath);
+        var openApiDocumentPath = openApiDocumentPathOverride
+            ?? GetOpenApiDocumentPath(
+                args,
+                manifest,
+                currentDirectory);
         var targetFilter = EndpointReplayTargetSyntax.ValidateOperationKeyOrNull(
             CommandArgumentSupport.GetArgumentValue(args, "--target"));
         var replayArtifactDirectory = artifactDirectoryOverride
@@ -75,6 +78,39 @@ internal sealed class ReplayArgumentParser
         };
     }
 
+    public string GetOpenApiDocumentPath(
+        string[] args,
+        SqloomApplicationManifest manifest,
+        string currentDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
+
+        var openApiDocumentPath = CommandArgumentSupport.GetArgumentValue(args, "--openapi-file");
+        if (!string.IsNullOrWhiteSpace(openApiDocumentPath))
+        {
+            return RequireOpenApiDocumentPath(
+                Path.GetFullPath(openApiDocumentPath, currentDirectory),
+                "--openapi-file");
+        }
+
+        if (string.IsNullOrWhiteSpace(manifest.OpenApiDocumentPath))
+        {
+            throw new ArgumentException(
+                "The Sqloom application manifest must set OpenApiDocumentPath to the absolute path of the app-owned OpenAPI document.");
+        }
+
+        if (!Path.IsPathFullyQualified(manifest.OpenApiDocumentPath))
+        {
+            throw new ArgumentException(
+                $"The Sqloom application manifest OpenApiDocumentPath must be absolute: '{manifest.OpenApiDocumentPath}'.");
+        }
+
+        return RequireOpenApiDocumentPath(
+            Path.GetFullPath(manifest.OpenApiDocumentPath),
+            "Sqloom application manifest OpenApiDocumentPath");
+    }
+
     public string GetReplayArtifactDirectory(string[] args, string currentDirectory)
     {
         var artifactDirectory = CommandArgumentSupport.GetArgumentValue(args, "--artifact-dir");
@@ -89,6 +125,19 @@ internal sealed class ReplayArgumentParser
         return ArtifactLayout.GetDefaultReplayArtifactDirectory(
             artifactRoot,
             DateTimeOffset.UtcNow);
+    }
+
+    private static string RequireOpenApiDocumentPath(
+        string openApiDocumentPath,
+        string source)
+    {
+        if (!File.Exists(openApiDocumentPath))
+        {
+            throw new ArgumentException(
+                $"The OpenAPI document from {source} does not exist: '{openApiDocumentPath}'.");
+        }
+
+        return openApiDocumentPath;
     }
 
     internal ReplayLaunchOptions CreateReplayLaunchOptions(

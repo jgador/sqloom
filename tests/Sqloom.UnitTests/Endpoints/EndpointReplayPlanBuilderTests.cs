@@ -19,10 +19,7 @@ public sealed class EndpointReplayPlanBuilderTests
         EndpointReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
-                new ReplayProfile
-                {
-                    DefaultOpenApiDocumentPath = "openapi.json",
-                }),
+                new ReplayProfile()),
             [
                 CreateOperation("GET", "/api/secure", requiresAuthentication: true),
             ]);
@@ -39,10 +36,7 @@ public sealed class EndpointReplayPlanBuilderTests
         EndpointReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
-                new ReplayProfile
-                {
-                    DefaultOpenApiDocumentPath = "openapi.json",
-                }),
+                new ReplayProfile()),
             [
                 CreateOperation("GET", "/api/public", requiresAuthentication: false),
                 CreateOperation("POST", "/api/items", requiresAuthentication: true),
@@ -70,7 +64,6 @@ public sealed class EndpointReplayPlanBuilderTests
             CreateOptions(
                 new ReplayProfile
                 {
-                    DefaultOpenApiDocumentPath = "openapi.json",
                     OperationOverlays =
                     [
                         new ReplayOperationOverlayDefinition
@@ -104,7 +97,6 @@ public sealed class EndpointReplayPlanBuilderTests
             CreateOptions(
                 new ReplayProfile
                 {
-                    DefaultOpenApiDocumentPath = "openapi.json",
                     OperationOverlays =
                     [
                         new ReplayOperationOverlayDefinition
@@ -138,7 +130,6 @@ public sealed class EndpointReplayPlanBuilderTests
                 CreateOptions(
                     new ReplayProfile
                     {
-                        DefaultOpenApiDocumentPath = "openapi.json",
                     },
                     targetFilter: "GetSecure"),
                 [
@@ -161,7 +152,6 @@ public sealed class EndpointReplayPlanBuilderTests
                 CreateOptions(
                     new ReplayProfile
                     {
-                        DefaultOpenApiDocumentPath = "openapi.json",
                     },
                     targetFilter: "GET /api/expense/dashboard"),
                 [
@@ -186,7 +176,6 @@ public sealed class EndpointReplayPlanBuilderTests
                 CreateOptions(
                     new ReplayProfile
                     {
-                        DefaultOpenApiDocumentPath = "openapi.json",
                     },
                     targetFilter: "get api/secure"),
                 [

@@ -39,6 +39,11 @@ internal sealed class TuneCommand
             manifest,
             context.CurrentDirectory);
 
+        var openApiDocumentPath = _argumentParser.GetOpenApiDocumentPath(
+            context.Arguments,
+            manifest,
+            context.CurrentDirectory);
+
         await using var session = await application
             .StartAsync(applicationContext)
             .ConfigureAwait(false);
@@ -56,7 +61,8 @@ internal sealed class TuneCommand
             manifest,
             session.ReplayHost,
             readOnlyConnectionString,
-            context.CurrentDirectory);
+            context.CurrentDirectory,
+            openApiDocumentPath);
         arguments.DebugWriter = context.DebugWriter;
         arguments.ObserveArguments.DebugWriter = context.DebugWriter;
         arguments.ReplayArguments.DebugWriter = context.DebugWriter;

@@ -124,12 +124,24 @@ internal sealed class TuneArgumentParser
             manifest.SqlServerSchemaPath);
     }
 
+    public string GetOpenApiDocumentPath(
+        string[] args,
+        SqloomApplicationManifest manifest,
+        string currentDirectory)
+    {
+        return _replayArgumentParser.GetOpenApiDocumentPath(
+            ExtractSwitchArguments(args, ReplaySwitches),
+            manifest,
+            currentDirectory);
+    }
+
     public TuneArguments Parse(
         string[] args,
         SqloomApplicationManifest manifest,
         IReplayHost replayHost,
         string readOnlyConnectionString,
-        string currentDirectory)
+        string currentDirectory,
+        string? openApiDocumentPathOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
@@ -159,7 +171,8 @@ internal sealed class TuneArgumentParser
             manifest,
             replayHost,
             currentDirectory,
-            replayArtifactDirectory);
+            replayArtifactDirectory,
+            openApiDocumentPathOverride);
         var adviseArguments = _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             replayArtifactDirectory,

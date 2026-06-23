@@ -59,4 +59,13 @@ internal static class SqloomTestAppPaths
             "Sqloom.TestApp.Harness",
             "AdventureWorksLT2025.schema.sql");
     }
+
+    public static string GetOpenApiDocumentPath()
+    {
+        return Path.Combine(
+            GetRepositoryRoot(),
+            "tests",
+            "Sqloom.TestApp",
+            "openapi.json");
+    }
 }

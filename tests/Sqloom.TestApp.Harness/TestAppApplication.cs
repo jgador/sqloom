@@ -24,8 +24,6 @@ namespace Sqloom.TestApp.Harness;
 /// </summary>
 public sealed class TestAppApplication : ISqloomApplication
 {
-    private static readonly Lazy<string> _openApiDocumentPath = new(CreateOpenApiDocumentPath);
-
     public SqloomApplicationManifest Describe(SqloomApplicationContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
@@ -33,6 +31,8 @@ public sealed class TestAppApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "Sqloom Test App",
+            OpenApiDocumentPath = SqloomOpenApiDocument.FindRequired(
+                ResolveTestAppDirectory()),
             ReplayProfile = CreateReplayProfile(),
             QueryStoreWorkloadProfile = new QueryStoreWorkloadProfile
             {
@@ -61,7 +61,6 @@ public sealed class TestAppApplication : ISqloomApplication
     {
         return new ReplayProfile
         {
-            DefaultOpenApiDocumentPath = _openApiDocumentPath.Value,
             Personas =
             [
                 new ReplayPersonaDefinition
@@ -86,63 +85,6 @@ public sealed class TestAppApplication : ISqloomApplication
         };
     }
 
-    private static string CreateOpenApiDocumentPath()
-    {
-        var directoryPath = Path.Combine(
-            Path.GetTempPath(),
-            "sqloom-tests",
-            "openapi");
-        Directory.CreateDirectory(directoryPath);
-
-        var documentPath = Path.Combine(directoryPath, "sqloom-test-app-openapi.json");
-        File.WriteAllText(
-            documentPath,
-            """
-            {
-              "openapi": "3.0.1",
-              "security": [
-                {
-                  "Bearer": []
-                }
-              ],
-              "paths": {
-                "/api/products/by-category": {
-                  "get": {
-                    "operationId": "GetProductsByCategory",
-                    "parameters": [
-                      {
-                        "name": "categoryId",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                          "type": "integer",
-                          "format": "int32"
-                        }
-                      },
-                      {
-                        "name": "minPrice",
-                        "in": "query",
-                        "required": true,
-                        "schema": {
-                          "type": "number",
-                          "format": "decimal"
-                        }
-                      }
-                    ],
-                    "responses": {
-                      "200": {
-                        "description": "OK"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            """);
-
-        return documentPath;
-    }
-
     private static ReplayLaunchOptions CreateEffectiveLaunchOptions(ReplayLaunchOptions requestedOptions)
     {
         return new ReplayLaunchOptions
@@ -164,6 +106,17 @@ public sealed class TestAppApplication : ISqloomApplication
             "tests",
             "Sqloom.TestApp.Harness",
             fileName);
+    }
+
+    private static string ResolveTestAppDirectory()
+    {
+        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
+            ?? RepositoryRootLocator.TryFind(Directory.GetCurrentDirectory())
+            ?? throw new InvalidOperationException("Could not locate the repository root for the Sqloom Test App harness.");
+        return Path.Combine(
+            repositoryRoot,
+            "tests",
+            "Sqloom.TestApp");
     }
 
     private sealed class TestAppApplicationSession : ISqloomApplicationSession

@@ -86,9 +86,6 @@ public sealed class SqlServerSeedSqlArtifact
 /// </summary>
 public sealed class ReplayProfile
 {
-    [JsonPropertyName("defaultOpenApiDocumentPath")]
-    public required string DefaultOpenApiDocumentPath { get; init; }
-
     [JsonPropertyName("includeAuthenticatedGetOperationsByDefault")]
     public bool IncludeAuthenticatedGetOperationsByDefault { get; init; } = true;
 

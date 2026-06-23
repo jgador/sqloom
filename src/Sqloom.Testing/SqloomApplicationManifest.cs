@@ -10,6 +10,8 @@ public sealed class SqloomApplicationManifest
 {
     public required string Name { get; init; }
 
+    public required string OpenApiDocumentPath { get; init; }
+
     public required ReplayProfile ReplayProfile { get; init; }
 
     public QueryStoreWorkloadProfile QueryStoreWorkloadProfile { get; init; } =
