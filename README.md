@@ -1,6 +1,6 @@
 # Sqloom
 
-Sqloom helps you find slow database work behind API requests in a .NET app. It replays an API operation through an app-owned harness, reads SQL Server or Azure SQL Query Store, matches the captured SQL back to Query Store evidence, and writes tuning advice plus SQL proposal files.
+Sqloom helps you find slow database work behind API requests in a .NET app. It runs a selected API request inside your app's test harness, captures the SQL that request executes, reads SQL Server or Azure SQL Query Store, matches the captured SQL back to Query Store evidence, and writes tuning advice plus SQL proposal files.
 
 Most users start with `sqloom tune`. It runs the full workflow:
 
@@ -42,7 +42,7 @@ sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
  --debug
 ```
 
-That command starts the sample harness, replays the selected API request, captures the SQL it caused, reads Query Store from the replay database, correlates the captured SQL to Query Store rows, and asks OpenAI for operation-level tuning advice. `--debug` prints stage details to `stderr`, including redacted OpenAI request and response details during the advice step.
+That command starts the sample harness, runs the selected API request, captures the SQL it caused, reads Query Store from the replay database, correlates the captured SQL to Query Store rows, and asks OpenAI for operation-level tuning advice. `--debug` prints stage details to `stderr`, including redacted OpenAI request and response details during the advice step.
 
 The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 
