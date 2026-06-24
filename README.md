@@ -8,7 +8,7 @@ Most users start with `sqloom tune`. It runs the full workflow:
 replay -> observe -> correlate -> advise
 ```
 
-This repo includes a sample app and harness for `GET /api/products/by-category`. The harness starts a throwaway SQL Server database from `AdventureWorksLT2025.dacpac`, seeds the data needed for the sample product query, and supplies the replay and schema defaults Sqloom needs.
+This repo includes a sample app and harness for `GET /api/products/by-category`. The quick start points Sqloom at the sample DACPAC, seed SQL, and read-only Query Store connection explicitly, so the replay database inputs and Query Store source are visible.
 
 ![Sqloom tuning pipeline diagram](docs/images/sqloom-diagram.png)
 
@@ -29,20 +29,21 @@ dotnet tool update --global sqloom
 
 ## Quick Start
 
-Run the sample `tune` workflow from the repo root:
+Set `OPENAI_API_KEY`, then run the sample `tune` workflow from the repo root. These are the minimum inputs: harness project, target operation, DACPAC, seed SQL, read-only Query Store connection, and OpenAI settings.
 
 ```powershell
-if (-not $env:OPENAI_API_KEY) { throw "OPENAI_API_KEY is required." }
-
 sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
  --target "GET /api/products/by-category" `
+ --sqlserver-dacpac-file .\tests\Sqloom.TestApp.Harness\AdventureWorksLT2025.dacpac `
+ --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.Harness\AdventureWorksLT2025.seed.sql `
+ --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
  --model-provider openai `
  --openai-api-key $env:OPENAI_API_KEY `
  --openai-model "gpt-5.5" `
  --debug
 ```
 
-That command starts the sample harness, runs the selected API request, captures the SQL it caused, reads Query Store from the replay database, correlates the captured SQL to Query Store rows, and asks OpenAI for operation-level tuning advice. `--debug` prints stage details to `stderr`, including redacted OpenAI request and response details during the advice step.
+That command starts the sample harness, uses the DACPAC and seed SQL to prepare the replay database, runs the selected API request, captures the SQL it caused, reads Query Store through the supplied read-only connection string, correlates the captured SQL to Query Store rows, and asks OpenAI for operation-level tuning advice. `--debug` prints stage details to `stderr`, including redacted OpenAI request and response details during the advice step.
 
 The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 
@@ -66,7 +67,7 @@ Sqloom has one common front door and four lower-level stages:
 - `correlate`: match replay-captured SQL back to a Query Store snapshot.
 - `advise`: turn replay, correlation, and schema evidence into tuning advice and SQL proposal files.
 
-See [docs/command-reference.md](docs/command-reference.md) for the exhaustive command syntax, arguments, defaults, outputs, and advanced options such as explicit DACPAC, seed, schema, and read-only connection overrides.
+See [docs/command-reference.md](docs/command-reference.md) for the exhaustive command syntax, arguments, defaults, outputs, and additional options.
 
 ## How It Fits Into An App
 
