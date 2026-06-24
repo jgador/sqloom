@@ -22,7 +22,7 @@ dotnet tool update --global sqloom
 - `observe`: read recent Query Store data with an explicit `--read-only-connection-string <connection-string>`
 - `replay`: replay API operations through an app-specific harness and capture SQL
 - `correlate`: match replayed SQL back to a Query Store snapshot
-- `advise`: send replay evidence, Query Store matches, and a schema file to OpenAI
+- `advise`: send replay evidence, Query Store matches, and DACPAC-derived schema SQL to OpenAI
 - `tune`: run the full `replay -> observe -> correlate -> advise` flow
 
 ## Required inputs
@@ -33,9 +33,11 @@ dotnet tool update --global sqloom
 
 - `--model-provider openai`
 - `--openai-api-key <key>`
-- `--sqlserver-schema-file <path>` unless `tune` can use a schema path from the harness manifest
+- `--sqlserver-dacpac-file <path>` for `advise`, unless you pass the expert `--sqlserver-schema-file <path>` override
 
-SQL Server-backed replay harnesses can provide default DACPAC, seed script, schema, replay profile, and Query Store profile values. CLI switches such as `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--sqlserver-schema-file <path>`, and `--read-only-connection-string <connection-string>` override harness defaults.
+For `tune`, a harness can provide a default DACPAC path in its manifest. When advice runs from a DACPAC, Sqloom extracts `model.sql` with DacFx and persists the generated schema as `sqlserver-schema.sql` beside the advice artifacts.
+
+SQL Server-backed replay harnesses can provide default DACPAC, seed script, replay profile, and Query Store profile values. CLI switches such as `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--sqlserver-schema-file <path>`, and `--read-only-connection-string <connection-string>` let you point at different inputs when needed.
 
 Use the global `--debug` switch when you want stage-owned diagnostics on `stderr`. In particular, `advise --debug` prints readable, redacted OpenAI request and response payloads, and `tune --debug` cascades the same debug mode through `observe`, `replay`, `correlate`, and `advise`.
 

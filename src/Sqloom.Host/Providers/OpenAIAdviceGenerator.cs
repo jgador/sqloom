@@ -268,7 +268,7 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
                 {
                     Name = PipelineStageNames.Advise,
                     Status = PipelineStageStatuses.Completed,
-                    Summary = "Operation-level tuning guidance was emitted from replay evidence plus the supplied SQL Server schema.",
+                    Summary = "Operation-level tuning guidance was emitted from replay evidence plus the resolved SQL Server schema.",
                     ArtifactPath = adviceOutputPath,
                 },
             ],

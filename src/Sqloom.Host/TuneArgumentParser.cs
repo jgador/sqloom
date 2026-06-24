@@ -77,6 +77,7 @@ internal sealed class TuneArgumentParser
     {
         "--model-provider",
         "--sqlserver-schema-file",
+        "--sqlserver-dacpac-file",
         "--openai-model",
         "--openai-base-url",
         "--openai-api-key",
@@ -121,7 +122,8 @@ internal sealed class TuneArgumentParser
             currentDirectory,
             validationPath,
             validationPath,
-            manifest.SchemaPath);
+            manifest.SqlServerDacpacPath,
+            currentDirectory);
     }
 
     public string GetOpenApiPath(
@@ -178,7 +180,8 @@ internal sealed class TuneArgumentParser
             replayArtifactDirectory,
             correlationPath,
             advicePath,
-            manifest.SchemaPath);
+            manifest.SqlServerDacpacPath,
+            currentDirectory);
 
         return new TuneArguments
         {

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using Sqloom.Core.Artifacts;
 using Sqloom.TestApp.Harness;
+using Sqloom.Testing;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -20,7 +21,7 @@ public sealed class TuneArgumentParserTests
         var dacpacPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.dacpac");
         var seedSqlPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.seed.sql");
         var openApiPath = Path.Combine(currentDirectory, "openapi.json");
-        var schemaPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.schema.sql");
+        var schemaPath = Path.Combine(currentDirectory, "manual.schema.sql");
         File.WriteAllText(dacpacPath, "sqloom");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
         File.WriteAllText(openApiPath, "{}");
@@ -99,6 +100,7 @@ public sealed class TuneArgumentParserTests
         Assert.Equal(expectedReplayDirectory, arguments.AdviseArguments.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedCorrelationPath, arguments.AdviseArguments.QueryStoreCorrelationPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(Path.GetFullPath(schemaPath), arguments.AdviseArguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(arguments.AdviseArguments.DacpacPath);
         Assert.Equal(expectedAdvicePath, arguments.AdviseArguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(ModelProviderKind.OpenAI, arguments.AdviseArguments.ModelProvider);
         Assert.NotNull(arguments.AdviseArguments.OpenAIOptions);
@@ -176,7 +178,41 @@ public sealed class TuneArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_RequiresSchemaFile()
+    public void Parse_UsesManifestDacpacForAdviceSchemaSource()
+    {
+        TuneArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+        var dacpacPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.dacpac");
+        File.WriteAllText(dacpacPath, "sqloom");
+        var manifest = new SqloomApplicationManifest
+        {
+            Name = "Sqloom Test Harness",
+            OpenApiPath = Sqloom.Tests.RepositoryPaths.GetTestAppOpenApiPath(),
+            ReplayProfile = ManifestFactory.CreateReplayProfile(),
+            SqlServerDacpacPath = dacpacPath,
+        };
+
+        var arguments = parser.Parse(
+            [
+                "tune",
+                "--read-only-connection-string",
+                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                "--model-provider",
+                "openai",
+                "--openai-api-key",
+                "openai-key",
+            ],
+            manifest,
+            new ReplayHostFake(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+            currentDirectory);
+
+        Assert.Null(arguments.AdviseArguments.SchemaPath);
+        Assert.Equal(Path.GetFullPath(dacpacPath), arguments.AdviseArguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_WithOpenAIModelProvider_RequiresSchemaSource()
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -198,6 +234,7 @@ public sealed class TuneArgumentParserTests
                 currentDirectory));
 
         Assert.Contains("--sqlserver-schema-file", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("DACPAC", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

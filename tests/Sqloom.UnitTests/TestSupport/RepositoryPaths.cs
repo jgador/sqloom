@@ -64,6 +64,15 @@ internal static class RepositoryPaths
             "Sqloom.TestApp.Harness.csproj");
     }
 
+    public static string GetSampleApplicationDacpacPath()
+    {
+        return Path.Combine(
+            GetRepositoryRoot(),
+            "tests",
+            "Sqloom.TestApp.Harness",
+            "AdventureWorksLT2025.dacpac");
+    }
+
     public static string GetExpectedSampleApplicationBuildOutputPath()
     {
         return Path.Combine(

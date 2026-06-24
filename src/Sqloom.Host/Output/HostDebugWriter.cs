@@ -123,7 +123,8 @@ internal sealed class HostDebugWriter
             [
                 $"replay_artifact_directory={arguments.ReplayArtifactDir}",
                 $"query_store_correlation={arguments.QueryStoreCorrelationPath}",
-                $"sqlserver_schema_file={arguments.SchemaPath}",
+                $"sqlserver_schema_file={arguments.SchemaPath ?? "none"}",
+                $"sqlserver_dacpac_file={arguments.DacpacPath ?? "none"}",
                 $"json_output_path={arguments.JsonOutputPath}",
                 $"model_provider={arguments.ModelProvider}",
                 $"openai_base_url={arguments.OpenAIOptions?.BaseUrl ?? "n/a"}",
@@ -147,7 +148,8 @@ internal sealed class HostDebugWriter
                 $"replay_artifact_directory={arguments.ReplayArguments.RunnerOptions.ReplayArtifactDir}",
                 $"query_store_correlation={arguments.CorrelateArguments.JsonOutputPath}",
                 $"tuning_advice={arguments.AdviseArguments.JsonOutputPath}",
-                $"sqlserver_schema_file={arguments.AdviseArguments.SchemaPath}",
+                $"sqlserver_schema_file={arguments.AdviseArguments.SchemaPath ?? "none"}",
+                $"sqlserver_dacpac_file={arguments.AdviseArguments.DacpacPath ?? "none"}",
                 $"model_provider={arguments.AdviseArguments.ModelProvider}",
                 $"openai_model={arguments.AdviseArguments.OpenAIOptions?.Model ?? "n/a"}",
             ]);

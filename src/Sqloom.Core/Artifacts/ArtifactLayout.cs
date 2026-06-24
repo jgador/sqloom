@@ -101,6 +101,13 @@ public static class ArtifactLayout
         return Path.Combine(replayArtifactDirectory, "tuning-advice.json");
     }
 
+    public static string GetSqlServerSchemaPath(string replayArtifactDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
+
+        return Path.Combine(replayArtifactDirectory, "sqlserver-schema.sql");
+    }
+
     public static string GetSqlProposalPath(string replayArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);

@@ -29,7 +29,7 @@ Sqloom.IntegrationTests -> Sqloom.Core, Sqloom.Testing, Sqloom.Host, Sqloom.Test
 
 - This document describes project references first, then the public package surfaces.
 - The public release artifacts are the `sqloom` .NET tool produced from `Sqloom.Host`, the `Sqloom.Testing` harness contract package, and the `Sqloom.Core` package required by the `Sqloom.Testing` package dependency graph.
-- SQL Server observation, ASP.NET Core replay, Query Store correlation, and advice stage implementations live in `Sqloom.Host`; external harnesses should compile against `Sqloom.Testing`.
+- SQL Server observation, DACPAC schema extraction, ASP.NET Core replay, Query Store correlation, and advice stage implementations live in `Sqloom.Host`; external harnesses should compile against `Sqloom.Testing`.
 
 ## Boundary Rules
 
@@ -37,6 +37,6 @@ Sqloom.IntegrationTests -> Sqloom.Core, Sqloom.Testing, Sqloom.Host, Sqloom.Test
 - Keep `Sqloom.Core` free of ASP.NET Core, live SQL connectivity, Testcontainers, and CLI orchestration.
 - Keep `Sqloom.Core` limited to provider-neutral contracts, persisted artifact schemas, replay evidence models, Query Store evidence models, correlation report models, and shared pure helpers.
 - Keep `Sqloom.Testing` limited to public harness contracts and harness-facing ASP.NET Core capture helpers needed by external harness projects.
-- Keep CLI argument parsing, stage orchestration, ASP.NET Core replay, live SQL Server connectivity, Query Store collection, correlation implementation, and advice implementation inside `Sqloom.Host`.
+- Keep CLI argument parsing, stage orchestration, ASP.NET Core replay, live SQL Server connectivity, DACPAC schema extraction, Query Store collection, correlation implementation, and advice implementation inside `Sqloom.Host`.
 - Keep project references acyclic and minimal.
 - If a capability must support multiple concrete providers or hosts, extract a dedicated abstraction or provider-specific project instead of broadening `Sqloom.Core`.

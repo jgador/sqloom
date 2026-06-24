@@ -121,6 +121,18 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
+    public void GetSqlServerSchemaPath_UsesReplayArtifactDir()
+    {
+        var path = ArtifactLayout.GetSqlServerSchemaPath(ReplayArtifactDir);
+
+        Assert.Equal(
+            Path.Combine(
+                ReplayArtifactDir,
+                "sqlserver-schema.sql"),
+            path);
+    }
+
+    [Fact]
     public void GetSqlProposalPath_UsesReplayArtifactDir()
     {
         var path = ArtifactLayout.GetSqlProposalPath(ReplayArtifactDir);

@@ -209,33 +209,26 @@ public sealed class HostRuntimeTests
     public async Task RunAsync_WithTuneWithoutConnectionStringSwitch_StillRequiresExplicitConnectionStringSwitch()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
-        var schemaPath = Path.Combine(CreateTempDir(), "schema.sql");
+        var dacpacPath = Path.Combine(CreateTempDir(), "schema-source.dacpac");
         File.WriteAllText(
-            schemaPath,
-            """
-            CREATE TABLE [dbo].[Product] (
-                [Id] INT NOT NULL
-            );
-            GO
-            """);
+            dacpacPath,
+            "sqloom");
 
         var result = await CaptureConsoleAsync(static async state =>
         {
             return await HostRuntime
                 .RunAsync(
-                    new NoConnectionTestApplication(state.SchemaPath),
+                    new NoConnectionTestApplication(state.DacpacPath),
                     [
                         "tune",
                         "--model-provider",
                         "openai",
                         "--openai-api-key",
                         "openai-key",
-                        "--sqlserver-schema-file",
-                        state.SchemaPath,
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
-        }, (CurrentDirectory: currentDirectory, SchemaPath: schemaPath));
+        }, (CurrentDirectory: currentDirectory, DacpacPath: dacpacPath));
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains(
@@ -301,7 +294,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithOpenAIAdviceWithoutSchemaFile_StillRequiresExplicitSchemaFile()
+    public async Task RunAsync_WithOpenAIAdviceWithoutSchemaSource_RequiresSchemaSource()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var replayArtifactDirectory = CreateTempDir();
@@ -333,6 +326,10 @@ public sealed class HostRuntimeTests
                 "--sqlserver-schema-file",
                 result.StdErr,
                 StringComparison.Ordinal);
+            Assert.Contains(
+                "DACPAC",
+                result.StdErr,
+                StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -347,7 +344,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithTuneWithoutSchemaFile_StillRequiresExplicitSchemaFile()
+    public async Task RunAsync_WithTuneWithoutSchemaSource_RequiresSchemaSource()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -374,6 +371,10 @@ public sealed class HostRuntimeTests
             "--sqlserver-schema-file",
             result.StdErr,
             StringComparison.Ordinal);
+        Assert.Contains(
+            "DACPAC",
+            result.StdErr,
+            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -511,11 +512,11 @@ public sealed class ConsoleHostRuntimeCollection
 /// </summary>
 internal sealed class NoConnectionTestApplication : ISqloomApplication
 {
-    private readonly string _schemaPath;
+    private readonly string _dacpacPath;
 
-    public NoConnectionTestApplication(string schemaPath)
+    public NoConnectionTestApplication(string dacpacPath)
     {
-        _schemaPath = schemaPath;
+        _dacpacPath = dacpacPath;
     }
 
     public SqloomApplicationManifest Describe(SqloomApplicationContext context)
@@ -525,7 +526,7 @@ internal sealed class NoConnectionTestApplication : ISqloomApplication
             Name = "No Connection Test App",
             OpenApiPath = SqloomTestAppPaths.GetOpenApiPath(),
             ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
-            SchemaPath = _schemaPath,
+            SqlServerDacpacPath = _dacpacPath,
         };
     }
 

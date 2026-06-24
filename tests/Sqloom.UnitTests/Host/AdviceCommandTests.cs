@@ -135,6 +135,67 @@ public sealed class AdviceCommandTests
         Assert.Contains(adviceOperation.OperationKey, proposalScript, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task ExecuteAsync_WithDacpacSchemaSource_PassesGeneratedSchemaPathToGenerator()
+    {
+        var replayArtifactDirectory = CreateTempDir();
+        var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
+        var advicePath = ArtifactLayout.GetReplayTuningAdvicePath(replayArtifactDirectory);
+        var proposalJsonPath = ArtifactLayout.GetSqlProposalPath(replayArtifactDirectory);
+        var proposalScriptPath = ArtifactLayout.GetSqlProposalScriptPath(replayArtifactDirectory);
+        var dacpacPath = Path.Combine(replayArtifactDirectory, "schema-source.dacpac");
+        var generatedSchemaPath = ArtifactLayout.GetSqlServerSchemaPath(replayArtifactDirectory);
+        var correlationReport = CreateCorrelationReport(replayArtifactDirectory);
+        var expectedReport = CreateAdviceReport(
+            replayArtifactDirectory,
+            correlationPath,
+            proposalJsonPath,
+            proposalScriptPath);
+        string? extractedDacpacPath = null;
+        string? extractionArtifactDirectory = null;
+        string? resolvedSchemaPath = null;
+
+        await JsonFileWriter.WriteAsync(
+                correlationPath,
+                correlationReport,
+                static serializerOptions => serializerOptions.Converters.Add(new JsonStringEnumConverter()))
+            ;
+        await File.WriteAllTextAsync(dacpacPath, "sqloom");
+
+        AdviceCommand command = new(
+            options => new FakeAdviceReportGenerator(
+                expectedReport,
+                path => resolvedSchemaPath = path),
+            new FakeSqlServerDacpacSchemaExtractor(
+                generatedSchemaPath,
+                (path, artifactDirectory) =>
+                {
+                    extractedDacpacPath = path;
+                    extractionArtifactDirectory = artifactDirectory;
+                }));
+
+        var result = await command
+            .ExecuteAsync(
+                new AdviseArguments
+                {
+                    ReplayArtifactDir = replayArtifactDirectory,
+                    QueryStoreCorrelationPath = correlationPath,
+                    DacpacPath = dacpacPath,
+                    JsonOutputPath = advicePath,
+                    ModelProvider = ModelProviderKind.OpenAI,
+                    OpenAIOptions = new OpenAIAdviceOptions
+                    {
+                        ApiKey = "sqloom-openai-key",
+                    },
+                })
+            ;
+
+        Assert.Equal(dacpacPath, extractedDacpacPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(replayArtifactDirectory, extractionArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(generatedSchemaPath, resolvedSchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(advicePath, result.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
+    }
+
     private static AdviceReport CreateAdviceReport(
         string replayArtifactDirectory,
         string correlationPath,
@@ -352,6 +413,20 @@ public sealed class AdviceCommandTests
 
         public void Dispose()
         {
+        }
+    }
+
+    private sealed class FakeSqlServerDacpacSchemaExtractor(
+        string generatedSchemaPath,
+        Action<string, string> captureExtraction) : ISqlServerDacpacSchemaExtractor
+    {
+        public Task<string> ExtractAsync(
+            string dacpacPath,
+            string replayArtifactDirectory,
+            System.Threading.CancellationToken cancellationToken = default)
+        {
+            captureExtraction(dacpacPath, replayArtifactDirectory);
+            return Task.FromResult(generatedSchemaPath);
         }
     }
 }

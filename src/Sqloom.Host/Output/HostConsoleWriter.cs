@@ -44,7 +44,7 @@ internal sealed class HostConsoleWriter
         Console.WriteLine(
             "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] [--read-only-connection-string <connection-string>] [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] --model-provider openai --openai-api-key <key> [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
         Console.WriteLine("    Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
-        Console.WriteLine("    Tune uses --read-only-connection-string and --sqlserver-schema-file when supplied, otherwise it uses the harness session connection string and manifest schema path.");
+        Console.WriteLine("    Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string. Advice uses --sqlserver-schema-file when supplied, otherwise it extracts schema SQL from --sqlserver-dacpac-file or the harness manifest DACPAC.");
         Console.WriteLine("    When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.");
         Console.WriteLine(
             "  [--debug] replay <path> [--dotnet-command <command>] [--no-build] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"]");
@@ -59,9 +59,9 @@ internal sealed class HostConsoleWriter
             "  [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [--json-output-file <path>]");
         Console.WriteLine("    Correlation resolves statement_sql_handle against captured replay SQL, then writes query-store-correlation.json under the replay artifact directory by default.");
         Console.WriteLine(
-            "  [--debug] advise --replay-artifact-dir <path> [--query-store-correlation-file <path>] [--json-output-file <path>] --model-provider openai --openai-api-key <key> --sqlserver-schema-file <path> [--openai-model <id>] [--openai-base-url <url>]");
-        Console.WriteLine("    Advice derives operation-level tuning guidance from query-store-correlation.json plus the supplied SQL Server schema file, then writes tuning-advice.json, sql-tuning-proposal.json, and sql-tuning-proposal.sql under the replay artifact directory by default.");
-        Console.WriteLine("    OpenAI advice requires --model-provider openai, --openai-api-key, and --sqlserver-schema-file.");
+            "  [--debug] advise --replay-artifact-dir <path> [--query-store-correlation-file <path>] [--json-output-file <path>] --model-provider openai --openai-api-key <key> [--sqlserver-dacpac-file <path>] [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
+        Console.WriteLine("    Advice derives operation-level tuning guidance from query-store-correlation.json plus SQL Server schema extracted from a DACPAC, then writes tuning-advice.json, sql-tuning-proposal.json, and sql-tuning-proposal.sql under the replay artifact directory by default.");
+        Console.WriteLine("    OpenAI advice requires --model-provider openai, --openai-api-key, and either --sqlserver-dacpac-file or the expert --sqlserver-schema-file override.");
         Console.WriteLine("    Use --debug to print per-stage diagnostics to stderr. With advise, debug prints the redacted OpenAI request and response payloads.");
     }
 

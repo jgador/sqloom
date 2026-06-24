@@ -9,7 +9,9 @@ internal sealed class AdviseArguments
 
     public required string QueryStoreCorrelationPath { get; init; }
 
-    public required string SchemaPath { get; init; }
+    public string? SchemaPath { get; init; }
+
+    public string? DacpacPath { get; init; }
 
     public required string JsonOutputPath { get; init; }
 

@@ -51,15 +51,6 @@ internal static class SqloomTestAppPaths
             "AdventureWorksLT2025.seed.sql");
     }
 
-    public static string GetSchemaPath()
-    {
-        return Path.Combine(
-            GetRepositoryRoot(),
-            "tests",
-            "Sqloom.TestApp.Harness",
-            "AdventureWorksLT2025.schema.sql");
-    }
-
     public static string GetOpenApiPath()
     {
         return Path.Combine(

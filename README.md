@@ -38,12 +38,13 @@ sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
   --debug
 ```
 
-`Sqloom.TestApp.Harness` supplies defaults for the DACPAC, seed script, SQL Server schema file, replay profile, Query Store profile, and read-only replay database connection. CLI options such as `--sqlserver-dacpac-file`, `--sqlserver-seed-sql-file`, `--sqlserver-schema-file`, and `--read-only-connection-string` override those harness defaults when you need to point at different inputs. You can regenerate the seed script from `localhost` with `pwsh .\tests\Sqloom.TestApp.Harness\Export-AdventureWorksLT2025SeedSql.ps1`.
+`Sqloom.TestApp.Harness` supplies defaults for the DACPAC, seed script, replay profile, Query Store profile, and read-only replay database connection. During advice, Sqloom extracts schema SQL from the DACPAC into the run artifacts as `sqlserver-schema.sql`. CLI options such as `--sqlserver-dacpac-file`, `--sqlserver-seed-sql-file`, `--sqlserver-schema-file`, and `--read-only-connection-string` let you point at different inputs when needed. You can regenerate the seed script from `localhost` with `pwsh .\tests\Sqloom.TestApp.Harness\Export-AdventureWorksLT2025SeedSql.ps1`.
 
 The run writes output files under `artifacts/sqloom/tune/tune-<timestamp>/`, including:
 
 - `query-store-snapshot.json`
 - `tune-summary.json`
+- `replay/sqlserver-schema.sql`
 - `replay/tuning-advice.json`
 - `replay/sql-tuning-proposal.json`
 - `replay/sql-tuning-proposal.sql`
@@ -179,8 +180,6 @@ dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- replay .\tests\Sqlo
 
 For `Sqloom.TestApp.Harness`, that script is optional override input. The default harness path uses the committed seed script next to the DACPAC.
 
-When `tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.dacpac` changes, regenerate the single-file schema dump next to it with `pwsh .\tests\Sqloom.TestApp.Harness\Export-AdventureWorksLT2025Schema.ps1`. The script applies the DACPAC to a temporary database on `localhost`, writes `AdventureWorksLT2025.schema.sql`, and then removes the temporary database.
-
 To export seed data from a local `AdventureWorksLT2025` database on `localhost` into a post-DACPAC replay script, run from the repo root:
 
 ```powershell
@@ -251,8 +250,8 @@ If you are iterating on this repository itself, the repo-local equivalent is the
 - `--debug`: print step-by-step details to `stderr` for `replay`, `observe`, `correlate`, and `advise`
 - `--read-only-connection-string <connection-string>`: Query Store connection for `observe` and `correlate`; in `tune`, this overrides the harness session connection string
 - `--lookback-hours <hours>`, `--max-plans <count>`, `--max-waits <count>`, `--command-timeout-seconds <seconds>`, `--app-only`, `--show-classification`: same behavior as `observe`.
-- `--openapi-file <path>`, `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--max-operations <count>`, `--target "METHOD /path/template"`, `--dotnet-command <command>`, `--no-build`: same behavior as `replay`.
-- `--model-provider openai`, `--openai-api-key <key>`, `--sqlserver-schema-file <path>`, `--openai-base-url <url>`, `--openai-model <id>`: same behavior as `advise`; in `tune`, `--sqlserver-schema-file` overrides the harness manifest schema path
+- `--openapi-file <path>`, `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--max-operations <count>`, `--target "METHOD /path/template"`, `--dotnet-command <command>`, `--no-build`: same behavior as `replay`; in `tune`, the DACPAC also supplies schema SQL for advice when `--sqlserver-schema-file` is not supplied.
+- `--model-provider openai`, `--openai-api-key <key>`, `--sqlserver-schema-file <path>`, `--openai-base-url <url>`, `--openai-model <id>`: same behavior as `advise`; `--sqlserver-schema-file` is an expert override for manually supplied schema SQL.
 - `--artifact-dir <path>`: choose a different output folder instead of the default timestamped tune folder
 
 If you do not pass `--artifact-dir`, `tune` writes under `artifacts/sqloom/tune/tune-<timestamp>/`. Each run writes:
@@ -262,6 +261,7 @@ If you do not pass `--artifact-dir`, `tune` writes under `artifacts/sqloom/tune/
 - `replay/`
 
 The `replay/` directory then contains the same replay, match, advice, and SQL proposal files you get when you run `replay`, `correlate`, and `advise` separately.
+When advice runs from a DACPAC, `replay/sqlserver-schema.sql` is the exact schema text sent to OpenAI.
 
 ## Replay Requests
 
@@ -328,7 +328,7 @@ Sqloom uses this ranking:
 Use `advise` after replay and correlation when you want Sqloom to turn the evidence into tuning suggestions:
 
 ```powershell
-dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --model-provider openai --openai-api-key "<api-key>" --sqlserver-schema-file "<schema-file>"
+dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --model-provider openai --openai-api-key "<api-key>" --sqlserver-dacpac-file "<dacpac-file>"
 ```
 
 Common advice switches:
@@ -339,7 +339,8 @@ Common advice switches:
 - `--json-output-file <path>`: choose a different advice output file
 - `--model-provider openai`: required model provider for this step
 - `--openai-api-key <key>`: required API key for the OpenAI-backed advice step
-- `--sqlserver-schema-file <path>`: required schema file used as table, column, and existing-index context
+- `--sqlserver-dacpac-file <path>`: DACPAC used to extract schema SQL into `sqlserver-schema.sql` under the replay artifact directory
+- `--sqlserver-schema-file <path>`: expert override for manually supplied schema SQL; this wins over DACPAC extraction when supplied
 - `--openai-base-url <url>`: optional override for the OpenAI base URL. The default is `https://api.openai.com`.
 - `--openai-model <id>`: optional override for the OpenAI model id. The default is `gpt-5.4-mini`.
 
@@ -348,21 +349,23 @@ By default, Sqloom reads `query-store-correlation.json` from the replay output f
 - `sql-tuning-proposal.json`
 - `sql-tuning-proposal.sql`
 
-Sqloom now uses OpenAI for this step. Before it sends the request, it packages the replay evidence, Query Store match data, any matching snapshot data, and the SQL Server schema file into a single evidence bundle.
+Sqloom now uses OpenAI for this step. Before it sends the request, it packages the replay evidence, Query Store match data, any matching snapshot data, and SQL Server schema text into a single evidence bundle. The normal path extracts that schema text from a DACPAC with DacFx and writes it as `sqlserver-schema.sql` next to the advice artifacts.
 
 Use `--model-provider openai` and pass the OpenAI settings on the command line. This CLI path does not read OpenAI settings from environment variables.
 
-The proposal files are SQL-focused review output built from the replay evidence, the Query Store match data, and the SQL Server schema file. Sqloom keeps the proposal kind returned by the model, and every valid model proposal is written into `tuning-advice.json`, `sql-tuning-proposal.json`, and `sql-tuning-proposal.sql`.
+The proposal files are SQL-focused review output built from the replay evidence, the Query Store match data, and the SQL Server schema text. Sqloom keeps the proposal kind returned by the model, and every valid model proposal is written into `tuning-advice.json`, `sql-tuning-proposal.json`, and `sql-tuning-proposal.sql`.
 
 Rollback SQL is helpful but optional in the OpenAI path. If the model leaves out `rollbackSqlScript`, Sqloom still keeps the proposal, records a warning in the advice files, and writes a placeholder rollback note in the `.sql` file. Sqloom no longer invents local SQL proposals from Query Store data alone.
 
 To generate operation advice:
 
 ```powershell
-dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --model-provider openai --openai-api-key "<api-key>" --sqlserver-schema-file "<schema-file>" --openai-base-url "https://api.openai.com" --openai-model "gpt-5.4-mini"
+dotnet run --project .\src\Sqloom.Host\Sqloom.Host.csproj -- advise --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" --model-provider openai --openai-api-key "<api-key>" --sqlserver-dacpac-file "<dacpac-file>" --openai-base-url "https://api.openai.com" --openai-model "gpt-5.4-mini"
 ```
 
 This uses the same correlation file, sends the evidence bundle and schema text to the Responses API with a strict JSON schema, keeps the model's `proposalKind`, and writes the selected model name into the report.
+
+If you already have a curated schema SQL file and want to bypass DACPAC extraction, pass `--sqlserver-schema-file <path>` instead of `--sqlserver-dacpac-file`.
 
 ## How App-Specific Code Fits In
 

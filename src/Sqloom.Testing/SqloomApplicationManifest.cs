@@ -17,5 +17,5 @@ public sealed class SqloomApplicationManifest
     public WorkloadProfile WorkloadProfile { get; init; } =
         WorkloadProfile.Empty;
 
-    public string? SchemaPath { get; init; }
+    public string? SqlServerDacpacPath { get; init; }
 }

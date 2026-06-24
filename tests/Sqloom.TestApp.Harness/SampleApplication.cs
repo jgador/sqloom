@@ -38,7 +38,7 @@ public sealed class SampleApplication : ISqloomApplication
             {
                 Name = "SqloomTestApp",
             },
-            SchemaPath = ResolveHarnessFilePath(ReplayConstants.SchemaFileName),
+            SqlServerDacpacPath = ResolveHarnessFilePath(ReplayConstants.DacpacFileName),
         };
     }
 

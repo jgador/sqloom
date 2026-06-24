@@ -78,7 +78,6 @@ public sealed class HostCatalogAdviceTests
     {
         var artifactDirectory = CreateTempDir();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
-        var schemaPath = SqloomTestAppPaths.GetSchemaPath();
         var currentDirectory = Directory.GetCurrentDirectory();
         QueryStoreEnabledReplayHostFactory replayHostFactory = new(
             new ReplayLaunchOptions
@@ -157,8 +156,8 @@ public sealed class HostCatalogAdviceTests
                                 "openai",
                                 "--openai-api-key",
                                 "sqloom-test-key",
-                                "--sqlserver-schema-file",
-                                schemaPath,
+                                "--sqlserver-dacpac-file",
+                                dacpacPath,
                                 "--openai-base-url",
                                 fakeOpenAiServer.BaseUrl.AbsoluteUri,
                             ],
@@ -204,8 +203,77 @@ public sealed class HostCatalogAdviceTests
                         $"Expected the proposal script to reference SalesLT.Product, but script was:{Environment.NewLine}{proposalScript}");
                     Assert.Contains("ProductCategoryID", proposalScript, StringComparison.OrdinalIgnoreCase);
                     Assert.Contains("ListPrice", proposalScript, StringComparison.OrdinalIgnoreCase);
+                    var generatedSchemaPath = ArtifactLayout.GetSqlServerSchemaPath(artifactDirectory);
+                    Assert.True(File.Exists(generatedSchemaPath), $"Expected generated schema at '{generatedSchemaPath}'.");
+                    var generatedSchemaSql = await File
+                        .ReadAllTextAsync(generatedSchemaPath)
+                        .ConfigureAwait(false);
+                    Assert.True(
+                        ContainsProductTableReference(generatedSchemaSql),
+                        $"Expected generated schema to contain SalesLT.Product, but schema started with:{Environment.NewLine}{Truncate(generatedSchemaSql)}");
+                    var openAiRequestBody = Assert.Single(fakeOpenAiServer.RequestBodies);
+                    Assert.Contains("sqlserver-schema.sql", openAiRequestBody, StringComparison.Ordinal);
+                    Assert.True(
+                        ContainsProductTableReference(openAiRequestBody),
+                        $"Expected the OpenAI evidence bundle to include SalesLT.Product schema text, but request started with:{Environment.NewLine}{Truncate(openAiRequestBody)}");
                     Assert.Equal("/v1/responses", Assert.Single(fakeOpenAiServer.RequestPaths));
                 }
+            }
+            finally
+            {
+                DeleteDirectoryIfExists(artifactDirectory);
+            }
+        }
+    }
+
+    [RequiresDockerFact]
+    [Trait("Category", "Integration")]
+    [Trait("Category", "OpenAI")]
+    public async Task HostRuntime_WithTuneAndManifestDacpac_GeneratesSchemaFromDacpac()
+    {
+        var artifactDirectory = CreateTempDir();
+        var currentDirectory = Directory.GetCurrentDirectory();
+        var fakeOpenAiServer = await FakeOpenAiServer
+            .StartAsync(CreateOpenAiAdviceResponse())
+            .ConfigureAwait(false);
+
+        await using (fakeOpenAiServer.ConfigureAwait(false))
+        {
+            try
+            {
+                var tuneResult = await RunHostRuntimeAsync(
+                        [
+                            "tune",
+                            "--artifact-dir",
+                            artifactDirectory,
+                            "--target",
+                            CatalogScenario.OperationKey,
+                            "--model-provider",
+                            "openai",
+                            "--openai-api-key",
+                            "sqloom-test-key",
+                            "--openai-base-url",
+                            fakeOpenAiServer.BaseUrl.AbsoluteUri,
+                        ],
+                        currentDirectory)
+                    .ConfigureAwait(false);
+                AssertCommandSucceeded("tune", tuneResult.ExitCode, tuneResult.StdOut, tuneResult.StdErr);
+
+                var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDir(artifactDirectory);
+                var generatedSchemaPath = ArtifactLayout.GetSqlServerSchemaPath(replayArtifactDirectory);
+                Assert.True(File.Exists(generatedSchemaPath), $"Expected generated schema at '{generatedSchemaPath}'.");
+
+                var generatedSchemaSql = await File
+                    .ReadAllTextAsync(generatedSchemaPath)
+                    .ConfigureAwait(false);
+                Assert.True(
+                    ContainsProductTableReference(generatedSchemaSql),
+                    $"Expected generated schema to contain SalesLT.Product, but schema started with:{Environment.NewLine}{Truncate(generatedSchemaSql)}");
+                var openAiRequestBody = Assert.Single(fakeOpenAiServer.RequestBodies);
+                Assert.Contains("sqlserver-schema.sql", openAiRequestBody, StringComparison.Ordinal);
+                Assert.True(
+                    ContainsProductTableReference(openAiRequestBody),
+                    $"Expected the OpenAI evidence bundle to include SalesLT.Product schema text, but request started with:{Environment.NewLine}{Truncate(openAiRequestBody)}");
             }
             finally
             {
@@ -672,6 +740,7 @@ public sealed class HostCatalogAdviceTests
         private readonly Task _serverTask;
         private readonly TcpListener _tcpListener;
         private readonly List<string> _requestPaths = [];
+        private readonly List<string> _requestBodies = [];
 
         private FakeOpenAiServer(
             TcpListener tcpListener,
@@ -685,6 +754,8 @@ public sealed class HostCatalogAdviceTests
         public Uri BaseUrl { get; private init; } = null!;
 
         public IReadOnlyList<string> RequestPaths => _requestPaths;
+
+        public IReadOnlyList<string> RequestBodies => _requestBodies;
 
         public static Task<FakeOpenAiServer> StartAsync(string responseBody)
         {
@@ -751,6 +822,11 @@ public sealed class HostCatalogAdviceTests
                 _requestPaths.Add(request.Path);
             }
 
+            lock (_requestBodies)
+            {
+                _requestBodies.Add(request.Body);
+            }
+
             var responseBytes = Encoding.UTF8.GetBytes(_responseBody);
             var responseHeader = string.Join(
                 "\r\n",
@@ -815,7 +891,14 @@ public sealed class HostCatalogAdviceTests
                 bodyBytesRemaining -= read;
             }
 
-            return new FakeHttpRequest(path);
+            var body = contentLength == 0
+                ? string.Empty
+                : Encoding.UTF8.GetString(
+                    requestBytes.GetBuffer(),
+                    bodyOffset,
+                    contentLength);
+
+            return new FakeHttpRequest(path, body);
         }
 
         private static int FindHeaderEndIndex(
@@ -857,7 +940,9 @@ public sealed class HostCatalogAdviceTests
             return 0;
         }
 
-        private sealed record FakeHttpRequest(string Path);
+        private sealed record FakeHttpRequest(
+            string Path,
+            string Body);
     }
 
     private sealed record HostRuntimeCommandResult(
