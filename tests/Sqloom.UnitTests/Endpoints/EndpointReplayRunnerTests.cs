@@ -7,11 +7,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Host.Replay;
 using Sqloom.Core.Execution;
 using Xunit;
 
-namespace Sqloom.AspNetCore.Tests.Endpoints;
+namespace Sqloom.Host.Tests.Replay;
 
 /// <summary>
 /// Exercises endpoint replay runner.
@@ -101,23 +101,22 @@ public sealed class EndpointReplayRunnerTests
             replayHost);
         var replayLaunchOptions = new ReplayLaunchOptions
         {
-            SqlServerDacpacPath = Path.Combine("artifacts", "test.dacpac"),
-            SqlServerSeedSqlPath = Path.Combine("artifacts", "test.seed.sql"),
+            DacpacPath = Path.Combine("artifacts", "test.dacpac"),
+            SeedSqlPath = Path.Combine("artifacts", "test.seed.sql"),
         };
 
         EndpointReplayRunner runner = new();
         var result = await runner.RunAsync(
-            new EndpointReplayRunnerOptions
+            new ReplayRunnerOptions
             {
                 AppName = "TestApp",
-                OpenApiDocumentPath = documentPath,
-                ReplayArtifactDirectory = tempDirectory,
+                OpenApiPath = documentPath,
+                ReplayArtifactDir = tempDirectory,
                 ReplayProfile = new ReplayProfile
                 {
-                    DefaultOpenApiDocumentPath = documentPath,
                     OperationOverlays =
                     [
-                        new ReplayOperationOverlayDefinition
+                        new ReplayOverlay
                         {
                             OperationKey = "POST /api/items/{itemId}",
                             Persona = "test-user",
@@ -138,8 +137,8 @@ public sealed class EndpointReplayRunnerTests
         Assert.Equal("""{"name":"runtime"}""", handler.RequestBody);
         Assert.Equal("abc123", Assert.Single(handler.RequestHeaders["x-trace"]));
         Assert.Equal("TestApp", result.AppName);
-        Assert.Equal(replayLaunchOptions.SqlServerDacpacPath, hostFactory.ReceivedLaunchOptions?.SqlServerDacpacPath);
-        Assert.Equal(replayLaunchOptions.SqlServerSeedSqlPath, hostFactory.ReceivedLaunchOptions?.SqlServerSeedSqlPath);
+        Assert.Equal(replayLaunchOptions.DacpacPath, hostFactory.ReceivedLaunchOptions?.DacpacPath);
+        Assert.Equal(replayLaunchOptions.SeedSqlPath, hostFactory.ReceivedLaunchOptions?.SeedSqlPath);
         Assert.Contains(
             result.Pipeline.Stages,
             static stage =>

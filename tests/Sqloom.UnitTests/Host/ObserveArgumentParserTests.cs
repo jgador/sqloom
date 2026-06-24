@@ -36,7 +36,7 @@ public sealed class ObserveArgumentParserTests
     public void Parse_UsesJsonOutputFileOverride()
     {
         ObserveArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
         var jsonOutputPath = Path.Combine(currentDirectory, "query-store.json");
 
         var arguments = parser.Parse(
@@ -55,7 +55,7 @@ public sealed class ObserveArgumentParserTests
     public void Parse_UsesExpandedDefaultPlanWindow()
     {
         ObserveArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
 
         var arguments = parser.Parse(
             [],
@@ -73,7 +73,7 @@ public sealed class ObserveArgumentParserTests
     public void Parse_RejectsLegacyJsonOutSwitch()
     {
         ObserveArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
@@ -89,7 +89,7 @@ public sealed class ObserveArgumentParserTests
         Assert.Contains("--json-out", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directory = Path.Combine(
             Path.GetTempPath(),

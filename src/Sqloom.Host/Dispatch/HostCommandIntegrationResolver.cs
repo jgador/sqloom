@@ -1,77 +1,91 @@
 using System;
-using System.Collections.Generic;
-using Sqloom.Core.Contracts;
+using System.Threading;
+using System.Threading.Tasks;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
 /// <summary>
-/// Resolves the app integrations required by a selected host command.
+/// Resolves the application harness required by a selected host command.
 /// </summary>
 internal sealed class HostCommandIntegrationResolver
 {
     private readonly AppResolver _appResolver;
-    private readonly IAppIntegration? _boundAppIntegration;
+    private readonly ISqloomApplication? _boundApplication;
 
     public HostCommandIntegrationResolver(AppResolver appResolver)
         : this(appResolver, null)
     {
     }
 
-    public HostCommandIntegrationResolver(IAppIntegration appIntegration)
-        : this(new AppResolver(), appIntegration)
+    public HostCommandIntegrationResolver(ISqloomApplication application)
+        : this(new AppResolver(), application)
     {
     }
 
     internal HostCommandIntegrationResolver(
         AppResolver appResolver,
-        IAppIntegration? boundAppIntegration)
+        ISqloomApplication? boundApplication)
     {
         _appResolver = appResolver ?? throw new ArgumentNullException(nameof(appResolver));
-        _boundAppIntegration = boundAppIntegration;
+        _boundApplication = boundApplication;
     }
 
-    public HostCommandBindings Resolve(
+    public async Task<HostCommandBindings> ResolveAsync(
         HostCommandKind commandKind,
-        HostStartupOptions startupOptions)
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
 
-        return commandKind switch
+        switch (commandKind)
         {
-            HostCommandKind.Observe => new HostCommandBindings
-            {
-                AppIntegration = ResolveObserveIntegration(startupOptions),
-            },
-            HostCommandKind.Tune => new HostCommandBindings
-            {
-                AppIntegration = ResolveRequiredIntegration(startupOptions),
-            },
-            HostCommandKind.Replay => new HostCommandBindings
-            {
-                AppIntegrations = ResolveReplayIntegrations(startupOptions),
-            },
-            HostCommandKind.Correlate or HostCommandKind.Advise => new HostCommandBindings
-            {
-                AppIntegration = _boundAppIntegration,
-            },
-            _ => throw new ArgumentOutOfRangeException(
+            case HostCommandKind.Observe:
+                return new HostCommandBindings
+                {
+                    Application = await ResolveObserveApplicationAsync(
+                            startupOptions,
+                            cancellationToken)
+                        .ConfigureAwait(false),
+                };
+            case HostCommandKind.Tune:
+            case HostCommandKind.Replay:
+                return new HostCommandBindings
+                {
+                    Application = await ResolveRequiredApplicationAsync(
+                            startupOptions,
+                            cancellationToken)
+                        .ConfigureAwait(false),
+                };
+            case HostCommandKind.Correlate:
+            case HostCommandKind.Advise:
+                return new HostCommandBindings
+                {
+                    Application = _boundApplication,
+                };
+            default:
+                throw new ArgumentOutOfRangeException(
                 nameof(commandKind),
                 commandKind,
-                "Sqloom could not resolve app integrations for the selected command kind."),
-        };
+                "Sqloom could not resolve an app harness for the selected command kind.");
+        }
     }
 
-    public IAppIntegration? ResolveBannerIntegration(HostStartupOptions startupOptions)
+    public Task<ISqloomApplication?> ResolveBannerApplicationAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
-        return ResolveObserveIntegration(startupOptions);
+        return ResolveObserveApplicationAsync(startupOptions, cancellationToken);
     }
 
-    private IAppIntegration? ResolveObserveIntegration(HostStartupOptions startupOptions)
+    private async Task<ISqloomApplication?> ResolveObserveApplicationAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken)
     {
-        if (_boundAppIntegration is not null)
+        if (_boundApplication is not null)
         {
-            return _boundAppIntegration;
+            return _boundApplication;
         }
 
         if (!startupOptions.HasTargetSelection)
@@ -79,22 +93,22 @@ internal sealed class HostCommandIntegrationResolver
             return null;
         }
 
-        return _appResolver.Resolve(startupOptions);
+        return await _appResolver
+            .ResolveAsync(startupOptions, cancellationToken)
+            .ConfigureAwait(false);
     }
 
-    private IAppIntegration ResolveRequiredIntegration(HostStartupOptions startupOptions)
+    private async Task<ISqloomApplication> ResolveRequiredApplicationAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken)
     {
-        return _boundAppIntegration
-            ?? _appResolver.Resolve(startupOptions);
-    }
-
-    private IReadOnlyList<IAppIntegration> ResolveReplayIntegrations(HostStartupOptions startupOptions)
-    {
-        if (_boundAppIntegration is not null)
+        if (_boundApplication is not null)
         {
-            return [_boundAppIntegration];
+            return _boundApplication;
         }
 
-        return _appResolver.ResolveReplayIntegrations(startupOptions);
+        return await _appResolver
+            .ResolveAsync(startupOptions, cancellationToken)
+            .ConfigureAwait(false);
     }
 }

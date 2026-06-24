@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Sqloom.Core.Execution;
 
@@ -7,6 +8,7 @@ namespace Sqloom.Core.Execution;
 /// </summary>
 public sealed class PipelineReport
 {
+    [JsonPropertyName("stages")]
     public required IReadOnlyList<PipelineStageReport> Stages { get; init; }
 }
 
@@ -15,12 +17,16 @@ public sealed class PipelineReport
 /// </summary>
 public sealed class PipelineStageReport
 {
+    [JsonPropertyName("name")]
     public required string Name { get; init; }
 
+    [JsonPropertyName("status")]
     public required string Status { get; init; }
 
+    [JsonPropertyName("summary")]
     public required string Summary { get; init; }
 
+    [JsonPropertyName("artifactPath")]
     public string? ArtifactPath { get; init; }
 }
 

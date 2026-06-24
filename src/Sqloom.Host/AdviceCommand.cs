@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
+using Sqloom.Core.QueryStore;
 
 namespace Sqloom.Host;
 
@@ -18,14 +18,24 @@ internal sealed class AdviceCommand
 {
     private readonly AdviseArgumentParser _argumentParser = new();
     private readonly Func<OpenAIAdviceOptions, IAdviceReportGenerator>? _generatorFactory;
+    private readonly ISqlServerDacpacSchemaExtractor _schemaExtractor;
 
     public AdviceCommand()
+        : this(null, new SqlServerDacpacSchemaExtractor())
     {
     }
 
     internal AdviceCommand(Func<OpenAIAdviceOptions, IAdviceReportGenerator> generatorFactory)
+        : this(generatorFactory, new SqlServerDacpacSchemaExtractor())
     {
-        _generatorFactory = generatorFactory ?? throw new ArgumentNullException(nameof(generatorFactory));
+    }
+
+    internal AdviceCommand(
+        Func<OpenAIAdviceOptions, IAdviceReportGenerator>? generatorFactory,
+        ISqlServerDacpacSchemaExtractor schemaExtractor)
+    {
+        _generatorFactory = generatorFactory;
+        _schemaExtractor = schemaExtractor ?? throw new ArgumentNullException(nameof(schemaExtractor));
     }
 
     public HostCommandKind CommandKind => HostCommandKind.Advise;
@@ -33,10 +43,12 @@ internal sealed class AdviceCommand
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
         context.ConsoleWriter.PrintBanner(
-            context.AppIntegration?.AppName,
-            HostApplication.GetProjectNames(context.AppIntegration));
+            null,
+            HostApplication.GetProjectNames(context.Application));
 
-        var arguments = _argumentParser.Parse(context.Arguments);
+        var arguments = _argumentParser.Parse(
+            context.Arguments,
+            context.CurrentDirectory);
         arguments.DebugWriter = context.DebugWriter;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
         context.ConsoleWriter.PrintAdviceSummary(
@@ -50,7 +62,7 @@ internal sealed class AdviceCommand
         CancellationToken cancellationToken = default)
     {
         var correlationReport = await JsonFileReader
-            .ReadAsync<QueryStoreCorrelationReport>(
+            .ReadAsync<QueryCorrelationReport>(
                 arguments.QueryStoreCorrelationPath,
                 static serializerOptions => serializerOptions.Converters.Add(new JsonStringEnumConverter()),
                 cancellationToken)
@@ -67,7 +79,7 @@ internal sealed class AdviceCommand
 
     internal async Task<AdviceCommandResult> ExecuteAsync(
         AdviseArguments arguments,
-        QueryStoreCorrelationReport correlationReport,
+        QueryCorrelationReport correlationReport,
         CancellationToken cancellationToken = default)
     {
         arguments.DebugWriter.PrintAdviceRun(arguments);
@@ -77,13 +89,17 @@ internal sealed class AdviceCommand
                 "Sqloom advice with --model-provider openai requires resolved OpenAI options.");
         }
 
+        var schemaPath = await ResolveSchemaPathAsync(
+                arguments,
+                cancellationToken)
+            .ConfigureAwait(false);
         using IAdviceReportGenerator adviceGenerator = CreateAdviceReportGenerator(arguments);
         var report = await adviceGenerator
             .CreateReportAsync(
                 correlationReport,
                 arguments.QueryStoreCorrelationPath,
                 arguments.JsonOutputPath,
-                arguments.SqlServerSchemaPath,
+                schemaPath,
                 cancellationToken)
             .ConfigureAwait(false);
 
@@ -98,6 +114,29 @@ internal sealed class AdviceCommand
             Report = report,
             JsonOutputPath = arguments.JsonOutputPath,
         };
+    }
+
+    private async Task<string> ResolveSchemaPathAsync(
+        AdviseArguments arguments,
+        CancellationToken cancellationToken)
+    {
+        if (!string.IsNullOrWhiteSpace(arguments.SchemaPath))
+        {
+            return arguments.SchemaPath;
+        }
+
+        if (string.IsNullOrWhiteSpace(arguments.DacpacPath))
+        {
+            throw new ArgumentException(
+                "Sqloom advice needs either --sqlserver-schema-file or a DACPAC source.");
+        }
+
+        return await _schemaExtractor
+            .ExtractAsync(
+                arguments.DacpacPath,
+                arguments.ReplayArtifactDir,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     [SuppressMessage(
@@ -147,7 +186,7 @@ internal sealed class AdviceCommand
 internal interface IAdviceReportGenerator : IDisposable
 {
     Task<AdviceReport> CreateReportAsync(
-        QueryStoreCorrelationReport correlationReport,
+        QueryCorrelationReport correlationReport,
         string queryStoreCorrelationPath,
         string adviceOutputPath,
         string sqlServerSchemaPath,

@@ -17,10 +17,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Sqloom.AspNetCore\Sqloom.AspNetCore.csproj" />
-    <ProjectReference Include="..\Sqloom.AzureSql\Sqloom.AzureSql.csproj" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.SqlServer.DacFx" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
-    <ProjectReference Include="..\Sqloom.QueryStore\Sqloom.QueryStore.csproj" />
+    <ProjectReference Include="..\Sqloom.Testing\Sqloom.Testing.csproj" />
   </ItemGroup>
 
   <ItemGroup>

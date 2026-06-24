@@ -45,16 +45,16 @@ internal sealed class TuneWorkflowRunner
         ArgumentNullException.ThrowIfNull(arguments);
         arguments.DebugWriter.PrintTuneRun(arguments);
 
-        arguments.DebugWriter.PrintTuneStageStarting("observe");
-        var observeResult = await _observeCommand
-            .ExecuteAsync(arguments.ObserveArguments, cancellationToken)
-            .ConfigureAwait(false);
-        arguments.DebugWriter.PrintTuneStageCompleted("observe", observeResult.JsonOutputPath);
         arguments.DebugWriter.PrintTuneStageStarting("replay");
         var replayResult = await _replayCommand
             .ExecuteAsync(arguments.ReplayArguments, cancellationToken)
             .ConfigureAwait(false);
         arguments.DebugWriter.PrintTuneStageCompleted("replay", replayResult.ReplayResult.SummaryArtifactPath);
+        arguments.DebugWriter.PrintTuneStageStarting("observe");
+        var observeResult = await _observeCommand
+            .ExecuteAsync(arguments.ObserveArguments, cancellationToken)
+            .ConfigureAwait(false);
+        arguments.DebugWriter.PrintTuneStageCompleted("observe", observeResult.JsonOutputPath);
         arguments.DebugWriter.PrintTuneStageStarting("correlate");
         var correlateResult = await _correlateCommand
             .ExecuteAsync(
@@ -79,7 +79,7 @@ internal sealed class TuneWorkflowRunner
             replayResult,
             correlateResult,
             adviceResult);
-        var summaryOutputPath = ArtifactLayout.GetTuneSummaryPath(arguments.WorkflowArtifactDirectory);
+        var summaryOutputPath = ArtifactLayout.GetTuneSummaryPath(arguments.WorkflowArtifactDir);
         await JsonFileWriter.WriteAsync(
                 summaryOutputPath,
                 report,
@@ -128,9 +128,9 @@ internal sealed class TuneWorkflowRunner
         {
             GeneratedAtUtc = adviceResult.Report.GeneratedAtUtc,
             AppName = adviceResult.Report.AppName,
-            WorkflowArtifactDirectory = arguments.WorkflowArtifactDirectory,
+            WorkflowArtifactDir = arguments.WorkflowArtifactDir,
             QueryStoreSnapshotPath = observeResult.JsonOutputPath,
-            ReplayArtifactDirectory = replayResult.ReplayResult.ReplayArtifactDirectory,
+            ReplayArtifactDir = replayResult.ReplayResult.ReplayArtifactDir,
             QueryStoreCorrelationPath = correlateResult.JsonOutputPath,
             TuningAdvicePath = adviceResult.JsonOutputPath,
             SqlProposalJsonPath = adviceResult.Report.SqlProposalJsonPath,

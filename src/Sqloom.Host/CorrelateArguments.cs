@@ -9,7 +9,7 @@ internal sealed class CorrelateArguments
 
     public required string QueryStoreSnapshotPath { get; init; }
 
-    public required string ReplayArtifactDirectory { get; init; }
+    public required string ReplayArtifactDir { get; init; }
 
     public required string JsonOutputPath { get; init; }
 

@@ -1,7 +1,7 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
-using Sqloom.Core.Contracts;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -27,31 +27,31 @@ public static class HostRuntime
     }
 
     public static Task<int> RunAsync(
-        IAppIntegration appIntegration,
+        ISqloomApplication application,
         string[] args)
     {
         return RunAsync(
-            appIntegration,
+            application,
             args,
             Environment.CurrentDirectory);
     }
 
     public static async Task<int> RunAsync(
-        IAppIntegration appIntegration,
+        ISqloomApplication application,
         string[] args,
         string currentDirectory)
     {
-        ArgumentNullException.ThrowIfNull(appIntegration);
+        ArgumentNullException.ThrowIfNull(application);
 
         return await RunCoreAsync(
-                appIntegration,
+                application,
                 args,
                 currentDirectory)
             .ConfigureAwait(false);
     }
 
     private static async Task<int> RunCoreAsync(
-        IAppIntegration? appIntegration,
+        ISqloomApplication? application,
         string[] args,
         string currentDirectory)
     {
@@ -63,17 +63,17 @@ public static class HostRuntime
             var startupOptions = startupCommandLine.Parse(args, currentDirectory);
             if (TryHandleStartupAction(
                 startupOptions,
-                appIntegration is not null,
+                application is not null,
                 consoleWriter,
                 out var exitCode))
             {
                 return exitCode;
             }
 
-            var application = CreateApplication(
-                appIntegration,
+            var hostApplication = CreateApplication(
+                application,
                 consoleWriter);
-            return await application
+            return await hostApplication
                 .RunAsync(
                     startupOptions,
                     currentDirectory)
@@ -108,15 +108,15 @@ public static class HostRuntime
     }
 
     private static HostApplication CreateApplication(
-        IAppIntegration? appIntegration,
+        ISqloomApplication? application,
         HostConsoleWriter consoleWriter)
     {
-        return appIntegration is null
+        return application is null
             ? new HostApplication(
                 new AppResolver(),
                 consoleWriter)
             : new HostApplication(
-                appIntegration,
+                application,
                 consoleWriter);
     }
 
@@ -131,7 +131,7 @@ public static class HostRuntime
 
     private static bool TryHandleStartupAction(
         HostStartupOptions startupOptions,
-        bool hasBoundAppIntegration,
+        bool hasBoundApplication,
         HostConsoleWriter consoleWriter,
         out int exitCode)
     {
@@ -149,10 +149,10 @@ public static class HostRuntime
             return true;
         }
 
-        if (hasBoundAppIntegration && startupOptions.HasTargetSelection)
+        if (hasBoundApplication && startupOptions.HasTargetSelection)
         {
             throw new ArgumentException(
-                "This app-owned Sqloom host already provides its integration. Remove the explicit target path selection and use the generic Sqloom.Host executable when you need runtime app selection.");
+                "This app-owned Sqloom host already provides its harness. Remove the explicit target path selection and use the generic Sqloom.Host executable when you need runtime app selection.");
         }
 
         exitCode = 0;

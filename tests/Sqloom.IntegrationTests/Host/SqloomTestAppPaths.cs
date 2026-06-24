@@ -20,16 +20,16 @@ internal static class SqloomTestAppPaths
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
-            "Sqloom.TestApp",
-            "Sqloom.TestApp.csproj");
+            "Sqloom.TestApp.Harness",
+            "Sqloom.TestApp.Harness.csproj");
     }
 
-    public static string GetSqlServerDacpacPath()
+    public static string GetDacpacPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
-            "Sqloom.TestApp.IntegrationTests",
+            "Sqloom.TestApp.Harness",
             "AdventureWorksLT2025.dacpac");
     }
 
@@ -38,7 +38,7 @@ internal static class SqloomTestAppPaths
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
-            "Sqloom.TestApp.IntegrationTests",
+            "Sqloom.TestApp.Harness",
             "Export-AdventureWorksLT2025SeedSql.ps1");
     }
 
@@ -47,16 +47,16 @@ internal static class SqloomTestAppPaths
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
-            "Sqloom.TestApp.IntegrationTests",
+            "Sqloom.TestApp.Harness",
             "AdventureWorksLT2025.seed.sql");
     }
 
-    public static string GetSqlServerSchemaPath()
+    public static string GetOpenApiPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
-            "Sqloom.TestApp.IntegrationTests",
-            "AdventureWorksLT2025.schema.sql");
+            "Sqloom.TestApp",
+            "openapi.json");
     }
 }

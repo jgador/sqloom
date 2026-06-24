@@ -5,7 +5,7 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class TuneArguments
 {
-    public required string WorkflowArtifactDirectory { get; init; }
+    public required string WorkflowArtifactDir { get; init; }
 
     public required ObserveArguments ObserveArguments { get; init; }
 

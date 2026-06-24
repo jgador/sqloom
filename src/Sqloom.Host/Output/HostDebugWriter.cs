@@ -9,8 +9,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
 
 namespace Sqloom.Host;
 
@@ -51,7 +50,7 @@ internal sealed class HostDebugWriter
             "observe",
             "resolved inputs",
             [
-                $"connection_string={RedactConnectionString(arguments.ReadOnlyConnectionString)}",
+                $"connection_string={RedactConnectionString(arguments.ReadOnlyConnection)}",
                 $"lookback_hours={arguments.ObservationOptions.LookbackWindow.TotalHours.ToString("F1", CultureInfo.InvariantCulture)}",
                 $"max_plans={arguments.ObservationOptions.MaxPlans.ToString(CultureInfo.InvariantCulture)}",
                 $"max_waits={arguments.ObservationOptions.MaxWaits.ToString(CultureInfo.InvariantCulture)}",
@@ -78,18 +77,18 @@ internal sealed class HostDebugWriter
             "resolved inputs",
             [
                 $"app={options.AppName}",
-                $"openapi_document={options.OpenApiDocumentPath}",
-                $"artifact_directory={options.ReplayArtifactDirectory}",
+                $"openapi_document={options.OpenApiPath}",
+                $"artifact_directory={options.ReplayArtifactDir}",
                 $"max_operations={options.MaxOperations.ToString(CultureInfo.InvariantCulture)}",
                 $"target_filter={options.TargetFilter ?? "default"}",
-                $"sqlserver_dacpac={options.ReplayLaunchOptions.SqlServerDacpacPath ?? "none"}",
-                $"sqlserver_seed_sql={options.ReplayLaunchOptions.SqlServerSeedSqlPath ?? "none"}",
+                $"sqlserver_dacpac={options.ReplayLaunchOptions.DacpacPath ?? "none"}",
+                $"sqlserver_seed_sql={options.ReplayLaunchOptions.SeedSqlPath ?? "none"}",
             ]);
     }
 
     public void PrintCorrelationRun(
         CorrelateArguments arguments,
-        QueryStoreCorrelationReport report)
+        QueryCorrelationReport report)
     {
         if (!IsEnabled)
         {
@@ -101,7 +100,7 @@ internal sealed class HostDebugWriter
             "resolved inputs",
             [
                 $"connection_string={RedactConnectionString(arguments.ConnectionString)}",
-                $"replay_artifact_directory={arguments.ReplayArtifactDirectory}",
+                $"replay_artifact_directory={arguments.ReplayArtifactDir}",
                 $"query_store_snapshot={arguments.QueryStoreSnapshotPath}",
                 $"json_output_path={arguments.JsonOutputPath}",
                 $"operation_count={report.Summary.OperationCount.ToString(CultureInfo.InvariantCulture)}",
@@ -122,9 +121,10 @@ internal sealed class HostDebugWriter
             "advise",
             "resolved inputs",
             [
-                $"replay_artifact_directory={arguments.ReplayArtifactDirectory}",
+                $"replay_artifact_directory={arguments.ReplayArtifactDir}",
                 $"query_store_correlation={arguments.QueryStoreCorrelationPath}",
-                $"sqlserver_schema_file={arguments.SqlServerSchemaPath}",
+                $"sqlserver_schema_file={arguments.SchemaPath ?? "none"}",
+                $"sqlserver_dacpac_file={arguments.DacpacPath ?? "none"}",
                 $"json_output_path={arguments.JsonOutputPath}",
                 $"model_provider={arguments.ModelProvider}",
                 $"openai_base_url={arguments.OpenAIOptions?.BaseUrl ?? "n/a"}",
@@ -143,12 +143,13 @@ internal sealed class HostDebugWriter
             "tune",
             "resolved workflow",
             [
-                $"workflow_artifact_directory={arguments.WorkflowArtifactDirectory}",
+                $"workflow_artifact_directory={arguments.WorkflowArtifactDir}",
                 $"query_store_snapshot={arguments.CorrelateArguments.QueryStoreSnapshotPath}",
-                $"replay_artifact_directory={arguments.ReplayArguments.RunnerOptions.ReplayArtifactDirectory}",
+                $"replay_artifact_directory={arguments.ReplayArguments.RunnerOptions.ReplayArtifactDir}",
                 $"query_store_correlation={arguments.CorrelateArguments.JsonOutputPath}",
                 $"tuning_advice={arguments.AdviseArguments.JsonOutputPath}",
-                $"sqlserver_schema_file={arguments.AdviseArguments.SqlServerSchemaPath}",
+                $"sqlserver_schema_file={arguments.AdviseArguments.SchemaPath ?? "none"}",
+                $"sqlserver_dacpac_file={arguments.AdviseArguments.DacpacPath ?? "none"}",
                 $"model_provider={arguments.AdviseArguments.ModelProvider}",
                 $"openai_model={arguments.AdviseArguments.OpenAIOptions?.Model ?? "n/a"}",
             ]);

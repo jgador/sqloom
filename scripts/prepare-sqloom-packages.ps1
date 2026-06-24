@@ -48,8 +48,8 @@ try
 
     if (-not $SkipSmoke)
     {
-        $sampleAppProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp\Sqloom.TestApp.csproj"
-        & $verifyExePath replay $sampleAppProject --target "GET /api/products/by-category"
+        $sampleHarnessProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj"
+        & $verifyExePath replay $sampleHarnessProject --target "GET /api/products/by-category"
         if ($LASTEXITCODE -ne 0)
         {
             throw "Prepared sqloom package smoke check failed."

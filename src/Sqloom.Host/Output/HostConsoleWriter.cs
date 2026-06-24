@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Host.Replay;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
 
 namespace Sqloom.Host;
 
@@ -35,34 +34,34 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("  --help");
         Console.WriteLine("  --version");
         Console.WriteLine("  [--debug] observe [<path>] --read-only-connection-string <connection-string> [options]");
-        Console.WriteLine("  [--debug] tune <path> --read-only-connection-string <connection-string> [options]");
+        Console.WriteLine("  [--debug] tune <path> [--read-only-connection-string <connection-string>] [options]");
         Console.WriteLine("  [--debug] replay <path> [options]");
         Console.WriteLine("  [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [options]");
         Console.WriteLine("  [--debug] advise --replay-artifact-dir <path> [options]");
         Console.WriteLine(
             "  [--debug] observe [<path>] [--dotnet-command <command>] [--no-build] --read-only-connection-string <connection-string> [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--json-output-file <path>] [--app-only] [--show-classification]");
-        Console.WriteLine("    --app-only implies classification display and filters the console view to App-classified queries when the selected app integration supplies Query Store profile data.");
+        Console.WriteLine("    --app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.");
         Console.WriteLine(
-            "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] --read-only-connection-string <connection-string> [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] --model-provider openai --openai-api-key <key> --sqlserver-schema-file <path> [--openai-model <id>] [--openai-base-url <url>]");
-        Console.WriteLine("    Tune runs observe -> replay -> correlate -> advise in one command. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
+            "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] [--read-only-connection-string <connection-string>] [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] --model-provider openai --openai-api-key <key> [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
+        Console.WriteLine("    Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
+        Console.WriteLine("    Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string. Advice uses --sqlserver-schema-file when supplied, otherwise it extracts schema SQL from --sqlserver-dacpac-file or the harness manifest DACPAC.");
         Console.WriteLine("    When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.");
         Console.WriteLine(
             "  [--debug] replay <path> [--dotnet-command <command>] [--no-build] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"]");
-        Console.WriteLine("    Standalone replay requires an explicit target path after the replay verb. Supported target paths are project files, solution files, solution filters, and directories.");
-        Console.WriteLine("    Sqloom resolves that target to one or more distinct app integrations, resolves each project's TargetPath through dotnet msbuild, and builds it unless --no-build is supplied.");
+        Console.WriteLine("    Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.");
+        Console.WriteLine("    Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.");
         Console.WriteLine("    Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.");
-        Console.WriteLine("    When a solution, solution filter, or directory resolves to multiple distinct app integrations, replay runs each target in order. If --artifact-dir is supplied, Sqloom writes one per-app subdirectory under that root.");
-        Console.WriteLine("    SQL Server-backed replay harnesses can require an app-owned DACPAC path through --sqlserver-dacpac-file.");
-        Console.WriteLine("    App-owned SQL replay harnesses can also apply a post-DACPAC seed script through --sqlserver-seed-sql-file, which requires --sqlserver-dacpac-file.");
+        Console.WriteLine("    If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.");
+        Console.WriteLine("    SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; --sqlserver-dacpac-file and --sqlserver-seed-sql-file override them.");
         Console.WriteLine("    Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".");
         Console.WriteLine("    Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.");
         Console.WriteLine(
             "  [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [--json-output-file <path>]");
         Console.WriteLine("    Correlation resolves statement_sql_handle against captured replay SQL, then writes query-store-correlation.json under the replay artifact directory by default.");
         Console.WriteLine(
-            "  [--debug] advise --replay-artifact-dir <path> [--query-store-correlation-file <path>] [--json-output-file <path>] --model-provider openai --openai-api-key <key> --sqlserver-schema-file <path> [--openai-model <id>] [--openai-base-url <url>]");
-        Console.WriteLine("    Advice derives operation-level tuning guidance from query-store-correlation.json plus the supplied SQL Server schema file, then writes tuning-advice.json, sql-tuning-proposal.json, and sql-tuning-proposal.sql under the replay artifact directory by default.");
-        Console.WriteLine("    OpenAI advice requires --model-provider openai, --openai-api-key, and --sqlserver-schema-file.");
+            "  [--debug] advise --replay-artifact-dir <path> [--query-store-correlation-file <path>] [--json-output-file <path>] --model-provider openai --openai-api-key <key> [--sqlserver-dacpac-file <path>] [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
+        Console.WriteLine("    Advice derives operation-level tuning guidance from query-store-correlation.json plus SQL Server schema extracted from a DACPAC, then writes tuning-advice.json, sql-tuning-proposal.json, and sql-tuning-proposal.sql under the replay artifact directory by default.");
+        Console.WriteLine("    OpenAI advice requires --model-provider openai, --openai-api-key, and either --sqlserver-dacpac-file or the expert --sqlserver-schema-file override.");
         Console.WriteLine("    Use --debug to print per-stage diagnostics to stderr. With advise, debug prints the redacted OpenAI request and response payloads.");
     }
 
@@ -73,12 +72,12 @@ internal sealed class HostConsoleWriter
 
     public void PrintNoCommandHint()
     {
-        Console.WriteLine("Use tune <path> to run the full observe, replay, correlate, and advise workflow in one command.");
-        Console.WriteLine("Use observe to capture a readonly Azure SQL Query Store snapshot.");
+        Console.WriteLine("Use tune <path> to start the harness and run the full replay, observe, correlate, and advise workflow in one command.");
+        Console.WriteLine("Use observe to capture a readonly SQL Server or Azure SQL Query Store snapshot.");
         Console.WriteLine("Use replay <path> to execute OpenAPI-driven in-process ASP.NET Core replays explicitly.");
-        Console.WriteLine("Standalone replay accepts a project, solution, solution filter, or directory path immediately after the replay verb.");
-        Console.WriteLine("SQL Server-backed replay harnesses can require an app-owned DACPAC path through --sqlserver-dacpac-file <path>.");
-        Console.WriteLine("Some app-owned SQL replay harnesses can also apply a post-DACPAC seed script through --sqlserver-seed-sql-file <path>.");
+        Console.WriteLine("Standalone replay accepts a harness project, harness assembly, solution, solution filter, or directory path immediately after the replay verb.");
+        Console.WriteLine("Sqloom resolves the target to exactly one public non-abstract ISqloomApplication implementation.");
+        Console.WriteLine("SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; CLI paths override them.");
         Console.WriteLine("Replay target selection uses --target \"METHOD /path/template\" when you need one exact operation.");
         Console.WriteLine("Use correlate to map replay SQL back to captured Query Store rows.");
         Console.WriteLine("Use advise to turn a correlation artifact into operation-level tuning guidance.");
@@ -107,7 +106,7 @@ internal sealed class HostConsoleWriter
             $"- State: {snapshot.DatabaseOptions.ActualState} (desired {snapshot.DatabaseOptions.DesiredState})");
         Console.WriteLine(
             $"- Storage: {snapshot.DatabaseOptions.CurrentStorageSizeMb:F1} MB / {snapshot.DatabaseOptions.MaxStorageSizeMb:F1} MB");
-        Console.WriteLine($"- Profile: {snapshot.WorkloadProfileName ?? QueryStoreWorkloadProfile.Empty.Name}");
+        Console.WriteLine($"- Profile: {snapshot.WorkloadProfileName ?? WorkloadProfile.Empty.Name}");
         Console.WriteLine(appOnly
             ? $"- Plans: {displayedPlans.Count} shown / {snapshot.Plans.Count} captured"
             : $"- Plans: {snapshot.Plans.Count}");
@@ -163,7 +162,7 @@ internal sealed class HostConsoleWriter
             foreach (var wait in displayedWaits)
             {
                 Console.WriteLine(
-                    $"- query_id={wait.QueryId}, plan_id={wait.PlanId}, wait={wait.WaitCategory}, total_ms={wait.TotalWaitMilliseconds:F2}, avg_ms={wait.AverageQueryWaitMilliseconds:F2}");
+                    $"- query_id={wait.QueryId}, plan_id={wait.PlanId}, wait={wait.WaitCategory}, total_ms={wait.TotalWaitMilliseconds:F2}, avg_ms={wait.AvgWaitMs:F2}");
                 if (showClassification)
                 {
                     PrintClassification(wait.Classification);
@@ -183,8 +182,8 @@ internal sealed class HostConsoleWriter
     {
         Console.WriteLine("Replay summary:");
         Console.WriteLine($"- App: {runReport.AppName}");
-        Console.WriteLine($"- OpenAPI document: {replayResult.OpenApiDocumentPath}");
-        Console.WriteLine($"- Artifact directory: {replayResult.ReplayArtifactDirectory}");
+        Console.WriteLine($"- OpenAPI document: {replayResult.OpenApiPath}");
+        Console.WriteLine($"- Artifact directory: {replayResult.ReplayArtifactDir}");
         Console.WriteLine($"- Discovered operations: {runReport.DiscoveredOperationCount}");
         Console.WriteLine($"- Planned operations: {runReport.PlannedOperationCount}");
         Console.WriteLine($"- Replayed operations: {replayResult.Results.Count(result => string.Equals(result.Status, "replayed", StringComparison.OrdinalIgnoreCase))}");
@@ -204,7 +203,7 @@ internal sealed class HostConsoleWriter
             Console.WriteLine($"- Seed script sha256: {sqlServerSeedSql.Sha256}");
         }
 
-        Console.WriteLine($"- Discovery artifact: {replayResult.DiscoveredOperationsArtifactPath}");
+        Console.WriteLine($"- Discovery artifact: {replayResult.DiscoveredOpsPath}");
         Console.WriteLine($"- Replay plan artifact: {replayResult.ReplayPlanArtifactPath}");
         Console.WriteLine($"- Summary artifact: {replayResult.SummaryArtifactPath}");
         PrintPipeline(runReport.Pipeline);
@@ -253,19 +252,19 @@ internal sealed class HostConsoleWriter
     }
 
     public void PrintCorrelationSummary(
-        QueryStoreCorrelationReport report,
+        QueryCorrelationReport report,
         string jsonOutputPath)
     {
         Console.WriteLine("Query Store correlation:");
         Console.WriteLine($"- App: {report.AppName ?? "unknown"}");
-        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDirectory}");
+        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
         Console.WriteLine($"- Query Store snapshot: {report.QueryStoreSnapshotPath ?? "n/a"}");
         Console.WriteLine($"- Query Store captured at: {report.QueryStoreCapturedAtUtc:O}");
         Console.WriteLine($"- Output path: {jsonOutputPath}");
         Console.WriteLine($"- Operations: {report.Summary.OperationCount}");
         Console.WriteLine($"- Captured SQL commands: {report.Summary.CapturedCommandCount}");
         Console.WriteLine($"- Matched commands: {report.Summary.MatchedCommandCount}");
-        Console.WriteLine($"- StatementHandleExact: {report.Summary.StatementHandleExactCount}");
+        Console.WriteLine($"- StatementHandleExact: {report.Summary.HandleExactCount}");
         Console.WriteLine($"- QueryTextExact: {report.Summary.QueryTextExactCount}");
         Console.WriteLine($"- FingerprintFallback: {report.Summary.FingerprintFallbackCount}");
         Console.WriteLine($"- Unmatched: {report.Summary.UnmatchedCount}");
@@ -281,7 +280,7 @@ internal sealed class HostConsoleWriter
         foreach (var operation in report.Summary.Operations)
         {
             Console.WriteLine(
-                $"- {operation.OperationKey}: status={operation.ReplayStatus}, sql={operation.CapturedCommandCount}, matched={operation.MatchedCommandCount}, handle={operation.StatementHandleExactCount}, text={operation.QueryTextExactCount}, fingerprint={operation.FingerprintFallbackCount}, unmatched={operation.UnmatchedCount}");
+                $"- {operation.OperationKey}: status={operation.ReplayStatus}, sql={operation.CapturedCommandCount}, matched={operation.MatchedCommandCount}, handle={operation.HandleExactCount}, text={operation.QueryTextExactCount}, fingerprint={operation.FingerprintFallbackCount}, unmatched={operation.UnmatchedCount}");
             if (operation.MatchedQueryIds.Count > 0)
             {
                 Console.WriteLine($"  query_ids={string.Join(", ", operation.MatchedQueryIds)}");
@@ -295,7 +294,7 @@ internal sealed class HostConsoleWriter
     {
         Console.WriteLine("Tuning advice:");
         Console.WriteLine($"- App: {report.AppName}");
-        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDirectory}");
+        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
         Console.WriteLine($"- Correlation artifact: {report.QueryStoreCorrelationPath}");
         Console.WriteLine($"- Output path: {jsonOutputPath}");
         Console.WriteLine($"- SQL proposal JSON: {report.SqlProposalJsonPath}");
@@ -346,9 +345,9 @@ internal sealed class HostConsoleWriter
     {
         Console.WriteLine("Tune summary:");
         Console.WriteLine($"- App: {report.AppName}");
-        Console.WriteLine($"- Workflow artifact directory: {report.WorkflowArtifactDirectory}");
+        Console.WriteLine($"- Workflow artifact directory: {report.WorkflowArtifactDir}");
         Console.WriteLine($"- Query Store snapshot: {report.QueryStoreSnapshotPath}");
-        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDirectory}");
+        Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
         Console.WriteLine($"- Correlation artifact: {report.QueryStoreCorrelationPath}");
         Console.WriteLine($"- Advice artifact: {report.TuningAdvicePath}");
         Console.WriteLine($"- SQL proposal JSON: {report.SqlProposalJsonPath}");

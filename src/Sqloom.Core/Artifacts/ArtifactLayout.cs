@@ -15,7 +15,7 @@ public static class ArtifactLayout
         return Path.Combine(repositoryRoot, "artifacts", "sqloom");
     }
 
-    public static string GetDefaultQueryStoreSnapshotPath(string artifactRoot, DateTimeOffset capturedAtUtc)
+    public static string GetQueryStoreSnapshotPath(string artifactRoot, DateTimeOffset capturedAtUtc)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(artifactRoot);
 
@@ -25,7 +25,7 @@ public static class ArtifactLayout
             $"query-store-{capturedAtUtc.UtcDateTime:yyyyMMddTHHmmssfffZ}.json");
     }
 
-    public static string GetDefaultReplayArtifactDirectory(string artifactRoot, DateTimeOffset startedAtUtc)
+    public static string GetReplayArtifactDir(string artifactRoot, DateTimeOffset startedAtUtc)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(artifactRoot);
 
@@ -35,7 +35,7 @@ public static class ArtifactLayout
             $"replay-{startedAtUtc.UtcDateTime:yyyyMMddTHHmmssfffZ}");
     }
 
-    public static string GetDefaultTuneArtifactDirectory(string artifactRoot, DateTimeOffset startedAtUtc)
+    public static string GetTuneArtifactDir(string artifactRoot, DateTimeOffset startedAtUtc)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(artifactRoot);
 
@@ -59,14 +59,14 @@ public static class ArtifactLayout
         return Path.Combine(tuneArtifactDirectory, "query-store-snapshot.json");
     }
 
-    public static string GetTuneReplayArtifactDirectory(string tuneArtifactDirectory)
+    public static string GetTuneReplayArtifactDir(string tuneArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(tuneArtifactDirectory);
 
         return Path.Combine(tuneArtifactDirectory, "replay");
     }
 
-    public static string GetReplayDiscoveredOperationsPath(string replayArtifactDirectory)
+    public static string GetDiscoveredOpsPath(string replayArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
 
@@ -87,7 +87,7 @@ public static class ArtifactLayout
         return Path.Combine(replayArtifactDirectory, "replay-summary.json");
     }
 
-    public static string GetReplayQueryStoreCorrelationPath(string replayArtifactDirectory)
+    public static string GetCorrelationPath(string replayArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
 
@@ -101,21 +101,28 @@ public static class ArtifactLayout
         return Path.Combine(replayArtifactDirectory, "tuning-advice.json");
     }
 
-    public static string GetReplaySqlTuningProposalPath(string replayArtifactDirectory)
+    public static string GetSqlServerSchemaPath(string replayArtifactDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
+
+        return Path.Combine(replayArtifactDirectory, "sqlserver-schema.sql");
+    }
+
+    public static string GetSqlProposalPath(string replayArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
 
         return Path.Combine(replayArtifactDirectory, "sql-tuning-proposal.json");
     }
 
-    public static string GetReplaySqlTuningProposalScriptPath(string replayArtifactDirectory)
+    public static string GetSqlProposalScriptPath(string replayArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
 
         return Path.Combine(replayArtifactDirectory, "sql-tuning-proposal.sql");
     }
 
-    public static string GetReplayOperationArtifactPath(
+    public static string GetOperationArtifactPath(
         string replayArtifactDirectory,
         int ordinal,
         string operationKey)
@@ -155,5 +162,4 @@ public static class ArtifactLayout
 
         return new string(buffer).Trim('-');
     }
-
 }

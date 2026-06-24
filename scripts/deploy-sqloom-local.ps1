@@ -42,8 +42,8 @@ try
 
     if (-not $SkipSmoke)
     {
-        $sampleAppProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp\Sqloom.TestApp.csproj"
-        & $localCommand replay $sampleAppProject --target "GET /api/products/by-category"
+        $sampleHarnessProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj"
+        & $localCommand replay $sampleHarnessProject --target "GET /api/products/by-category"
         if ($LASTEXITCODE -ne 0)
         {
             throw "sqloom-local sample app smoke check failed."

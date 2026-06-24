@@ -9,7 +9,7 @@ namespace Sqloom.Core.Execution;
 /// </summary>
 public sealed class RunOptions
 {
-    public string? ReadOnlyConnectionString { get; init; }
+    public string? ReadOnlyConnection { get; init; }
 
     public required string ArtifactRoot { get; init; }
 
@@ -21,13 +21,13 @@ public sealed class RunOptions
 
     public bool CaptureSqlDuringReplay { get; init; } = true;
 
-    public bool CorrelateReplayToQueryStore { get; init; } = true;
+    public bool CorrelateReplay { get; init; } = true;
 
     public bool GenerateTuningAdvice { get; init; } = true;
 
     public int MaxOperations { get; init; } = 25;
 
-    public string? OpenApiDocumentPath { get; init; }
+    public string? OpenApiPath { get; init; }
 
     public string? TargetFilter { get; init; }
 
@@ -45,7 +45,7 @@ public sealed class RunOptions
 
         return new RunOptions
         {
-            ReadOnlyConnectionString = readOnlyConnectionString,
+            ReadOnlyConnection = readOnlyConnectionString,
             ArtifactRoot = artifactRoot,
             OpenAIApiKey = openAIApiKey,
         };

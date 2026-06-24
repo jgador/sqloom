@@ -51,38 +51,40 @@ function Resolve-OutputPath {
 function Get-GeneratedOpenApiPath {
     param(
         [Parameter(Mandatory = $true)]
-        [string]$ProjectName
+        [string]$ProjectName,
+
+        [Parameter(Mandatory = $true)]
+        [string]$DocumentsDirectory
     )
 
-    $knownCandidatePaths = @(
-        (Join-RepoPath "artifacts/obj/$ProjectName/$($Configuration.ToLowerInvariant())/$ProjectName.json")
-        (Join-RepoPath "artifacts/bin/$ProjectName/$($Configuration.ToLowerInvariant())/$ProjectName.json")
-    )
-
-    foreach ($candidatePath in $knownCandidatePaths) {
-        if (Test-Path -LiteralPath $candidatePath -PathType Leaf) {
-            return $candidatePath
-        }
+    $projectNamedDocumentPath = Join-Path $DocumentsDirectory "$ProjectName.json"
+    if (Test-Path -LiteralPath $projectNamedDocumentPath -PathType Leaf) {
+        return $projectNamedDocumentPath
     }
 
-    $artifactsRoot = Join-RepoPath "artifacts"
-    $generatedPath = Get-ChildItem -Path $artifactsRoot -Recurse -File -Filter "$ProjectName.json" -ErrorAction SilentlyContinue |
-        Sort-Object -Property LastWriteTimeUtc -Descending |
-        Select-Object -First 1 -ExpandProperty FullName
-    if (-not [string]::IsNullOrWhiteSpace($generatedPath)) {
-        return $generatedPath
+    $generatedDocuments = @(Get-ChildItem -LiteralPath $DocumentsDirectory -File -Filter "*.json" -ErrorAction SilentlyContinue)
+    if ($generatedDocuments.Count -eq 1) {
+        return $generatedDocuments[0].FullName
     }
 
-    throw "OpenAPI generation did not produce the expected file under $artifactsRoot"
+    if ($generatedDocuments.Count -gt 1) {
+        throw "OpenAPI generation produced multiple JSON documents under $DocumentsDirectory."
+    }
+
+    throw "OpenAPI generation did not produce the expected file under $DocumentsDirectory."
 }
 
 $dotnet = (Get-Command dotnet -ErrorAction Stop).Source
 $projectPath = Join-RepoPath "tests/Sqloom.TestApp/Sqloom.TestApp.csproj"
 $destinationPath = Resolve-OutputPath $OutputPath
+$documentsDirectory = Join-RepoPath "artifacts/openapi/Sqloom.TestApp/$($Configuration.ToLowerInvariant())"
+New-Item -ItemType Directory -Force -Path $documentsDirectory | Out-Null
+Get-ChildItem -LiteralPath $documentsDirectory -File -Filter "*.json" -ErrorAction SilentlyContinue |
+    Remove-Item -Force
 
 Push-Location $RepoRoot
 try {
-    & $dotnet build $projectPath --tl:off --nologo "-clp:ErrorsOnly;NoSummary" "-p:OpenApiGenerateDocuments=true" "-p:Configuration=$Configuration"
+    & $dotnet build $projectPath --no-incremental --tl:off --nologo "-clp:ErrorsOnly;NoSummary" "-p:OpenApiGenerateDocuments=true" "-p:OpenApiDocumentsDirectory=$documentsDirectory" "-p:Configuration=$Configuration"
     if ($LASTEXITCODE -ne 0) {
         throw "OpenAPI generation build failed with exit code $LASTEXITCODE."
     }
@@ -91,7 +93,7 @@ finally {
     Pop-Location
 }
 
-$generatedSourcePath = Get-GeneratedOpenApiPath -ProjectName "Sqloom.TestApp"
+$generatedSourcePath = Get-GeneratedOpenApiPath -ProjectName "Sqloom.TestApp" -DocumentsDirectory $documentsDirectory
 
 $destinationDirectory = Split-Path -Parent $destinationPath
 New-Item -ItemType Directory -Force -Path $destinationDirectory | Out-Null

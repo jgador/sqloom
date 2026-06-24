@@ -1,21 +1,20 @@
 using System;
 using System.Collections.Generic;
-using Sqloom.AspNetCore.Endpoints;
-using Sqloom.AspNetCore.OpenApi;
+using Sqloom.Host.Replay;
 using Sqloom.Core.Execution;
 using Xunit;
 
-namespace Sqloom.AspNetCore.Tests.Endpoints;
+namespace Sqloom.Host.Tests.Replay;
 
 /// <summary>
 /// Exercises endpoint replay request resolver.
 /// </summary>
-public sealed class EndpointReplayRequestResolverTests
+public sealed class ReplayRequestResolverTests
 {
     [Fact]
     public void Resolve_MergesPreparedValuesOverReplayDefaults()
     {
-        EndpointReplayRequestResolver resolver = new();
+        ReplayRequestResolver resolver = new();
         var request = resolver.Resolve(
             CreateOperation(requestBodyRequired: true),
             new ResolvedReplayOperation
@@ -65,7 +64,7 @@ public sealed class EndpointReplayRequestResolverTests
     [Fact]
     public void Resolve_ThrowsWhenRequiredRequestBodyIsMissing()
     {
-        EndpointReplayRequestResolver resolver = new();
+        ReplayRequestResolver resolver = new();
 
         var exception = Assert.Throws<InvalidOperationException>(() => resolver.Resolve(
             CreateOperation(requestBodyRequired: true),
@@ -94,9 +93,9 @@ public sealed class EndpointReplayRequestResolverTests
         Assert.Contains("requires a JSON request body", exception.Message);
     }
 
-    private static DiscoveredOpenApiOperation CreateOperation(bool requestBodyRequired)
+    private static OpenApiOperation CreateOperation(bool requestBodyRequired)
     {
-        return new DiscoveredOpenApiOperation
+        return new OpenApiOperation
         {
             StableOperationKey = "POST /api/items/{itemId}",
             HttpMethod = "POST",
@@ -106,19 +105,19 @@ public sealed class EndpointReplayRequestResolverTests
             RequestBodyRequired = requestBodyRequired,
             Parameters =
             [
-                new OpenApiParameterDefinition
+                new OpenApiParameter
                 {
                     Name = "itemId",
                     Location = "path",
                     Required = true,
                 },
-                new OpenApiParameterDefinition
+                new OpenApiParameter
                 {
                     Name = "since",
                     Location = "query",
                     Required = true,
                 },
-                new OpenApiParameterDefinition
+                new OpenApiParameter
                 {
                     Name = "x-trace",
                     Location = "header",

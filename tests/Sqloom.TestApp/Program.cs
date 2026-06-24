@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.OpenApi;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,7 +18,38 @@ public partial class Program
 
         builder.Services.AddControllers();
         builder.Services.AddEndpointsApiExplorer();
-        builder.Services.AddOpenApi();
+        builder.Services.AddOpenApi(options =>
+        {
+            options.AddDocumentTransformer((document, _, _) =>
+            {
+                document.Components ??= new OpenApiComponents();
+                document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+                document.Components.SecuritySchemes["Bearer"] = new OpenApiSecurityScheme
+                {
+                    Type = SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                };
+                document.Security ??= [];
+                document.Security.Add(new OpenApiSecurityRequirement
+                {
+                    [new OpenApiSecuritySchemeReference("Bearer", document)] = [],
+                });
+                return Task.CompletedTask;
+            });
+            options.AddOperationTransformer((operation, _, _) =>
+            {
+                foreach (var parameter in operation.Parameters ?? [])
+                {
+                    if (parameter is OpenApiParameter openApiParameter
+                        && openApiParameter.In == ParameterLocation.Query)
+                    {
+                        openApiParameter.Required = true;
+                    }
+                }
+
+                return Task.CompletedTask;
+            });
+        });
         builder.Services.AddSwaggerGen(options =>
         {
             options.SwaggerDoc("v1", new OpenApiInfo
@@ -27,7 +60,7 @@ public partial class Program
             options.SupportNonNullableReferenceTypes();
             options.NonNullableReferenceTypesAsRequired();
         });
-        builder.Services.AddScoped<ITestAppProductCatalogService, TestAppProductCatalogService>();
+        builder.Services.AddScoped<IProductCatalogService, ProductCatalogService>();
         builder.Services.AddDbContext<TestAppProductCatalogDbContext>(options =>
         {
             if (!string.IsNullOrWhiteSpace(connectionString))

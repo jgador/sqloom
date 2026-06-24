@@ -1,11 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.Endpoints;
-using Sqloom.AzureSql.Capture;
-using Sqloom.Core.Contracts;
 using Sqloom.Core.Execution;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -43,10 +41,10 @@ internal sealed class HostApplication
     }
 
     public HostApplication(
-        IAppIntegration appIntegration,
+        ISqloomApplication application,
         HostConsoleWriter consoleWriter)
         : this(
-            new HostCommandIntegrationResolver(appIntegration),
+            new HostCommandIntegrationResolver(application),
             new HostCommandExecutionContextFactory(consoleWriter),
             consoleWriter,
             CreateDefaultRegistry())
@@ -54,11 +52,11 @@ internal sealed class HostApplication
     }
 
     internal HostApplication(
-        IAppIntegration appIntegration,
+        ISqloomApplication application,
         HostConsoleWriter consoleWriter,
         CommandRegistry commandRegistry)
         : this(
-            new HostCommandIntegrationResolver(appIntegration),
+            new HostCommandIntegrationResolver(application),
             new HostCommandExecutionContextFactory(consoleWriter),
             consoleWriter,
             commandRegistry)
@@ -79,7 +77,8 @@ internal sealed class HostApplication
 
     public async Task<int> RunAsync(
         HostStartupOptions startupOptions,
-        string currentDirectory)
+        string currentDirectory,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
         ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
@@ -99,39 +98,43 @@ internal sealed class HostApplication
                 return await RunHandlerAsync(
                         commandKind,
                         startupOptions,
-                        currentDirectory)
+                        currentDirectory,
+                        cancellationToken)
                     .ConfigureAwait(false);
             default:
-                return HandleNoCommand(startupOptions);
+                return await HandleNoCommandAsync(
+                        startupOptions,
+                        currentDirectory,
+                        cancellationToken)
+                    .ConfigureAwait(false);
         }
     }
 
     public async Task<int> RunAsync(
         string[] args,
-        string currentDirectory)
+        string currentDirectory,
+        CancellationToken cancellationToken = default)
     {
         HostStartupOptions startupOptions = new()
         {
             ApplicationArguments = args,
         };
 
-        return await RunAsync(startupOptions, currentDirectory).ConfigureAwait(false);
+        return await RunAsync(startupOptions, currentDirectory, cancellationToken).ConfigureAwait(false);
     }
 
-    internal static IReadOnlyList<string> GetProjectNames(IAppIntegration? appIntegration)
+    internal static IReadOnlyList<string> GetProjectNames(ISqloomApplication? application)
     {
         List<string> projectNames =
         [
             typeof(RunOptions).Assembly.GetName().Name ?? "Sqloom.Core",
-            typeof(QueryStoreSnapshot).Assembly.GetName().Name ?? "Sqloom.QueryStore",
-            typeof(AzureSqlObservationOptions).Assembly.GetName().Name ?? "Sqloom.AzureSql",
-            typeof(EndpointReplayRequest).Assembly.GetName().Name ?? "Sqloom.AspNetCore",
+            typeof(ISqloomApplication).Assembly.GetName().Name ?? "Sqloom.Testing",
             typeof(HostApplication).Assembly.GetName().Name ?? "Sqloom.Host",
         ];
 
-        if (appIntegration is not null)
+        if (application is not null)
         {
-            projectNames.Add(appIntegration.GetType().Assembly.GetName().Name ?? appIntegration.AppName);
+            projectNames.Add(application.GetType().Assembly.GetName().Name ?? "Sqloom.Application");
         }
 
         return projectNames;
@@ -140,14 +143,16 @@ internal sealed class HostApplication
     private async Task<int> RunHandlerAsync(
         HostCommandKind commandKind,
         HostStartupOptions startupOptions,
-        string currentDirectory)
+        string currentDirectory,
+        CancellationToken cancellationToken)
     {
-        var bindings = _integrationResolver.Resolve(commandKind, startupOptions);
+        var bindings = await _integrationResolver
+            .ResolveAsync(commandKind, startupOptions, cancellationToken)
+            .ConfigureAwait(false);
         var context = _contextFactory.Create(
             startupOptions,
             currentDirectory,
-            bindings.AppIntegration,
-            bindings.AppIntegrations);
+            bindings.Application);
 
         return await _commandRegistry
             .GetRequiredHandler(commandKind)
@@ -155,7 +160,10 @@ internal sealed class HostApplication
             .ConfigureAwait(false);
     }
 
-    private int HandleNoCommand(HostStartupOptions startupOptions)
+    private async Task<int> HandleNoCommandAsync(
+        HostStartupOptions startupOptions,
+        string currentDirectory,
+        CancellationToken cancellationToken)
     {
         if (startupOptions.ApplicationArguments.Length > 0)
         {
@@ -163,16 +171,25 @@ internal sealed class HostApplication
                 "Sqloom now requires an explicit stage verb. Use tune, observe, replay, correlate, or advise.");
         }
 
-        PrintBanner(_integrationResolver.ResolveBannerIntegration(startupOptions));
+        var application = await _integrationResolver
+            .ResolveBannerApplicationAsync(startupOptions, cancellationToken)
+            .ConfigureAwait(false);
+        PrintBanner(application, currentDirectory);
         _consoleWriter.PrintNoCommandHint();
         return 0;
     }
 
-    private void PrintBanner(IAppIntegration? appIntegration)
+    private void PrintBanner(
+        ISqloomApplication? application,
+        string currentDirectory)
     {
+        var manifest = application?.Describe(new SqloomApplicationContext
+        {
+            CurrentDirectory = currentDirectory,
+        });
         _consoleWriter.PrintBanner(
-            appIntegration?.AppName,
-            GetProjectNames(appIntegration));
+            manifest?.Name,
+            GetProjectNames(application));
     }
 
     private static CommandRegistry CreateDefaultRegistry()

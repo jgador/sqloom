@@ -2,7 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Sqloom.Core.Artifacts;
-using Sqloom.Core.Contracts;
+using Sqloom.Core.Execution;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -76,6 +77,7 @@ internal sealed class TuneArgumentParser
     {
         "--model-provider",
         "--sqlserver-schema-file",
+        "--sqlserver-dacpac-file",
         "--openai-model",
         "--openai-base-url",
         "--openai-api-key",
@@ -90,13 +92,21 @@ internal sealed class TuneArgumentParser
         return CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string");
     }
 
-    public TuneArguments Parse(
+    public ReplayLaunchOptions CreateReplayLaunchOptions(
         string[] args,
-        IAppIntegration appIntegration,
-        string readOnlyConnectionString,
         string currentDirectory)
     {
-        ArgumentNullException.ThrowIfNull(appIntegration);
+        return _replayArgumentParser.CreateReplayLaunchOptions(
+            ExtractSwitchArguments(args, ReplaySwitches),
+            currentDirectory);
+    }
+
+    public void ValidateBeforeSession(
+        string[] args,
+        SqloomApplicationManifest manifest,
+        string currentDirectory)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
 
         CommandArgumentSupport.ValidateArguments(
             args,
@@ -104,10 +114,50 @@ internal sealed class TuneArgumentParser
             SupportedSwitches,
             ValueSwitches);
 
-        var workflowArtifactDirectory = GetWorkflowArtifactDirectory(args, currentDirectory);
-        var snapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(workflowArtifactDirectory);
-        var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDirectory(workflowArtifactDirectory);
-        var correlationPath = ArtifactLayout.GetReplayQueryStoreCorrelationPath(replayArtifactDirectory);
+        var validationPath = Path.Combine(
+            currentDirectory,
+            "sqloom-validation-placeholder.json");
+        _adviseArgumentParser.CreateArguments(
+            ExtractSwitchArguments(args, AdviceSwitches),
+            currentDirectory,
+            validationPath,
+            validationPath,
+            manifest.SqlServerDacpacPath,
+            currentDirectory);
+    }
+
+    public string GetOpenApiPath(
+        string[] args,
+        SqloomApplicationManifest manifest,
+        string currentDirectory)
+    {
+        return _replayArgumentParser.GetOpenApiPath(
+            ExtractSwitchArguments(args, ReplaySwitches),
+            manifest,
+            currentDirectory);
+    }
+
+    public TuneArguments Parse(
+        string[] args,
+        SqloomApplicationManifest manifest,
+        IReplayHost replayHost,
+        string readOnlyConnectionString,
+        string currentDirectory,
+        string? openApiPathOverride = null)
+    {
+        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentNullException.ThrowIfNull(replayHost);
+
+        CommandArgumentSupport.ValidateArguments(
+            args,
+            HostCommandKind.Tune,
+            SupportedSwitches,
+            ValueSwitches);
+
+        var workflowArtifactDir = GetWorkflowArtifactDir(args, currentDirectory);
+        var snapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(workflowArtifactDir);
+        var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDir(workflowArtifactDir);
+        var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
         var advicePath = ArtifactLayout.GetReplayTuningAdvicePath(replayArtifactDirectory);
 
         var observeArguments = _observeArgumentParser.Parse(
@@ -115,37 +165,41 @@ internal sealed class TuneArgumentParser
                 ExtractSwitchArguments(args, ObserveSwitches),
                 "--json-output-file",
                 snapshotPath),
-            appIntegration,
+            manifest,
             readOnlyConnectionString,
             currentDirectory);
         var replayArguments = _replayArgumentParser.Parse(
             ExtractSwitchArguments(args, ReplaySwitches),
-            appIntegration,
+            manifest,
+            replayHost,
             currentDirectory,
-            replayArtifactDirectory);
+            replayArtifactDirectory,
+            openApiPathOverride);
         var adviseArguments = _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             replayArtifactDirectory,
             correlationPath,
-            advicePath);
+            advicePath,
+            manifest.SqlServerDacpacPath,
+            currentDirectory);
 
         return new TuneArguments
         {
-            WorkflowArtifactDirectory = workflowArtifactDirectory,
+            WorkflowArtifactDir = workflowArtifactDir,
             ObserveArguments = observeArguments,
             ReplayArguments = replayArguments,
             CorrelateArguments = new CorrelateArguments
             {
                 ConnectionString = readOnlyConnectionString,
                 QueryStoreSnapshotPath = snapshotPath,
-                ReplayArtifactDirectory = replayArtifactDirectory,
+                ReplayArtifactDir = replayArtifactDirectory,
                 JsonOutputPath = correlationPath,
             },
             AdviseArguments = adviseArguments,
         };
     }
 
-    internal string GetWorkflowArtifactDirectory(string[] args, string currentDirectory)
+    internal string GetWorkflowArtifactDir(string[] args, string currentDirectory)
     {
         var artifactDirectory = CommandArgumentSupport.GetArgumentValue(args, "--artifact-dir");
         if (!string.IsNullOrWhiteSpace(artifactDirectory))
@@ -156,7 +210,7 @@ internal sealed class TuneArgumentParser
         }
 
         var artifactRoot = ArtifactRootResolver.Resolve(currentDirectory);
-        return ArtifactLayout.GetDefaultTuneArtifactDirectory(
+        return ArtifactLayout.GetTuneArtifactDir(
             artifactRoot,
             DateTimeOffset.UtcNow);
     }

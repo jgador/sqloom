@@ -2,7 +2,7 @@
   <PropertyGroup>
     <UseArtifactsOutput>true</UseArtifactsOutput>
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
-    <Version>0.1.0</Version>
+    <Version>0.2.0</Version>
     <AssemblyInformationalVersion>$(Version)</AssemblyInformationalVersion>
     <RepositoryType>git</RepositoryType>
     <Nullable>enable</Nullable>

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Sqloom.AzureSql.QueryStore;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Host.QueryStore;
+using Sqloom.Core.QueryStore;
 using Xunit;
 
-namespace Sqloom.AzureSql.Tests.QueryStore;
+namespace Sqloom.Host.Tests.QueryStore;
 
 /// <summary>
 /// Exercises SQL statement handle resolver.
@@ -16,7 +16,7 @@ public sealed class SqlStatementHandleResolverTests
         var resolution = SqlStatementHandleResolver.BuildResolution(
             "SELECT 1",
             "SELECT 1",
-            new List<SqlStatementHandleResolver.SqlStatementHandleCandidateRecord>
+            new List<SqlStatementHandleResolver.SqlHandleCandidateRecord>
             {
                 new("Raw", "Default", 0, null),
                 new("ParameterDefinitionPrefix", "None", 0, "0xAAAA"),
@@ -30,19 +30,19 @@ public sealed class SqlStatementHandleResolverTests
             candidate =>
             {
                 Assert.Equal("Raw", candidate.QueryTextShape);
-                Assert.Equal("Default", candidate.RequestedQueryParameterizationType);
+                Assert.Equal("Default", candidate.RequestedParamType);
                 Assert.Null(candidate.StatementSqlHandle);
             },
             candidate =>
             {
                 Assert.Equal("ParameterDefinitionPrefix", candidate.QueryTextShape);
-                Assert.Equal("None", candidate.RequestedQueryParameterizationType);
+                Assert.Equal("None", candidate.RequestedParamType);
                 Assert.Equal("0xAAAA", candidate.StatementSqlHandle);
             },
             candidate =>
             {
                 Assert.Equal("ParameterDefinitionPrefix", candidate.QueryTextShape);
-                Assert.Equal("Simple", candidate.RequestedQueryParameterizationType);
+                Assert.Equal("Simple", candidate.RequestedParamType);
                 Assert.Equal("0xBBBB", candidate.StatementSqlHandle);
             });
     }
@@ -53,7 +53,7 @@ public sealed class SqlStatementHandleResolverTests
         var resolution = SqlStatementHandleResolver.BuildResolution(
             "SELECT 1",
             "SELECT 1",
-            new List<SqlStatementHandleResolver.SqlStatementHandleCandidateRecord>(),
+            new List<SqlStatementHandleResolver.SqlHandleCandidateRecord>(),
             "Permission denied.");
 
         Assert.Null(resolution.StatementSqlHandle);
@@ -77,18 +77,18 @@ public sealed class SqlStatementHandleResolverTests
                 WHERE [Category] = N'Groceries';
                 """,
                 [
-                    new SqlStatementHandleParameterDescriptor
+                    new SqlHandleParameter
                     {
                         Name = "@UserId",
                         DbType = "NVarChar",
                         Size = 450,
                     },
-                    new SqlStatementHandleParameterDescriptor
+                    new SqlHandleParameter
                     {
                         Name = "@CandidateExpenseIdsJson",
                         DbType = "NVarChar",
                     },
-                    new SqlStatementHandleParameterDescriptor
+                    new SqlHandleParameter
                     {
                         Name = "@Unused",
                         DbType = "Int",

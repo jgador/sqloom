@@ -1,7 +1,8 @@
 using System;
 using System.IO;
 using Sqloom.Core.Artifacts;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
+using Sqloom.Testing;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -15,12 +16,12 @@ public sealed class TuneArgumentParserTests
     public void Parse_BuildsWorkflowArtifactLayoutAndNestedStageArguments()
     {
         TuneArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
         var workflowRoot = Path.Combine(currentDirectory, "custom-tune-run");
         var dacpacPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.dacpac");
         var seedSqlPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.seed.sql");
         var openApiPath = Path.Combine(currentDirectory, "openapi.json");
-        var schemaPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.schema.sql");
+        var schemaPath = Path.Combine(currentDirectory, "manual.schema.sql");
         File.WriteAllText(dacpacPath, "sqloom");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
         File.WriteAllText(openApiPath, "{}");
@@ -52,7 +53,7 @@ public sealed class TuneArgumentParserTests
                 "--openapi-file",
                 openApiPath,
                 "--target",
-                TestAppProductCatalogScenario.OperationKey,
+                CatalogScenario.OperationKey,
                 "--model-provider",
                 "openai",
                 "--openai-api-key",
@@ -60,19 +61,20 @@ public sealed class TuneArgumentParserTests
                 "--sqlserver-schema-file",
                 schemaPath,
             ],
-            new MultipleTestAppIntegrationA(),
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
             currentDirectory);
 
         var expectedWorkflowRoot = Path.GetFullPath(workflowRoot, currentDirectory);
-        var expectedReplayDirectory = ArtifactLayout.GetTuneReplayArtifactDirectory(expectedWorkflowRoot);
+        var expectedReplayDirectory = ArtifactLayout.GetTuneReplayArtifactDir(expectedWorkflowRoot);
         var expectedSnapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(expectedWorkflowRoot);
-        var expectedCorrelationPath = ArtifactLayout.GetReplayQueryStoreCorrelationPath(expectedReplayDirectory);
+        var expectedCorrelationPath = ArtifactLayout.GetCorrelationPath(expectedReplayDirectory);
         var expectedAdvicePath = ArtifactLayout.GetReplayTuningAdvicePath(expectedReplayDirectory);
 
-        Assert.Equal(expectedWorkflowRoot, arguments.WorkflowArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(expectedWorkflowRoot, arguments.WorkflowArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedSnapshotPath, arguments.ObserveArguments.JsonOutputPathOverride, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(expectedReplayDirectory, arguments.ReplayArguments.RunnerOptions.ReplayArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(expectedReplayDirectory, arguments.ReplayArguments.RunnerOptions.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(TimeSpan.FromHours(6), arguments.ObserveArguments.ObservationOptions.LookbackWindow);
         Assert.Equal(100, arguments.ObserveArguments.ObservationOptions.MaxPlans);
         Assert.Equal(10, arguments.ObserveArguments.ObservationOptions.MaxWaits);
@@ -81,23 +83,24 @@ public sealed class TuneArgumentParserTests
         Assert.True(arguments.ObserveArguments.ShowClassification);
         Assert.Equal(
             Path.GetFullPath(openApiPath),
-            arguments.ReplayArguments.RunnerOptions.OpenApiDocumentPath,
+            arguments.ReplayArguments.RunnerOptions.OpenApiPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
             Path.GetFullPath(dacpacPath),
-            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.SqlServerDacpacPath,
+            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.DacpacPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
             Path.GetFullPath(seedSqlPath),
-            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.SqlServerSeedSqlPath,
+            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.SeedSqlPath,
             StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(TestAppProductCatalogScenario.OperationKey, arguments.ReplayArguments.RunnerOptions.TargetFilter);
+        Assert.Equal(CatalogScenario.OperationKey, arguments.ReplayArguments.RunnerOptions.TargetFilter);
         Assert.Equal(expectedSnapshotPath, arguments.CorrelateArguments.QueryStoreSnapshotPath, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(expectedReplayDirectory, arguments.CorrelateArguments.ReplayArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(expectedReplayDirectory, arguments.CorrelateArguments.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedCorrelationPath, arguments.CorrelateArguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(expectedReplayDirectory, arguments.AdviseArguments.ReplayArtifactDirectory, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(expectedReplayDirectory, arguments.AdviseArguments.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedCorrelationPath, arguments.AdviseArguments.QueryStoreCorrelationPath, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(Path.GetFullPath(schemaPath), arguments.AdviseArguments.SqlServerSchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(Path.GetFullPath(schemaPath), arguments.AdviseArguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(arguments.AdviseArguments.DacpacPath);
         Assert.Equal(expectedAdvicePath, arguments.AdviseArguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(ModelProviderKind.OpenAI, arguments.AdviseArguments.ModelProvider);
         Assert.NotNull(arguments.AdviseArguments.OpenAIOptions);
@@ -110,7 +113,7 @@ public sealed class TuneArgumentParserTests
     public void Parse_RejectsTuneJsonOutputFileOverride()
     {
         TuneArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
@@ -121,8 +124,9 @@ public sealed class TuneArgumentParserTests
                     "--json-output-file",
                     Path.Combine(currentDirectory, "tune-summary.json"),
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -133,7 +137,7 @@ public sealed class TuneArgumentParserTests
     public void Parse_RequiresModelProvider()
     {
         TuneArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
@@ -142,8 +146,9 @@ public sealed class TuneArgumentParserTests
                     "--read-only-connection-string",
                     "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("--model-provider", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -153,7 +158,7 @@ public sealed class TuneArgumentParserTests
     public void Parse_WithOpenAIModelProvider_RequiresApiKey()
     {
         TuneArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
@@ -164,18 +169,53 @@ public sealed class TuneArgumentParserTests
                     "--model-provider",
                     "openai",
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_RequiresSchemaFile()
+    public void Parse_UsesManifestDacpacForAdviceSchemaSource()
     {
         TuneArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
+        var dacpacPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.dacpac");
+        File.WriteAllText(dacpacPath, "sqloom");
+        var manifest = new SqloomApplicationManifest
+        {
+            Name = "Sqloom Test Harness",
+            OpenApiPath = Sqloom.Tests.RepositoryPaths.GetTestAppOpenApiPath(),
+            ReplayProfile = ManifestFactory.CreateReplayProfile(),
+            SqlServerDacpacPath = dacpacPath,
+        };
+
+        var arguments = parser.Parse(
+            [
+                "tune",
+                "--read-only-connection-string",
+                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                "--model-provider",
+                "openai",
+                "--openai-api-key",
+                "openai-key",
+            ],
+            manifest,
+            new ReplayHostFake(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+            currentDirectory);
+
+        Assert.Null(arguments.AdviseArguments.SchemaPath);
+        Assert.Equal(Path.GetFullPath(dacpacPath), arguments.AdviseArguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_WithOpenAIModelProvider_RequiresSchemaSource()
+    {
+        TuneArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
@@ -188,18 +228,20 @@ public sealed class TuneArgumentParserTests
                     "--openai-api-key",
                     "openai-key",
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("--sqlserver-schema-file", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("DACPAC", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void Parse_RejectsLegacyAdviceProviderSwitch()
     {
         TuneArgumentParser parser = new();
-        var currentDirectory = CreateTempDirectory();
+        var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
@@ -210,15 +252,16 @@ public sealed class TuneArgumentParserTests
                     "--advice-provider",
                     "openai",
                 ],
-                new MultipleTestAppIntegrationA(),
-                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("--advice-provider", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directory = Path.Combine(
             Path.GetTempPath(),

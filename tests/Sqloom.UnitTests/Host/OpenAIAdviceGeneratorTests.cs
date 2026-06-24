@@ -8,11 +8,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Host.Replay;
+using Sqloom.Core.QueryStore;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.QueryStore.QueryStore;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -22,12 +21,10 @@ namespace Sqloom.Host.Tests;
 /// </summary>
 public sealed class OpenAIAdviceGeneratorTests
 {
-    private static readonly SemaphoreSlim ConsoleGate = new(1, 1);
-
     [Fact]
     public async Task CreateReportAsync_UsesEvidenceAndSchemaWithoutBaselineHints()
     {
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
         var advicePath = Path.Combine(replayArtifactDirectory, "tuning-advice.json");
         var correlationReport = CreateCorrelationReport(replayArtifactDirectory);
@@ -69,7 +66,7 @@ public sealed class OpenAIAdviceGeneratorTests
                 }
             })
         });
-        using var handler = new FakeHttpMessageHandler(async request =>
+        using var handler = new FakeHandler(async request =>
         {
             capturedRequestBody = await request.Content!
                 .ReadAsStringAsync()
@@ -107,11 +104,11 @@ public sealed class OpenAIAdviceGeneratorTests
         Assert.Equal("gpt-5.4-mini", report.ModelName);
         Assert.Equal("openai-responses-structured-outputs", report.StrategyName);
         Assert.Equal(
-            ArtifactLayout.GetReplaySqlTuningProposalPath(correlationReport.ReplayArtifactDirectory),
+            ArtifactLayout.GetSqlProposalPath(correlationReport.ReplayArtifactDir),
             report.SqlProposalJsonPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
-            ArtifactLayout.GetReplaySqlTuningProposalScriptPath(correlationReport.ReplayArtifactDirectory),
+            ArtifactLayout.GetSqlProposalScriptPath(correlationReport.ReplayArtifactDir),
             report.SqlProposalScriptPath,
             StringComparer.OrdinalIgnoreCase);
 
@@ -141,7 +138,7 @@ public sealed class OpenAIAdviceGeneratorTests
     [Fact]
     public async Task CreateReportAsync_PersistsFreeFormProposalWithoutRollbackAndAddsWarning()
     {
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
         var advicePath = Path.Combine(replayArtifactDirectory, "tuning-advice.json");
         var correlationReport = CreateCorrelationReport(replayArtifactDirectory);
@@ -182,7 +179,7 @@ public sealed class OpenAIAdviceGeneratorTests
                 }
             })
         });
-        using var handler = new FakeHttpMessageHandler(_ =>
+        using var handler = new FakeHandler(_ =>
         {
             return Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
@@ -231,7 +228,7 @@ public sealed class OpenAIAdviceGeneratorTests
     [Fact]
     public async Task CreateReportAsync_WithDebugWriter_PrintsRedactedRequestAndResponse()
     {
-        var replayArtifactDirectory = CreateTempDirectory();
+        var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
         var advicePath = Path.Combine(replayArtifactDirectory, "tuning-advice.json");
         var correlationReport = CreateCorrelationReport(replayArtifactDirectory);
@@ -256,7 +253,7 @@ public sealed class OpenAIAdviceGeneratorTests
                 proposals = Array.Empty<object>(),
             })
         });
-        using var handler = new FakeHttpMessageHandler(_ =>
+        using var handler = new FakeHandler(_ =>
         {
             return Task.FromResult(
                 new HttpResponseMessage(HttpStatusCode.OK)
@@ -283,7 +280,7 @@ public sealed class OpenAIAdviceGeneratorTests
             httpClient,
             debugWriter);
 
-        var result = await CaptureStandardErrorAsync(async () =>
+        var result = await CaptureStderrAsync(async () =>
         {
             return await generator
                 .CreateReportAsync(
@@ -310,18 +307,18 @@ public sealed class OpenAIAdviceGeneratorTests
         Assert.DoesNotContain("openai-live-secret", result.StandardError, StringComparison.Ordinal);
     }
 
-    private static QueryStoreCorrelationReport CreateCorrelationReport(string replayArtifactDirectory)
+    private static QueryCorrelationReport CreateCorrelationReport(string replayArtifactDirectory)
     {
-        return new QueryStoreCorrelationReport
+        return new QueryCorrelationReport
         {
             GeneratedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
             AppName = "SqloomTestApp",
-            ReplayArtifactDirectory = replayArtifactDirectory,
+            ReplayArtifactDir = replayArtifactDirectory,
             QueryStoreSnapshotPath = Path.Combine(replayArtifactDirectory, "query-store-snapshot.json"),
             QueryStoreCapturedAtUtc = new DateTimeOffset(2026, 6, 14, 0, 0, 0, TimeSpan.Zero),
             Records =
             [
-                new QueryStoreCorrelationRecord
+                new QueryCorrelationRecord
                 {
                     OperationKey = "GET /api/expenses/dashboard",
                     HttpMethod = "GET",
@@ -330,7 +327,7 @@ public sealed class OpenAIAdviceGeneratorTests
                     CommandOrdinal = 1,
                     CapturedCommand = CreateCommand("SELECT [e].[Id], [e].[OccurredAtLocal] FROM [dbo].[ExpenseRecord] AS [e] WHERE [e].[UserId] = @p0 ORDER BY [e].[OccurredAtLocal] DESC"),
                     ComparableSqlText = "SELECT [e].[Id], [e].[OccurredAtLocal] FROM [dbo].[ExpenseRecord] AS [e] WHERE [e].[UserId] = @p0 ORDER BY [e].[OccurredAtLocal] DESC",
-                    MatchKind = QueryStoreCorrelationMatchKind.StatementHandleExact,
+                    MatchKind = CorrelationMatchKind.StatementHandleExact,
                     Confidence = 1.0d,
                     MatchedPlans =
                     [
@@ -339,18 +336,18 @@ public sealed class OpenAIAdviceGeneratorTests
                     Notes = ["Matched Query Store statement_sql_handle exactly."],
                 },
             ],
-            Summary = new QueryStoreCorrelationSummary
+            Summary = new QueryCorrelationSummary
             {
                 OperationCount = 1,
                 CapturedCommandCount = 1,
                 MatchedCommandCount = 1,
-                StatementHandleExactCount = 1,
+                HandleExactCount = 1,
                 QueryTextExactCount = 0,
                 FingerprintFallbackCount = 0,
                 UnmatchedCount = 0,
                 Operations =
                 [
-                    new QueryStoreCorrelationOperationSummary
+                    new OperationCorrelationSummary
                     {
                         OperationKey = "GET /api/expenses/dashboard",
                         HttpMethod = "GET",
@@ -359,7 +356,7 @@ public sealed class OpenAIAdviceGeneratorTests
                         OperationArtifactPath = Path.Combine(replayArtifactDirectory, "operations", "01-expenses-dashboard.json"),
                         CapturedCommandCount = 1,
                         MatchedCommandCount = 1,
-                        StatementHandleExactCount = 1,
+                        HandleExactCount = 1,
                         QueryTextExactCount = 0,
                         FingerprintFallbackCount = 0,
                         UnmatchedCount = 0,
@@ -383,7 +380,7 @@ public sealed class OpenAIAdviceGeneratorTests
         };
     }
 
-    private static async Task WriteReplayEvidenceAsync(QueryStoreCorrelationReport correlationReport)
+    private static async Task WriteReplayEvidenceAsync(QueryCorrelationReport correlationReport)
     {
         var operation = correlationReport.Summary.Operations[0];
         var operationDirectory = Path.GetDirectoryName(operation.OperationArtifactPath)
@@ -429,7 +426,7 @@ public sealed class OpenAIAdviceGeneratorTests
                         MaxStorageSizeMb = 1024,
                     },
                     WorkloadProfileName = "SqloomTestApp",
-                    DiscoveredObjectCatalog = new DiscoveredDatabaseObjectCatalog
+                    DiscoveredObjectCatalog = new DbObjectCatalog
                     {
                         CapturedAtUtc = correlationReport.QueryStoreCapturedAtUtc,
                         SourceName = "unit-test",
@@ -442,7 +439,7 @@ public sealed class OpenAIAdviceGeneratorTests
                                 SchemaName = "dbo",
                                 ObjectName = "ExpenseRecord",
                                 FullyQualifiedName = "[dbo].[ExpenseRecord]",
-                                Kind = DiscoveredDatabaseObjectKind.Table,
+                                Kind = DbObjectKind.Table,
                             },
                         ],
                     },
@@ -457,7 +454,7 @@ public sealed class OpenAIAdviceGeneratorTests
                             QueryId = 10L,
                             PlanId = 20L,
                             WaitCategory = "CPU",
-                            AverageQueryWaitMilliseconds = 3.5d,
+                            AvgWaitMs = 3.5d,
                             TotalWaitMilliseconds = 14d,
                         },
                     ],
@@ -498,7 +495,7 @@ public sealed class OpenAIAdviceGeneratorTests
             QueryText = "SELECT [e].[Id], [e].[OccurredAtLocal] FROM [dbo].[ExpenseRecord] AS [e] WHERE [e].[UserId] = @p0 ORDER BY [e].[OccurredAtLocal] DESC",
             ObjectName = "[dbo].[ExpenseRecord]",
             QueryParameterizationType = 0,
-            QueryParameterizationTypeDescription = "None",
+            ParamTypeDescription = "None",
             ExecutionCount = 4,
             MeanDuration = TimeSpan.FromMilliseconds(240),
             MaxDuration = TimeSpan.FromMilliseconds(300),
@@ -533,7 +530,7 @@ public sealed class OpenAIAdviceGeneratorTests
     /// <summary>
     /// Fakes OpenAI HTTP responses for advice-generator tests.
     /// </summary>
-    private sealed class FakeHttpMessageHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> handler)
+    private sealed class FakeHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> handler)
         : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(
@@ -544,9 +541,9 @@ public sealed class OpenAIAdviceGeneratorTests
         }
     }
 
-    private static async Task<StandardErrorCaptureResult<T>> CaptureStandardErrorAsync<T>(Func<Task<T>> action)
+    private static async Task<StandardErrorCaptureResult<T>> CaptureStderrAsync<T>(Func<Task<T>> action)
     {
-        await ConsoleGate.WaitAsync().ConfigureAwait(false);
+        await ConsoleGate.Semaphore.WaitAsync().ConfigureAwait(false);
         var originalError = Console.Error;
         using StringWriter standardError = new();
 
@@ -561,11 +558,11 @@ public sealed class OpenAIAdviceGeneratorTests
         finally
         {
             Console.SetError(originalError);
-            ConsoleGate.Release();
+            ConsoleGate.Semaphore.Release();
         }
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directory = Path.Combine(
             Path.GetTempPath(),

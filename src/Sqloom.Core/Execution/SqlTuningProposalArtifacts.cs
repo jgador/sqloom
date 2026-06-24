@@ -31,7 +31,7 @@ public static class SqlTuningProposalArtifacts
         {
             GeneratedAtUtc = adviceReport.GeneratedAtUtc,
             AppName = adviceReport.AppName,
-            ReplayArtifactDirectory = adviceReport.ReplayArtifactDirectory,
+            ReplayArtifactDir = adviceReport.ReplayArtifactDir,
             QueryStoreCorrelationPath = adviceReport.QueryStoreCorrelationPath,
             SourceAdvicePath = adviceOutputPath,
             SqlScriptPath = adviceReport.SqlProposalScriptPath,

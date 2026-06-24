@@ -6,10 +6,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.Endpoints;
+using Sqloom.Host.Replay;
+using Sqloom.Core.Execution;
 using Sqloom.Core.Artifacts;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
 
 namespace Sqloom.Host;
 
@@ -28,20 +28,20 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
     private readonly QueryStoreSnapshot? _queryStoreSnapshot;
     private readonly string? _queryStoreSnapshotPath;
     private readonly string _sqlServerSchemaPath;
-    private readonly string _sqlServerSchemaText;
+    private readonly string _schemaSql;
     private readonly IReadOnlyList<string> _sharedWarnings;
 
     private OpenAIAdviceEvidencePackBuilder(
         string queryStoreCorrelationPath,
         string sqlServerSchemaPath,
-        string sqlServerSchemaText,
+        string schemaSql,
         QueryStoreSnapshot? queryStoreSnapshot,
         string? queryStoreSnapshotPath,
         IReadOnlyList<string> sharedWarnings)
     {
         _queryStoreCorrelationPath = queryStoreCorrelationPath;
         _sqlServerSchemaPath = sqlServerSchemaPath;
-        _sqlServerSchemaText = sqlServerSchemaText;
+        _schemaSql = schemaSql;
         _queryStoreSnapshot = queryStoreSnapshot;
         _queryStoreSnapshotPath = queryStoreSnapshotPath;
         _sharedWarnings = sharedWarnings;
@@ -50,13 +50,13 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
     public static async Task<OpenAIAdviceEvidencePackBuilder> CreateAsync(
         string queryStoreCorrelationPath,
         string sqlServerSchemaPath,
-        string sqlServerSchemaText,
+        string schemaSql,
         string? queryStoreSnapshotPath,
         CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(queryStoreCorrelationPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(sqlServerSchemaPath);
-        ArgumentException.ThrowIfNullOrWhiteSpace(sqlServerSchemaText);
+        ArgumentException.ThrowIfNullOrWhiteSpace(schemaSql);
 
         HashSet<string> warnings = new(StringComparer.Ordinal);
         var queryStoreSnapshot = await LoadQueryStoreSnapshotAsync(
@@ -68,16 +68,16 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
         return new OpenAIAdviceEvidencePackBuilder(
             queryStoreCorrelationPath,
             sqlServerSchemaPath,
-            sqlServerSchemaText,
+            schemaSql,
             queryStoreSnapshot,
             queryStoreSnapshotPath,
             warnings.ToArray());
     }
 
     public async Task<OpenAIAdviceEvidencePack> BuildAsync(
-        QueryStoreCorrelationReport correlationReport,
-        QueryStoreCorrelationOperationSummary operation,
-        IReadOnlyList<QueryStoreCorrelationRecord> records,
+        QueryCorrelationReport correlationReport,
+        OperationCorrelationSummary operation,
+        IReadOnlyList<QueryCorrelationRecord> records,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(correlationReport);
@@ -127,7 +127,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
                 {
                     capturedCommandCount = operation.CapturedCommandCount,
                     matchedCommandCount = operation.MatchedCommandCount,
-                    statementHandleExactCount = operation.StatementHandleExactCount,
+                    handleExactCount = operation.HandleExactCount,
                     queryTextExactCount = operation.QueryTextExactCount,
                     fingerprintFallbackCount = operation.FingerprintFallbackCount,
                     unmatchedCount = operation.UnmatchedCount,
@@ -155,13 +155,13 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
             SourceEvidenceJson = JsonSerializer.Serialize(
                 sourceEvidence,
                 SerializerOptions),
-            SqlServerSchemaText = _sqlServerSchemaText,
+            SchemaSql = _schemaSql,
             Warnings = warnings.ToArray(),
         };
     }
 
     private object[] BuildArtifacts(
-        QueryStoreCorrelationOperationSummary operation,
+        OperationCorrelationSummary operation,
         bool hasReplayOperation)
     {
         List<object> artifacts =
@@ -213,7 +213,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
         return artifacts.ToArray();
     }
 
-    private static object CreateCorrelationRecordProjection(QueryStoreCorrelationRecord record)
+    private static object CreateCorrelationRecordProjection(QueryCorrelationRecord record)
     {
         return new
         {
@@ -222,7 +222,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
             confidence = record.Confidence,
             comparableSqlText = record.ComparableSqlText,
             statementSqlHandle = record.StatementSqlHandle,
-            statementSqlHandleCandidateCount = record.StatementSqlHandleCandidates.Count,
+            statementSqlHandleCandidateCount = record.SqlHandleCandidates.Count,
             capturedCommand = CreateCapturedCommandProjection(record.CapturedCommand),
             matchedPlans = record.MatchedPlans.Select(CreateMatchedPlanProjection).ToArray(),
             notes = record.Notes,
@@ -271,7 +271,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
 
     private static object CreateQueryStoreSnapshotProjection(
         QueryStoreSnapshot queryStoreSnapshot,
-        IReadOnlyList<QueryStoreCorrelationRecord> records)
+        IReadOnlyList<QueryCorrelationRecord> records)
     {
         var matchedPlanIds = records
             .SelectMany(static record => record.MatchedPlans)
@@ -285,7 +285,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
                 queryId = wait.QueryId,
                 planId = wait.PlanId,
                 waitCategory = wait.WaitCategory,
-                averageQueryWaitMilliseconds = wait.AverageQueryWaitMilliseconds,
+                avgWaitMs = wait.AvgWaitMs,
                 totalWaitMilliseconds = wait.TotalWaitMilliseconds,
                 classification = wait.Classification is null
                     ? null
@@ -361,7 +361,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
             queryHash = plan.QueryHash,
             queryText = plan.QueryText,
             queryParameterizationType = plan.QueryParameterizationType,
-            queryParameterizationTypeDescription = plan.QueryParameterizationTypeDescription,
+            paramTypeDescription = plan.ParamTypeDescription,
             executionCount = plan.ExecutionCount,
             meanDurationMilliseconds = plan.MeanDuration.TotalMilliseconds,
             maxDurationMilliseconds = plan.MaxDuration.TotalMilliseconds,
@@ -413,7 +413,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
     }
 
     private static async Task<EndpointReplayResult?> LoadReplayOperationAsync(
-        QueryStoreCorrelationOperationSummary operation,
+        OperationCorrelationSummary operation,
         ISet<string> warnings,
         CancellationToken cancellationToken)
     {
@@ -457,7 +457,7 @@ internal sealed class OpenAIAdviceEvidencePack
 
     public required string SourceEvidenceJson { get; init; }
 
-    public required string SqlServerSchemaText { get; init; }
+    public required string SchemaSql { get; init; }
 
     public required IReadOnlyList<string> Warnings { get; init; }
 }

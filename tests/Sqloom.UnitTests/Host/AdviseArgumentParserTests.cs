@@ -13,7 +13,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_ThrowsWhenCorrelationArtifactIsMissing()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
@@ -29,7 +29,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_WithOpenAIModelProvider_ResolvesExplicitOpenAIOptions()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
         var schemaPath = CreateSchemaFile(replayDirectory);
@@ -60,15 +60,72 @@ public sealed class AdviseArgumentParserTests
         Assert.Equal("openai-key", arguments.OpenAIOptions!.ApiKey);
         Assert.Equal("https://api.openai.com", arguments.OpenAIOptions.BaseUrl);
         Assert.Equal("gpt-5.4-mini", arguments.OpenAIOptions.Model);
-        Assert.Equal(schemaPath, arguments.SqlServerSchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(schemaPath, arguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(jsonOutputPath, arguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_WithOpenAIModelProvider_AcceptsDacpacSchemaSource()
+    {
+        AdviseArgumentParser parser = new();
+        var replayDirectory = CreateTempDir();
+        var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
+        File.WriteAllText(correlationPath, "{}");
+        var dacpacPath = CreateDacpacFile(replayDirectory);
+
+        var arguments = parser.Parse(
+            [
+                "--replay-artifact-dir",
+                replayDirectory,
+                "--query-store-correlation-file",
+                correlationPath,
+                "--model-provider",
+                "openai",
+                "--openai-api-key",
+                "openai-key",
+                "--sqlserver-dacpac-file",
+                dacpacPath,
+            ]);
+
+        Assert.Null(arguments.SchemaPath);
+        Assert.Equal(dacpacPath, arguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_WithOpenAIModelProvider_PrefersSchemaFileOverDacpac()
+    {
+        AdviseArgumentParser parser = new();
+        var replayDirectory = CreateTempDir();
+        var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
+        File.WriteAllText(correlationPath, "{}");
+        var schemaPath = CreateSchemaFile(replayDirectory);
+        var dacpacPath = CreateDacpacFile(replayDirectory);
+
+        var arguments = parser.Parse(
+            [
+                "--replay-artifact-dir",
+                replayDirectory,
+                "--query-store-correlation-file",
+                correlationPath,
+                "--model-provider",
+                "openai",
+                "--openai-api-key",
+                "openai-key",
+                "--sqlserver-schema-file",
+                schemaPath,
+                "--sqlserver-dacpac-file",
+                dacpacPath,
+            ]);
+
+        Assert.Equal(schemaPath, arguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(arguments.DacpacPath);
     }
 
     [Fact]
     public void Parse_WithOpenAIModelProvider_UsesDefaultBaseUrlAndModelWhenNotSpecified()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
         var schemaPath = CreateSchemaFile(replayDirectory);
@@ -95,7 +152,7 @@ public sealed class AdviseArgumentParserTests
         Assert.Equal("openai-key", arguments.OpenAIOptions!.ApiKey);
         Assert.Equal("https://api.openai.com", arguments.OpenAIOptions.BaseUrl);
         Assert.Equal("gpt-5.4-mini", arguments.OpenAIOptions.Model);
-        Assert.Equal(schemaPath, arguments.SqlServerSchemaPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(schemaPath, arguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(jsonOutputPath, arguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
     }
 
@@ -103,7 +160,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_RequiresModelProvider()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
         var schemaPath = CreateSchemaFile(replayDirectory);
@@ -126,7 +183,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_WithOpenAIModelProvider_RequiresApiKey()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
         var schemaPath = CreateSchemaFile(replayDirectory);
@@ -148,10 +205,10 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_RequiresSchemaFile()
+    public void Parse_WithOpenAIModelProvider_RequiresSchemaSource()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
 
@@ -169,13 +226,14 @@ public sealed class AdviseArgumentParserTests
                 ]));
 
         Assert.Contains("--sqlserver-schema-file", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("DACPAC", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void Parse_RejectsLegacyAdviceProviderSwitch()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
 
@@ -198,7 +256,7 @@ public sealed class AdviseArgumentParserTests
     public void Parse_RejectsLegacyCorrelationSwitch()
     {
         AdviseArgumentParser parser = new();
-        var replayDirectory = CreateTempDirectory();
+        var replayDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
         File.WriteAllText(correlationPath, "{}");
 
@@ -215,7 +273,7 @@ public sealed class AdviseArgumentParserTests
         Assert.Contains("--query-store-correlation", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string CreateTempDirectory()
+    private static string CreateTempDir()
     {
         var directory = Path.Combine(
             Path.GetTempPath(),
@@ -237,6 +295,13 @@ public sealed class AdviseArgumentParserTests
             );
             GO
             """);
+        return path;
+    }
+
+    private static string CreateDacpacFile(string directory)
+    {
+        var path = Path.Combine(directory, "schema-source.dacpac");
+        File.WriteAllText(path, "sqloom");
         return path;
     }
 }

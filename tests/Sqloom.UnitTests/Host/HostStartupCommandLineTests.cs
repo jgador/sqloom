@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Sqloom.TestApp.IntegrationTests;
+using Sqloom.TestApp.Harness;
 using Sqloom.Tests;
 using Xunit;
 
@@ -15,8 +15,8 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithProjectPathAfterReplayVerb_SelectsProjectAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -24,7 +24,7 @@ public sealed class HostStartupCommandLineTests
                 relativeProjectPath,
                 "--no-build",
                 "--target",
-                TestAppProductCatalogScenario.OperationKey,
+                CatalogScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -38,15 +38,15 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(TestAppProductCatalogScenario.OperationKey, item));
+            item => Assert.Equal(CatalogScenario.OperationKey, item));
     }
 
     [Fact]
     public void Parse_WithProjectPathAfterTuneVerb_SelectsProjectAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -55,7 +55,7 @@ public sealed class HostStartupCommandLineTests
                 "--read-only-connection-string",
                 "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 "--target",
-                TestAppProductCatalogScenario.OperationKey,
+                CatalogScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -70,14 +70,14 @@ public sealed class HostStartupCommandLineTests
             item => Assert.Equal("--read-only-connection-string", item),
             item => Assert.Equal("Server=localhost;Database=Sqloom;Trusted_Connection=True;", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(TestAppProductCatalogScenario.OperationKey, item));
+            item => Assert.Equal(CatalogScenario.OperationKey, item));
     }
 
     [Fact]
     public void Parse_WithSolutionPathAfterObserveVerb_SelectsTargetAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
         const string relativeSolutionPath = @".\Sqloom.slnx";
 
         var startupOptions = commandLine.Parse(
@@ -103,8 +103,8 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithDotNetCommandAfterReplayVerb_StoresExplicitCommandAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -113,7 +113,7 @@ public sealed class HostStartupCommandLineTests
                 "--dotnet-command",
                 "custom-dotnet",
                 "--target",
-                TestAppProductCatalogScenario.OperationKey,
+                CatalogScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -126,15 +126,15 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(TestAppProductCatalogScenario.OperationKey, item));
+            item => Assert.Equal(CatalogScenario.OperationKey, item));
     }
 
     [Fact]
     public void Parse_WithGlobalDebugSwitch_SetsDebugEnabledAndRemovesItFromApplicationArguments()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
-        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
 
         var startupOptions = commandLine.Parse(
             [
@@ -142,7 +142,7 @@ public sealed class HostStartupCommandLineTests
                 relativeProjectPath,
                 "--debug",
                 "--target",
-                TestAppProductCatalogScenario.OperationKey,
+                CatalogScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -155,23 +155,23 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(TestAppProductCatalogScenario.OperationKey, item));
+            item => Assert.Equal(CatalogScenario.OperationKey, item));
     }
 
     [Theory]
-    [InlineData(@".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj")]
-    [InlineData(@".\tests\Sqloom.TestApp")]
+    [InlineData(@".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj")]
+    [InlineData(@".\tests\Sqloom.TestApp.Harness")]
     public void Parse_WithLeadingTargetPath_ThrowsWhenStageVerbIsMissing(string relativeTargetPath)
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
 
         var exception = Assert.Throws<ArgumentException>(
             () => commandLine.Parse(
                 [
                     relativeTargetPath,
                     "--target",
-                    TestAppProductCatalogScenario.OperationKey,
+                    CatalogScenario.OperationKey,
                 ],
                 currentDirectory));
 
@@ -185,14 +185,14 @@ public sealed class HostStartupCommandLineTests
     public void Parse_ThrowsWhenUnsupportedStartupSwitchIsUsed(string switchName)
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
 
         var exception = Assert.Throws<ArgumentException>(
             () => commandLine.Parse(
                 [
                     "replay",
                     switchName,
-                    @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj",
                 ],
                 currentDirectory));
 
@@ -204,13 +204,13 @@ public sealed class HostStartupCommandLineTests
     public void Parse_ThrowsWhenDotNetCommandValueIsMissing()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
 
         var exception = Assert.Throws<ArgumentException>(
             () => commandLine.Parse(
                 [
                     "replay",
-                    @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj",
                     "--dotnet-command",
                 ],
                 currentDirectory));
@@ -222,7 +222,7 @@ public sealed class HostStartupCommandLineTests
     public void Parse_WithVersionSwitch_SetsShowVersionAndSkipsTargetSelection()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
 
         var startupOptions = commandLine.Parse(
             [
@@ -241,13 +241,13 @@ public sealed class HostStartupCommandLineTests
     public void Parse_ThrowsWhenUnknownLeadingCommandIsUsed()
     {
         HostStartupCommandLine commandLine = new();
-        var currentDirectory = SqloomRepositoryPaths.GetRepositoryRoot();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
 
         var exception = Assert.Throws<ArgumentException>(
             () => commandLine.Parse(
                 [
                     "benchmark",
-                    @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj",
+                    @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj",
                 ],
                 currentDirectory));
 

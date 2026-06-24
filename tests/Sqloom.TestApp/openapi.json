@@ -1,29 +1,40 @@
 {
-  "openapi": "3.0.4",
+  "openapi": "3.1.1",
   "info": {
-    "title": "Sqloom Test App",
-    "version": "v1"
+    "title": "Sqloom.TestApp | v1",
+    "version": "1.0.0"
   },
   "paths": {
     "/api/products/by-category": {
       "get": {
         "tags": [
-          "TestAppProducts"
+          "Products"
         ],
+        "summary": "Returns products in one category filtered by a minimum list price.",
         "parameters": [
           {
             "name": "categoryId",
             "in": "query",
+            "required": true,
             "schema": {
-              "type": "integer",
+              "pattern": "^-?(?:0|[1-9]\\d*)$",
+              "type": [
+                "integer",
+                "string"
+              ],
               "format": "int32"
             }
           },
           {
             "name": "minPrice",
             "in": "query",
+            "required": true,
             "schema": {
-              "type": "number",
+              "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+              "type": [
+                "number",
+                "string"
+              ],
               "format": "double"
             }
           }
@@ -36,7 +47,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductByCategoryResponse"
+                    "$ref": "#/components/schemas/ProductResponse"
                   }
                 }
               },
@@ -44,7 +55,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductByCategoryResponse"
+                    "$ref": "#/components/schemas/ProductResponse"
                   }
                 }
               },
@@ -52,7 +63,7 @@
                 "schema": {
                   "type": "array",
                   "items": {
-                    "$ref": "#/components/schemas/ProductByCategoryResponse"
+                    "$ref": "#/components/schemas/ProductResponse"
                   }
                 }
               }
@@ -64,17 +75,15 @@
   },
   "components": {
     "schemas": {
-      "ProductByCategoryResponse": {
-        "required": [
-          "listPrice",
-          "name",
-          "productId",
-          "productNumber"
-        ],
+      "ProductResponse": {
         "type": "object",
         "properties": {
           "productId": {
-            "type": "integer",
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
             "format": "int32"
           },
           "name": {
@@ -84,17 +93,32 @@
             "type": "string"
           },
           "listPrice": {
-            "type": "number",
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
             "format": "double"
           }
         },
-        "additionalProperties": false
+        "description": "Returns one product row from the seeded sample catalog query."
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "scheme": "bearer"
       }
     }
   },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ],
   "tags": [
     {
-      "name": "TestAppProducts"
+      "name": "Products"
     }
   ]
 }

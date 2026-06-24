@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.Capture;
-using Sqloom.AspNetCore.Endpoints;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
+using Sqloom.Host.QueryStore;
 using Xunit;
 
-namespace Sqloom.Correlation.Tests.QueryStore;
+namespace Sqloom.Host.Tests.QueryStore;
 
 /// <summary>
 /// Exercises Query Store correlator.
@@ -40,16 +38,16 @@ public sealed class QueryStoreCorrelatorTests
         var replayResult = CreateReplayResult(
             CreateCommand("SELECT 1"));
         FakeStatementSqlHandleResolver resolver = new(
-            new SqlStatementHandleResolution
+            new SqlHandleResolution
             {
                 SqlText = "SELECT 1",
                 ComparableSqlText = "SELECT 1",
                 StatementSqlHandle = "0xBBBB",
                 Candidates =
                 [
-                    new SqlStatementHandleCandidate
+                    new SqlHandleCandidate
                     {
-                        RequestedQueryParameterizationType = "None",
+                        RequestedParamType = "None",
                         QueryParameterizationType = 0,
                         StatementSqlHandle = "0xBBBB",
                     },
@@ -61,7 +59,7 @@ public sealed class QueryStoreCorrelatorTests
             .CorrelateAsync(snapshot, [replayResult], ArtifactRoot);
 
         var record = Assert.Single(report.Records);
-        Assert.Equal(QueryStoreCorrelationMatchKind.StatementHandleExact, record.MatchKind);
+        Assert.Equal(CorrelationMatchKind.StatementHandleExact, record.MatchKind);
         Assert.Equal(1.0d, record.Confidence);
         Assert.Single(record.MatchedPlans);
         Assert.Equal(11L, record.MatchedPlans[0].QueryId);
@@ -94,11 +92,11 @@ public sealed class QueryStoreCorrelatorTests
                 /* trailing comment */
                 """));
         FakeStatementSqlHandleResolver resolver = new(
-            new SqlStatementHandleResolution
+            new SqlHandleResolution
             {
                 SqlText = replayResult.CapturedSqlCommands[0].CommandText,
                 ComparableSqlText = "SELECT [e].[Id] FROM [dbo].[ExpenseRecord] AS [e]",
-                Candidates = Array.Empty<SqlStatementHandleCandidate>(),
+                Candidates = Array.Empty<SqlHandleCandidate>(),
             });
         QueryStoreCorrelator correlator = new(resolver);
 
@@ -106,7 +104,7 @@ public sealed class QueryStoreCorrelatorTests
             .CorrelateAsync(snapshot, [replayResult], ArtifactRoot);
 
         var record = Assert.Single(report.Records);
-        Assert.Equal(QueryStoreCorrelationMatchKind.QueryTextExact, record.MatchKind);
+        Assert.Equal(CorrelationMatchKind.QueryTextExact, record.MatchKind);
         Assert.Single(record.MatchedPlans);
         Assert.Equal(42L, record.MatchedPlans[0].QueryId);
     }
@@ -128,11 +126,11 @@ public sealed class QueryStoreCorrelatorTests
                 SELECT 1;
                 """));
         FakeStatementSqlHandleResolver resolver = new(
-            new SqlStatementHandleResolution
+            new SqlHandleResolution
             {
                 SqlText = replayResult.CapturedSqlCommands[0].CommandText,
                 ComparableSqlText = replayResult.CapturedSqlCommands[0].CommandText,
-                Candidates = Array.Empty<SqlStatementHandleCandidate>(),
+                Candidates = Array.Empty<SqlHandleCandidate>(),
             });
         QueryStoreCorrelator correlator = new(resolver);
 
@@ -140,7 +138,7 @@ public sealed class QueryStoreCorrelatorTests
             .CorrelateAsync(snapshot, [replayResult], ArtifactRoot);
 
         var record = Assert.Single(report.Records);
-        Assert.Equal(QueryStoreCorrelationMatchKind.QueryTextExact, record.MatchKind);
+        Assert.Equal(CorrelationMatchKind.QueryTextExact, record.MatchKind);
         Assert.Single(record.MatchedPlans);
         Assert.Equal(42L, record.MatchedPlans[0].QueryId);
     }
@@ -159,11 +157,11 @@ public sealed class QueryStoreCorrelatorTests
                 statementSqlHandle: "0x1111"));
         var replayResult = CreateReplayResult(CreateCommand(capturedText));
         FakeStatementSqlHandleResolver resolver = new(
-            new SqlStatementHandleResolution
+            new SqlHandleResolution
             {
                 SqlText = capturedText,
                 ComparableSqlText = capturedText,
-                Candidates = Array.Empty<SqlStatementHandleCandidate>(),
+                Candidates = Array.Empty<SqlHandleCandidate>(),
             });
         QueryStoreCorrelator correlator = new(resolver);
 
@@ -171,7 +169,7 @@ public sealed class QueryStoreCorrelatorTests
             .CorrelateAsync(snapshot, [replayResult], ArtifactRoot);
 
         var record = Assert.Single(report.Records);
-        Assert.Equal(QueryStoreCorrelationMatchKind.FingerprintFallback, record.MatchKind);
+        Assert.Equal(CorrelationMatchKind.FingerprintFallback, record.MatchKind);
         Assert.Contains(record.Notes, static note => note.Contains("diagnostic", StringComparison.OrdinalIgnoreCase));
     }
 
@@ -187,11 +185,11 @@ public sealed class QueryStoreCorrelatorTests
         var replayResult = CreateReplayResult(
             CreateCommand("SELECT 2"));
         FakeStatementSqlHandleResolver resolver = new(
-            new SqlStatementHandleResolution
+            new SqlHandleResolution
             {
                 SqlText = "SELECT 2",
                 ComparableSqlText = "SELECT 2",
-                Candidates = Array.Empty<SqlStatementHandleCandidate>(),
+                Candidates = Array.Empty<SqlHandleCandidate>(),
             });
         QueryStoreCorrelator correlator = new(resolver);
 
@@ -199,7 +197,7 @@ public sealed class QueryStoreCorrelatorTests
             .CorrelateAsync(snapshot, [replayResult], ArtifactRoot);
 
         var record = Assert.Single(report.Records);
-        Assert.Equal(QueryStoreCorrelationMatchKind.Unmatched, record.MatchKind);
+        Assert.Equal(CorrelationMatchKind.Unmatched, record.MatchKind);
         Assert.Empty(record.MatchedPlans);
     }
 
@@ -217,16 +215,16 @@ public sealed class QueryStoreCorrelatorTests
         var replayResult = CreateReplayResult(
             CreateCommand("EXEC [dbo].[RebuildExpenseCache] @userId"));
         FakeStatementSqlHandleResolver resolver = new(
-            new SqlStatementHandleResolution
+            new SqlHandleResolution
             {
                 SqlText = "EXEC [dbo].[RebuildExpenseCache] @userId",
                 ComparableSqlText = "EXEC [dbo].[RebuildExpenseCache] @userId",
                 StatementSqlHandle = "0xC0FFEE",
                 Candidates =
                 [
-                    new SqlStatementHandleCandidate
+                    new SqlHandleCandidate
                     {
-                        RequestedQueryParameterizationType = "None",
+                        RequestedParamType = "None",
                         QueryParameterizationType = 0,
                         StatementSqlHandle = "0xC0FFEE",
                     },
@@ -281,7 +279,7 @@ public sealed class QueryStoreCorrelatorTests
             QueryText = queryText,
             ObjectName = objectName,
             QueryParameterizationType = 0,
-            QueryParameterizationTypeDescription = "None",
+            ParamTypeDescription = "None",
             ExecutionCount = 1,
             MeanDuration = TimeSpan.FromMilliseconds(1),
             MaxDuration = TimeSpan.FromMilliseconds(1),
@@ -331,18 +329,18 @@ public sealed class QueryStoreCorrelatorTests
     /// <summary>
     /// Resolves fake statement SQL handle.
     /// </summary>
-    private sealed class FakeStatementSqlHandleResolver : IStatementSqlHandleResolver
+    private sealed class FakeStatementSqlHandleResolver : ISqlHandleResolver
     {
-        private readonly SqlStatementHandleResolution _resolution;
+        private readonly SqlHandleResolution _resolution;
 
-        public FakeStatementSqlHandleResolver(SqlStatementHandleResolution resolution)
+        public FakeStatementSqlHandleResolver(SqlHandleResolution resolution)
         {
             _resolution = resolution;
         }
 
-        public Task<SqlStatementHandleResolution> ResolveAsync(
+        public Task<SqlHandleResolution> ResolveAsync(
             string sqlText,
-            IReadOnlyList<SqlStatementHandleParameterDescriptor> parameters,
+            IReadOnlyList<SqlHandleParameter> parameters,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_resolution);

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Sqloom.Core.Contracts;
-using Sqloom.QueryStore.QueryStore;
+using Sqloom.Core.QueryStore;
+using Sqloom.Testing;
 
 namespace Sqloom.Host;
 
@@ -39,7 +39,7 @@ internal sealed class ObserveArgumentParser
 
     public ObserveArguments Parse(
         string[] args,
-        IAppIntegration? appIntegration,
+        SqloomApplicationManifest? manifest,
         string readOnlyConnectionString,
         string currentDirectory)
     {
@@ -49,7 +49,7 @@ internal sealed class ObserveArgumentParser
             SupportedSwitches,
             ValueSwitches);
 
-        QueryStoreObservationOptions observationOptions = new()
+        QueryStoreOptions observationOptions = new()
         {
             LookbackWindow = TimeSpan.FromHours(CommandArgumentSupport.GetDoubleArgumentValue(args, "--lookback-hours") ?? 24d),
             MaxPlans = CommandArgumentSupport.GetIntArgumentValue(args, "--max-plans") ?? 100,
@@ -61,10 +61,10 @@ internal sealed class ObserveArgumentParser
 
         return new ObserveArguments
         {
-            ReadOnlyConnectionString = readOnlyConnectionString,
+            ReadOnlyConnection = readOnlyConnectionString,
             ObservationOptions = observationOptions,
-            BaseWorkloadProfile = (appIntegration as IQueryStoreAppIntegration)?.GetQueryStoreWorkloadProfile()
-                ?? QueryStoreWorkloadProfile.Empty,
+            BaseWorkloadProfile = manifest?.WorkloadProfile
+                ?? WorkloadProfile.Empty,
             AppOnly = appOnly,
             ShowClassification = showClassification,
             JsonOutputPathOverride = CommandArgumentSupport.GetArgumentValue(args, "--json-output-file"),

@@ -1,4 +1,4 @@
-# Public `sqloom` `.NET tool` Release
+# Public Sqloom Package Release
 
 This runbook is for publishing a new public version of the `sqloom` dotnet tool to NuGet.org when package upload is done manually after the local build completes.
 
@@ -6,18 +6,20 @@ Run every command from the repo root.
 
 ## What gets published
 
-The public release uploads one NuGet package:
+The public release uploads this NuGet package:
 
 - `sqloom`
+
+The local package-prep flow also emits `Sqloom.Core` and `Sqloom.Testing` packages into the folder feed for verification, but they are local artifacts, not public upload targets for this release.
 
 The release version comes from `Directory.Build.props`. The tool package metadata lives in `src/Sqloom.Host/Sqloom.Host.csproj`, and the package readme comes from `src/Sqloom.Host/PackageReadme.md`.
 
 ## 1. Update release metadata
 
-1. Set the new `<Version>` in `Directory.Build.props` using a bare NuGet version such as `0.1.0`. Use the leading `v` only for Git tags or release titles such as `v0.1.0`.
+1. Set the new `<Version>` in `Directory.Build.props` using a bare NuGet version such as `0.2.0`. Use the leading `v` only for Git tags or release titles such as `v0.2.0`.
 2. Confirm `src/Sqloom.Host/Sqloom.Host.csproj` still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
 3. Confirm `src/Sqloom.Host/PackageReadme.md` still matches the current CLI behavior and install story.
-4. If the public CLI surface or documented workflow changed, update `README.md` in the same change.
+4. If the public CLI surface, harness contract surface, or documented workflow changed, update `README.md` in the same change.
 
 ## 2. Validate the repo before packing
 
@@ -49,7 +51,7 @@ That script is the main release gate for packaging. It:
 1. Restores `.\Sqloom.slnx`.
 2. Builds `.\Sqloom.slnx` in `Release`.
 3. Recreates the local package feed at `.\artifacts\packages\sqloom`.
-4. Packs the tool project and the supporting internal projects into that folder feed for local verification.
+4. Packs the tool project, `Sqloom.Core`, and `Sqloom.Testing` into that folder feed for local verification.
 5. Verifies that every expected `.nupkg` exists for the local pack step.
 6. Installs `sqloom` from that local feed into `.\artifacts\tools\sqloom-verify`.
 7. Runs `sqloom.exe --help`.
@@ -68,7 +70,10 @@ After the script succeeds, confirm the public package exists under `.\artifacts\
 
 - `sqloom.<version>.nupkg`
 
-The current pack script may also produce additional `Sqloom.*.nupkg` files as local build artifacts, but they are not part of the public release upload.
+The local verification package feed should also contain:
+
+- `Sqloom.Core.<version>.nupkg`
+- `Sqloom.Testing.<version>.nupkg`
 
 The verification install should also exist under `.\artifacts\tools\sqloom-verify`.
 
@@ -79,9 +84,9 @@ If you want one more explicit local check before upload, run:
 .\artifacts\tools\sqloom-verify\sqloom.exe --help
 ```
 
-## 5. Upload the packages manually to NuGet.org
+## 5. Upload the package manually to NuGet.org
 
-The packaging script already prints the `dotnet nuget push` command for the public tool package. For a manual browser upload flow, use that printed path as the package manifest and upload the `.nupkg` file yourself instead of running the push command.
+The packaging script already prints the `dotnet nuget push` command for the public package. For a manual browser upload flow, use that printed path as the package manifest and upload the `.nupkg` file yourself instead of running the push command.
 
 Upload:
 
@@ -109,4 +114,4 @@ If this fails immediately after upload, wait for NuGet indexing to finish and tr
 
 ## 7. If something is wrong after upload
 
-Do not try to reuse the same version number. Fix the repo, bump the version, rerun this runbook, and publish a new package set.
+Do not try to reuse the same version number. Fix the repo, bump the version, rerun this runbook, and publish a new package.

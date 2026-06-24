@@ -1,28 +1,24 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.Endpoints;
-using Sqloom.AspNetCore.OpenApi;
+using Sqloom.Host.Replay;
 using Sqloom.Core.Execution;
 using Xunit;
 
-namespace Sqloom.AspNetCore.Tests.Endpoints;
+namespace Sqloom.Host.Tests.Replay;
 
 /// <summary>
 /// Exercises endpoint replay plan builder.
 /// </summary>
-public sealed class EndpointReplayPlanBuilderTests
+public sealed class ReplayPlanBuilderTests
 {
     [Fact]
     public void BuildInitialPlan_PlansAuthenticatedGetOperationsWithoutAppOverlays()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
-                new ReplayProfile
-                {
-                    DefaultOpenApiDocumentPath = "openapi.json",
-                }),
+                new ReplayProfile()),
             [
                 CreateOperation("GET", "/api/secure", requiresAuthentication: true),
             ]);
@@ -36,13 +32,10 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_SkipsUnsafeOperationsWithoutReplayOverlays()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
-                new ReplayProfile
-                {
-                    DefaultOpenApiDocumentPath = "openapi.json",
-                }),
+                new ReplayProfile()),
             [
                 CreateOperation("GET", "/api/public", requiresAuthentication: false),
                 CreateOperation("POST", "/api/items", requiresAuthentication: true),
@@ -65,15 +58,14 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_SkipsOptInReplayWhenItWasNotSelectedExplicitly()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile
                 {
-                    DefaultOpenApiDocumentPath = "openapi.json",
                     OperationOverlays =
                     [
-                        new ReplayOperationOverlayDefinition
+                        new ReplayOverlay
                         {
                             OperationKey = "POST /api/advisor/query",
                             ReplayByDefault = false,
@@ -99,15 +91,14 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_AllowsOptInReplayWhenTargetMatchesOperationKey()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile
                 {
-                    DefaultOpenApiDocumentPath = "openapi.json",
                     OperationOverlays =
                     [
-                        new ReplayOperationOverlayDefinition
+                        new ReplayOverlay
                         {
                             OperationKey = "POST /api/advisor/query",
                             ReplayByDefault = false,
@@ -132,13 +123,12 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_ThrowsWhenTargetMatchesOperationIdInsteadOfOperationKey()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var exception = Assert.Throws<ArgumentException>(
             () => builder.BuildInitialPlan(
                 CreateOptions(
                     new ReplayProfile
                     {
-                        DefaultOpenApiDocumentPath = "openapi.json",
                     },
                     targetFilter: "GetSecure"),
                 [
@@ -155,13 +145,12 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_ThrowsWhenTargetDoesNotMatchAnyOperation()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
         var exception = Assert.Throws<ArgumentException>(
             () => builder.BuildInitialPlan(
                 CreateOptions(
                     new ReplayProfile
                     {
-                        DefaultOpenApiDocumentPath = "openapi.json",
                     },
                     targetFilter: "GET /api/expense/dashboard"),
                 [
@@ -179,14 +168,13 @@ public sealed class EndpointReplayPlanBuilderTests
     [Fact]
     public void BuildInitialPlan_ThrowsWhenTargetUsesInvalidOperationKeySyntax()
     {
-        EndpointReplayPlanBuilder builder = new();
+        ReplayPlanBuilder builder = new();
 
         var exception = Assert.Throws<ArgumentException>(
             () => builder.BuildInitialPlan(
                 CreateOptions(
                     new ReplayProfile
                     {
-                        DefaultOpenApiDocumentPath = "openapi.json",
                     },
                     targetFilter: "get api/secure"),
                 [
@@ -197,29 +185,29 @@ public sealed class EndpointReplayPlanBuilderTests
         Assert.Contains("Did you mean 'GET /api/secure'?", exception.Message, StringComparison.Ordinal);
     }
 
-    private static EndpointReplayRunnerOptions CreateOptions(
+    private static ReplayRunnerOptions CreateOptions(
         ReplayProfile replayProfile,
         string? targetFilter = null)
     {
-        return new EndpointReplayRunnerOptions
+        return new ReplayRunnerOptions
         {
             AppName = "TestApp",
-            OpenApiDocumentPath = "openapi.json",
-            ReplayArtifactDirectory = "artifacts",
+            OpenApiPath = "openapi.json",
+            ReplayArtifactDir = "artifacts",
             ReplayProfile = replayProfile,
             ReplayHostFactory = new UnusedReplayHostFactory(),
             TargetFilter = targetFilter,
         };
     }
 
-    private static DiscoveredOpenApiOperation CreateOperation(
+    private static OpenApiOperation CreateOperation(
         string httpMethod,
         string route,
         bool requiresAuthentication,
         bool requestBodyRequired = false,
         string? operationId = null)
     {
-        return new DiscoveredOpenApiOperation
+        return new OpenApiOperation
         {
             StableOperationKey = $"{httpMethod} {route}",
             OperationId = operationId,

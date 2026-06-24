@@ -15,6 +15,7 @@ internal sealed class AdviseArgumentParser
         "--replay-artifact-dir",
         "--query-store-correlation-file",
         "--sqlserver-schema-file",
+        "--sqlserver-dacpac-file",
         "--json-output-file",
         "--model-provider",
         "--openai-model",
@@ -27,6 +28,7 @@ internal sealed class AdviseArgumentParser
         "--replay-artifact-dir",
         "--query-store-correlation-file",
         "--sqlserver-schema-file",
+        "--sqlserver-dacpac-file",
         "--json-output-file",
         "--model-provider",
         "--openai-model",
@@ -34,7 +36,9 @@ internal sealed class AdviseArgumentParser
         "--openai-api-key",
     };
 
-    public AdviseArguments Parse(string[] args)
+    public AdviseArguments Parse(
+        string[] args,
+        string? currentDirectory = null)
     {
         CommandArgumentSupport.ValidateArguments(
             args,
@@ -52,7 +56,7 @@ internal sealed class AdviseArgumentParser
 
         var queryStoreCorrelationPath = CommandArgumentSupport.GetArgumentValue(args, "--query-store-correlation-file") is { } correlationPathOverride
             ? Path.GetFullPath(correlationPathOverride)
-            : ArtifactLayout.GetReplayQueryStoreCorrelationPath(replayArtifactDirectory);
+            : ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
         if (!File.Exists(queryStoreCorrelationPath))
         {
             throw new ArgumentException(
@@ -66,14 +70,17 @@ internal sealed class AdviseArgumentParser
             args,
             replayArtifactDirectory,
             queryStoreCorrelationPath,
-            jsonOutputPath);
+            jsonOutputPath,
+            currentDirectory: currentDirectory);
     }
 
     internal AdviseArguments CreateArguments(
         string[] args,
         string replayArtifactDirectory,
         string queryStoreCorrelationPath,
-        string jsonOutputPath)
+        string jsonOutputPath,
+        string? defaultDacpacPath = null,
+        string? currentDirectory = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(queryStoreCorrelationPath);
@@ -81,13 +88,17 @@ internal sealed class AdviseArgumentParser
 
         var modelProvider = ParseModelProvider(CommandArgumentSupport.GetRequiredArgumentValue(args, "--model-provider"));
         var openAIOptions = ResolveOpenAIAdviceOptions(args);
-        var sqlServerSchemaPath = ResolveSqlServerSchemaPath(args);
+        var schemaSource = ResolveSchemaSource(
+            args,
+            defaultDacpacPath,
+            currentDirectory);
 
         return new AdviseArguments
         {
-            ReplayArtifactDirectory = replayArtifactDirectory,
+            ReplayArtifactDir = replayArtifactDirectory,
             QueryStoreCorrelationPath = queryStoreCorrelationPath,
-            SqlServerSchemaPath = sqlServerSchemaPath,
+            SchemaPath = schemaSource.SchemaPath,
+            DacpacPath = schemaSource.DacpacPath,
             JsonOutputPath = jsonOutputPath,
             ModelProvider = modelProvider,
             OpenAIOptions = openAIOptions,
@@ -132,16 +143,59 @@ internal sealed class AdviseArgumentParser
         };
     }
 
-    private static string ResolveSqlServerSchemaPath(string[] args)
+    private static AdviceSchemaSource ResolveSchemaSource(
+        string[] args,
+        string? defaultDacpacPath,
+        string? currentDirectory)
     {
-        var sqlServerSchemaPath = Path.GetFullPath(
-            CommandArgumentSupport.GetRequiredArgumentValue(args, "--sqlserver-schema-file"));
-        if (!File.Exists(sqlServerSchemaPath))
+        var baseDirectory = string.IsNullOrWhiteSpace(currentDirectory)
+            ? Directory.GetCurrentDirectory()
+            : currentDirectory!;
+        var rawSchemaPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-schema-file");
+        if (!string.IsNullOrWhiteSpace(rawSchemaPath))
         {
-            throw new ArgumentException(
-                $"The SQL Server schema file '{sqlServerSchemaPath}' does not exist.");
+            var sqlServerSchemaPath = Path.GetFullPath(
+                rawSchemaPath,
+                baseDirectory);
+            if (!File.Exists(sqlServerSchemaPath))
+            {
+                throw new ArgumentException(
+                    $"The SQL Server schema file '{sqlServerSchemaPath}' does not exist.");
+            }
+
+            return new AdviceSchemaSource
+            {
+                SchemaPath = sqlServerSchemaPath,
+            };
         }
 
-        return sqlServerSchemaPath;
+        var rawDacpacPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-dacpac-file")
+            ?? defaultDacpacPath;
+        if (string.IsNullOrWhiteSpace(rawDacpacPath))
+        {
+            throw new ArgumentException(
+                "Sqloom advice needs either --sqlserver-schema-file or a DACPAC source.");
+        }
+
+        var sqlServerDacpacPath = Path.GetFullPath(
+            rawDacpacPath,
+            baseDirectory);
+        if (!File.Exists(sqlServerDacpacPath))
+        {
+            throw new ArgumentException(
+                $"The SQL Server DACPAC '{sqlServerDacpacPath}' does not exist.");
+        }
+
+        return new AdviceSchemaSource
+        {
+            DacpacPath = sqlServerDacpacPath,
+        };
     }
+}
+
+internal sealed class AdviceSchemaSource
+{
+    public string? SchemaPath { get; init; }
+
+    public string? DacpacPath { get; init; }
 }

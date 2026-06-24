@@ -2,12 +2,11 @@ using System;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.AspNetCore.Endpoints;
-using Sqloom.AzureSql.QueryStore;
+using Sqloom.Host.Replay;
+using Sqloom.Core.QueryStore;
+using Sqloom.Host.QueryStore;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
-using Sqloom.Correlation.QueryStore;
-using Sqloom.QueryStore.QueryStore;
 
 namespace Sqloom.Host;
 
@@ -24,8 +23,8 @@ internal sealed class CorrelateCommand
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
         context.ConsoleWriter.PrintBanner(
-            context.AppIntegration?.AppName,
-            HostApplication.GetProjectNames(context.AppIntegration));
+            null,
+            HostApplication.GetProjectNames(context.Application));
 
         var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments);
         if (string.IsNullOrWhiteSpace(readOnlyConnectionString))
@@ -59,7 +58,7 @@ internal sealed class CorrelateCommand
             ?? throw new InvalidOperationException(
                 $"Could not deserialize Query Store snapshot at '{arguments.QueryStoreSnapshotPath}'.");
 
-        var replaySummaryPath = ArtifactLayout.GetReplaySummaryPath(arguments.ReplayArtifactDirectory);
+        var replaySummaryPath = ArtifactLayout.GetReplaySummaryPath(arguments.ReplayArtifactDir);
         var replayRunResult = await JsonFileReader
             .ReadAsync<EndpointReplayRunResult>(
                 replaySummaryPath,
@@ -87,7 +86,7 @@ internal sealed class CorrelateCommand
             .CorrelateAsync(
                 snapshot,
                 replayRunResult.Results,
-                arguments.ReplayArtifactDirectory,
+                arguments.ReplayArtifactDir,
                 replayRunResult.AppName,
                 arguments.QueryStoreSnapshotPath,
                 cancellationToken)
@@ -112,19 +111,19 @@ internal sealed class CorrelateCommand
         };
     }
 
-    private static QueryStoreCorrelationReport CreateFinalReport(
-        QueryStoreCorrelationReport rawReport,
+    private static QueryCorrelationReport CreateFinalReport(
+        QueryCorrelationReport rawReport,
         string appName,
         string jsonOutputPath)
     {
-        var replaySummaryPath = ArtifactLayout.GetReplaySummaryPath(rawReport.ReplayArtifactDirectory);
-        var adviceArtifactPath = ArtifactLayout.GetReplayTuningAdvicePath(rawReport.ReplayArtifactDirectory);
+        var replaySummaryPath = ArtifactLayout.GetReplaySummaryPath(rawReport.ReplayArtifactDir);
+        var adviceArtifactPath = ArtifactLayout.GetReplayTuningAdvicePath(rawReport.ReplayArtifactDir);
 
-        return new QueryStoreCorrelationReport
+        return new QueryCorrelationReport
         {
             GeneratedAtUtc = rawReport.GeneratedAtUtc,
             AppName = appName,
-            ReplayArtifactDirectory = rawReport.ReplayArtifactDirectory,
+            ReplayArtifactDir = rawReport.ReplayArtifactDir,
             QueryStoreSnapshotPath = rawReport.QueryStoreSnapshotPath,
             QueryStoreCapturedAtUtc = rawReport.QueryStoreCapturedAtUtc,
             Records = rawReport.Records,
@@ -152,7 +151,7 @@ internal sealed class CorrelateCommand
                         Name = PipelineStageNames.Capture,
                         Status = PipelineStageStatuses.Completed,
                         Summary = "Captured replay SQL was available for correlation.",
-                        ArtifactPath = rawReport.ReplayArtifactDirectory,
+                        ArtifactPath = rawReport.ReplayArtifactDir,
                     },
                     new PipelineStageReport
                     {
@@ -180,7 +179,7 @@ internal sealed class CorrelateCommand
 /// </summary>
 internal sealed class CorrelateCommandResult
 {
-    public required QueryStoreCorrelationReport Report { get; init; }
+    public required QueryCorrelationReport Report { get; init; }
 
     public required string JsonOutputPath { get; init; }
 }
