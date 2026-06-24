@@ -70,12 +70,12 @@ See [docs/command-reference.md](docs/command-reference.md) for the exhaustive co
 
 ## How It Fits Into An App
 
-Sqloom stays generic. Your app supplies a small harness project that references `Sqloom.Testing` and exposes exactly one public non-abstract `ISqloomApplication`. The harness tells Sqloom where the app-owned OpenAPI document lives, how to start the app for replay, and which replay defaults are safe for that app.
+Sqloom stays generic. Your app supplies a small harness project that exposes exactly one public non-abstract `ISqloomApplication`. The harness tells Sqloom where the app-owned OpenAPI document lives, how to start the app for replay, and which replay defaults are safe for that app.
 
 In this repo:
 
 - `src/Sqloom.Core` owns shared contracts and persisted artifact models.
-- `src/Sqloom.Testing` is the public package used by app harnesses.
+- `src/Sqloom.Testing` owns harness contracts and ASP.NET Core capture helpers.
 - `src/Sqloom.Host` owns the CLI, harness loading, replay, Query Store collection, correlation, schema extraction, and advice generation.
 - `tests/Sqloom.TestApp.Harness` is the sample app-specific harness used by the quick start.
 

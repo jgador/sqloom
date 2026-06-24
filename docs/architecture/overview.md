@@ -19,7 +19,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 ## Host and Harness Model
 
 - `Sqloom.Host`: generic runner for harness project, harness assembly, solution, solution-filter, or directory targets
-- `Sqloom.Testing`: public harness contract package containing `ISqloomApplication`, `ISqloomApplicationSession`, and manifest types that external app harnesses implement
+- `Sqloom.Testing`: harness contract library containing `ISqloomApplication`, `ISqloomApplicationSession`, and manifest types that app harnesses implement
 - `Sqloom.TestApp`: sample target app in this repo
 - `Sqloom.TestApp.Harness`: sample harness loaded by the host for generic replay coverage, SQL Server DACPAC bootstrap, seed setup, Query Store profile, and the DACPAC schema source used by advice
 - Additional app-owned harnesses can follow the same pattern without changing the host
@@ -29,7 +29,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 ## Current Project Roles
 
 - `Sqloom.Core`: shared contracts, artifact layout, pipeline models, replay evidence models, OpenAPI/replay artifact schemas, Query Store evidence models, correlation report models, workload classification helpers, and merged Showplan/OpenAI advice contracts
-- `Sqloom.Testing`: public app-harness runner contracts, manifest types, and harness-facing ASP.NET Core SQL capture helpers used by external harness projects and the sample harness
+- `Sqloom.Testing`: app-harness runner contracts, manifest types, and harness-facing ASP.NET Core SQL capture helpers used by harness projects and the sample harness
 - `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, library-harness loading, ASP.NET Core replay implementation, live SQL Server Query Store collection, statement-handle resolution, replay-to-Query Store correlation, DACPAC schema extraction, advice generation, and the composition root
 - `Sqloom.TestApp`: sample target app for generic host coverage
 - `Sqloom.TestApp.Harness`: sample replay harness, replay profile, DACPAC bootstrap, seed setup, Query Store profile, and sample SQL Server setup

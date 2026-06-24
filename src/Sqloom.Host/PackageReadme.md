@@ -47,7 +47,7 @@ Use the global `--debug` switch when you want stage-owned diagnostics on `stderr
 sqloom replay .\tests\MyApi.Harness\MyApi.Harness.csproj --target "GET /api/orders/{id}"
 ```
 
-Harness projects reference the public `Sqloom.Testing` package and expose exactly one public non-abstract `ISqloomApplication` implementation for the app under test. The CLI accepts a harness project, harness assembly, solution, solution filter, or directory containing harness projects.
+Harness projects expose exactly one public non-abstract `ISqloomApplication` implementation for the app under test. The CLI accepts a harness project, harness assembly, solution, solution filter, or directory containing harness projects.
 
 ## Install from a local feed
 
@@ -57,7 +57,7 @@ Install the tool from a local folder feed:
 dotnet tool install --tool-path <tool-path> sqloom --add-source <local-feed-path> --ignore-failed-sources
 ```
 
-The published `sqloom` tool package is sufficient for local folder-feed installs and public NuGet.org installs. App harness projects compile against the published `Sqloom.Testing` package.
+The published `sqloom` tool package is sufficient for local folder-feed installs and public NuGet.org installs.
 
 See the repository README for the full end-to-end sample and maintainer workflow:
 

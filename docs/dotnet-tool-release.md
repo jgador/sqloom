@@ -1,26 +1,25 @@
 # Public Sqloom Package Release
 
-This runbook is for publishing a new public version of the `sqloom` dotnet tool and the harness contract package set to NuGet.org when package upload is done manually after the local build completes.
+This runbook is for publishing a new public version of the `sqloom` dotnet tool to NuGet.org when package upload is done manually after the local build completes.
 
 Run every command from the repo root.
 
 ## What gets published
 
-The public release uploads these NuGet packages:
+The public release uploads this NuGet package:
 
 - `sqloom`
-- `Sqloom.Core`
-- `Sqloom.Testing`
 
-The release version comes from `Directory.Build.props`. The tool package metadata lives in `src/Sqloom.Host/Sqloom.Host.csproj`, and the package readme comes from `src/Sqloom.Host/PackageReadme.md`. The harness contract package metadata lives in `src/Sqloom.Testing/Sqloom.Testing.csproj`. `Sqloom.Core` is published because `Sqloom.Testing` has public API dependencies on shared runner and Query Store profile types.
+The local package-prep flow also emits `Sqloom.Core` and `Sqloom.Testing` packages into the folder feed for verification, but they are local artifacts, not public upload targets for this release.
+
+The release version comes from `Directory.Build.props`. The tool package metadata lives in `src/Sqloom.Host/Sqloom.Host.csproj`, and the package readme comes from `src/Sqloom.Host/PackageReadme.md`.
 
 ## 1. Update release metadata
 
-1. Set the new `<Version>` in `Directory.Build.props` using a bare NuGet version such as `0.1.0`. Use the leading `v` only for Git tags or release titles such as `v0.1.0`.
+1. Set the new `<Version>` in `Directory.Build.props` using a bare NuGet version such as `0.2.0`. Use the leading `v` only for Git tags or release titles such as `v0.2.0`.
 2. Confirm `src/Sqloom.Host/Sqloom.Host.csproj` still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
-3. Confirm `src/Sqloom.Core/Sqloom.Core.csproj` and `src/Sqloom.Testing/Sqloom.Testing.csproj` still have correct public package metadata for the harness contract dependency graph.
-4. Confirm `src/Sqloom.Host/PackageReadme.md` still matches the current CLI behavior and install story.
-5. If the public CLI surface, harness contract surface, or documented workflow changed, update `README.md` in the same change.
+3. Confirm `src/Sqloom.Host/PackageReadme.md` still matches the current CLI behavior and install story.
+4. If the public CLI surface, harness contract surface, or documented workflow changed, update `README.md` in the same change.
 
 ## 2. Validate the repo before packing
 
@@ -57,7 +56,7 @@ That script is the main release gate for packaging. It:
 6. Installs `sqloom` from that local feed into `.\artifacts\tools\sqloom-verify`.
 7. Runs `sqloom.exe --help`.
 8. Runs a sample `replay` smoke test unless `-SkipSmoke` is passed.
-9. Prints the exact `dotnet nuget push` commands for the public package set.
+9. Prints the exact `dotnet nuget push` command for the public `sqloom` package.
 
 Use `-SkipSmoke` only when the sample replay cannot run in the current environment and you are intentionally accepting a weaker release gate:
 
@@ -67,9 +66,12 @@ pwsh .\scripts\prepare-sqloom-packages.ps1 -SkipSmoke
 
 ## 4. Inspect the release output
 
-After the script succeeds, confirm the public packages exist under `.\artifacts\packages\sqloom`:
+After the script succeeds, confirm the public package exists under `.\artifacts\packages\sqloom`:
 
 - `sqloom.<version>.nupkg`
+
+The local verification package feed should also contain:
+
 - `Sqloom.Core.<version>.nupkg`
 - `Sqloom.Testing.<version>.nupkg`
 
@@ -82,15 +84,13 @@ If you want one more explicit local check before upload, run:
 .\artifacts\tools\sqloom-verify\sqloom.exe --help
 ```
 
-## 5. Upload the packages manually to NuGet.org
+## 5. Upload the package manually to NuGet.org
 
-The packaging script already prints the `dotnet nuget push` commands for the public packages. For a manual browser upload flow, use those printed paths as the package manifests and upload the `.nupkg` files yourself instead of running the push commands.
+The packaging script already prints the `dotnet nuget push` command for the public package. For a manual browser upload flow, use that printed path as the package manifest and upload the `.nupkg` file yourself instead of running the push command.
 
 Upload:
 
-1. `Sqloom.Core.<version>.nupkg`
-2. `Sqloom.Testing.<version>.nupkg`
-3. `sqloom.<version>.nupkg`
+1. `sqloom.<version>.nupkg`
 
 ## 6. Verify install from the public feed
 
@@ -114,4 +114,4 @@ If this fails immediately after upload, wait for NuGet indexing to finish and tr
 
 ## 7. If something is wrong after upload
 
-Do not try to reuse the same version number. Fix the repo, bump the version, rerun this runbook, and publish a new package set.
+Do not try to reuse the same version number. Fix the repo, bump the version, rerun this runbook, and publish a new package.

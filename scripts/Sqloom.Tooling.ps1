@@ -28,7 +28,7 @@ function Get-SqloomToolingContext
 
     if ($packageVersion.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase))
     {
-        throw "Directory.Build.props <Version> must use a bare NuGet version like 0.1.0, not v0.1.0. Use the leading 'v' only for Git tags or release titles."
+        throw "Directory.Build.props <Version> must use a bare NuGet version like 0.2.0, not v0.2.0. Use the leading 'v' only for Git tags or release titles."
     }
 
     return [pscustomobject]@{
@@ -81,8 +81,6 @@ function Get-SqloomPublicPackagePaths
     )
 
     return @(
-        Join-Path $Context.PackageFeedPath "Sqloom.Core.$($Context.PackageVersion).nupkg"
-        Join-Path $Context.PackageFeedPath "Sqloom.Testing.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
     )
 }
@@ -368,7 +366,7 @@ function Show-SqloomPublishCommands
     )
 
     Write-Host ""
-    Write-Host "Manual NuGet.org publish commands for public packages:"
+    Write-Host "Manual NuGet.org publish command for the public package:"
     foreach ($packagePath in (Get-SqloomPublicPackagePaths -Context $Context))
     {
         Write-Host "dotnet nuget push `"$packagePath`" --source https://api.nuget.org/v3/index.json --api-key <nuget-api-key>"
