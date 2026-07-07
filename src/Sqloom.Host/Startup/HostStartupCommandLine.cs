@@ -143,6 +143,12 @@ internal sealed class HostStartupCommandLine
             || value.Equals("advise", StringComparison.OrdinalIgnoreCase);
     }
 
+    private static bool IsSupportedCommand(string value)
+    {
+        return value.Equals("init", StringComparison.OrdinalIgnoreCase)
+            || IsVerb(value);
+    }
+
     private static bool LooksLikeTargetPath(
         string value,
         string currentDirectory)
@@ -204,10 +210,10 @@ internal sealed class HostStartupCommandLine
                 $"Sqloom now requires an explicit stage verb before the target path. Use 'tune {argument}', 'replay {argument}', or 'observe {argument}'.");
         }
 
-        if (!IsSwitch(argument) && !IsVerb(argument))
+        if (!IsSwitch(argument) && !IsSupportedCommand(argument))
         {
             throw new ArgumentException(
-                $"Unknown Sqloom command '{argument}'. Use tune, observe, replay, correlate, advise, --help, or --version.");
+                $"Unknown Sqloom command '{argument}'. Use init, tune, observe, replay, correlate, advise, --help, or --version.");
         }
     }
 

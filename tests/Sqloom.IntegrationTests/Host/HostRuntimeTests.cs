@@ -398,6 +398,61 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
+    public async Task RunAsync_WithHelp_PrintsInitUsage()
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+
+        var result = await CaptureConsoleAsync(static async state =>
+        {
+            return await HostRuntime
+                .RunAsync(
+                    [
+                        "--help",
+                    ],
+                    state)
+                .ConfigureAwait(false);
+        }, currentDirectory);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("init [--agent codex|claude|copilot|all] [--overwrite]", result.StdOut, StringComparison.Ordinal);
+        Assert.Equal(string.Empty, result.StdErr);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task RunAsync_WithInit_ScaffoldsSkillWithoutHarnessTarget()
+    {
+        var currentDirectory = CreateTempDir();
+        Directory.CreateDirectory(Path.Combine(currentDirectory, ".git"));
+
+        try
+        {
+            var result = await CaptureConsoleAsync(static async state =>
+            {
+                return await HostRuntime
+                    .RunAsync(
+                        [
+                            "init",
+                            "--agent",
+                            "copilot",
+                        ],
+                        state)
+                    .ConfigureAwait(false);
+            }, currentDirectory);
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains(".github/skills/sqloom-harness/SKILL.md", result.StdOut, StringComparison.Ordinal);
+            Assert.Equal(string.Empty, result.StdErr);
+            Assert.True(File.Exists(Path.Combine(currentDirectory, ".github", "skills", "sqloom-harness", "SKILL.md")));
+        }
+        finally
+        {
+            Directory.Delete(currentDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
     public async Task RunAsync_WithVersion_PrintsToolVersion()
     {
         var currentDirectory = Directory.GetCurrentDirectory();

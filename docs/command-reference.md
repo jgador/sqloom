@@ -8,6 +8,7 @@ This is the detailed CLI reference for `sqloom`. For the shortest path, start wi
 sqloom help
 sqloom --help
 sqloom --version
+sqloom init [--agent codex|claude|copilot|all] [--overwrite]
 sqloom [--debug] observe [<path>] --read-only-connection-string <connection-string> [options]
 sqloom [--debug] tune <path> [--read-only-connection-string <connection-string>] [options]
 sqloom [--debug] replay <path> [options]
@@ -15,7 +16,7 @@ sqloom [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-f
 sqloom [--debug] advise --replay-artifact-dir <path> [options]
 ```
 
-`<path>` can be a harness project, harness assembly, solution, solution filter, or directory containing harness projects. Sqloom builds harness projects unless `--no-build` is supplied, scans loadable assemblies for public non-abstract `ISqloomApplication` implementations, and requires exactly one match.
+`<path>` can be a harness project, harness assembly, solution, solution filter, or directory containing harness projects. Sqloom builds harness projects unless `--no-build` is supplied, scans loadable assemblies for public non-abstract `ISqloomApplication` implementations, and requires exactly one match. `init` is target-independent and does not resolve a harness.
 
 ## Global And Startup Options
 
@@ -27,6 +28,28 @@ sqloom [--debug] advise --replay-artifact-dir <path> [options]
 | `--debug` | all commands | Prints stage diagnostics to `stderr`. For `advise`, this includes readable, redacted OpenAI request and response payloads. For `tune`, this cascades through `replay`, `observe`, `correlate`, and `advise`. |
 | `--dotnet-command <command>` | commands that resolve harness projects | Uses a specific `dotnet` executable for nested project resolution and builds. |
 | `--no-build` | commands that resolve harness projects | Skips building harness projects before scanning their outputs. |
+
+## `init`
+
+Use `init` from a Git repository root to scaffold Sqloom's embedded `sqloom-harness` agent skill. The command requires the current directory to contain a `.git` directory or file.
+
+```powershell
+sqloom init
+sqloom init --agent claude
+sqloom init --agent copilot
+sqloom init --agent all
+```
+
+Default agent: `codex`.
+
+| Agent | Target root |
+| --- | --- |
+| `codex` | `.agents/skills/sqloom-harness/` |
+| `claude` | `.claude/skills/sqloom-harness/` |
+| `copilot` | `.github/skills/sqloom-harness/` |
+| `all` | all target roots |
+
+`init` creates missing directories, leaves identical files unchanged, and refuses to overwrite changed existing files unless `--overwrite` is supplied.
 
 ## `tune`
 

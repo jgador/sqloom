@@ -33,6 +33,8 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("Sqloom host usage:");
         Console.WriteLine("  --help");
         Console.WriteLine("  --version");
+        Console.WriteLine("  init [--agent codex|claude|copilot|all] [--overwrite]");
+        Console.WriteLine("    Init scaffolds the embedded sqloom-harness agent skill into the selected repository agent location. Run it from a Git repository root.");
         Console.WriteLine("  [--debug] observe [<path>] --read-only-connection-string <connection-string> [options]");
         Console.WriteLine("  [--debug] tune <path> [--read-only-connection-string <connection-string>] [options]");
         Console.WriteLine("  [--debug] replay <path> [options]");
@@ -73,6 +75,7 @@ internal sealed class HostConsoleWriter
     public void PrintNoCommandHint()
     {
         Console.WriteLine("Use tune <path> to start the harness and run the full replay, observe, correlate, and advise workflow in one command.");
+        Console.WriteLine("Use init to scaffold the sqloom-harness agent skill into this repository.");
         Console.WriteLine("Use observe to capture a readonly SQL Server or Azure SQL Query Store snapshot.");
         Console.WriteLine("Use replay <path> to execute OpenAPI-driven in-process ASP.NET Core replays explicitly.");
         Console.WriteLine("Standalone replay accepts a harness project, harness assembly, solution, solution filter, or directory path immediately after the replay verb.");
@@ -84,6 +87,15 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("Use --debug to print per-stage diagnostics to stderr.");
         Console.WriteLine("Use --help to print the available host arguments.");
         Console.WriteLine("Use --version to print the installed Sqloom tool version.");
+    }
+
+    public void PrintInitResult(InitResult result)
+    {
+        Console.WriteLine($"Scaffolded sqloom-harness skill for agent selection '{result.AgentSelection}' in {result.RepositoryRoot}.");
+        foreach (var file in result.Files)
+        {
+            Console.WriteLine($"- {file.Status.ToString().ToLowerInvariant()}: {file.Path}");
+        }
     }
 
     public void PrintQueryStoreSnapshot(

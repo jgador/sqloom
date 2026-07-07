@@ -11,6 +11,29 @@ namespace Sqloom.Host.Tests;
 public sealed class HostApplicationTests
 {
     [Fact]
+    public async Task RunAsync_WithInitVerb_InvokesMatchingHandlerWithoutApplication()
+    {
+        StubCommandHandler handler = new(HostCommandKind.Init, 13);
+        HostApplication application = new(
+            new AppResolver(),
+            new HostConsoleWriter(),
+            new CommandRegistry(handler));
+        HostStartupOptions startupOptions = new()
+        {
+            ApplicationArguments = ["init"],
+        };
+
+        var result = await application.RunAsync(
+            startupOptions,
+            Directory.GetCurrentDirectory());
+
+        Assert.Equal(13, result);
+        Assert.NotNull(handler.LastContext);
+        Assert.Null(handler.LastContext!.Application);
+        Assert.Equal("init", Assert.Single(handler.LastContext.Arguments));
+    }
+
+    [Fact]
     public async Task RunAsync_WithAdviseVerb_InvokesMatchingHandler()
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 17);

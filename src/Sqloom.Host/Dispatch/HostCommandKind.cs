@@ -7,6 +7,7 @@ internal enum HostCommandKind
 {
     None,
     Help,
+    Init,
     Observe,
     Tune,
     Replay,

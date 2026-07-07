@@ -19,6 +19,7 @@ dotnet tool update --global sqloom
 
 ## Main commands
 
+- `init`: scaffold the `sqloom-harness` agent skill into `.agents`, `.claude`, or `.github`
 - `observe`: read recent Query Store data with an explicit `--read-only-connection-string <connection-string>`
 - `replay`: replay API operations through an app-specific harness and capture SQL
 - `correlate`: match replayed SQL back to a Query Store snapshot

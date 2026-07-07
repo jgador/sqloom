@@ -69,6 +69,7 @@ internal sealed class CommandRegistry
         return args[0].ToLowerInvariant() switch
         {
             "help" => HostCommandKind.Help,
+            "init" => HostCommandKind.Init,
             "observe" => HostCommandKind.Observe,
             "tune" => HostCommandKind.Tune,
             "replay" => HostCommandKind.Replay,
@@ -82,6 +83,7 @@ internal sealed class CommandRegistry
     {
         return commandKind switch
         {
+            HostCommandKind.Init => "init",
             HostCommandKind.Observe => "observe",
             HostCommandKind.Tune => "tune",
             HostCommandKind.Replay => "replay",

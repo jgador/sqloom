@@ -238,6 +238,50 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Fact]
+    public void Parse_WithInitVerb_KeepsArgumentsAndSkipsTargetSelection()
+    {
+        HostStartupCommandLine commandLine = new();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+
+        var startupOptions = commandLine.Parse(
+            [
+                "init",
+                "--agent",
+                "codex",
+            ],
+            currentDirectory);
+
+        Assert.False(startupOptions.HasTargetSelection);
+        Assert.Null(startupOptions.AppTargetPath);
+        Assert.Collection(
+            startupOptions.ApplicationArguments,
+            item => Assert.Equal("init", item),
+            item => Assert.Equal("--agent", item),
+            item => Assert.Equal("codex", item));
+    }
+
+    [Fact]
+    public void Parse_WithInitAndPathLikeArgument_DoesNotSelectHarnessTarget()
+    {
+        HostStartupCommandLine commandLine = new();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+
+        var startupOptions = commandLine.Parse(
+            [
+                "init",
+                ".",
+            ],
+            currentDirectory);
+
+        Assert.False(startupOptions.HasTargetSelection);
+        Assert.Null(startupOptions.AppTargetPath);
+        Assert.Collection(
+            startupOptions.ApplicationArguments,
+            item => Assert.Equal("init", item),
+            item => Assert.Equal(".", item));
+    }
+
+    [Fact]
     public void Parse_ThrowsWhenUnknownLeadingCommandIsUsed()
     {
         HostStartupCommandLine commandLine = new();

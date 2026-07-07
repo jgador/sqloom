@@ -10,7 +10,7 @@ Resident architecture context for first-pass navigation. Atlas stores durable ro
 - Tests and sample harness: [tests/Sqloom.UnitTests/](../../tests/Sqloom.UnitTests/), [tests/Sqloom.IntegrationTests/](../../tests/Sqloom.IntegrationTests/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), [tests/Sqloom.TestApp.Harness/](../../tests/Sqloom.TestApp.Harness/)
 - Docs and tooling: [README.md](../../README.md), [docs/](../../docs/), [scripts/](../../scripts/)
 - Generated artifacts: `artifacts/sqloom/`
-- Agent assets: [AGENTS.md](../../AGENTS.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/roslynkit/references/commands.md](../../.agents/skills/roslynkit/references/commands.md), [.agents/skills/roslynkit/references/output.md](../../.agents/skills/roslynkit/references/output.md), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md)
+- Agent assets: [AGENTS.md](../../AGENTS.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/roslynkit/references/commands.md](../../.agents/skills/roslynkit/references/commands.md), [.agents/skills/roslynkit/references/output.md](../../.agents/skills/roslynkit/references/output.md), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), [.agents/skills/sqloom-harness/SKILL.md](../../.agents/skills/sqloom-harness/SKILL.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md)
 
 ## Runtime Diagram
 
@@ -29,7 +29,8 @@ flowchart TB
   User --> Tool --> Program --> Runtime
   Runtime --> Startup --> App --> Registry
 
-  subgraph Commands["Stage Commands In Sqloom.Host"]
+  subgraph Commands["Commands In Sqloom.Host"]
+    Init["InitCommand<br/>agent skill scaffolding"]
     Tune["TuneCommand<br/>common workflow front door"]
     Replay["ReplayCommand<br/>ASP.NET Core replay"]
     Observe["ObserveCommand<br/>SQL Server Query Store collection"]
@@ -37,6 +38,7 @@ flowchart TB
     Advise["AdviceCommand<br/>evidence pack, schema, advice, SQL proposals"]
   end
 
+  Registry --> Init
   Registry --> Tune
   Registry --> Replay
   Registry --> Observe
@@ -186,7 +188,7 @@ flowchart TB
   classDef core fill:#eef0f3,stroke:#555f6d,color:#171a1f
 
   class User,Tool,Program,Runtime,Startup,App,Registry entry
-  class Tune,Replay,Observe,Correlate,Advise,TuneArgs,TuneContext,TuneReport command
+  class Init,Tune,Replay,Observe,Correlate,Advise,TuneArgs,TuneContext,TuneReport command
   class TargetInput,Resolver,HarnessContract,HarnessApp,Session harness
   class ReplayArgs,ReplayPlan,AspNetReplay,EndpointExecution,ReplayEvidence,ReplayArtifact replay
   class ObserveArgs,QueryStoreCollector,DiscoveredObjects,WorkloadClassifier,QueryStoreEvidence,ObserveArtifact observe
@@ -199,15 +201,16 @@ flowchart TB
 ## Runtime Flow
 
 - User-facing pipeline: `replay -> observe -> correlate -> advise`.
+- Setup command: `init` scaffolds the embedded `sqloom-harness` agent skill and skips harness resolution.
 - Convenience front door: `tune` runs the common workflow and writes stage-owned artifacts under `artifacts/sqloom/`.
 - [src/Sqloom.Host/Program.cs](../../src/Sqloom.Host/Program.cs) calls `HostRuntime.RunAsync`.
 - [src/Sqloom.Host/HostRuntime.cs](../../src/Sqloom.Host/HostRuntime.cs) parses startup options, handles help/version, creates `HostApplication`, and delegates command execution.
 - [src/Sqloom.Host/Dispatch/HostApplication.cs](../../src/Sqloom.Host/Dispatch/HostApplication.cs) resolves the selected harness or bound `ISqloomApplication`, chooses a `HostCommandKind`, creates command context, and dispatches through `CommandRegistry`.
-- Stage commands own their stage behavior: [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/AdviceCommand.cs](../../src/Sqloom.Host/AdviceCommand.cs), and [src/Sqloom.Host/TuneCommand.cs](../../src/Sqloom.Host/TuneCommand.cs).
+- Commands own their behavior: [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/AdviceCommand.cs](../../src/Sqloom.Host/AdviceCommand.cs), and [src/Sqloom.Host/TuneCommand.cs](../../src/Sqloom.Host/TuneCommand.cs).
 
 ## Domains
 
-- CLI dispatch and startup: [src/Sqloom.Host/Program.cs](../../src/Sqloom.Host/Program.cs), [src/Sqloom.Host/HostRuntime.cs](../../src/Sqloom.Host/HostRuntime.cs), [src/Sqloom.Host/Startup/](../../src/Sqloom.Host/Startup/), [src/Sqloom.Host/Dispatch/](../../src/Sqloom.Host/Dispatch/), [src/Sqloom.Host/Output/HostConsoleWriter.cs](../../src/Sqloom.Host/Output/HostConsoleWriter.cs); tests usually start in [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs).
+- CLI dispatch and startup: [src/Sqloom.Host/Program.cs](../../src/Sqloom.Host/Program.cs), [src/Sqloom.Host/HostRuntime.cs](../../src/Sqloom.Host/HostRuntime.cs), [src/Sqloom.Host/Startup/](../../src/Sqloom.Host/Startup/), [src/Sqloom.Host/Dispatch/](../../src/Sqloom.Host/Dispatch/), [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/InitCommandExecutor.cs](../../src/Sqloom.Host/InitCommandExecutor.cs), [src/Sqloom.Host/Output/HostConsoleWriter.cs](../../src/Sqloom.Host/Output/HostConsoleWriter.cs); tests usually start in [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs).
 - Replay: [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ReplayArgumentParser.cs](../../src/Sqloom.Host/ReplayArgumentParser.cs), [src/Sqloom.Host/Replay/](../../src/Sqloom.Host/Replay/), endpoint execution contracts in [src/Sqloom.Core/Execution/](../../src/Sqloom.Core/Execution/); tests usually start in [tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayPlanBuilderTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayPlanBuilderTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayRequestResolverTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayRequestResolverTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayRunnerTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayRunnerTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs).
 - Observe and Query Store: [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/ObserveArgumentParser.cs](../../src/Sqloom.Host/ObserveArgumentParser.cs), [src/Sqloom.Host/QueryStore/](../../src/Sqloom.Host/QueryStore/), Query Store contracts in [src/Sqloom.Core/QueryStore/](../../src/Sqloom.Core/QueryStore/); tests usually start in [tests/Sqloom.UnitTests/Host/ObserveArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/ObserveArgumentParserTests.cs), [tests/Sqloom.UnitTests/QueryStore/SqlServerQueryStoreCollectorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/SqlServerQueryStoreCollectorTests.cs), [tests/Sqloom.UnitTests/QueryStore/SqlServerDiscoveredObjectCollectorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/SqlServerDiscoveredObjectCollectorTests.cs), and [tests/Sqloom.UnitTests/QueryStore/WorkloadClassifierTests.cs](../../tests/Sqloom.UnitTests/QueryStore/WorkloadClassifierTests.cs).
 - Correlate: [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/CorrelateArgumentParser.cs](../../src/Sqloom.Host/CorrelateArgumentParser.cs), [src/Sqloom.Host/QueryStore/QueryStoreCorrelator.cs](../../src/Sqloom.Host/QueryStore/QueryStoreCorrelator.cs), correlation contracts in [src/Sqloom.Core/QueryStore/](../../src/Sqloom.Core/QueryStore/); tests usually start in [tests/Sqloom.UnitTests/Host/CorrelateArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/CorrelateArgumentParserTests.cs), [tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelatorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelatorTests.cs), and [tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelationAdvisorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelationAdvisorTests.cs).
@@ -220,7 +223,7 @@ flowchart TB
 
 ## Test Routing
 
-- CLI startup, command dispatch, and help/version output -> [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs)
+- CLI startup, command dispatch, init scaffolding, and help/version output -> [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), [tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs](../../tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs), [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs)
 - Parser changes -> matching `*ArgumentParserTests.cs` under [tests/Sqloom.UnitTests/Host/](../../tests/Sqloom.UnitTests/Host/)
 - Replay planning and request execution -> [tests/Sqloom.UnitTests/Endpoints/](../../tests/Sqloom.UnitTests/Endpoints/), [tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs), [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs)
 - Query Store collection and classification -> [tests/Sqloom.UnitTests/QueryStore/](../../tests/Sqloom.UnitTests/QueryStore/)

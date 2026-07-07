@@ -31,4 +31,10 @@
   <ItemGroup>
     <None Include="PackageReadme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\.agents\skills\sqloom-harness\**\*">
+      <LogicalName>Sqloom.Host.InitAssets/skills/sqloom-harness/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>
