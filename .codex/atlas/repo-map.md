@@ -12,6 +12,190 @@ Resident architecture context for first-pass navigation. Atlas stores durable ro
 - Generated artifacts: `artifacts/sqloom/`
 - Agent assets: [AGENTS.md](../../AGENTS.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/roslynkit/references/commands.md](../../.agents/skills/roslynkit/references/commands.md), [.agents/skills/roslynkit/references/output.md](../../.agents/skills/roslynkit/references/output.md), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md)
 
+## Runtime Diagram
+
+```mermaid
+flowchart TB
+  subgraph Entry["CLI Entry And Startup"]
+    User["User / automation"]
+    Tool["sqloom / sqloom-local<br/>packaged .NET tool"]
+    Program["Program.cs"]
+    Runtime["HostRuntime<br/>startup parsing, help/version, app creation"]
+    Startup["Startup options<br/>target, command, diagnostics"]
+    App["HostApplication<br/>resolve target and dispatch command"]
+    Registry["CommandRegistry<br/>HostCommandKind -> command"]
+  end
+
+  User --> Tool --> Program --> Runtime
+  Runtime --> Startup --> App --> Registry
+
+  subgraph Commands["Stage Commands In Sqloom.Host"]
+    Tune["TuneCommand<br/>common workflow front door"]
+    Replay["ReplayCommand<br/>ASP.NET Core replay"]
+    Observe["ObserveCommand<br/>SQL Server Query Store collection"]
+    Correlate["CorrelateCommand<br/>replay-to-Query Store correlation"]
+    Advise["AdviceCommand<br/>evidence pack, schema, advice, SQL proposals"]
+  end
+
+  Registry --> Tune
+  Registry --> Replay
+  Registry --> Observe
+  Registry --> Correlate
+  Registry --> Advise
+
+  Tune --> Replay
+  Tune --> Observe
+  Tune --> Correlate
+  Tune --> Advise
+
+  subgraph Resolution["Target And Harness Resolution"]
+    TargetInput["Target input<br/>project, assembly, solution, solution filter, directory"]
+    Resolver["Resolution pipeline<br/>find/load harness assembly"]
+    HarnessContract["Sqloom.Testing<br/>ISqloomApplication + session contracts"]
+    HarnessApp["App-owned harness<br/>exactly one public non-abstract ISqloomApplication"]
+    Session["ISqloomApplicationSession<br/>app session for replay and setup"]
+  end
+
+  App --> TargetInput --> Resolver
+  Resolver --> HarnessContract
+  Resolver --> HarnessApp --> Session
+
+  subgraph ReplayFlow["Replay Stage"]
+    ReplayArgs["ReplayArgumentParser"]
+    ReplayPlan["Replay plan<br/>endpoint request selection"]
+    AspNetReplay["ASP.NET Core replay runner"]
+    EndpointExecution["Endpoint execution contracts"]
+    ReplayEvidence["Replay evidence models"]
+    ReplayArtifact["Replay stage artifacts"]
+  end
+
+  Replay --> ReplayArgs --> ReplayPlan --> AspNetReplay
+  AspNetReplay --> Session
+  AspNetReplay --> EndpointExecution --> ReplayEvidence --> ReplayArtifact
+
+  subgraph ObserveFlow["Observe Stage"]
+    ObserveArgs["ObserveArgumentParser"]
+    QueryStoreCollector["SQL Server Query Store collector"]
+    DiscoveredObjects["Discovered SQL objects"]
+    WorkloadClassifier["Workload classifier"]
+    QueryStoreEvidence["Query Store evidence models"]
+    ObserveArtifact["Observe stage artifacts"]
+  end
+
+  Observe --> ObserveArgs --> QueryStoreCollector
+  QueryStoreCollector --> DiscoveredObjects
+  QueryStoreCollector --> WorkloadClassifier
+  QueryStoreCollector --> QueryStoreEvidence --> ObserveArtifact
+
+  subgraph CorrelateFlow["Correlate Stage"]
+    CorrelateArgs["CorrelateArgumentParser"]
+    Correlator["QueryStoreCorrelator"]
+    StatementHandles["statement/query/plan handle matching"]
+    CorrelationReport["Correlation report models"]
+    CorrelationArtifact["query-store-correlation.json"]
+  end
+
+  Correlate --> CorrelateArgs --> Correlator
+  ReplayArtifact --> Correlator
+  ObserveArtifact --> Correlator
+  Correlator --> StatementHandles --> CorrelationReport --> CorrelationArtifact
+
+  subgraph AdviseFlow["Advise Stage"]
+    AdviseArgs["AdviseArgumentParser"]
+    SchemaSource["Schema source<br/>DACPAC or catalog-derived schema"]
+    DacpacExtractor["SqlServerDacpacSchemaExtractor"]
+    EvidencePack["OpenAIAdviceEvidencePackBuilder"]
+    AdviceGenerator["OpenAIAdviceGenerator"]
+    AdviceContracts["OpenAI advice request/response contracts"]
+    LocalValidation["Local proposal validation and normalization"]
+    AdviceArtifact["tuning-advice.json"]
+    SqlProposal["sql-tuning-proposal.sql"]
+  end
+
+  Advise --> AdviseArgs
+  AdviseArgs --> SchemaSource
+  SchemaSource --> DacpacExtractor
+  CorrelationArtifact --> EvidencePack
+  ObserveArtifact --> EvidencePack
+  ReplayArtifact --> EvidencePack
+  DacpacExtractor --> EvidencePack
+  EvidencePack --> AdviceGenerator --> AdviceContracts
+  AdviceContracts --> LocalValidation
+  LocalValidation --> AdviceArtifact
+  LocalValidation --> SqlProposal
+
+  subgraph TuneFlow["Tune Workflow"]
+    TuneArgs["TuneArgumentParser"]
+    TuneContext["Tune command context"]
+    TuneReport["TuneWorkflowReport"]
+  end
+
+  Tune --> TuneArgs --> TuneContext
+  TuneContext --> Replay
+  TuneContext --> Observe
+  TuneContext --> Correlate
+  TuneContext --> Advise
+  ReplayArtifact --> TuneReport
+  ObserveArtifact --> TuneReport
+  CorrelationArtifact --> TuneReport
+  AdviceArtifact --> TuneReport
+  SqlProposal --> TuneReport
+
+  subgraph ArtifactRoot["artifacts/sqloom"]
+    ReplayRun["replay output"]
+    ObserveRun["query-store output"]
+    CorrelateRun["correlation output"]
+    AdviceRun["advice output"]
+    ProposalRun["SQL proposal output"]
+    WorkflowRun["tune workflow report"]
+  end
+
+  ReplayArtifact --> ReplayRun
+  ObserveArtifact --> ObserveRun
+  CorrelationArtifact --> CorrelateRun
+  AdviceArtifact --> AdviceRun
+  SqlProposal --> ProposalRun
+  TuneReport --> WorkflowRun
+
+  subgraph CoreContracts["Sqloom.Core Runtime Contracts"]
+    CoreArtifacts["Artifact layout and JSON contracts"]
+    CoreExecution["Execution and replay evidence contracts"]
+    CoreQueryStore["Query Store and correlation contracts"]
+    CoreOpenAI["OpenAI advice contracts"]
+    CoreHelpers["Provider-neutral helpers"]
+  end
+
+  ReplayEvidence --> CoreExecution
+  QueryStoreEvidence --> CoreQueryStore
+  CorrelationReport --> CoreQueryStore
+  AdviceContracts --> CoreOpenAI
+  ReplayArtifact --> CoreArtifacts
+  ObserveArtifact --> CoreArtifacts
+  CorrelationArtifact --> CoreArtifacts
+  AdviceArtifact --> CoreArtifacts
+  SqlProposal --> CoreArtifacts
+
+  classDef entry fill:#e8f2ff,stroke:#2b5fab,color:#102033
+  classDef command fill:#fff4df,stroke:#9a6500,color:#1f1600
+  classDef harness fill:#f4ecff,stroke:#6d45a3,color:#21142f
+  classDef replay fill:#e9f8ee,stroke:#2f7d42,color:#102215
+  classDef observe fill:#eef7ff,stroke:#3178a8,color:#0b2230
+  classDef correlate fill:#fff0f0,stroke:#a33d3d,color:#2b1010
+  classDef advise fill:#f7f0ff,stroke:#7b4ca0,color:#25122f
+  classDef artifact fill:#f8f8ec,stroke:#74742b,color:#20200c
+  classDef core fill:#eef0f3,stroke:#555f6d,color:#171a1f
+
+  class User,Tool,Program,Runtime,Startup,App,Registry entry
+  class Tune,Replay,Observe,Correlate,Advise,TuneArgs,TuneContext,TuneReport command
+  class TargetInput,Resolver,HarnessContract,HarnessApp,Session harness
+  class ReplayArgs,ReplayPlan,AspNetReplay,EndpointExecution,ReplayEvidence,ReplayArtifact replay
+  class ObserveArgs,QueryStoreCollector,DiscoveredObjects,WorkloadClassifier,QueryStoreEvidence,ObserveArtifact observe
+  class CorrelateArgs,Correlator,StatementHandles,CorrelationReport,CorrelationArtifact correlate
+  class AdviseArgs,SchemaSource,DacpacExtractor,EvidencePack,AdviceGenerator,AdviceContracts,LocalValidation,AdviceArtifact,SqlProposal advise
+  class ReplayRun,ObserveRun,CorrelateRun,AdviceRun,ProposalRun,WorkflowRun artifact
+  class CoreArtifacts,CoreExecution,CoreQueryStore,CoreOpenAI,CoreHelpers core
+```
+
 ## Runtime Flow
 
 - User-facing pipeline: `replay -> observe -> correlate -> advise`.
