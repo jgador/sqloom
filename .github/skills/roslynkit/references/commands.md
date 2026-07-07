@@ -1,6 +1,6 @@
 # RoslynKit Command Reference
 
-This reference lists command names, usage strings, and options exposed by the installed RoslynKit CLI. For emitted `id:` values and documentation-comment ID prefix meanings, see [references/output.md](output.md). Agent routing guidance remains in [SKILL.md](../SKILL.md).
+This reference lists command names, usage strings, and options exposed by the installed RoslynKit CLI. For emitted `id:` values and documentation-comment ID prefix meanings, see [.github/skills/roslynkit/references/output.md](output.md). Agent routing guidance remains in [.github/skills/roslynkit/SKILL.md](../SKILL.md).
 
 ## Commands
 

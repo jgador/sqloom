@@ -1,6 +1,6 @@
 # Sqloom Command Reference
 
-This is the detailed CLI reference for `sqloom`. For the shortest path, start with `sqloom tune` in the root [README](../README.md).
+This is the detailed CLI reference for `sqloom`. For the shortest path, start with `sqloom tune` in [README.md](../README.md).
 
 ## Command Overview
 
@@ -239,13 +239,13 @@ Rollback SQL is helpful but optional in the OpenAI path. If the model omits `rol
 
 ## Sample Harness Defaults
 
-The sample harness at `tests/Sqloom.TestApp.Harness/Sqloom.TestApp.Harness.csproj` supplies:
+The sample harness at [tests/Sqloom.TestApp.Harness/Sqloom.TestApp.Harness.csproj](../tests/Sqloom.TestApp.Harness/Sqloom.TestApp.Harness.csproj) supplies:
 
 - app name: `Sqloom Test App`
-- OpenAPI document: `tests/Sqloom.TestApp/openapi.json`
+- OpenAPI document: [tests/Sqloom.TestApp/openapi.json](../tests/Sqloom.TestApp/openapi.json)
 - sample target: `GET /api/products/by-category`
-- DACPAC: `tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.dacpac`
-- seed script: `tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.seed.sql`
+- DACPAC: [tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.dacpac](../tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.dacpac)
+- seed script: [tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.seed.sql](../tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.seed.sql)
 
 Regenerate the sample seed script from a local `AdventureWorksLT2025` database on `localhost` with:
 

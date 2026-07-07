@@ -1,12 +1,12 @@
 # Sqloom .NET Architecture and Coding Guidelines
 
-> Repo-adopted C# and .NET design standards. Use this with `README.md`, `docs/architecture/overview.md`, and `docs/architecture/dependencies.md`, not instead of them.
+> Repo-adopted C# and .NET design standards. Use this with [README.md](../../README.md), [docs/architecture/overview.md](overview.md), and [docs/architecture/dependencies.md](dependencies.md), not instead of them.
 
 ## How to Use This Guide
 
-- `README.md` is the user-facing command and workflow document.
-- `docs/architecture/overview.md` is the canonical repo-layout and project-ownership document.
-- `docs/architecture/dependencies.md` is the canonical project-graph and boundary-rules document.
+- [README.md](../../README.md) is the user-facing command and workflow document.
+- [docs/architecture/overview.md](overview.md) is the canonical repo-layout and project-ownership document.
+- [docs/architecture/dependencies.md](dependencies.md) is the canonical project-graph and boundary-rules document.
 - This file focuses on deeper coding, API, testing, and review standards that still apply after the repo-specific structure is already known.
 
 Do not rename the current `Sqloom.*` projects into generic `Domain`, `Application`, or `Infrastructure` buckets unless there is a concrete repository need.
@@ -45,8 +45,8 @@ Do not rename the current `Sqloom.*` projects into generic `Domain`, `Applicatio
 - Register services through clear extension methods rather than ad hoc startup helpers.
 - Do not call `BuildServiceProvider()` during registration.
 - Choose lifetimes deliberately. Background services are singletons, but they should create scopes for scoped work.
-- `Directory.Build.props` is authoritative for build policy such as nullable settings, analyzers, and warnings-as-errors.
-- `Directory.Packages.props` is authoritative for package versions.
+- [Directory.Build.props](../../Directory.Build.props) is authoritative for build policy such as nullable settings, analyzers, and warnings-as-errors.
+- [Directory.Packages.props](../../Directory.Packages.props) is authoritative for package versions.
 - Bind configuration into validated options types. Avoid pulling raw `IConfiguration` into long-lived services when typed options or explicit constructor arguments are clearer.
 - When configuration is required, add sensible defaults when possible and validate at startup.
 
@@ -80,7 +80,7 @@ Do not rename the current `Sqloom.*` projects into generic `Domain`, `Applicatio
 
 ## Documentation and Change Discipline
 
-- If a public API, public CLI or package surface, public contract, configuration surface, or documented workflow changes, update `README.md` or the relevant docs in the same change.
+- If a public API, public CLI or package surface, public contract, configuration surface, or documented workflow changes, update [README.md](../../README.md) or the relevant docs in the same change.
 - Keep samples runnable and minimal.
 - Document breaking changes with a description, the new behavior, the reason, and migration steps when needed.
 - Prefer short, focused comments over broad prose blocks.

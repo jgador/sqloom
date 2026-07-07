@@ -12,14 +12,14 @@ The public release uploads this NuGet package:
 
 The local package-prep flow also emits `Sqloom.Core` and `Sqloom.Testing` packages into the folder feed for verification, but they are local artifacts, not public upload targets for this release.
 
-The release version comes from `Directory.Build.props`. The tool package metadata lives in `src/Sqloom.Host/Sqloom.Host.csproj`, and the package readme comes from `src/Sqloom.Host/PackageReadme.md`.
+The release version comes from [Directory.Build.props](../Directory.Build.props). The tool package metadata lives in [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj), and the package readme comes from [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md).
 
 ## 1. Update release metadata
 
-1. Set the new `<Version>` in `Directory.Build.props` using a bare NuGet version such as `0.2.0`. Use the leading `v` only for Git tags or release titles such as `v0.2.0`.
-2. Confirm `src/Sqloom.Host/Sqloom.Host.csproj` still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
-3. Confirm `src/Sqloom.Host/PackageReadme.md` still matches the current CLI behavior and install story.
-4. If the public CLI surface, harness contract surface, or documented workflow changed, update `README.md` in the same change.
+1. Set the new `<Version>` in [Directory.Build.props](../Directory.Build.props) using a bare NuGet version such as `0.2.0`. Use the leading `v` only for Git tags or release titles such as `v0.2.0`.
+2. Confirm [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj) still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
+3. Confirm [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md) still matches the current CLI behavior and install story.
+4. If the public CLI surface, harness contract surface, or documented workflow changed, update [README.md](../README.md) in the same change.
 
 ## 2. Validate the repo before packing
 
@@ -32,7 +32,7 @@ dotnet test --solution .\Sqloom.UnitTests.slnf
 dotnet test --solution .\Sqloom.IntegrationTests.slnf
 ```
 
-If the release includes CLI behavior changes and you want an extra local-tool sanity check before packing, also run:
+If the release includes CLI behavior changes and you want an extra local-tool sanity check before packing, also run [scripts/deploy-sqloom-local.ps1](../scripts/deploy-sqloom-local.ps1):
 
 ```powershell
 pwsh .\scripts\deploy-sqloom-local.ps1
@@ -40,7 +40,7 @@ pwsh .\scripts\deploy-sqloom-local.ps1
 
 ## 3. Build the release packages
 
-Run the package-prep script:
+Run [scripts/prepare-sqloom-packages.ps1](../scripts/prepare-sqloom-packages.ps1):
 
 ```powershell
 pwsh .\scripts\prepare-sqloom-packages.ps1

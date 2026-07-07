@@ -75,10 +75,10 @@ Sqloom stays generic. Your app supplies a small harness project that exposes exa
 
 In this repo:
 
-- `src/Sqloom.Core` owns shared contracts and persisted artifact models.
-- `src/Sqloom.Testing` owns harness contracts and ASP.NET Core capture helpers.
-- `src/Sqloom.Host` owns the CLI, harness loading, replay, Query Store collection, correlation, schema extraction, and advice generation.
-- `tests/Sqloom.TestApp.Harness` is the sample app-specific harness used by the quick start.
+- [src/Sqloom.Core](src/Sqloom.Core) owns shared contracts and persisted artifact models.
+- [src/Sqloom.Testing](src/Sqloom.Testing) owns harness contracts and ASP.NET Core capture helpers.
+- [src/Sqloom.Host](src/Sqloom.Host) owns the CLI, harness loading, replay, Query Store collection, correlation, schema extraction, and advice generation.
+- [tests/Sqloom.TestApp.Harness](tests/Sqloom.TestApp.Harness) is the sample app-specific harness used by the quick start.
 
 For more detail about repo layout and boundaries, see [docs/architecture/overview.md](docs/architecture/overview.md) and [docs/architecture/dependencies.md](docs/architecture/dependencies.md).
 

@@ -11,6 +11,7 @@ Purpose
 - Do fast, narrow reconnaissance for the parent agent.
 - Reduce the search space.
 - Hand back likely files and evidence, not deep analysis.
+- Stay out of repository-domain routing; scout is not an Atlas selector, architecture-spine selector, or first-read-order chooser.
 
 Scope rules
 - Only inspect the paths, files, symbols, or diff scope assigned by the parent agent.
@@ -29,6 +30,7 @@ Forbidden behavior
 - Do not propose fixes unless the parent explicitly asks.
 - Do not broaden scope on your own.
 - Do not do deep execution tracing unless the parent explicitly asks.
+- Do not choose the Atlas domain or decide whether an Atlas specialist should run.
 
 Return format
 Return a compact report with exactly these sections:

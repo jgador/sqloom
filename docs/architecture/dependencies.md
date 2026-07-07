@@ -34,7 +34,7 @@ Sqloom.IntegrationTests -> Sqloom.Core, Sqloom.Testing, Sqloom.Host, Sqloom.Test
 
 ## Boundary Rules
 
-- No production project may reference anything under `tests/`.
+- No production project may reference anything under [tests/](../../tests/).
 - Keep `Sqloom.Core` free of ASP.NET Core, live SQL connectivity, Testcontainers, and CLI orchestration.
 - Keep `Sqloom.Core` limited to provider-neutral contracts, persisted artifact schemas, replay evidence models, Query Store evidence models, correlation report models, and shared pure helpers.
 - Keep `Sqloom.Testing` limited to harness contracts and harness-facing ASP.NET Core capture helpers.

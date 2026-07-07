@@ -33,7 +33,7 @@ Do not default to `Get-Content`, `Select-String`, or grep-style file reads for q
 - The target has no global name (local variable, parameter, lambda parameter): position mode is the only way to address it.
 - `signature-help` and mid-expression `quick-info` are always position-based: they answer questions about a spot in the code, not about a declaration.
 
-`--symbol` takes a documentation-comment ID from RoslynKit `id:` output or a qualified name such as `SomeNamespace.SomeType.SomeMethod`. Prefix meanings for documentation-comment IDs are defined in [references/output.md](references/output.md). An ambiguous qualified name (for example method overloads) fails with the candidate documentation-comment IDs; retry with the exact ID. Constructors need the emitted `M:...#ctor(...)` ID form.
+`--symbol` takes a documentation-comment ID from RoslynKit `id:` output or a qualified name such as `SomeNamespace.SomeType.SomeMethod`. Prefix meanings for documentation-comment IDs are defined in [.agents/skills/roslynkit/references/output.md](references/output.md). An ambiguous qualified name (for example method overloads) fails with the candidate documentation-comment IDs; retry with the exact ID. Constructors need the emitted `M:...#ctor(...)` ID form.
 
 Hard rule: coordinates must come from tool output, a diagnostic, or the user. If reading or searching a file would be required to find a line number, use `--symbol` instead.
 
@@ -61,7 +61,7 @@ roslynkit <command> --target <solution.slnx|solution.sln|project.csproj>
 
 Always pass `--target` explicitly. RoslynKit does not infer a solution or project path automatically.
 When a command accepts `--file`, pass a `.cs` path by default.
-Use `roslynkit help <command>` for exact runtime syntax and options. For the bundled command reference, read [references/commands.md](references/commands.md).
+Use `roslynkit help <command>` for exact runtime syntax and options. For the bundled command reference, read [.agents/skills/roslynkit/references/commands.md](references/commands.md).
 
 ## When To Start With `workspace`
 

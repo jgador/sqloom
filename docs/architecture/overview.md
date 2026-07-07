@@ -10,11 +10,11 @@ This is the canonical repo-layout and project-ownership document for the standal
 
 ## Top-Level Structure
 
-- `src/`: production libraries and the CLI host
-- `tests/`: unit tests, integration tests, the sample app, and its app-owned harness
-- `scripts/`: local tooling and packaging automation
+- [src/](../../src/): production libraries and the CLI host
+- [tests/](../../tests/): unit tests, integration tests, the sample app, and its app-owned harness
+- [scripts/](../../scripts/): local tooling and packaging automation
 - `artifacts/`: generated build, package, replay, and tune output
-- `docs/`: architecture notes and repo guidance
+- [docs/](../): architecture notes and repo guidance
 
 ## Host and Harness Model
 
@@ -41,6 +41,6 @@ Retired runtime boundaries stay merged into adjacent survivors: `Sqloom.Showplan
 ## Current Repo Direction
 
 - Keep the current surviving `Sqloom.*` names. Do not rename into generic `Domain`, `Application`, or `Infrastructure` buckets unless there is a concrete repo need.
-- Keep repo automation in `scripts/` for now.
+- Keep repo automation in [scripts/](../../scripts/) for now.
 - Keep `Sqloom.Host` as the only CLI composition root.
 - Keep new shared code narrowly owned and task-driven.
