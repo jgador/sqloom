@@ -21,6 +21,10 @@ public sealed class ReplayRunnerOptions
 
     public ReplayLaunchOptions ReplayLaunchOptions { get; init; } = new();
 
+    public ReplayDataAgentOptions ReplayDataAgentOptions { get; init; } = new();
+
+    public IReplayDataPreparer? ReplayDataPreparer { get; init; }
+
     public int MaxOperations { get; init; } = 25;
 
     public string? TargetFilter { get; init; }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Sqloom.Core.Artifacts;
+using Sqloom.Host.Replay;
 using Sqloom.TestApp.Harness;
 using Sqloom.Testing;
 using Xunit;
@@ -54,6 +55,10 @@ public sealed class TuneArgumentParserTests
                 openApiPath,
                 "--target",
                 CatalogScenario.OperationKey,
+                "--replay-data-agent",
+                "auto",
+                "--replay-data-agent-model",
+                "gpt-replay",
                 "--model-provider",
                 "openai",
                 "--openai-api-key",
@@ -94,6 +99,9 @@ public sealed class TuneArgumentParserTests
             arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.SeedSqlPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(CatalogScenario.OperationKey, arguments.ReplayArguments.RunnerOptions.TargetFilter);
+        Assert.Equal(ReplayDataAgentMode.Auto, arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.Equal("gpt-replay", arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
+        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.ReplayArguments.RunnerOptions.ReplayDataPreparer);
         Assert.Equal(expectedSnapshotPath, arguments.CorrelateArguments.QueryStoreSnapshotPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedReplayDirectory, arguments.CorrelateArguments.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedCorrelationPath, arguments.CorrelateArguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
@@ -174,6 +182,51 @@ public sealed class TuneArgumentParserTests
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
+        Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ValidateBeforeSession_RejectsInvalidReplayDataAgentMode()
+    {
+        TuneArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.ValidateBeforeSession(
+                [
+                    "tune",
+                    "--replay-data-agent",
+                    "sometimes",
+                    "--model-provider",
+                    "openai",
+                    "--openai-api-key",
+                    "openai-key",
+                ],
+                ManifestFactory.CreateManifest(),
+                currentDirectory));
+
+        Assert.Contains("--replay-data-agent", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ValidateBeforeSession_WithReplayDataAgentRequired_RequiresOpenAIKey()
+    {
+        TuneArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.ValidateBeforeSession(
+                [
+                    "tune",
+                    "--replay-data-agent",
+                    "required",
+                    "--model-provider",
+                    "openai",
+                ],
+                ManifestFactory.CreateManifest(),
+                currentDirectory));
+
+        Assert.Contains("replay data agent", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 

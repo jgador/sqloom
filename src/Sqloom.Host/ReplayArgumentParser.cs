@@ -21,6 +21,10 @@ internal sealed class ReplayArgumentParser
         "--artifact-dir",
         "--max-operations",
         "--target",
+        "--replay-data-agent",
+        "--replay-data-agent-model",
+        "--openai-base-url",
+        "--openai-api-key",
     };
 
     private static readonly HashSet<string> ValueSwitches = new(StringComparer.OrdinalIgnoreCase)
@@ -31,6 +35,10 @@ internal sealed class ReplayArgumentParser
         "--artifact-dir",
         "--max-operations",
         "--target",
+        "--replay-data-agent",
+        "--replay-data-agent-model",
+        "--openai-base-url",
+        "--openai-api-key",
     };
 
     public ReplayArguments Parse(
@@ -61,6 +69,7 @@ internal sealed class ReplayArgumentParser
         var replayArtifactDirectory = artifactDirectoryOverride
             ?? GetReplayArtifactDir(args, currentDirectory);
         var replayLaunchOptions = CreateReplayLaunchOptions(args, currentDirectory);
+        var replayDataAgentOptions = CreateReplayDataAgentOptions(args);
 
         return new ReplayArguments
         {
@@ -72,6 +81,8 @@ internal sealed class ReplayArgumentParser
                 ReplayProfile = replayProfile,
                 ReplayHost = replayHost,
                 ReplayLaunchOptions = replayLaunchOptions,
+                ReplayDataAgentOptions = replayDataAgentOptions,
+                ReplayDataPreparer = CreateReplayDataPreparer(args, replayDataAgentOptions),
                 MaxOperations = CommandArgumentSupport.GetIntArgumentValue(args, "--max-operations") ?? 25,
                 TargetFilter = targetFilter,
             },
@@ -182,6 +193,80 @@ internal sealed class ReplayArgumentParser
         {
             DacpacPath = fullDacpacPath,
             SeedSqlPath = fullSeedSqlPath,
+        };
+    }
+
+    internal ReplayDataAgentOptions CreateReplayDataAgentOptions(string[] args)
+    {
+        var mode = ParseReplayDataAgentMode(
+            CommandArgumentSupport.GetArgumentValue(args, "--replay-data-agent"));
+        if (mode == ReplayDataAgentMode.Off)
+        {
+            return new ReplayDataAgentOptions();
+        }
+
+        return new ReplayDataAgentOptions
+        {
+            Mode = mode,
+            ModelName = CommandArgumentSupport.GetArgumentValue(args, "--replay-data-agent-model")
+                ?? "gpt-5.4-mini",
+        };
+    }
+
+    internal void ValidateReplayDataAgentOptions(string[] args)
+    {
+        var replayDataAgentOptions = CreateReplayDataAgentOptions(args);
+        _ = CreateReplayDataPreparer(args, replayDataAgentOptions);
+    }
+
+    private static IReplayDataPreparer? CreateReplayDataPreparer(
+        string[] args,
+        ReplayDataAgentOptions options)
+    {
+        if (options.Mode == ReplayDataAgentMode.Off)
+        {
+            return null;
+        }
+
+        DeterministicReplayDataPreparer deterministicPreparer = new();
+        var apiKey = CommandArgumentSupport.GetArgumentValue(args, "--openai-api-key");
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            if (options.Mode == ReplayDataAgentMode.Required)
+            {
+                throw new ArgumentException(
+                    "Sqloom replay data agent with --replay-data-agent required requires --openai-api-key.");
+            }
+
+            return deterministicPreparer;
+        }
+
+        return new AgentFrameworkReplayDataPreparer(
+            new OpenAIAdviceOptions
+            {
+                ApiKey = apiKey,
+                BaseUrl = CommandArgumentSupport.GetArgumentValue(args, "--openai-base-url")
+                    ?? "https://api.openai.com",
+                Model = options.ModelName ?? "gpt-5.4-mini",
+            },
+            deterministicPreparer,
+            allowFallback: options.Mode != ReplayDataAgentMode.Required);
+    }
+
+    private static ReplayDataAgentMode ParseReplayDataAgentMode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return ReplayDataAgentMode.Off;
+        }
+
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "off" => ReplayDataAgentMode.Off,
+            "auto" => ReplayDataAgentMode.Auto,
+            "required" => ReplayDataAgentMode.Required,
+            _ => throw new ArgumentException(
+                "The value for --replay-data-agent must be 'off', 'auto', or 'required'."),
         };
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Sqloom.Core.Execution;
+using Sqloom.Host.Replay;
 using Sqloom.Testing;
 using Sqloom.TestApp.Harness;
 using Sqloom.Tests;
@@ -68,6 +69,90 @@ public sealed class ReplayArgumentParserTests
             RepositoryPaths.GetTestAppOpenApiPath(),
             arguments.RunnerOptions.OpenApiPath,
             StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_WithReplayDataAgentAuto_ThreadsReplayDataAgentOptions()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var arguments = parser.Parse(
+            [
+                "--replay-data-agent",
+                "auto",
+                "--replay-data-agent-model",
+                "gpt-test",
+            ],
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory);
+
+        Assert.Equal(ReplayDataAgentMode.Auto, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.Equal("gpt-test", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
+        Assert.IsType<DeterministicReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+    }
+
+    [Fact]
+    public void Parse_WithReplayDataAgentRequiredAndOpenAIKey_CreatesAgentFrameworkPreparer()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var arguments = parser.Parse(
+            [
+                "--replay-data-agent",
+                "required",
+                "--openai-api-key",
+                "openai-key",
+                "--openai-base-url",
+                "https://api.openai.com",
+            ],
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory);
+
+        Assert.Equal(ReplayDataAgentMode.Required, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.Equal("gpt-5.4-mini", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
+        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+    }
+
+    [Fact]
+    public void Parse_WithReplayDataAgentRequired_RequiresOpenAIKey()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.Parse(
+                [
+                    "--replay-data-agent",
+                    "required",
+                ],
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory));
+
+        Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_RejectsInvalidReplayDataAgentMode()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.Parse(
+                [
+                    "--replay-data-agent",
+                    "always",
+                ],
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory));
+
+        Assert.Contains("--replay-data-agent", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

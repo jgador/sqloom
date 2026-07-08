@@ -26,6 +26,12 @@ public sealed class EndpointReplayRunResult
     [JsonPropertyName("summaryArtifactPath")]
     public required string SummaryArtifactPath { get; init; }
 
+    [JsonPropertyName("replayDataPreparationPath")]
+    public string? ReplayDataPreparationPath { get; init; }
+
+    [JsonPropertyName("replayDataPreparation")]
+    public ReplayDataPreparationReport? ReplayDataPreparation { get; init; }
+
     [JsonPropertyName("discoveredOperations")]
     public required IReadOnlyList<OpenApiOperation> DiscoveredOperations { get; init; }
 

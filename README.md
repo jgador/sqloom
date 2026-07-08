@@ -49,6 +49,7 @@ The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 
 - `query-store-snapshot.json`
 - `tune-summary.json`
+- `replay/replay-data-prep.json` when `--replay-data-agent` is enabled
 - `replay/query-store-correlation.json`
 - `replay/sqlserver-schema.sql`
 - `replay/tuning-advice.json`
@@ -56,6 +57,8 @@ The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 - `replay/sql-tuning-proposal.sql`
 
 The important review artifact is usually `replay/sql-tuning-proposal.sql`, with the JSON files available when you want the full evidence chain.
+
+If the harness does not already provide enough path, query, header, or body values for replay, add `--replay-data-agent auto`. Sqloom will fill missing replay inputs before the replay stage and keep the generated values in `replay/replay-data-prep.json`. Use `--replay-data-agent required` when model-backed Microsoft Agent Framework replay data generation must succeed.
 
 ## Commands
 

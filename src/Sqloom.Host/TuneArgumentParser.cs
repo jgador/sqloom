@@ -27,6 +27,8 @@ internal sealed class TuneArgumentParser
         "--artifact-dir",
         "--max-operations",
         "--target",
+        "--replay-data-agent",
+        "--replay-data-agent-model",
         "--model-provider",
         "--sqlserver-schema-file",
         "--openai-model",
@@ -47,6 +49,8 @@ internal sealed class TuneArgumentParser
         "--artifact-dir",
         "--max-operations",
         "--target",
+        "--replay-data-agent",
+        "--replay-data-agent-model",
         "--model-provider",
         "--sqlserver-schema-file",
         "--openai-model",
@@ -71,6 +75,10 @@ internal sealed class TuneArgumentParser
         "--sqlserver-seed-sql-file",
         "--max-operations",
         "--target",
+        "--replay-data-agent",
+        "--replay-data-agent-model",
+        "--openai-base-url",
+        "--openai-api-key",
     };
 
     private static readonly HashSet<string> AdviceSwitches = new(StringComparer.OrdinalIgnoreCase)
@@ -117,6 +125,8 @@ internal sealed class TuneArgumentParser
         var validationPath = Path.Combine(
             currentDirectory,
             "sqloom-validation-placeholder.json");
+        _replayArgumentParser.ValidateReplayDataAgentOptions(
+            ExtractSwitchArguments(args, ReplaySwitches));
         _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             currentDirectory,

@@ -121,6 +121,18 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
+    public void GetReplayDataPreparationPath_UsesReplayArtifactDir()
+    {
+        var path = ArtifactLayout.GetReplayDataPreparationPath(ReplayArtifactDir);
+
+        Assert.Equal(
+            Path.Combine(
+                ReplayArtifactDir,
+                "replay-data-prep.json"),
+            path);
+    }
+
+    [Fact]
     public void GetSqlServerSchemaPath_UsesReplayArtifactDir()
     {
         var path = ArtifactLayout.GetSqlServerSchemaPath(ReplayArtifactDir);

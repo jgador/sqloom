@@ -47,6 +47,7 @@ public sealed class EndpointReplayRunner
 
         var results = new List<EndpointReplayResult>();
         var finalizedPlanItems = new List<EndpointReplayPlanItem>();
+        var replayDataPreparationOperations = new List<ReplayDataPreparationOperation>();
         var discoveredByKey = discoveredOperations.ToDictionary(
             operation => operation.StableOperationKey,
             StringComparer.OrdinalIgnoreCase);
@@ -68,6 +69,7 @@ public sealed class EndpointReplayRunner
                     overlays,
                     results,
                     finalizedPlanItems,
+                    replayDataPreparationOperations,
                     cancellationToken)
                 .ConfigureAwait(false);
             replayBootstrap = replayHost.Bootstrap;
@@ -92,6 +94,26 @@ public sealed class EndpointReplayRunner
             .ConfigureAwait(false);
 
         var summaryPath = _artifactWriter.GetSummaryPath(options.ReplayArtifactDir);
+        var replayDataPreparationPath =
+            options.ReplayDataAgentOptions.Mode == ReplayDataAgentMode.Off
+                ? null
+                : _artifactWriter.GetReplayDataPreparationPath(options.ReplayArtifactDir);
+        var replayDataPreparation = replayDataPreparationPath is null
+            ? null
+            : CreateReplayDataPreparationReport(
+                options,
+                replayDataPreparationOperations);
+        if (replayDataPreparationPath is not null
+            && replayDataPreparation is not null)
+        {
+            await _artifactWriter
+                .WriteReplayDataPreparationAsync(
+                    replayDataPreparationPath,
+                    replayDataPreparation,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var runResult = new EndpointReplayRunResult()
         {
             AppName = options.AppName,
@@ -100,6 +122,8 @@ public sealed class EndpointReplayRunner
             DiscoveredOpsPath = discoveredOperationsPath,
             ReplayPlanArtifactPath = replayPlanPath,
             SummaryArtifactPath = summaryPath,
+            ReplayDataPreparationPath = replayDataPreparationPath,
+            ReplayDataPreparation = replayDataPreparation,
             DiscoveredOperations = discoveredOperations,
             ReplayPlan = finalPlan,
             Pipeline = CreatePipeline(options.ReplayArtifactDir, summaryPath, results),
@@ -136,6 +160,7 @@ public sealed class EndpointReplayRunner
         IReadOnlyDictionary<string, ReplayOverlay> overlays,
         ICollection<EndpointReplayResult> results,
         ICollection<EndpointReplayPlanItem> finalizedPlanItems,
+        ICollection<ReplayDataPreparationOperation> replayDataPreparationOperations,
         CancellationToken cancellationToken)
     {
         var captureCollector =
@@ -164,12 +189,21 @@ public sealed class EndpointReplayRunner
             EndpointReplayResult result;
             try
             {
+                var replayInputOperation = await PrepareReplayDataAsync(
+                        options,
+                        discoveredOperation,
+                        resolvedOperation,
+                        replayDataPreparationOperations,
+                        cancellationToken)
+                    .ConfigureAwait(false);
                 var preparedOperation = await replayHost
-                    .PrepareOperationAsync(resolvedOperation, cancellationToken)
+                    .PrepareOperationAsync(
+                        replayInputOperation,
+                        cancellationToken)
                     .ConfigureAwait(false);
                 var request = _requestResolver.Resolve(
                     discoveredOperation,
-                    resolvedOperation,
+                    replayInputOperation,
                     preparedOperation);
                 result = await _requestExecutor
                     .ExecuteAsync(
@@ -195,6 +229,112 @@ public sealed class EndpointReplayRunner
             results.Add(result);
             finalizedPlanItems.Add(CreateFinalPlanItem(planItem, result));
         }
+    }
+
+    private static async Task<ResolvedReplayOperation> PrepareReplayDataAsync(
+        ReplayRunnerOptions options,
+        OpenApiOperation discoveredOperation,
+        ResolvedReplayOperation resolvedOperation,
+        ICollection<ReplayDataPreparationOperation> replayDataPreparationOperations,
+        CancellationToken cancellationToken)
+    {
+        if (options.ReplayDataAgentOptions.Mode == ReplayDataAgentMode.Off
+            || options.ReplayDataPreparer is null)
+        {
+            return resolvedOperation;
+        }
+
+        ReplayDataPreparationOperation preparedData;
+        try
+        {
+            preparedData = await options.ReplayDataPreparer
+                .PrepareAsync(
+                    new ReplayDataPreparationContext
+                    {
+                        Operation = discoveredOperation,
+                        ResolvedOperation = resolvedOperation,
+                        Mode = options.ReplayDataAgentOptions.Mode,
+                        ModelName = options.ReplayDataAgentOptions.ModelName,
+                    },
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            replayDataPreparationOperations.Add(new ReplayDataPreparationOperation
+            {
+                OperationKey = discoveredOperation.StableOperationKey,
+                Strategy = "replay-data-agent",
+                Status = "failed",
+                Confidence = 0,
+                Warnings =
+                [
+                    exception.Message,
+                ],
+                SourcesUsed =
+                [
+                    "replay-data-agent",
+                ],
+                Notes = "Replay data preparation failed before the operation could be replayed.",
+            });
+            throw;
+        }
+
+        replayDataPreparationOperations.Add(preparedData);
+        return ApplyPreparedData(resolvedOperation, preparedData.PreparedData);
+    }
+
+    private static ResolvedReplayOperation ApplyPreparedData(
+        ResolvedReplayOperation resolvedOperation,
+        ReplayPreparedData preparedData)
+    {
+        return new ResolvedReplayOperation
+        {
+            OperationKey = resolvedOperation.OperationKey,
+            OperationId = resolvedOperation.OperationId,
+            HttpMethod = resolvedOperation.HttpMethod,
+            Route = resolvedOperation.Route,
+            Persona = resolvedOperation.Persona ?? preparedData.Persona,
+            RequestBodyJson = resolvedOperation.RequestBodyJson ?? preparedData.RequestBodyJson,
+            PathValues = MergeMissingValues(resolvedOperation.PathValues, preparedData.PathValues),
+            QueryValues = MergeMissingValues(resolvedOperation.QueryValues, preparedData.QueryValues),
+            HeaderValues = MergeMissingValues(resolvedOperation.HeaderValues, preparedData.HeaderValues),
+            Notes = resolvedOperation.Notes,
+        };
+    }
+
+    private static IReadOnlyDictionary<string, string> MergeMissingValues(
+        IReadOnlyDictionary<string, string> primary,
+        IReadOnlyDictionary<string, string> fallback)
+    {
+        Dictionary<string, string> merged = new(primary, StringComparer.OrdinalIgnoreCase);
+        foreach ((var key, var value) in fallback)
+        {
+            if (!merged.ContainsKey(key))
+            {
+                merged[key] = value;
+            }
+        }
+
+        return merged;
+    }
+
+    private static ReplayDataPreparationReport CreateReplayDataPreparationReport(
+        ReplayRunnerOptions options,
+        IReadOnlyList<ReplayDataPreparationOperation> operations)
+    {
+        return new ReplayDataPreparationReport
+        {
+            AppName = options.AppName,
+            Mode = options.ReplayDataAgentOptions.Mode.ToString().ToLowerInvariant(),
+            ModelName = options.ReplayDataAgentOptions.ModelName,
+            GeneratedAtUtc = DateTimeOffset.UtcNow,
+            Operations = operations,
+            Warnings = operations
+                .SelectMany(static operation => operation.Warnings)
+                .Distinct(StringComparer.Ordinal)
+                .ToArray(),
+        };
     }
 
     private static PipelineReport CreatePipeline(

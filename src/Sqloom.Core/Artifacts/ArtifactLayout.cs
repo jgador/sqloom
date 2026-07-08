@@ -87,6 +87,13 @@ public static class ArtifactLayout
         return Path.Combine(replayArtifactDirectory, "replay-summary.json");
     }
 
+    public static string GetReplayDataPreparationPath(string replayArtifactDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
+
+        return Path.Combine(replayArtifactDirectory, "replay-data-prep.json");
+    }
+
     public static string GetCorrelationPath(string replayArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);

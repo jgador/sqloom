@@ -26,6 +26,7 @@ public sealed class JsonContractTests
             { typeof(AdviceReport), ["generatedAtUtc", "queryStoreCorrelationPath", "modelProvider"] },
             { typeof(EndpointReplayRunResult), ["appName", "discoveredOperations", "replayPlan"] },
             { typeof(QueryStoreSnapshot), ["capturedAtUtc", "databaseOptions", "plans"] },
+            { typeof(ReplayDataPreparationReport), ["appName", "mode", "operations"] },
             { typeof(SqlTuningProposalReport), ["generatedAtUtc", "sourceAdvicePath", "sqlScriptPath"] },
             { typeof(TuneWorkflowReport), ["generatedAtUtc", "queryStoreSnapshotPath", "summary"] },
         };
@@ -42,6 +43,7 @@ public sealed class JsonContractTests
         typeof(ProductResponse),
         typeof(QueryCorrelationReport),
         typeof(QueryStoreSnapshot),
+        typeof(ReplayDataPreparationReport),
         typeof(ReplayLaunchOptions),
         typeof(ReplayProfile),
         typeof(SqlTuningProposalReport),

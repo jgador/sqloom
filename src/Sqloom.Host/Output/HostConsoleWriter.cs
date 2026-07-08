@@ -44,17 +44,19 @@ internal sealed class HostConsoleWriter
             "  [--debug] observe [<path>] [--dotnet-command <command>] [--no-build] --read-only-connection-string <connection-string> [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--json-output-file <path>] [--app-only] [--show-classification]");
         Console.WriteLine("    --app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.");
         Console.WriteLine(
-            "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] [--read-only-connection-string <connection-string>] [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] --model-provider openai --openai-api-key <key> [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
+            "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] [--read-only-connection-string <connection-string>] [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] [--replay-data-agent off|auto|required] [--replay-data-agent-model <id>] --model-provider openai --openai-api-key <key> [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
         Console.WriteLine("    Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
         Console.WriteLine("    Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string. Advice uses --sqlserver-schema-file when supplied, otherwise it extracts schema SQL from --sqlserver-dacpac-file or the harness manifest DACPAC.");
+        Console.WriteLine("    Use --replay-data-agent auto to let Sqloom fill missing replay path/query/header/body values. Use required when Microsoft Agent Framework replay data generation must succeed.");
         Console.WriteLine("    When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.");
         Console.WriteLine(
-            "  [--debug] replay <path> [--dotnet-command <command>] [--no-build] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"]");
+            "  [--debug] replay <path> [--dotnet-command <command>] [--no-build] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] [--replay-data-agent off|auto|required] [--replay-data-agent-model <id>] [--openai-api-key <key>] [--openai-base-url <url>]");
         Console.WriteLine("    Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.");
         Console.WriteLine("    Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.");
         Console.WriteLine("    Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.");
         Console.WriteLine("    If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.");
         Console.WriteLine("    SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; --sqlserver-dacpac-file and --sqlserver-seed-sql-file override them.");
+        Console.WriteLine("    The replay data agent is replay-only. It fills missing type-valid request values and writes replay-data-prep.json when enabled.");
         Console.WriteLine("    Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".");
         Console.WriteLine("    Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.");
         Console.WriteLine(
@@ -217,6 +219,11 @@ internal sealed class HostConsoleWriter
 
         Console.WriteLine($"- Discovery artifact: {replayResult.DiscoveredOpsPath}");
         Console.WriteLine($"- Replay plan artifact: {replayResult.ReplayPlanArtifactPath}");
+        if (!string.IsNullOrWhiteSpace(replayResult.ReplayDataPreparationPath))
+        {
+            Console.WriteLine($"- Replay data prep artifact: {replayResult.ReplayDataPreparationPath}");
+        }
+
         Console.WriteLine($"- Summary artifact: {replayResult.SummaryArtifactPath}");
         PrintPipeline(runReport.Pipeline);
 
@@ -360,6 +367,11 @@ internal sealed class HostConsoleWriter
         Console.WriteLine($"- Workflow artifact directory: {report.WorkflowArtifactDir}");
         Console.WriteLine($"- Query Store snapshot: {report.QueryStoreSnapshotPath}");
         Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
+        if (!string.IsNullOrWhiteSpace(report.ReplayDataPreparationPath))
+        {
+            Console.WriteLine($"- Replay data prep artifact: {report.ReplayDataPreparationPath}");
+        }
+
         Console.WriteLine($"- Correlation artifact: {report.QueryStoreCorrelationPath}");
         Console.WriteLine($"- Advice artifact: {report.TuningAdvicePath}");
         Console.WriteLine($"- SQL proposal JSON: {report.SqlProposalJsonPath}");
