@@ -6,7 +6,7 @@ This folder is for agent-maintenance guidance that should be discoverable during
 
 - [AGENTS.md](../../AGENTS.md) is the default execution policy for coding agents in this repository.
 - [.codex/atlas/repo-map.md](../../.codex/atlas/repo-map.md) is the durable Atlas routing map for architecture, source-to-test routing, artifact routing, and first-read-order decisions.
-- [.codex/agents/](../../.codex/agents/) contains `.codex/agents/*.toml` read-only sub-agent role prompts for Atlas specialists and bounded scout discovery.
+- [.codex/agents/](../../.codex/agents/) contains `.codex/agents/*.toml` read-only sub-agent role prompts for advisor routing, Atlas specialists, and bounded scout discovery.
 
 Keep user-facing product commands, quick starts, and workflows in [README.md](../../README.md) or [docs/command-reference.md](../command-reference.md). Keep architecture ownership and project-boundary details in [docs/architecture/](../architecture/).
 

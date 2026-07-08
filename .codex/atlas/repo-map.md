@@ -219,7 +219,7 @@ flowchart TB
 - Artifact and JSON contracts: [src/Sqloom.Core/Artifacts/](../../src/Sqloom.Core/Artifacts/), persisted models under [src/Sqloom.Core/Execution/](../../src/Sqloom.Core/Execution/) and [src/Sqloom.Core/QueryStore/](../../src/Sqloom.Core/QueryStore/), and [src/Sqloom.Host/TuneWorkflowReport.cs](../../src/Sqloom.Host/TuneWorkflowReport.cs); tests usually start in [tests/Sqloom.UnitTests/Artifacts/ArtifactLayoutTests.cs](../../tests/Sqloom.UnitTests/Artifacts/ArtifactLayoutTests.cs) and [tests/Sqloom.UnitTests/Artifacts/JsonContractTests.cs](../../tests/Sqloom.UnitTests/Artifacts/JsonContractTests.cs).
 - Harness model: [src/Sqloom.Testing/](../../src/Sqloom.Testing/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), [tests/Sqloom.TestApp.Harness/](../../tests/Sqloom.TestApp.Harness/), and host resolution under [src/Sqloom.Host/Resolution/](../../src/Sqloom.Host/Resolution/); tests usually start in [tests/Sqloom.UnitTests/Host/AppResolverTests.cs](../../tests/Sqloom.UnitTests/Host/AppResolverTests.cs), [tests/Sqloom.UnitTests/Host/TestAppIntegrations.cs](../../tests/Sqloom.UnitTests/Host/TestAppIntegrations.cs), [tests/Sqloom.IntegrationTests/Host/HostSeedScriptTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostSeedScriptTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs).
 - Packaging and local tooling: [src/Sqloom.Host/Sqloom.Host.csproj](../../src/Sqloom.Host/Sqloom.Host.csproj), [src/Sqloom.Host/PackageReadme.md](../../src/Sqloom.Host/PackageReadme.md), [scripts/Sqloom.Tooling.ps1](../../scripts/Sqloom.Tooling.ps1), [scripts/deploy-sqloom-local.ps1](../../scripts/deploy-sqloom-local.ps1), [docs/dotnet-tool-release.md](../../docs/dotnet-tool-release.md), and [docs/command-reference.md](../../docs/command-reference.md).
-- Agent/navigation policy: [AGENTS.md](../../AGENTS.md), [docs/agents/README.md](../../docs/agents/README.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md), and [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/).
+- Agent/navigation policy: [AGENTS.md](../../AGENTS.md), [docs/agents/README.md](../../docs/agents/README.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md), and [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/). Use `advisor` for request classification and sub-agent routing recommendations, Atlas mappers for specialist read-only mapping, and `scout` only for bounded literal discovery.
 
 ## Test Routing
 
@@ -248,7 +248,8 @@ flowchart TB
 - For public CLI, JSON artifact, package, configuration, or documented workflow changes, update [README.md](../../README.md) or the relevant docs in the same change.
 - Inspect `artifacts/sqloom/` before guessing about replay, correlate, advise, or tune behavior from code alone.
 - Use [.agents/skills/roslynkit/SKILL.md](../../.agents/skills/roslynkit/SKILL.md) for C# semantic inspection when the current environment exposes RoslynKit and the task benefits from symbols, definitions, references, implementations, quick info, or line-range reads.
+- Use repo-defined sub-agents from [.codex/agents/](../agents/) only unless the user explicitly asks otherwise; `advisor` is the first routing handoff for non-trivial tasks when the correct specialist is not already obvious.
 - Do not use Atlas as a file inventory, test inventory, symbol graph, reference graph, artifact cache, or source cache.
 - Ignore first: `artifacts/`, `TestResults/`, `.vs/`, `.tools/`, `bin/`, `obj/`, and package output unless the task is explicitly about generated artifacts, local tooling, or packaging.
 
-Last verified: `2026-07-07`
+Last verified: `2026-07-08`
