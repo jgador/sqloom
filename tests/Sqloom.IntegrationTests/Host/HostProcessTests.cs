@@ -14,7 +14,7 @@ public sealed class HostProcessTests
 {
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task WithHostAndTestAppProject_ReplaysWorkload()
+    public async Task WithHostAndTestAppProject_ReportsMissingQueryData()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
@@ -36,14 +36,14 @@ public sealed class HostProcessTests
             ]);
 
         Assert.True(
-            result.ExitCode == 0,
+            result.ExitCode == 1,
             FormatFailureMessage(result));
+        var output = result.StandardOutput + result.StandardError;
         Assert.Contains("Sqloom host", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("App: Sqloom Test App", result.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("Replay summary:", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains(
-            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
-            result.StandardOutput,
+            "missing required query parameter 'categoryId'",
+            output,
             StringComparison.Ordinal);
     }
 

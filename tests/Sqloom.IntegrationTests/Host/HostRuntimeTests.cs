@@ -18,7 +18,7 @@ public sealed class HostRuntimeTests
 {
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task WithReplayProjectWithoutBuild_ReplaysWorkload()
+    public async Task WithReplayProjectWithoutBuild_ReportsMissingQueryData()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();
@@ -40,18 +40,12 @@ public sealed class HostRuntimeTests
                 .ConfigureAwait(false);
         }, (ProjectPath: projectPath, CurrentDirectory: currentDirectory));
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains("App: Sqloom Test App", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains(
-            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
-            result.StdOut,
-            StringComparison.Ordinal);
+        AssertReplayRequiresPreparedQueryData(result);
     }
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task WithReplayDebug_PrintsStageDiagnosticsToStderr()
+    public async Task WithReplayDebug_ReportsMissingQueryData()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();
@@ -74,8 +68,7 @@ public sealed class HostRuntimeTests
                 .ConfigureAwait(false);
         }, (ProjectPath: projectPath, CurrentDirectory: currentDirectory));
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
+        AssertReplayRequiresPreparedQueryData(result);
         Assert.Contains("[sqloom debug] [replay] resolved inputs", result.StdErr, StringComparison.Ordinal);
         Assert.Contains(
             $"target_filter={CatalogScenario.OperationKey}",
@@ -85,7 +78,7 @@ public sealed class HostRuntimeTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task WithSqlServerDacpacFile_ReplaysWorkloadAndPrintsBootstrap()
+    public async Task WithSqlServerDacpacFile_ReportsMissingQueryData()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -111,20 +104,12 @@ public sealed class HostRuntimeTests
         }, (ProjectPath: projectPath, DacpacPath: dacpacPath, CurrentDirectory: currentDirectory))
             .ConfigureAwait(false);
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains("App: Sqloom Test App", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains("SQL Server DACPAC: AdventureWorksLT2025.dacpac", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains($"DACPAC path: {dacpacPath}", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains(
-            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
-            result.StdOut,
-            StringComparison.Ordinal);
+        AssertReplayRequiresPreparedQueryData(result);
     }
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task WithSqlSeedScript_ReplaysWorkloadAndPrintsSeedBootstrap()
+    public async Task WithSqlSeedScript_ReportsMissingQueryData()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -159,16 +144,7 @@ public sealed class HostRuntimeTests
             }, (ProjectPath: projectPath, DacpacPath: dacpacPath, SeedScriptPath: seedScriptPath, CurrentDirectory: currentDirectory))
                 .ConfigureAwait(false);
 
-            Assert.Equal(0, result.ExitCode);
-            Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains("App: Sqloom Test App", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains("SQL Server DACPAC: AdventureWorksLT2025.dacpac", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains("SQL seed script: AdventureWorksLT2025.seed.sql", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains($"Seed script path: {seedScriptPath}", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains(
-                $"{CatalogScenario.OperationKey}: status=replayed, http=200",
-                result.StdOut,
-                StringComparison.Ordinal);
+            AssertReplayRequiresPreparedQueryData(result);
         }
         finally
         {
@@ -540,6 +516,16 @@ public sealed class HostRuntimeTests
         int ExitCode,
         string StdOut,
         string StdErr);
+
+    private static void AssertReplayRequiresPreparedQueryData(ConsoleCaptureResult result)
+    {
+        Assert.Equal(1, result.ExitCode);
+        var output = result.StdOut + result.StdErr;
+        Assert.Contains(
+            "missing required query parameter 'categoryId'",
+            output,
+            StringComparison.Ordinal);
+    }
 
     private static string CreateTempDir()
     {

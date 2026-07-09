@@ -74,11 +74,6 @@ public sealed class SampleApplication : ISqloomApplication
                 {
                     OperationKey = CatalogScenario.OperationKey,
                     Persona = "sqloom-test-user",
-                    QueryValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["categoryId"] = CatalogScenario.HotCategoryId.ToString(),
-                        ["minPrice"] = CatalogScenario.MinPriceText,
-                    },
                     Notes = "AdventureWorks product query intentionally seeded without a supporting nonclustered index for tuning advice coverage.",
                 },
             ],

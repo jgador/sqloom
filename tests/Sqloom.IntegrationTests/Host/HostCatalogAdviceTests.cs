@@ -19,6 +19,7 @@ using Sqloom.Core.QueryStore;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
 using Sqloom.TestApp.Harness;
+using Sqloom.Testing;
 using Xunit;
 using SqloomTestApp = global::Sqloom.TestApp;
 
@@ -113,6 +114,12 @@ public sealed class HostCatalogAdviceTests
                             {
                                 DacpacPath = dacpacPath,
                             },
+                            ReplayDataAgentOptions = new ReplayDataAgentOptions
+                            {
+                                Mode = ReplayDataAgentMode.Required,
+                                ModelName = "test-replay-data",
+                            },
+                            ReplayDataPreparer = new StaticCatalogReplayDataPreparer(),
                             TargetFilter = CatalogScenario.OperationKey,
                         })
                     .ConfigureAwait(false);
@@ -255,7 +262,8 @@ public sealed class HostCatalogAdviceTests
                             "--openai-base-url",
                             fakeOpenAiServer.BaseUrl.AbsoluteUri,
                         ],
-                        currentDirectory)
+                        currentDirectory,
+                        new StaticReplayDataSampleApplication())
                     .ConfigureAwait(false);
                 AssertCommandSucceeded("tune", tuneResult.ExitCode, tuneResult.StdOut, tuneResult.StdErr);
 
@@ -511,21 +519,109 @@ public sealed class HostCatalogAdviceTests
 
     private static async Task<HostRuntimeCommandResult> RunHostRuntimeAsync(
         string[] args,
-        string currentDirectory)
+        string currentDirectory,
+        ISqloomApplication? application = null)
     {
-        return await CaptureConsoleAsync(static async state =>
+        return await CaptureConsoleAsync(
+            static async state =>
+            {
+                var exitCode = await HostRuntime
+                    .RunAsync(
+                        state.Application,
+                        state.Args,
+                        state.CurrentDirectory)
+                    .ConfigureAwait(false);
+                return new HostRuntimeCommandResult(
+                    exitCode,
+                    string.Empty,
+                    string.Empty);
+            },
+            (Application: application ?? new SampleApplication(), Args: args, CurrentDirectory: currentDirectory))
+            .ConfigureAwait(false);
+    }
+
+    private static ReplayPreparedData CreateCatalogReplayPreparedData()
+    {
+        return new ReplayPreparedData
         {
-            var exitCode = await HostRuntime
-                .RunAsync(
-                    new SampleApplication(),
-                    state.Args,
-                    state.CurrentDirectory)
-                .ConfigureAwait(false);
-            return new HostRuntimeCommandResult(
-                exitCode,
-                string.Empty,
-                string.Empty);
-        }, (Args: args, CurrentDirectory: currentDirectory)).ConfigureAwait(false);
+            Persona = "sqloom-test-user",
+            QueryValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["categoryId"] = CatalogScenario.HotCategoryId.ToString(),
+                ["minPrice"] = CatalogScenario.MinPriceText,
+            },
+        };
+    }
+
+    private static ReplayProfile CreateCatalogReplayProfile()
+    {
+        return new ReplayProfile
+        {
+            Personas =
+            [
+                new ReplayPersonaDefinition
+                {
+                    Name = "sqloom-test-user",
+                },
+            ],
+            OperationOverlays =
+            [
+                new ReplayOverlay
+                {
+                    OperationKey = CatalogScenario.OperationKey,
+                    Persona = "sqloom-test-user",
+                    QueryValues = CreateCatalogReplayPreparedData().QueryValues,
+                    Notes = "Test-only replay data for deterministic advice coverage.",
+                },
+            ],
+        };
+    }
+
+    private sealed class StaticCatalogReplayDataPreparer : IReplayDataPreparer
+    {
+        public Task<ReplayDataPreparationOperation> PrepareAsync(
+            ReplayDataPreparationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ReplayDataPreparationOperation
+            {
+                OperationKey = context.Operation.StableOperationKey,
+                Strategy = "test-replay-data",
+                Status = "generated",
+                Confidence = 1,
+                PreparedData = CreateCatalogReplayPreparedData(),
+                SourcesUsed =
+                [
+                    "test-replay-data",
+                ],
+                Notes = "Supplies deterministic replay values for advice integration tests.",
+            });
+        }
+    }
+
+    private sealed class StaticReplayDataSampleApplication : ISqloomApplication
+    {
+        private readonly SampleApplication _inner = new();
+
+        public SqloomApplicationManifest Describe(SqloomApplicationContext context)
+        {
+            var manifest = _inner.Describe(context);
+            return new SqloomApplicationManifest
+            {
+                Name = manifest.Name,
+                OpenApiPath = manifest.OpenApiPath,
+                ReplayProfile = CreateCatalogReplayProfile(),
+                WorkloadProfile = manifest.WorkloadProfile,
+                SqlServerDacpacPath = manifest.SqlServerDacpacPath,
+            };
+        }
+
+        public ValueTask<ISqloomApplicationSession> StartAsync(
+            SqloomApplicationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            return _inner.StartAsync(context, cancellationToken);
+        }
     }
 
     private static JsonSerializerOptions CreateCorrelationSerializerOptions()
