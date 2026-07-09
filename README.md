@@ -58,7 +58,7 @@ The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 
 The important review artifact is usually `replay/sql-tuning-proposal.sql`, with the JSON files available when you want the full evidence chain.
 
-If the harness does not already provide enough path, query, header, or body values for replay, add `--replay-data-agent auto`. Sqloom will fill missing replay inputs before the replay stage and keep the generated values in `replay/replay-data-prep.json`. Use `--replay-data-agent required` when model-backed Microsoft Agent Framework replay data generation must succeed.
+If the harness does not already provide enough path, query, header, or body values for replay, add `--replay-data-agent auto` with `--openai-api-key`. Sqloom uses Microsoft Agent Framework with OpenAI to fill missing replay inputs before the replay stage and keeps the generated values in `replay/replay-data-prep.json`. `off` is the only non-agent mode.
 
 ## Commands
 

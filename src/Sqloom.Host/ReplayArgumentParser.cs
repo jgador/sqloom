@@ -228,17 +228,11 @@ internal sealed class ReplayArgumentParser
             return null;
         }
 
-        DeterministicReplayDataPreparer deterministicPreparer = new();
         var apiKey = CommandArgumentSupport.GetArgumentValue(args, "--openai-api-key");
         if (string.IsNullOrWhiteSpace(apiKey))
         {
-            if (options.Mode == ReplayDataAgentMode.Required)
-            {
-                throw new ArgumentException(
-                    "Sqloom replay data agent with --replay-data-agent required requires --openai-api-key.");
-            }
-
-            return deterministicPreparer;
+            throw new ArgumentException(
+                "Sqloom replay data agent requires --openai-api-key when --replay-data-agent is auto or required.");
         }
 
         return new AgentFrameworkReplayDataPreparer(
@@ -248,9 +242,7 @@ internal sealed class ReplayArgumentParser
                 BaseUrl = CommandArgumentSupport.GetArgumentValue(args, "--openai-base-url")
                     ?? "https://api.openai.com",
                 Model = options.ModelName ?? "gpt-5.4-mini",
-            },
-            deterministicPreparer,
-            allowFallback: options.Mode != ReplayDataAgentMode.Required);
+            });
     }
 
     private static ReplayDataAgentMode ParseReplayDataAgentMode(string? value)

@@ -91,7 +91,7 @@ sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
 | `--artifact-dir <path>` | Uses a custom workflow root. Default: `artifacts/sqloom/tune/tune-<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target "METHOD /path/template"` | Replays one exact operation. The method must be uppercase, with one space before a leading-slash route and no trailing slash. |
-| `--replay-data-agent off\|auto\|required` | Enables replay-only request data preparation. Default: `off`. `auto` fills missing values deterministically and uses Microsoft Agent Framework when `--openai-api-key` is supplied. `required` requires model-backed replay data generation to succeed. |
+| `--replay-data-agent off\|auto\|required` | Enables replay-only request data preparation. Default: `off`. `auto` and `required` use Microsoft Agent Framework with OpenAI and require `--openai-api-key`. `off` is the only non-agent mode. |
 | `--replay-data-agent-model <id>` | Model id for the replay data agent. Default: `gpt-5.4-mini`. This is separate from the advice `--openai-model`. |
 | `--sqlserver-schema-file <path>` | Expert override for manually supplied schema SQL. This wins over DACPAC extraction. |
 | `--openai-model <id>` | OpenAI model id. Default: `gpt-5.4-mini`. |
@@ -139,9 +139,9 @@ sqloom replay .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
 | `--artifact-dir <path>` | Uses a custom replay output folder. Default: `artifacts/sqloom/replay/<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target "METHOD /path/template"` | Replays one exact operation such as `GET /api/products/by-category`. |
-| `--replay-data-agent off\|auto\|required` | Enables replay-only request data preparation. Default: `off`. `auto` fills missing values deterministically and uses Microsoft Agent Framework when `--openai-api-key` is supplied. `required` requires model-backed replay data generation to succeed. |
+| `--replay-data-agent off\|auto\|required` | Enables replay-only request data preparation. Default: `off`. `auto` and `required` use Microsoft Agent Framework with OpenAI and require `--openai-api-key`. `off` is the only non-agent mode. |
 | `--replay-data-agent-model <id>` | Model id for the replay data agent. Default: `gpt-5.4-mini`. |
-| `--openai-api-key <key>` | API key used only when the replay data agent calls Microsoft Agent Framework. Required for `--replay-data-agent required`. |
+| `--openai-api-key <key>` | API key used when the replay data agent calls Microsoft Agent Framework. Required when `--replay-data-agent` is `auto` or `required`. |
 | `--openai-base-url <url>` | OpenAI base URL for the replay data agent. Default: `https://api.openai.com`. |
 
 Sqloom replays authenticated `GET` operations by default plus app overlays enabled by default. Non-`GET` operations must be allowed by the app through replay overlays and selected when needed.

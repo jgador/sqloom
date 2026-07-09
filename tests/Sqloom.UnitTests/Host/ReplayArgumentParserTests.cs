@@ -72,7 +72,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void WithReplayDataAgentAuto_ThreadsAgentOptions()
+    public void WithReplayDataAgentAuto_CreatesAgentPreparer()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -83,6 +83,8 @@ public sealed class ReplayArgumentParserTests
                 "auto",
                 "--replay-data-agent-model",
                 "gpt-test",
+                "--openai-api-key",
+                "openai-key",
             ],
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
@@ -90,7 +92,26 @@ public sealed class ReplayArgumentParserTests
 
         Assert.Equal(ReplayDataAgentMode.Auto, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.Equal("gpt-test", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
-        Assert.IsType<DeterministicReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+    }
+
+    [Fact]
+    public void WithReplayDataAgentAuto_RequiresOpenAIKey()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.Parse(
+                [
+                    "--replay-data-agent",
+                    "auto",
+                ],
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory));
+
+        Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

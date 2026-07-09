@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Core.Execution;
 using Sqloom.Host.Replay;
+using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.Host.Tests.Replay;
@@ -60,123 +61,206 @@ public sealed class AgentFrameworkReplayDataPreparerTests
     }
 
     [Fact]
-    public async Task PrepareAsync_WhenFallbackNeedsNoData_ReturnsFallback()
+    public async Task PrepareAsync_WhenResolvedOperationNeedsNoData_ReturnsNotNeededWithoutCallingAgent()
     {
-        var fallbackOperation = CreateFallbackOperation(status: "not-needed");
-        StubReplayDataPreparer fallback = new(fallbackOperation);
+        FakeAgentReplayDataClient agentClient = new(
+            new AgentFrameworkReplayDataPreparer.AgentReplayPreparedData());
         AgentFrameworkReplayDataPreparer preparer = new(
-            CreateOptions(baseUrl: "not a uri"),
-            fallback);
+            CreateOptions(),
+            agentClient);
 
-        var result = await preparer.PrepareAsync(CreateContext(ReplayDataAgentMode.Auto));
+        var result = await preparer.PrepareAsync(
+            CreateProductContext(
+                new Dictionary<string, string>
+                {
+                    ["categoryId"] = "1",
+                    ["minPrice"] = "900",
+                }));
 
-        Assert.Same(fallbackOperation, result);
-        Assert.Equal(1, fallback.Calls);
+        Assert.Equal("microsoft-agent-framework-openai", result.Strategy);
+        Assert.Equal("not-needed", result.Status);
+        Assert.Equal(0, agentClient.Calls);
     }
 
     [Fact]
-    public async Task PrepareAsync_InAutoMode_WhenSetupFails_ReturnsFallbackWarning()
+    public async Task PrepareAsync_WhenValuesAreMissing_UsesAgentValues()
     {
-        var fallbackOperation = CreateFallbackOperation(status: "generated");
-        StubReplayDataPreparer fallback = new(fallbackOperation);
+        FakeAgentReplayDataClient agentClient = new(
+            new AgentFrameworkReplayDataPreparer.AgentReplayPreparedData
+            {
+                QueryValues =
+                [
+                    "categoryId=1",
+                    "minPrice=900",
+                    "extra=ignored",
+                ],
+            });
         AgentFrameworkReplayDataPreparer preparer = new(
-            CreateOptions(baseUrl: "not a uri"),
-            fallback,
-            allowFallback: true);
+            CreateOptions(),
+            agentClient);
 
-        var result = await preparer.PrepareAsync(CreateContext(ReplayDataAgentMode.Auto));
+        var result = await preparer.PrepareAsync(CreateProductContext());
 
-        Assert.Equal("deterministic-openapi", result.Strategy);
+        Assert.Equal("microsoft-agent-framework-openai", result.Strategy);
         Assert.Equal("generated", result.Status);
-        Assert.Equal("1", result.PreparedData.PathValues["id"]);
-        Assert.Contains(result.Warnings, warning => warning.Contains("Microsoft Agent Framework"));
+        Assert.Equal(CatalogScenario.OperationKey, result.OperationKey);
+        Assert.Equal("1", result.PreparedData.QueryValues["categoryId"]);
+        Assert.Equal("900", result.PreparedData.QueryValues["minPrice"]);
+        Assert.False(result.PreparedData.QueryValues.ContainsKey("extra"));
+        Assert.Contains("microsoft-agent-framework", result.SourcesUsed);
+        Assert.Contains(
+            result.Warnings,
+            warning => warning.Contains("Ignored unexpected query value 'extra'", StringComparison.Ordinal));
+        Assert.Equal(1, agentClient.Calls);
+        Assert.NotNull(agentClient.Prompt);
+        Assert.Contains("missingInputs", agentClient.Prompt, StringComparison.Ordinal);
+        Assert.DoesNotContain("deterministicFallback", agentClient.Prompt, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task PrepareAsync_InRequiredMode_WhenAgentSetupFails_Throws()
+    public async Task PrepareAsync_WhenAgentCallFails_Throws()
     {
-        StubReplayDataPreparer fallback = new(CreateFallbackOperation(status: "generated"));
+        FakeAgentReplayDataClient agentClient = new(
+            new InvalidOperationException("agent failed"));
         AgentFrameworkReplayDataPreparer preparer = new(
-            CreateOptions(baseUrl: "not a uri"),
-            fallback,
-            allowFallback: false);
+            CreateOptions(),
+            agentClient);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => preparer.PrepareAsync(CreateContext(ReplayDataAgentMode.Required)));
+            () => preparer.PrepareAsync(CreateProductContext()));
 
-        Assert.Contains("required mode", exception.Message);
+        Assert.Contains("Microsoft Agent Framework", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("agent failed", exception.InnerException?.Message, StringComparison.Ordinal);
     }
 
-    private static OpenAIAdviceOptions CreateOptions(string baseUrl)
+    [Fact]
+    public async Task PrepareAsync_WhenAgentMissesRequiredValue_Throws()
+    {
+        FakeAgentReplayDataClient agentClient = new(
+            new AgentFrameworkReplayDataPreparer.AgentReplayPreparedData
+            {
+                QueryValues =
+                [
+                    "categoryId=1",
+                ],
+            });
+        AgentFrameworkReplayDataPreparer preparer = new(
+            CreateOptions(),
+            agentClient);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => preparer.PrepareAsync(CreateProductContext()));
+
+        Assert.Contains("minPrice", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task PrepareAsync_WhenAgentReturnsInvalidPrimitiveValue_Throws()
+    {
+        FakeAgentReplayDataClient agentClient = new(
+            new AgentFrameworkReplayDataPreparer.AgentReplayPreparedData
+            {
+                QueryValues =
+                [
+                    "categoryId=abc",
+                    "minPrice=900",
+                ],
+            });
+        AgentFrameworkReplayDataPreparer preparer = new(
+            CreateOptions(),
+            agentClient);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => preparer.PrepareAsync(CreateProductContext()));
+
+        Assert.Contains("categoryId", exception.Message, StringComparison.Ordinal);
+        Assert.Contains("non-integer", exception.Message, StringComparison.Ordinal);
+    }
+
+    private static OpenAIAdviceOptions CreateOptions()
     {
         return new OpenAIAdviceOptions
         {
             ApiKey = "test-key",
-            BaseUrl = baseUrl,
+            BaseUrl = "https://api.openai.com",
             Model = "gpt-test",
         };
     }
 
-    private static ReplayDataPreparationContext CreateContext(ReplayDataAgentMode mode)
+    private static ReplayDataPreparationContext CreateProductContext(
+        IReadOnlyDictionary<string, string>? queryValues = null)
     {
         return new ReplayDataPreparationContext
         {
             Operation = new OpenApiOperation
             {
-                StableOperationKey = "GET /api/orders/{id}",
+                StableOperationKey = CatalogScenario.OperationKey,
                 HttpMethod = "GET",
-                Route = "/api/orders/{id}",
+                Route = CatalogScenario.Route,
+                Parameters =
+                [
+                    new OpenApiParameter
+                    {
+                        Name = "categoryId",
+                        Location = "query",
+                        Required = true,
+                        SchemaType = "integer",
+                    },
+                    new OpenApiParameter
+                    {
+                        Name = "minPrice",
+                        Location = "query",
+                        Required = true,
+                        SchemaType = "number",
+                    },
+                ],
             },
             ResolvedOperation = new ResolvedReplayOperation
             {
-                OperationKey = "GET /api/orders/{id}",
+                OperationKey = CatalogScenario.OperationKey,
                 HttpMethod = "GET",
-                Route = "/api/orders/{id}",
+                Route = CatalogScenario.Route,
+                QueryValues = queryValues
+                    ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
             },
-            Mode = mode,
+            Mode = ReplayDataAgentMode.Required,
             ModelName = "gpt-test",
         };
     }
 
-    private static ReplayDataPreparationOperation CreateFallbackOperation(string status)
+    private sealed class FakeAgentReplayDataClient
+        : AgentFrameworkReplayDataPreparer.IAgentReplayDataClient
     {
-        return new ReplayDataPreparationOperation
-        {
-            OperationKey = "GET /api/orders/{id}",
-            Strategy = "deterministic-openapi",
-            Status = status,
-            Confidence = 0.75,
-            PreparedData = new ReplayPreparedData
-            {
-                PathValues = new Dictionary<string, string>
-                {
-                    ["id"] = "1",
-                },
-            },
-            SourcesUsed =
-            [
-                "openapi-parameter:path:id",
-            ],
-        };
-    }
+        private readonly AgentFrameworkReplayDataPreparer.AgentReplayPreparedData? _response;
+        private readonly Exception? _exception;
 
-    private sealed class StubReplayDataPreparer : IReplayDataPreparer
-    {
-        private readonly ReplayDataPreparationOperation _operation;
-
-        public StubReplayDataPreparer(ReplayDataPreparationOperation operation)
+        public FakeAgentReplayDataClient(
+            AgentFrameworkReplayDataPreparer.AgentReplayPreparedData response)
         {
-            _operation = operation;
+            _response = response;
+        }
+
+        public FakeAgentReplayDataClient(Exception exception)
+        {
+            _exception = exception;
         }
 
         public int Calls { get; private set; }
 
-        public Task<ReplayDataPreparationOperation> PrepareAsync(
-            ReplayDataPreparationContext context,
+        public string? Prompt { get; private set; }
+
+        public Task<AgentFrameworkReplayDataPreparer.AgentReplayPreparedData> RunAsync(
+            string prompt,
             CancellationToken cancellationToken = default)
         {
             Calls++;
-            return Task.FromResult(_operation);
+            Prompt = prompt;
+            if (_exception is not null)
+            {
+                throw _exception;
+            }
+
+            return Task.FromResult(_response!);
         }
     }
 }

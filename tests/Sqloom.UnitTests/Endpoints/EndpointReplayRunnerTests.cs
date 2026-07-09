@@ -217,7 +217,29 @@ public sealed class EndpointReplayRunnerTests
                     Mode = ReplayDataAgentMode.Auto,
                     ModelName = "gpt-test",
                 },
-                ReplayDataPreparer = new DeterministicReplayDataPreparer(),
+                ReplayDataPreparer = new StubReplayDataPreparer(
+                    new ReplayDataPreparationOperation
+                    {
+                        OperationKey = "GET /api/items/{itemId}",
+                        Strategy = "test-preparer",
+                        Status = "generated",
+                        Confidence = 0.8,
+                        PreparedData = new ReplayPreparedData
+                        {
+                            PathValues = new Dictionary<string, string>
+                            {
+                                ["itemId"] = "1",
+                            },
+                            QueryValues = new Dictionary<string, string>
+                            {
+                                ["since"] = "2026-01-01T00:00:00Z",
+                            },
+                            HeaderValues = new Dictionary<string, string>
+                            {
+                                ["x-trace"] = "sqloom",
+                            },
+                        },
+                    }),
             });
 
         var replay = Assert.Single(result.Results);
@@ -488,6 +510,23 @@ public sealed class EndpointReplayRunnerTests
             CancellationToken cancellationToken = default)
         {
             throw new InvalidOperationException(_message);
+        }
+    }
+
+    private sealed class StubReplayDataPreparer : IReplayDataPreparer
+    {
+        private readonly ReplayDataPreparationOperation _operation;
+
+        public StubReplayDataPreparer(ReplayDataPreparationOperation operation)
+        {
+            _operation = operation;
+        }
+
+        public Task<ReplayDataPreparationOperation> PrepareAsync(
+            ReplayDataPreparationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_operation);
         }
     }
 }

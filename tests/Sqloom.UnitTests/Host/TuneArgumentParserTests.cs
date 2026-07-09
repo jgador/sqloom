@@ -208,8 +208,11 @@ public sealed class TuneArgumentParserTests
         Assert.Contains("--replay-data-agent", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public void ValidateBeforeSession_RequiresOpenAIKeyForRequiredAgent()
+    [Theory]
+    [InlineData("auto")]
+    [InlineData("required")]
+    public void ValidateBeforeSession_RequiresOpenAIKeyForEnabledReplayDataAgent(
+        string replayDataAgentMode)
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -219,7 +222,7 @@ public sealed class TuneArgumentParserTests
                 [
                     "tune",
                     "--replay-data-agent",
-                    "required",
+                    replayDataAgentMode,
                     "--model-provider",
                     "openai",
                 ],

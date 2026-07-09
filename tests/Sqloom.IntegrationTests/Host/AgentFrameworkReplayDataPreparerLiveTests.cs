@@ -33,9 +33,7 @@ public sealed class AgentFrameworkReplayDataPreparerLiveTests
                 ApiKey = apiKey,
                 BaseUrl = "https://api.openai.com",
                 Model = LiveModel,
-            },
-            new DeterministicReplayDataPreparer(),
-            allowFallback: false);
+            });
 
         var context = await CreateContextAsync();
         var result = await preparer.PrepareAsync(context);
