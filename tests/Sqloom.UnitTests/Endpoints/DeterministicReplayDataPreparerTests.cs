@@ -12,7 +12,7 @@ namespace Sqloom.Host.Tests.Replay;
 public sealed class DeterministicReplayDataPreparerTests
 {
     [Fact]
-    public async Task PrepareAsync_GeneratesMissingRequiredValuesFromOpenApiMetadata()
+    public async Task GeneratesMissingRequiredValuesFromOpenApiMetadata()
     {
         DeterministicReplayDataPreparer preparer = new();
 
@@ -78,7 +78,7 @@ public sealed class DeterministicReplayDataPreparerTests
     }
 
     [Fact]
-    public async Task PrepareAsync_DoesNotOverwriteExistingResolvedValues()
+    public async Task DoesNotOverwriteExistingResolvedValues()
     {
         DeterministicReplayDataPreparer preparer = new();
 
@@ -119,7 +119,7 @@ public sealed class DeterministicReplayDataPreparerTests
     }
 
     [Fact]
-    public async Task PrepareAsync_GeneratesEmptyJsonObjectForRequiredBodyWithoutExample()
+    public async Task GeneratesEmptyJsonObjectForRequiredBodyWithoutExample()
     {
         DeterministicReplayDataPreparer preparer = new();
 
@@ -149,7 +149,7 @@ public sealed class DeterministicReplayDataPreparerTests
     }
 
     [Fact]
-    public async Task PrepareAsync_WarnsForUnsupportedRequiredParameterLocation()
+    public async Task WarnsForUnsupportedRequiredParameterLocation()
     {
         DeterministicReplayDataPreparer preparer = new();
 

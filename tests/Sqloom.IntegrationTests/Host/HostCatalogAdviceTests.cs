@@ -35,7 +35,7 @@ public sealed class HostCatalogAdviceTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task CreateAsync_WithSqlServerDacpac_SeedsByCategoryEndpoint()
+    public async Task WithSqlServerDacpac_SeedsByCategoryEndpoint()
     {
         ReplayHostFactory replayHostFactory = new();
         var replayHost = await replayHostFactory
@@ -74,7 +74,7 @@ public sealed class HostCatalogAdviceTests
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
     [Trait("Category", "OpenAI")]
-    public async Task HostRuntime_WithOpenAiAdvice_PersistsProposalForByCategory()
+    public async Task HostRuntime_WithOpenAIAdvice_PersistsByCategoryProposal()
     {
         var artifactDirectory = CreateTempDir();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -229,7 +229,7 @@ public sealed class HostCatalogAdviceTests
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
     [Trait("Category", "OpenAI")]
-    public async Task HostRuntime_WithTuneAndManifestDacpac_GeneratesSchemaFromDacpac()
+    public async Task HostRuntime_WithTuneManifestDacpac_GeneratesSchema()
     {
         var artifactDirectory = CreateTempDir();
         var currentDirectory = Directory.GetCurrentDirectory();

@@ -10,7 +10,7 @@ namespace Sqloom.Host.Tests;
 public sealed class CorrelateArgumentParserTests
 {
     [Fact]
-    public void Parse_ThrowsWhenReplayArtifactDirIsMissing()
+    public void ThrowsWhenReplayArtifactDirIsMissing()
     {
         CorrelateArgumentParser parser = new();
         var missingReplayDirectory = Path.Combine(
@@ -33,7 +33,7 @@ public sealed class CorrelateArgumentParserTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenQueryStoreSnapshotIsMissing()
+    public void ThrowsWhenQueryStoreSnapshotIsMissing()
     {
         CorrelateArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -53,7 +53,7 @@ public sealed class CorrelateArgumentParserTests
     }
 
     [Fact]
-    public void Parse_RejectsLegacyQueryStoreSnapshotSwitch()
+    public void RejectsLegacyQueryStoreSnapshotSwitch()
     {
         CorrelateArgumentParser parser = new();
         var replayDirectory = CreateTempDir();

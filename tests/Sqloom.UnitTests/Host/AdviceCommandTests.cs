@@ -15,7 +15,7 @@ namespace Sqloom.Host.Tests;
 public sealed class AdviceCommandTests
 {
     [Fact]
-    public async Task ExecuteAsync_WithOpenAIModelProvider_WritesAdviceAndSqlProposalSidecars()
+    public async Task WithOpenAIModelProvider_WritesAdviceAndSqlSidecars()
     {
         var replayArtifactDirectory = CreateTempDir();
         var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
@@ -136,7 +136,7 @@ public sealed class AdviceCommandTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_WithDacpacSchemaSource_PassesGeneratedSchemaPathToGenerator()
+    public async Task WithDacpacSchemaSource_PassesGeneratedSchemaPath()
     {
         var replayArtifactDirectory = CreateTempDir();
         var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);

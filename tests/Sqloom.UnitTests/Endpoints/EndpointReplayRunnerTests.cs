@@ -20,7 +20,7 @@ namespace Sqloom.Host.Tests.Replay;
 public sealed class EndpointReplayRunnerTests
 {
     [Fact]
-    public async Task RunAsync_MergesPreparedRequestValuesAndSendsAuthenticatedRequest()
+    public async Task MergesPreparedValuesAndSendsAuthenticatedRequest()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
@@ -148,7 +148,7 @@ public sealed class EndpointReplayRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_WithReplayDataPreparer_FillsMissingRequiredValuesAndWritesPreparationArtifact()
+    public async Task WithReplayDataPreparer_FillsValuesAndWritesArtifact()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
@@ -245,7 +245,7 @@ public sealed class EndpointReplayRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_WithReplayDataAgentOff_DoesNotPrepareReplayDataOrWriteArtifact()
+    public async Task WithReplayDataAgentOff_SkipsReplayDataAndArtifact()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
@@ -299,7 +299,7 @@ public sealed class EndpointReplayRunnerTests
     }
 
     [Fact]
-    public async Task RunAsync_WhenReplayDataPreparerFails_WritesFailedPreparationArtifact()
+    public async Task WhenReplayDataPreparerFails_WritesFailedArtifact()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);

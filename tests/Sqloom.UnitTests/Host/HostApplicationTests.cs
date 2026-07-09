@@ -11,7 +11,7 @@ namespace Sqloom.Host.Tests;
 public sealed class HostApplicationTests
 {
     [Fact]
-    public async Task RunAsync_WithInitVerb_InvokesMatchingHandlerWithoutApplication()
+    public async Task WithInitVerb_InvokesHandlerWithoutApplication()
     {
         StubCommandHandler handler = new(HostCommandKind.Init, 13);
         HostApplication application = new(
@@ -34,7 +34,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithAdviseVerb_InvokesMatchingHandler()
+    public async Task WithAdviseVerb_InvokesMatchingHandler()
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 17);
         HostApplication application = new(
@@ -56,7 +56,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithTuneVerb_InvokesMatchingHandler()
+    public async Task WithTuneVerb_InvokesMatchingHandler()
     {
         var applicationHarness = new TestApplicationA();
         StubCommandHandler handler = new(HostCommandKind.Tune, 23);
@@ -89,7 +89,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithDebugEnabled_DispatchesEnabledDebugWriter()
+    public async Task WithDebugEnabled_DispatchesEnabledDebugWriter()
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 19);
         HostApplication application = new(
@@ -112,7 +112,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithReplayVerb_UsesBoundApplication()
+    public async Task WithReplayVerb_UsesBoundApplication()
     {
         var applicationHarness = new TestApplicationA();
         StubCommandHandler handler = new(HostCommandKind.Replay, 29);
@@ -135,7 +135,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithoutCommand_PrintsNoCommandHint()
+    public async Task WithoutCommand_PrintsNoCommandHint()
     {
         HostApplication application = new(
             new AppResolver(),

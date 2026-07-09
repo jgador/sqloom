@@ -18,7 +18,7 @@ public sealed class HostRuntimeTests
 {
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithReplayProjectWithoutBuild_ReplaysWorkload()
+    public async Task WithReplayProjectWithoutBuild_ReplaysWorkload()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();
@@ -51,7 +51,7 @@ public sealed class HostRuntimeTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithReplayDebug_PrintsStageDiagnosticsToStandardError()
+    public async Task WithReplayDebug_PrintsStageDiagnosticsToStderr()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();
@@ -85,7 +85,7 @@ public sealed class HostRuntimeTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithSqlServerDacpacFile_ReplaysWorkloadAndPrintsBootstrap()
+    public async Task WithSqlServerDacpacFile_ReplaysWorkloadAndPrintsBootstrap()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -124,7 +124,7 @@ public sealed class HostRuntimeTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithSqlSeedScript_ReplaysWorkloadAndPrintsSeedBootstrap()
+    public async Task WithSqlSeedScript_ReplaysWorkloadAndPrintsSeedBootstrap()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -181,7 +181,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithObserveWithoutConnectionStringSwitch_StillRequiresExplicitConnectionStringSwitch()
+    public async Task ObserveWithoutConnectionString_RequiresExplicitSwitch()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -206,7 +206,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithTuneWithoutConnectionStringSwitch_StillRequiresExplicitConnectionStringSwitch()
+    public async Task TuneWithoutConnectionString_RequiresExplicitSwitch()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var dacpacPath = Path.Combine(CreateTempDir(), "schema-source.dacpac");
@@ -239,7 +239,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithOpenAIAdviceWithoutApiKey_StillRequiresExplicitApiKey()
+    public async Task OpenAIAdviceWithoutApiKey_RequiresExplicitApiKey()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var replayArtifactDirectory = CreateTempDir();
@@ -294,7 +294,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithOpenAIAdviceWithoutSchemaSource_RequiresSchemaSource()
+    public async Task OpenAIAdviceWithoutSchemaSource_RequiresSchemaSource()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var replayArtifactDirectory = CreateTempDir();
@@ -344,7 +344,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithTuneWithoutSchemaSource_RequiresSchemaSource()
+    public async Task WithTuneWithoutSchemaSource_RequiresSchemaSource()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -379,7 +379,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithoutAppSelection_PrintsNoCommandHint()
+    public async Task WithoutAppSelection_PrintsNoCommandHint()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -398,7 +398,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithHelp_PrintsInitUsage()
+    public async Task WithHelp_PrintsInitUsage()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -420,7 +420,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithInit_ScaffoldsSkillWithoutHarnessTarget()
+    public async Task WithInit_ScaffoldsSkillWithoutHarnessTarget()
     {
         var currentDirectory = CreateTempDir();
         Directory.CreateDirectory(Path.Combine(currentDirectory, ".git"));
@@ -453,7 +453,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithVersion_PrintsToolVersion()
+    public async Task WithVersion_PrintsToolVersion()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var expectedVersion = typeof(HostRuntime)
@@ -489,7 +489,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithBoundAppIntegration_RejectsExplicitTargetPathSelection()
+    public async Task WithBoundAppIntegration_RejectsExplicitTargetPathSelection()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();

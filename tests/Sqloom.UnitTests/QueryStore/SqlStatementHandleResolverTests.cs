@@ -11,7 +11,7 @@ namespace Sqloom.Host.Tests.QueryStore;
 public sealed class SqlStatementHandleResolverTests
 {
     [Fact]
-    public void BuildResolution_UsesFirstNonEmptyStatementHandleAndPreservesCandidates()
+    public void BuildResolution_UsesFirstHandleAndPreservesCandidates()
     {
         var resolution = SqlStatementHandleResolver.BuildResolution(
             "SELECT 1",
@@ -62,7 +62,7 @@ public sealed class SqlStatementHandleResolverTests
     }
 
     [Fact]
-    public void BuildQueryTextCandidates_SplitsBatchStatementsAndPrefixesOnlyStatementParameters()
+    public void BuildQueryTextCandidates_SplitsBatchesAndPrefixesParameters()
     {
         var candidates =
             SqlStatementHandleResolver.BuildQueryTextCandidates(

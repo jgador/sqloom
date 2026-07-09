@@ -10,7 +10,7 @@ namespace Sqloom.Host.Tests;
 public sealed class AdviseArgumentParserTests
 {
     [Fact]
-    public void Parse_ThrowsWhenCorrelationArtifactIsMissing()
+    public void ThrowsWhenCorrelationArtifactIsMissing()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -26,7 +26,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_ResolvesExplicitOpenAIOptions()
+    public void WithOpenAIModelProvider_ResolvesExplicitOptions()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -65,7 +65,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_AcceptsDacpacSchemaSource()
+    public void WithOpenAIModelProvider_AcceptsDacpacSchema()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -92,7 +92,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_PrefersSchemaFileOverDacpac()
+    public void WithOpenAIModelProvider_PrefersSchemaFile()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -122,7 +122,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_UsesDefaultBaseUrlAndModelWhenNotSpecified()
+    public void WithOpenAIModelProvider_UsesDefaultBaseUrlAndModel()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -157,7 +157,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_RequiresModelProvider()
+    public void RequiresModelProvider()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -180,7 +180,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_RequiresApiKey()
+    public void WithOpenAIModelProvider_RequiresApiKey()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -205,7 +205,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_RequiresSchemaSource()
+    public void WithOpenAIModelProvider_RequiresSchemaSource()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -230,7 +230,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_RejectsLegacyAdviceProviderSwitch()
+    public void RejectsLegacyAdviceProviderSwitch()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
@@ -253,7 +253,7 @@ public sealed class AdviseArgumentParserTests
     }
 
     [Fact]
-    public void Parse_RejectsLegacyCorrelationSwitch()
+    public void RejectsLegacyCorrelationSwitch()
     {
         AdviseArgumentParser parser = new();
         var replayDirectory = CreateTempDir();

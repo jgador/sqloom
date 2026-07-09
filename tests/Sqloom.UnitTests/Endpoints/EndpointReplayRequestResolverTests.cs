@@ -12,7 +12,7 @@ namespace Sqloom.Host.Tests.Replay;
 public sealed class ReplayRequestResolverTests
 {
     [Fact]
-    public void Resolve_MergesPreparedValuesOverReplayDefaults()
+    public void MergesPreparedValuesOverReplayDefaults()
     {
         ReplayRequestResolver resolver = new();
         var request = resolver.Resolve(
@@ -62,7 +62,7 @@ public sealed class ReplayRequestResolverTests
     }
 
     [Fact]
-    public void Resolve_ThrowsWhenRequiredRequestBodyIsMissing()
+    public void ThrowsWhenRequiredRequestBodyIsMissing()
     {
         ReplayRequestResolver resolver = new();
 

@@ -13,7 +13,7 @@ namespace Sqloom.Host.Tests;
 public sealed class SqlServerDacpacSchemaExtractorTests
 {
     [Fact]
-    public async Task ExtractAsync_UnpacksModelSqlIntoReplayArtifactDirectory()
+    public async Task UnpacksModelSqlIntoReplayArtifactDirectory()
     {
         var artifactDirectory = CreateTempDir();
         var expectedSchemaPath = ArtifactLayout.GetSqlServerSchemaPath(artifactDirectory);
@@ -34,7 +34,7 @@ public sealed class SqlServerDacpacSchemaExtractorTests
     }
 
     [Fact]
-    public async Task ExtractAsync_ThrowsWhenDacpacIsMissing()
+    public async Task ThrowsWhenDacpacIsMissing()
     {
         var artifactDirectory = CreateTempDir();
         SqlServerDacpacSchemaExtractor extractor = new();

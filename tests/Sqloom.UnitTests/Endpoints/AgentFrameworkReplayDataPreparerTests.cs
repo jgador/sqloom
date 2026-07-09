@@ -13,8 +13,54 @@ namespace Sqloom.Host.Tests.Replay;
 /// </summary>
 public sealed class AgentFrameworkReplayDataPreparerTests
 {
+    [Theory]
+    [InlineData("https://api.openai.com", "https://api.openai.com/v1")]
+    [InlineData("https://api.openai.com/", "https://api.openai.com/v1")]
+    [InlineData("https://api.openai.com/v1", "https://api.openai.com/v1")]
+    public void BuildOpenAIEndpoint_NormalizesSqloomBaseUrlForOpenAISdk(
+        string baseUrl,
+        string expectedEndpoint)
+    {
+        var endpoint = AgentFrameworkReplayDataPreparer.BuildOpenAIEndpoint(baseUrl);
+
+        Assert.Equal(expectedEndpoint, endpoint.AbsoluteUri);
+    }
+
     [Fact]
-    public async Task PrepareAsync_WhenFallbackNeedsNoData_ReturnsFallbackWithoutCreatingAgent()
+    public void AgentReplayPreparedData_ConvertsValueListsToReplayPreparedData()
+    {
+        AgentFrameworkReplayDataPreparer.AgentReplayPreparedData agentData = new()
+        {
+            Persona = "customer",
+            RequestBodyJson = """{"name":"probe"}""",
+            PathValues =
+            [
+                "id=42",
+            ],
+            QueryValues =
+            [
+                "sqloomMafProbe=sqloom",
+                "ignored",
+                "=ignored",
+            ],
+            HeaderValues =
+            [
+                "x-test=true",
+            ],
+        };
+
+        var preparedData = agentData.ToReplayPreparedData();
+
+        Assert.Equal("customer", preparedData.Persona);
+        Assert.Equal("""{"name":"probe"}""", preparedData.RequestBodyJson);
+        Assert.Equal("42", preparedData.PathValues["id"]);
+        Assert.Equal("sqloom", preparedData.QueryValues["sqloomMafProbe"]);
+        Assert.False(preparedData.QueryValues.ContainsKey(""));
+        Assert.Equal("true", preparedData.HeaderValues["x-test"]);
+    }
+
+    [Fact]
+    public async Task PrepareAsync_WhenFallbackNeedsNoData_ReturnsFallback()
     {
         var fallbackOperation = CreateFallbackOperation(status: "not-needed");
         StubReplayDataPreparer fallback = new(fallbackOperation);
@@ -29,7 +75,7 @@ public sealed class AgentFrameworkReplayDataPreparerTests
     }
 
     [Fact]
-    public async Task PrepareAsync_InAutoMode_WhenAgentSetupFails_ReturnsFallbackWithWarning()
+    public async Task PrepareAsync_InAutoMode_WhenSetupFails_ReturnsFallbackWarning()
     {
         var fallbackOperation = CreateFallbackOperation(status: "generated");
         StubReplayDataPreparer fallback = new(fallbackOperation);

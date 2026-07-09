@@ -142,7 +142,7 @@ public sealed class TuneArgumentParserTests
     }
 
     [Fact]
-    public void Parse_RequiresModelProvider()
+    public void RequiresModelProvider()
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -163,7 +163,7 @@ public sealed class TuneArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_RequiresApiKey()
+    public void WithOpenAIModelProvider_RequiresApiKey()
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -209,7 +209,7 @@ public sealed class TuneArgumentParserTests
     }
 
     [Fact]
-    public void ValidateBeforeSession_WithReplayDataAgentRequired_RequiresOpenAIKey()
+    public void ValidateBeforeSession_RequiresOpenAIKeyForRequiredAgent()
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -265,7 +265,7 @@ public sealed class TuneArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithOpenAIModelProvider_RequiresSchemaSource()
+    public void WithOpenAIModelProvider_RequiresSchemaSource()
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -291,7 +291,7 @@ public sealed class TuneArgumentParserTests
     }
 
     [Fact]
-    public void Parse_RejectsLegacyAdviceProviderSwitch()
+    public void RejectsLegacyAdviceProviderSwitch()
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();

@@ -22,7 +22,7 @@ public sealed class ArtifactLayoutTests
         Path.Combine(ArtifactRoot, "replay", "replay-20260608T040506000Z");
 
     [Fact]
-    public void GetQueryStoreSnapshotPath_UsesQueryStoreFolderAndTimestampedFileName()
+    public void GetQueryStoreSnapshotPath_UsesTimestampedFileName()
     {
         DateTimeOffset capturedAtUtc = new(2026, 6, 7, 13, 39, 58, TimeSpan.Zero);
 

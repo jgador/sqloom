@@ -2,7 +2,9 @@
 
 using System;
 using System.ClientModel;
+using System.Collections.Generic;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Agents.AI;
@@ -21,6 +23,8 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
     private const string Instructions =
         "You prepare ASP.NET Core endpoint replay data for Sqloom. " +
         "Return only type-valid path, query, header, and JSON body values. " +
+        "Return pathValues, queryValues, and headerValues as arrays of name=value strings. " +
+        "Use an empty array when no values are needed. " +
         "Do not invent secrets, auth tokens, or database connection strings. " +
         "Prefer simple values that satisfy model binding over business-realistic data.";
 
@@ -57,7 +61,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
             var agent = CreateAgent();
             var prompt = BuildPrompt(context, fallback.PreparedData);
             var response = await agent
-                .RunAsync<ReplayPreparedData>(
+                .RunAsync<AgentReplayPreparedData>(
                     prompt,
                     serializerOptions: JsonSerializerOptions.Web,
                     cancellationToken: cancellationToken)
@@ -69,7 +73,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
                 Strategy = "microsoft-agent-framework-openai",
                 Status = "generated",
                 Confidence = 0.8,
-                PreparedData = response.Result,
+                PreparedData = response.Result.ToReplayPreparedData(),
                 SourcesUsed =
                 [
                     "openapi-operation",
@@ -111,7 +115,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
     {
         OpenAIClientOptions clientOptions = new()
         {
-            Endpoint = new Uri(_options.BaseUrl),
+            Endpoint = BuildOpenAIEndpoint(_options.BaseUrl),
         };
         ResponsesClient client = new(
             new ApiKeyCredential(_options.ApiKey),
@@ -128,6 +132,19 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
                 },
             },
             model: _options.Model);
+    }
+
+    internal static Uri BuildOpenAIEndpoint(string baseUrl)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(baseUrl);
+
+        var endpoint = baseUrl.TrimEnd('/');
+        if (!endpoint.EndsWith("/v1", StringComparison.OrdinalIgnoreCase))
+        {
+            endpoint = $"{endpoint}/v1";
+        }
+
+        return new Uri(endpoint, UriKind.Absolute);
     }
 
     private static string BuildPrompt(
@@ -152,5 +169,58 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
         };
 
         return JsonSerializer.Serialize(payload, JsonSerializerOptions.Web);
+    }
+
+    internal sealed class AgentReplayPreparedData
+    {
+        [JsonPropertyName("persona")]
+        public string? Persona { get; init; }
+
+        [JsonPropertyName("requestBodyJson")]
+        public string RequestBodyJson { get; init; } = string.Empty;
+
+        [JsonPropertyName("pathValues")]
+        public List<string> PathValues { get; init; } = [];
+
+        [JsonPropertyName("queryValues")]
+        public List<string> QueryValues { get; init; } = [];
+
+        [JsonPropertyName("headerValues")]
+        public List<string> HeaderValues { get; init; } = [];
+
+        public ReplayPreparedData ToReplayPreparedData()
+        {
+            return new ReplayPreparedData
+            {
+                Persona = string.IsNullOrWhiteSpace(Persona) ? null : Persona,
+                RequestBodyJson = string.IsNullOrWhiteSpace(RequestBodyJson) ? null : RequestBodyJson,
+                PathValues = ToDictionary(PathValues),
+                QueryValues = ToDictionary(QueryValues),
+                HeaderValues = ToDictionary(HeaderValues),
+            };
+        }
+
+        private static IReadOnlyDictionary<string, string> ToDictionary(IEnumerable<string> values)
+        {
+            Dictionary<string, string> result = new(StringComparer.OrdinalIgnoreCase);
+            foreach (var value in values)
+            {
+                var separatorIndex = value.IndexOf('=');
+                if (separatorIndex <= 0)
+                {
+                    continue;
+                }
+
+                var name = value[..separatorIndex].Trim();
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    continue;
+                }
+
+                result[name] = value[(separatorIndex + 1)..];
+            }
+
+            return result;
+        }
     }
 }

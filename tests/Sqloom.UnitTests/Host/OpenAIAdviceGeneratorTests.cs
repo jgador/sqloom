@@ -22,7 +22,7 @@ namespace Sqloom.Host.Tests;
 public sealed class OpenAIAdviceGeneratorTests
 {
     [Fact]
-    public async Task CreateReportAsync_UsesEvidenceAndSchemaWithoutBaselineHints()
+    public async Task UsesEvidenceAndSchemaWithoutBaselineHints()
     {
         var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
@@ -136,7 +136,7 @@ public sealed class OpenAIAdviceGeneratorTests
     }
 
     [Fact]
-    public async Task CreateReportAsync_PersistsFreeFormProposalWithoutRollbackAndAddsWarning()
+    public async Task PersistsFreeFormProposalWithoutRollbackWarning()
     {
         var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
@@ -226,7 +226,7 @@ public sealed class OpenAIAdviceGeneratorTests
     }
 
     [Fact]
-    public async Task CreateReportAsync_WithDebugWriter_PrintsRedactedRequestAndResponse()
+    public async Task WithDebugWriter_PrintsRedactedRequestAndResponse()
     {
         var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");

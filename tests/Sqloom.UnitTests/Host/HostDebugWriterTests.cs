@@ -88,7 +88,7 @@ public sealed class HostDebugWriterTests
     }
 
     [Fact]
-    public void PrintOpenAIResponse_FallsBackToDecodedBlockForInvalidNestedJsonText()
+    public void PrintOpenAIResponse_FallsBackForInvalidNestedJson()
     {
         var responseJson = JsonSerializer.Serialize(new
         {

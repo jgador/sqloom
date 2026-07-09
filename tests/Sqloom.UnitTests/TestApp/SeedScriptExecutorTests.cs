@@ -10,7 +10,7 @@ namespace Sqloom.UnitTests.TestApp;
 public sealed class SeedScriptExecutorTests
 {
     [Fact]
-    public void SplitBatches_SplitsOnStandaloneGoLinesAndSkipsBlankBatches()
+    public void SplitsOnStandaloneGoLinesAndSkipsBlankBatches()
     {
         const string sqlText = """
             SELECT 1;
@@ -32,7 +32,7 @@ public sealed class SeedScriptExecutorTests
     }
 
     [Fact]
-    public void SplitBatches_DoesNotSplitWhenGoAppearsInsideOtherSqlText()
+    public void DoesNotSplitWhenGoAppearsInsideOtherSqlText()
     {
         const string sqlText = """
             INSERT INTO [dbo].[Messages] ([Text]) VALUES (N'GO');

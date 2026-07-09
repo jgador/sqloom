@@ -15,7 +15,7 @@ namespace Sqloom.Host.Tests;
 public sealed class ReplayArgumentParserTests
 {
     [Fact]
-    public void Parse_WithSqlServerDacpac_ResolvesReplayLaunchOptions()
+    public void WithSqlServerDacpac_ResolvesReplayLaunchOptions()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -54,7 +54,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_UsesManifestOpenApiPathByDefault()
+    public void UsesManifestOpenApiPathByDefault()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -72,7 +72,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithReplayDataAgentAuto_ThreadsReplayDataAgentOptions()
+    public void WithReplayDataAgentAuto_ThreadsAgentOptions()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -94,7 +94,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithReplayDataAgentRequiredAndOpenAIKey_CreatesAgentFrameworkPreparer()
+    public void WithRequiredReplayDataAgent_CreatesAgentPreparer()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -118,7 +118,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_WithReplayDataAgentRequired_RequiresOpenAIKey()
+    public void WithReplayDataAgentRequired_RequiresOpenAIKey()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -137,7 +137,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_RejectsInvalidReplayDataAgentMode()
+    public void RejectsInvalidReplayDataAgentMode()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -156,7 +156,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenManifestOpenApiPathIsRelative()
+    public void ThrowsWhenManifestOpenApiPathIsRelative()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -179,7 +179,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenSqlServerDacpacIsMissing()
+    public void ThrowsWhenSqlServerDacpacIsMissing()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -199,7 +199,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenSqlSeedScriptIsMissing()
+    public void ThrowsWhenSqlSeedScriptIsMissing()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -223,7 +223,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenSqlSeedScriptIsSuppliedWithoutDacpac()
+    public void ThrowsWhenSqlSeedScriptIsSuppliedWithoutDacpac()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -246,7 +246,7 @@ public sealed class ReplayArgumentParserTests
     [Theory]
     [InlineData("--workload", "GET /api/expenses/dashboard")]
     [InlineData("--operation", "GET /api/expenses/dashboard")]
-    public void Parse_RejectsLegacyOperationSwitches(string legacySwitch, string value)
+    public void RejectsLegacyOperationSwitches(string legacySwitch, string value)
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -268,7 +268,7 @@ public sealed class ReplayArgumentParserTests
     [Theory]
     [InlineData("--openapi-path", "openapi.json")]
     [InlineData("--sqlserver-dacpac", "SqloomTestApp.dacpac")]
-    public void Parse_RejectsLegacyPathSwitches(string legacySwitch, string fileName)
+    public void RejectsLegacyPathSwitches(string legacySwitch, string fileName)
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -292,7 +292,7 @@ public sealed class ReplayArgumentParserTests
     [InlineData("GET api/products/by-category", "The route template must start with '/'.", CatalogScenario.OperationKey)]
     [InlineData("GET /api/products/by-category/", "Do not include a trailing '/' in the route template.", CatalogScenario.OperationKey)]
     [InlineData("GET //api/products/by-category", "Do not include repeated '/' characters in the route template.", CatalogScenario.OperationKey)]
-    public void Parse_RejectsMalformedTargetValues(
+    public void RejectsMalformedTargetValues(
         string targetFilter,
         string expectedReason,
         string expectedSuggestion)
@@ -318,7 +318,7 @@ public sealed class ReplayArgumentParserTests
     [Theory]
     [InlineData("expenses.dashboard")]
     [InlineData("GetSecure")]
-    public void Parse_RejectsNonOperationKeyTargetValues(string targetFilter)
+    public void RejectsNonOperationKeyTargetValues(string targetFilter)
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -342,7 +342,7 @@ public sealed class ReplayArgumentParserTests
     [InlineData("--replay")]
     [InlineData("--correlate")]
     [InlineData("--advise")]
-    public void Parse_RejectsLegacyStageAliasSwitches(string legacySwitch)
+    public void RejectsLegacyStageAliasSwitches(string legacySwitch)
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();

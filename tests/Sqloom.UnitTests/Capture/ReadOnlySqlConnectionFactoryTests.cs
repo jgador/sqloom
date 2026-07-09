@@ -9,7 +9,7 @@ namespace Sqloom.Host.Tests.QueryStore;
 public sealed class ReadOnlySqlConnectionFactoryTests
 {
     [Fact]
-    public void CreateBuilder_SetsDefaultApplicationName_WhenMissing()
+    public void SetsDefaultApplicationName_WhenMissing()
     {
         ReadOnlySqlConnectionFactory factory = new();
 
@@ -20,7 +20,7 @@ public sealed class ReadOnlySqlConnectionFactoryTests
     }
 
     [Fact]
-    public void CreateBuilder_PreservesExistingApplicationName()
+    public void PreservesExistingApplicationName()
     {
         ReadOnlySqlConnectionFactory factory = new();
 

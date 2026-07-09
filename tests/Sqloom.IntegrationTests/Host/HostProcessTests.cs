@@ -14,7 +14,7 @@ public sealed class HostProcessTests
 {
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task DotNetRun_WithHostAndTestAppProject_ReplaysWorkload()
+    public async Task WithHostAndTestAppProject_ReplaysWorkload()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
@@ -49,7 +49,7 @@ public sealed class HostProcessTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task DotNetRun_WithLeadingTargetPath_FailsWithoutStageVerb()
+    public async Task WithLeadingTargetPath_FailsWithoutStageVerb()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";

@@ -24,7 +24,7 @@ public sealed class HostSeedScriptTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task CreateAsync_WithCustomSeedScript_SkipsBuiltInSeeder()
+    public async Task WithCustomSeedScript_SkipsBuiltInSeeder()
     {
         var tempDirectory = CreateTempDir();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -70,7 +70,7 @@ public sealed class HostSeedScriptTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task CreateAsync_WithExportedSeedScript_RestoresHotSeedIntoFreshContainer()
+    public async Task WithExportedSeedScript_RestoresHotSeedIntoFreshContainer()
     {
         var tempDirectory = CreateTempDir();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -148,7 +148,7 @@ public sealed class HostSeedScriptTests
 
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
-    public async Task CreateAsync_WithCommittedSeedScript_BootstrapsAdventureWorksIntoFreshContainer()
+    public async Task WithCommittedSeedScript_BootstrapsAdventureWorks()
     {
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var seedScriptPath = SqloomTestAppPaths.GetSqlServerSeedScriptPath();

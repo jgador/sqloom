@@ -12,7 +12,7 @@ namespace Sqloom.Host.Tests;
 public sealed class InitCommandExecutorTests
 {
     [Fact]
-    public void Execute_ScaffoldsCodexSkillBundleByDefault()
+    public void ScaffoldsCodexSkillBundleByDefault()
     {
         var root = CreateRepositoryRoot();
         try
@@ -37,7 +37,7 @@ public sealed class InitCommandExecutorTests
     }
 
     [Fact]
-    public void Execute_ScaffoldsSelectedAgentRoot()
+    public void ScaffoldsSelectedAgentRoot()
     {
         var root = CreateRepositoryRoot();
         try
@@ -60,7 +60,7 @@ public sealed class InitCommandExecutorTests
     }
 
     [Fact]
-    public void Execute_ScaffoldsAllAgentRoots()
+    public void ScaffoldsAllAgentRoots()
     {
         var root = CreateRepositoryRoot();
         try
@@ -84,7 +84,7 @@ public sealed class InitCommandExecutorTests
     }
 
     [Fact]
-    public void Execute_LeavesIdenticalFilesUnchanged()
+    public void LeavesIdenticalFilesUnchanged()
     {
         var root = CreateRepositoryRoot();
         try
@@ -105,7 +105,7 @@ public sealed class InitCommandExecutorTests
     }
 
     [Fact]
-    public void Execute_RejectsExistingDifferentFileWithoutOverwrite()
+    public void RejectsExistingDifferentFileWithoutOverwrite()
     {
         var root = CreateRepositoryRoot();
         try
@@ -128,7 +128,7 @@ public sealed class InitCommandExecutorTests
     }
 
     [Fact]
-    public void Execute_OverwritesExistingDifferentFileWhenRequested()
+    public void OverwritesExistingDifferentFileWhenRequested()
     {
         var root = CreateRepositoryRoot();
         try
@@ -152,7 +152,7 @@ public sealed class InitCommandExecutorTests
     }
 
     [Fact]
-    public void Execute_RequiresGitMarkerInCurrentDirectory()
+    public void RequiresGitMarkerInCurrentDirectory()
     {
         var root = CreateTestRoot();
         try
@@ -172,7 +172,7 @@ public sealed class InitCommandExecutorTests
     }
 
     [Fact]
-    public void Execute_RejectsUnknownAgent()
+    public void RejectsUnknownAgent()
     {
         var root = CreateRepositoryRoot();
         try
