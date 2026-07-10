@@ -32,18 +32,14 @@ internal sealed record CommandSpec(
     CommandTargetKind TargetKind,
     bool SupportsDebug,
     bool SupportsHarnessOptions,
-    IReadOnlyList<CommandOptionSpec> Options)
+    IReadOnlyList<CommandOptionSpec> Options,
+    IReadOnlyList<string> Notes)
 {
     public string Usage
     {
         get
         {
             List<string> parts = [];
-            if (SupportsDebug)
-            {
-                parts.Add("[--debug]");
-            }
-
             parts.Add(Verb);
             if (TargetKind == CommandTargetKind.Optional)
             {
@@ -54,15 +50,16 @@ internal sealed record CommandSpec(
                 parts.Add("<path>");
             }
 
-            if (SupportsHarnessOptions)
+            parts.AddRange(Options
+                .Where(static option => option.IsRequired)
+                .Select(static option => option.Syntax));
+            if (SupportsDebug
+                || SupportsHarnessOptions
+                || Options.Any(static option => !option.IsRequired))
             {
-                parts.Add("[--dotnet-command <command>]");
-                parts.Add("[--no-build]");
+                parts.Add("[options]");
             }
 
-            parts.AddRange(Options.Select(option => option.IsRequired
-                ? option.Syntax
-                : $"[{option.Syntax}]"));
             return string.Join(' ', parts);
         }
     }
@@ -72,8 +69,8 @@ internal static class CommandCatalog
 {
     public static IReadOnlyList<CommandOptionSpec> ToolOptions { get; } =
     [
-        new("--help", "Prints Sqloom command usage."),
-        new("--version", "Prints the installed Sqloom tool version."),
+        new("--help", "Show command line help."),
+        new("--version", "Display Sqloom version."),
     ];
 
     public static IReadOnlyList<CommandOptionSpec> StartupOptions { get; } =
@@ -95,6 +92,9 @@ internal static class CommandCatalog
             [
                 new("--agent", "Selects the agent skill location. Allowed values: codex, claude, copilot, all.", "codex|claude|copilot|all", DefaultValue: "codex"),
                 new("--overwrite", "Replaces changed scaffolded skill files."),
+            ],
+            [
+                "Run init from a Git repository root. Sqloom writes the selected agent skill under the matching agent-specific skill directory.",
             ]),
         new(
             HostCommandKind.Observe,
@@ -112,6 +112,10 @@ internal static class CommandCatalog
                 new("--json-output-file", "Writes the Query Store snapshot to a specific JSON path.", "path"),
                 new("--app-only", "Filters the console view to App-classified entries and implies --show-classification."),
                 new("--show-classification", "Prints classification details for displayed plans and waits."),
+            ],
+            [
+                "--app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.",
+                "When a target path is supplied, Sqloom resolves it, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.",
             ]),
         new(
             HostCommandKind.Tune,
@@ -141,6 +145,15 @@ internal static class CommandCatalog
                 new("--openai-model", "Selects the OpenAI advice model.", "id", DefaultValue: "gpt-5.4-mini"),
                 new("--openai-base-url", "Sets the OpenAI base URL.", "url", DefaultValue: "https://api.openai.com"),
                 new("--openai-api-key", "Supplies the OpenAI API key used by enabled agent workflows.", "key", IsRequired: true),
+            ],
+            [
+                "Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session.",
+                "Tune writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.",
+                "Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string.",
+                "When no DACPAC override or harness manifest DACPAC is available, tune exports a DACPAC from the command-line read-only connection before replay and reuses it for advice schema extraction.",
+                "Use --replay-data-agent auto or required with --openai-api-key to let Microsoft Agent Framework fill missing replay path, query, header, and body values.",
+                "--sqlserver-dacpac-file and --sqlserver-seed-sql-file are harness replay launch overrides; the replay data agent does not generate DACPACs or seed SQL.",
+                "When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.",
             ]),
         new(
             HostCommandKind.Replay,
@@ -160,6 +173,17 @@ internal static class CommandCatalog
                 new("--replay-data-agent-model", "Selects the replay data agent model.", "id", DefaultValue: "gpt-5.4-mini"),
                 new("--openai-base-url", "Sets the OpenAI base URL for the replay data agent.", "url", DefaultValue: "https://api.openai.com"),
                 new("--openai-api-key", "Supplies the OpenAI API key used by the replay data agent.", "key"),
+            ],
+            [
+                "Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.",
+                "Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.",
+                "Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.",
+                "If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.",
+                "SQL Server-backed replay harnesses can consume app-owned DACPAC and seed launch options when they implement that setup.",
+                "The replay data agent fills HTTP replay inputs only; it does not generate DACPACs or seed SQL.",
+                "The replay data agent is replay-only. When enabled, it requires --openai-api-key, uses Microsoft Agent Framework, and writes replay-data-prep.json.",
+                "Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".",
+                "Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.",
             ]),
         new(
             HostCommandKind.Correlate,
@@ -173,6 +197,9 @@ internal static class CommandCatalog
                 new("--query-store-snapshot-file", "Query Store snapshot JSON produced by observe.", "path", IsRequired: true),
                 new("--read-only-connection-string", "Connection string used for statement handle resolution.", "connection-string", IsRequired: true),
                 new("--json-output-file", "Writes correlation to a specific JSON path.", "path"),
+            ],
+            [
+                "Correlation resolves statement_sql_handle against captured replay SQL, then writes query-store-correlation.json under the replay artifact directory by default.",
             ]),
         new(
             HostCommandKind.Advise,
@@ -192,6 +219,12 @@ internal static class CommandCatalog
                 new("--openai-model", "Selects the OpenAI advice model.", "id", DefaultValue: "gpt-5.4-mini"),
                 new("--openai-base-url", "Sets the OpenAI base URL.", "url", DefaultValue: "https://api.openai.com"),
                 new("--openai-api-key", "Supplies the OpenAI API key used by advice generation.", "key", IsRequired: true),
+            ],
+            [
+                "Advice derives operation-level tuning guidance from query-store-correlation.json plus SQL Server schema extracted from a DACPAC.",
+                "Advice writes tuning-advice.json, sql-tuning-proposal.json, and sql-tuning-proposal.sql under the replay artifact directory by default.",
+                "OpenAI advice requires --model-provider openai, --openai-api-key, and a schema source: --sqlserver-schema-file, --sqlserver-dacpac-file, or --read-only-connection-string.",
+                "Use --debug to print per-stage diagnostics to stderr. With advise, debug prints the redacted OpenAI request and response payloads.",
             ]),
     ];
 

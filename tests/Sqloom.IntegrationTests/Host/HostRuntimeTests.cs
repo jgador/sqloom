@@ -281,12 +281,12 @@ public sealed class HostRuntimeTests
         }, currentDirectory);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Use --help to print the available host arguments.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Use sqloom help to list commands.", result.StdOut, StringComparison.Ordinal);
     }
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task WithHelp_PrintsInitUsage()
+    public async Task WithHelp_PrintsTopLevelSections()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -302,8 +302,78 @@ public sealed class HostRuntimeTests
         }, currentDirectory);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Contains("init [--agent <codex|claude|copilot|all>] [--overwrite]", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Usage:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("tool-options:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("commands:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("  replay     Starts the harness and replays selected OpenAPI operations.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Run 'sqloom help <command>' for more information on a command.", result.StdOut, StringComparison.Ordinal);
         Assert.Equal(string.Empty, result.StdErr);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task WithHelpReplay_PrintsCommandSections()
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+
+        var result = await CaptureConsoleAsync(static async state =>
+        {
+            return await HostRuntime
+                .RunAsync(
+                    [
+                        "help",
+                        "replay",
+                    ],
+                    state)
+                .ConfigureAwait(false);
+        }, currentDirectory);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Description:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Starts the harness and replays selected OpenAPI operations.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Usage:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("sqloom replay <path> [options]", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Arguments:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("startup-options:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("options:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Replay targets must use the exact form 'METHOD /path/template'", result.StdOut, StringComparison.Ordinal);
+        Assert.Equal(string.Empty, result.StdErr);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task WithReplayHelp_PrintsSameOutputAsHelpReplay()
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+
+        var helpReplay = await CaptureConsoleAsync(static async state =>
+        {
+            return await HostRuntime
+                .RunAsync(
+                    [
+                        "help",
+                        "replay",
+                    ],
+                    state)
+                .ConfigureAwait(false);
+        }, currentDirectory);
+        var replayHelp = await CaptureConsoleAsync(static async state =>
+        {
+            return await HostRuntime
+                .RunAsync(
+                    [
+                        "replay",
+                        "--help",
+                    ],
+                    state)
+                .ConfigureAwait(false);
+        }, currentDirectory);
+
+        Assert.Equal(0, helpReplay.ExitCode);
+        Assert.Equal(0, replayHelp.ExitCode);
+        Assert.Equal(helpReplay.StdOut, replayHelp.StdOut);
+        Assert.Equal(string.Empty, helpReplay.StdErr);
+        Assert.Equal(string.Empty, replayHelp.StdErr);
     }
 
     [Fact]

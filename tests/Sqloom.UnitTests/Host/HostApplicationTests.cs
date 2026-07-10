@@ -155,7 +155,7 @@ public sealed class HostApplicationTests
 
             Assert.Equal(0, result);
             Assert.Contains(
-                "Use --help to print the available host arguments.",
+                "Use sqloom help to list commands.",
                 stdOut.ToString(),
                 StringComparison.Ordinal);
         }

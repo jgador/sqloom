@@ -238,6 +238,28 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Fact]
+    public void WithHelpVerb_KeepsVerbArgumentsAndSkipsTargetSelection()
+    {
+        HostStartupCommandLine commandLine = new();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+
+        var startupOptions = commandLine.Parse(
+            [
+                "help",
+                "replay",
+            ],
+            currentDirectory);
+
+        Assert.False(startupOptions.ShowHelp);
+        Assert.False(startupOptions.HasTargetSelection);
+        Assert.Null(startupOptions.AppTargetPath);
+        Assert.Collection(
+            startupOptions.ApplicationArguments,
+            item => Assert.Equal("help", item),
+            item => Assert.Equal("replay", item));
+    }
+
+    [Fact]
     public void WithInitVerb_KeepsArgumentsAndSkipsTargetSelection()
     {
         HostStartupCommandLine commandLine = new();

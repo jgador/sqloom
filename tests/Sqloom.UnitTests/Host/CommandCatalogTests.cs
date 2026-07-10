@@ -42,6 +42,36 @@ public sealed class CommandCatalogTests
     }
 
     [Fact]
+    public void CommandUsageStaysConcise()
+    {
+        Assert.Equal("init [options]", CommandCatalog.GetRequired(HostCommandKind.Init).Usage);
+        Assert.Equal(
+            "observe [<path>] --read-only-connection-string <connection-string> [options]",
+            CommandCatalog.GetRequired(HostCommandKind.Observe).Usage);
+        Assert.Equal(
+            "tune <path> --model-provider <openai> --openai-api-key <key> [options]",
+            CommandCatalog.GetRequired(HostCommandKind.Tune).Usage);
+        Assert.Equal("replay <path> [options]", CommandCatalog.GetRequired(HostCommandKind.Replay).Usage);
+        Assert.Equal(
+            "correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [options]",
+            CommandCatalog.GetRequired(HostCommandKind.Correlate).Usage);
+    }
+
+    [Fact]
+    public void GeneratedReferenceUsesSectionedHelpShape()
+    {
+        var markdown = CommandReferenceMarkdown.Render();
+
+        Assert.Contains("## Usage", markdown, StringComparison.Ordinal);
+        Assert.Contains("| Command | Description |", markdown, StringComparison.Ordinal);
+        Assert.Contains("### `replay`", markdown, StringComparison.Ordinal);
+        Assert.Contains("#### Startup options", markdown, StringComparison.Ordinal);
+        Assert.Contains("#### Notes", markdown, StringComparison.Ordinal);
+        Assert.Contains("sqloom replay <path> [options]", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("sqloom [--debug] replay <path> [--dotnet-command", markdown, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void GeneratedReferenceMatchesCheckedInFile()
     {
         var repositoryRoot = RepositoryPaths.GetRepositoryRoot();

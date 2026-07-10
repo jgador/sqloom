@@ -6,14 +6,16 @@ This is the detailed CLI reference for `sqloom`. For the shortest path, start wi
 
 ```text
 sqloom help
+sqloom help <command>
 sqloom --help
+sqloom <command> --help
 sqloom --version
-sqloom init [--agent codex|claude|copilot|all] [--overwrite]
-sqloom [--debug] observe [<path>] --read-only-connection-string <connection-string> [options]
-sqloom [--debug] tune <path> [--read-only-connection-string <connection-string>] [options]
-sqloom [--debug] replay <path> [options]
-sqloom [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [options]
-sqloom [--debug] advise --replay-artifact-dir <path> [options]
+sqloom init [options]
+sqloom observe [<path>] --read-only-connection-string <connection-string> [options]
+sqloom tune <path> --model-provider openai --openai-api-key <key> [options]
+sqloom replay <path> [options]
+sqloom correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [options]
+sqloom advise --replay-artifact-dir <path> --model-provider openai --openai-api-key <key> [options]
 ```
 
 `<path>` can be a harness project, harness assembly, solution, solution filter, or directory containing harness projects. Sqloom builds harness projects unless `--no-build` is supplied, scans loadable assemblies for public non-abstract `ISqloomApplication` implementations, and requires exactly one match. `init` is target-independent and does not resolve a harness.
@@ -23,7 +25,9 @@ sqloom [--debug] advise --replay-artifact-dir <path> [options]
 | Option | Applies to | Description |
 | --- | --- | --- |
 | `help` | tool | Prints usage. |
+| `help <command>` | tool | Prints command-specific help. |
 | `--help` | tool | Prints usage. |
+| `<command> --help` | tool | Prints command-specific help without resolving a harness. |
 | `--version` | tool | Prints the installed Sqloom tool version. |
 | `--debug` | all commands | Prints stage diagnostics to `stderr`. For `advise`, this includes readable, redacted OpenAI request and response payloads. For `tune`, this cascades through `replay`, `observe`, `correlate`, and `advise`. |
 | `--dotnet-command <command>` | commands that resolve harness projects | Uses a specific `dotnet` executable for nested project resolution and builds. |

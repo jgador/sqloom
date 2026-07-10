@@ -156,7 +156,7 @@ public static class HostRuntime
 
         if (startupOptions.ShowHelp)
         {
-            consoleWriter.PrintUsage();
+            consoleWriter.PrintHelp(startupOptions.ApplicationArguments);
             exitCode = 0;
             return true;
         }

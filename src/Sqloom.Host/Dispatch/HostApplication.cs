@@ -88,7 +88,7 @@ internal sealed class HostApplication
         switch (commandKind)
         {
             case HostCommandKind.Help:
-                _consoleWriter.PrintUsage();
+                _consoleWriter.PrintHelp(startupOptions.ApplicationArguments);
                 return 0;
             case HostCommandKind.Init:
                 return await RunTargetIndependentHandlerAsync(
