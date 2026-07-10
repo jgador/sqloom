@@ -26,9 +26,12 @@ public sealed class InitCommandExecutorTests
             Assert.Equal("codex", result.AgentSelection);
             Assert.True(result.Files.Count >= 1);
             Assert.All(result.Files, file => Assert.Equal(InitFileStatus.Created, file.Status));
-            var skillPath = Path.Combine(root, ".agents", "skills", "sqloom-harness", "SKILL.md");
+            var skillPath = Path.Combine(root, ".agents", "skills", "sqloom", "SKILL.md");
+            var commandReferencePath = Path.Combine(root, ".agents", "skills", "sqloom", "references", "commands.md");
             Assert.True(File.Exists(skillPath));
-            Assert.Contains("name: sqloom-harness", File.ReadAllText(skillPath), StringComparison.Ordinal);
+            Assert.True(File.Exists(commandReferencePath));
+            Assert.Contains("name: sqloom", File.ReadAllText(skillPath), StringComparison.Ordinal);
+            Assert.Contains("# Sqloom Command Reference", File.ReadAllText(commandReferencePath), StringComparison.Ordinal);
         }
         finally
         {
@@ -49,8 +52,8 @@ public sealed class InitCommandExecutorTests
                 root);
 
             Assert.Equal("claude", result.AgentSelection);
-            Assert.All(result.Files, file => Assert.StartsWith(".claude/skills/sqloom-harness/", file.Path, StringComparison.Ordinal));
-            Assert.True(File.Exists(Path.Combine(root, ".claude", "skills", "sqloom-harness", "SKILL.md")));
+            Assert.All(result.Files, file => Assert.StartsWith(".claude/skills/sqloom/", file.Path, StringComparison.Ordinal));
+            Assert.True(File.Exists(Path.Combine(root, ".claude", "skills", "sqloom", "SKILL.md")));
             Assert.False(Directory.Exists(Path.Combine(root, ".agents")));
         }
         finally
@@ -73,9 +76,9 @@ public sealed class InitCommandExecutorTests
 
             Assert.Equal("all", result.AgentSelection);
             Assert.Equal(["claude", "codex", "copilot"], result.Files.Select(file => file.Agent).Distinct().OrderBy(agent => agent, StringComparer.Ordinal));
-            Assert.True(File.Exists(Path.Combine(root, ".agents", "skills", "sqloom-harness", "SKILL.md")));
-            Assert.True(File.Exists(Path.Combine(root, ".claude", "skills", "sqloom-harness", "SKILL.md")));
-            Assert.True(File.Exists(Path.Combine(root, ".github", "skills", "sqloom-harness", "SKILL.md")));
+            Assert.True(File.Exists(Path.Combine(root, ".agents", "skills", "sqloom", "SKILL.md")));
+            Assert.True(File.Exists(Path.Combine(root, ".claude", "skills", "sqloom", "SKILL.md")));
+            Assert.True(File.Exists(Path.Combine(root, ".github", "skills", "sqloom", "SKILL.md")));
         }
         finally
         {
@@ -110,7 +113,7 @@ public sealed class InitCommandExecutorTests
         var root = CreateRepositoryRoot();
         try
         {
-            var skillPath = Path.Combine(root, ".agents", "skills", "sqloom-harness", "SKILL.md");
+            var skillPath = Path.Combine(root, ".agents", "skills", "sqloom", "SKILL.md");
             Directory.CreateDirectory(Path.GetDirectoryName(skillPath)!);
             File.WriteAllText(skillPath, "local content");
             InitCommandExecutor executor = new();
@@ -118,7 +121,7 @@ public sealed class InitCommandExecutorTests
             var exception = Assert.Throws<ArgumentException>(
                 () => executor.Execute(["init"], root));
 
-            Assert.Contains("Refusing to overwrite existing file '.agents/skills/sqloom-harness/SKILL.md'", exception.Message, StringComparison.Ordinal);
+            Assert.Contains("Refusing to overwrite existing file '.agents/skills/sqloom/SKILL.md'", exception.Message, StringComparison.Ordinal);
             Assert.Contains("--overwrite", exception.Message, StringComparison.Ordinal);
         }
         finally
@@ -133,7 +136,7 @@ public sealed class InitCommandExecutorTests
         var root = CreateRepositoryRoot();
         try
         {
-            var skillPath = Path.Combine(root, ".agents", "skills", "sqloom-harness", "SKILL.md");
+            var skillPath = Path.Combine(root, ".agents", "skills", "sqloom", "SKILL.md");
             Directory.CreateDirectory(Path.GetDirectoryName(skillPath)!);
             File.WriteAllText(skillPath, "local content");
             InitCommandExecutor executor = new();
@@ -142,8 +145,8 @@ public sealed class InitCommandExecutorTests
                 ["init", "--overwrite"],
                 root);
 
-            Assert.Contains(result.Files, file => file.Path == ".agents/skills/sqloom-harness/SKILL.md" && file.Status == InitFileStatus.Overwritten);
-            Assert.Contains("name: sqloom-harness", File.ReadAllText(skillPath), StringComparison.Ordinal);
+            Assert.Contains(result.Files, file => file.Path == ".agents/skills/sqloom/SKILL.md" && file.Status == InitFileStatus.Overwritten);
+            Assert.Contains("name: sqloom", File.ReadAllText(skillPath), StringComparison.Ordinal);
         }
         finally
         {

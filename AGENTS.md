@@ -110,6 +110,7 @@ After scouts return:
 - Run .NET commands from the repo root.
 - Use the narrowest relevant restore, build, or test command first.
 - After CLI surface changes that affect `sqloom-local`, redeploy the local wrapper before trusting manual runs.
+- After command metadata changes, regenerate `.agents/skills/sqloom/references/commands.md` with `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --write` and run the same file app with `--check`.
 - For replay, correlate, advise, and tune issues, inspect `artifacts/sqloom/` before guessing from code alone.
 - If deeper verification requires Docker, SQL Server assets, or OpenAI credentials, say exactly what you ran and what you skipped.
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 
 namespace Sqloom.Host;
 
@@ -79,10 +80,16 @@ internal static class CommandArgumentSupport
 
     public static void ValidateArguments(
         string[] args,
-        HostCommandKind commandKind,
-        ISet<string> supportedSwitches,
-        ISet<string> valueSwitches)
+        HostCommandKind commandKind)
     {
+        var command = CommandCatalog.GetRequired(commandKind);
+        var supportedSwitches = command.Options
+            .Select(option => option.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var valueSwitches = command.Options
+            .Where(option => option.TakesValue)
+            .Select(option => option.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
         var commandVerb = CommandRegistry.GetCommandVerb(commandKind);
         var leadingVerb = CommandRegistry.GetLeadingVerb(args);
         if (leadingVerb is not null && leadingVerb != commandKind)

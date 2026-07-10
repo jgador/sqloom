@@ -1,5 +1,5 @@
 ---
-name: sqloom-harness
+name: sqloom
 description: Guide an interactive intake workflow before generating Sqloom harness files for an ASP.NET Core app.
 ---
 
@@ -44,3 +44,7 @@ Before writing harness files, confirm the complete intake:
 - expected status
 
 Generate the smallest harness that can start the app, expose `ISqloomApplication`, locate the app-owned OpenAPI document, and replay the selected endpoint. Keep app-specific setup in the harness; do not add Sqloom runtime features for one app's setup.
+
+## Use Exact Sqloom Syntax
+
+After intake, use [references/commands.md](references/commands.md) for the exact generated Sqloom commands, arguments, defaults, and option names. Do not infer CLI syntax from examples or prose when the generated reference covers it.

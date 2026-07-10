@@ -10,28 +10,6 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class ObserveArgumentParser
 {
-    private static readonly HashSet<string> SupportedSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--read-only-connection-string",
-        "--lookback-hours",
-        "--max-plans",
-        "--max-waits",
-        "--command-timeout-seconds",
-        "--json-output-file",
-        "--app-only",
-        "--show-classification",
-    };
-
-    private static readonly HashSet<string> ValueSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--read-only-connection-string",
-        "--lookback-hours",
-        "--max-plans",
-        "--max-waits",
-        "--command-timeout-seconds",
-        "--json-output-file",
-    };
-
     public string? GetQueryStoreConnectionString(string[] args)
     {
         return CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string");
@@ -43,11 +21,7 @@ internal sealed class ObserveArgumentParser
         string readOnlyConnectionString,
         string currentDirectory)
     {
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Observe,
-            SupportedSwitches,
-            ValueSwitches);
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Observe);
 
         QueryStoreOptions observationOptions = new()
         {

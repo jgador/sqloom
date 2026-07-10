@@ -65,7 +65,7 @@ If the harness does not already provide enough path, query, header, or body valu
 
 Sqloom has one setup command, one common front door, and four lower-level stages:
 
-- `init`: scaffold the `sqloom-harness` agent skill into this repository.
+- `init`: scaffold the `sqloom` agent skill into this repository.
 - `tune`: run `replay -> observe -> correlate -> advise` in one command.
 - `replay`: run API operations through an `ISqloomApplication` harness and capture SQL.
 - `observe`: read recent Query Store data from SQL Server or Azure SQL.

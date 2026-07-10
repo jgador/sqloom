@@ -123,7 +123,9 @@ internal sealed class HostStartupCommandLine
         string[] args,
         string currentDirectory)
     {
-        if (args.Length < 2 || !IsVerb(args[0]))
+        if (args.Length < 2
+            || !args[0].Equals("help", StringComparison.OrdinalIgnoreCase)
+                && CommandCatalog.Find(args[0]) is not { TargetKind: not CommandTargetKind.None })
         {
             return null;
         }
@@ -133,20 +135,10 @@ internal sealed class HostStartupCommandLine
             : null;
     }
 
-    private static bool IsVerb(string value)
-    {
-        return value.Equals("help", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("observe", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("tune", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("replay", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("correlate", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("advise", StringComparison.OrdinalIgnoreCase);
-    }
-
     private static bool IsSupportedCommand(string value)
     {
-        return value.Equals("init", StringComparison.OrdinalIgnoreCase)
-            || IsVerb(value);
+        return value.Equals("help", StringComparison.OrdinalIgnoreCase)
+            || CommandCatalog.Find(value) is not null;
     }
 
     private static bool LooksLikeTargetPath(

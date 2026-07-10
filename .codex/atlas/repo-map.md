@@ -10,7 +10,7 @@ Resident architecture context for first-pass navigation. Atlas stores durable ro
 - Tests and sample harness: [tests/Sqloom.UnitTests/](../../tests/Sqloom.UnitTests/), [tests/Sqloom.IntegrationTests/](../../tests/Sqloom.IntegrationTests/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), [tests/Sqloom.TestApp.Harness/](../../tests/Sqloom.TestApp.Harness/)
 - Docs and tooling: [README.md](../../README.md), [docs/](../../docs/), [scripts/](../../scripts/)
 - Generated artifacts: `artifacts/sqloom/`
-- Agent assets: [AGENTS.md](../../AGENTS.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/roslynkit/references/commands.md](../../.agents/skills/roslynkit/references/commands.md), [.agents/skills/roslynkit/references/output.md](../../.agents/skills/roslynkit/references/output.md), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), [.agents/skills/sqloom-harness/SKILL.md](../../.agents/skills/sqloom-harness/SKILL.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md)
+- Agent assets: [AGENTS.md](../../AGENTS.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/roslynkit/references/commands.md](../../.agents/skills/roslynkit/references/commands.md), [.agents/skills/roslynkit/references/output.md](../../.agents/skills/roslynkit/references/output.md), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), [.agents/skills/sqloom/SKILL.md](../../.agents/skills/sqloom/SKILL.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md)
 
 ## Runtime Diagram
 
@@ -201,12 +201,13 @@ flowchart TB
 ## Runtime Flow
 
 - User-facing pipeline: `replay -> observe -> correlate -> advise`.
-- Setup command: `init` scaffolds the embedded `sqloom-harness` agent skill and skips harness resolution.
+- Setup command: `init` scaffolds the embedded `sqloom` agent skill and skips harness resolution.
 - Convenience front door: `tune` runs the common workflow and writes stage-owned artifacts under `artifacts/sqloom/`.
 - `tune` can export a DACPAC from an explicit command-line read-only connection before harness startup when no CLI DACPAC or harness manifest DACPAC exists; this exported package is replay bootstrap input and the advice schema source.
 - DACPAC-backed advice keeps the raw DacFx unpack under `replay/sqlserver-dacpac-extract/` and writes the normalized schema copy to `replay/sqlserver-schema.sql`.
 - [src/Sqloom.Host/Program.cs](../../src/Sqloom.Host/Program.cs) calls `HostRuntime.RunAsync`.
 - [src/Sqloom.Host/HostRuntime.cs](../../src/Sqloom.Host/HostRuntime.cs) parses startup options, handles help/version, creates `HostApplication`, and delegates command execution.
+- [src/Sqloom.Host/CommandCatalog.cs](../../src/Sqloom.Host/CommandCatalog.cs) is the ordered source of truth for command verbs, target requirements, options, runtime structural validation, help syntax, and generated agent reference metadata. [tools/Sqloom.CommandDocs.cs](../../tools/Sqloom.CommandDocs.cs) writes or checks [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md).
 - [src/Sqloom.Host/Dispatch/HostApplication.cs](../../src/Sqloom.Host/Dispatch/HostApplication.cs) resolves the selected harness or bound `ISqloomApplication`, chooses a `HostCommandKind`, creates command context, and dispatches through `CommandRegistry`.
 - Commands own their behavior: [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/AdviceCommand.cs](../../src/Sqloom.Host/AdviceCommand.cs), and [src/Sqloom.Host/TuneCommand.cs](../../src/Sqloom.Host/TuneCommand.cs).
 
@@ -242,6 +243,7 @@ flowchart TB
 - Integration tests: `dotnet test --solution .\Sqloom.IntegrationTests.slnf`
 - Local tool deploy: `pwsh .\scripts\deploy-sqloom-local.ps1`
 - Local tool smoke: `sqloom-local --version`
+- Command reference write/check: `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --write` / `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --check`
 
 ## Navigation Rules
 

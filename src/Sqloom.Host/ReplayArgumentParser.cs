@@ -13,34 +13,6 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class ReplayArgumentParser
 {
-    private static readonly HashSet<string> SupportedSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--openapi-file",
-        "--sqlserver-dacpac-file",
-        "--sqlserver-seed-sql-file",
-        "--artifact-dir",
-        "--max-operations",
-        "--target",
-        "--replay-data-agent",
-        "--replay-data-agent-model",
-        "--openai-base-url",
-        "--openai-api-key",
-    };
-
-    private static readonly HashSet<string> ValueSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--openapi-file",
-        "--sqlserver-dacpac-file",
-        "--sqlserver-seed-sql-file",
-        "--artifact-dir",
-        "--max-operations",
-        "--target",
-        "--replay-data-agent",
-        "--replay-data-agent-model",
-        "--openai-base-url",
-        "--openai-api-key",
-    };
-
     public ReplayArguments Parse(
         string[] args,
         SqloomApplicationManifest manifest,
@@ -53,11 +25,7 @@ internal sealed class ReplayArgumentParser
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
 
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Replay,
-            SupportedSwitches,
-            ValueSwitches);
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Replay);
 
         var replayProfile = manifest.ReplayProfile;
         var openApiPath = openApiPathOverride

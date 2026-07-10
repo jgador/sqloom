@@ -31,27 +31,23 @@ internal sealed class HostConsoleWriter
     public void PrintUsage()
     {
         Console.WriteLine("Sqloom host usage:");
-        Console.WriteLine("  --help");
-        Console.WriteLine("  --version");
-        Console.WriteLine("  init [--agent codex|claude|copilot|all] [--overwrite]");
-        Console.WriteLine("    Init scaffolds the embedded sqloom-harness agent skill into the selected repository agent location. Run it from a Git repository root.");
-        Console.WriteLine("  [--debug] observe [<path>] --read-only-connection-string <connection-string> [options]");
-        Console.WriteLine("  [--debug] tune <path> [--read-only-connection-string <connection-string>] [options]");
-        Console.WriteLine("  [--debug] replay <path> [options]");
-        Console.WriteLine("  [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [options]");
-        Console.WriteLine("  [--debug] advise --replay-artifact-dir <path> [options]");
-        Console.WriteLine(
-            "  [--debug] observe [<path>] [--dotnet-command <command>] [--no-build] --read-only-connection-string <connection-string> [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--json-output-file <path>] [--app-only] [--show-classification]");
+        foreach (var option in CommandCatalog.ToolOptions)
+        {
+            Console.WriteLine($"  {option.Syntax}");
+        }
+
+        foreach (var command in CommandCatalog.Commands)
+        {
+            Console.WriteLine($"  {command.Usage}");
+            Console.WriteLine($"    {command.Description}");
+        }
+
         Console.WriteLine("    --app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.");
-        Console.WriteLine(
-            "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] [--read-only-connection-string <connection-string>] [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] [--replay-data-agent off|auto|required] [--replay-data-agent-model <id>] --model-provider openai --openai-api-key <key> [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
         Console.WriteLine("    Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
         Console.WriteLine("    Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string. When no DACPAC override or harness manifest DACPAC is available, tune exports a DACPAC from the command-line read-only connection before replay and reuses it for advice schema extraction.");
         Console.WriteLine("    Use --replay-data-agent auto or required with --openai-api-key to let Microsoft Agent Framework fill missing replay path/query/header/body values.");
         Console.WriteLine("    --sqlserver-dacpac-file and --sqlserver-seed-sql-file are replay bootstrap overrides; the replay data agent does not generate seed SQL.");
         Console.WriteLine("    When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.");
-        Console.WriteLine(
-            "  [--debug] replay <path> [--dotnet-command <command>] [--no-build] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] [--replay-data-agent off|auto|required] [--replay-data-agent-model <id>] [--openai-api-key <key>] [--openai-base-url <url>]");
         Console.WriteLine("    Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.");
         Console.WriteLine("    Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.");
         Console.WriteLine("    Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.");
@@ -61,11 +57,7 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("    The replay data agent is replay-only. When enabled, it requires --openai-api-key, uses Microsoft Agent Framework, and writes replay-data-prep.json.");
         Console.WriteLine("    Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".");
         Console.WriteLine("    Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.");
-        Console.WriteLine(
-            "  [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [--json-output-file <path>]");
         Console.WriteLine("    Correlation resolves statement_sql_handle against captured replay SQL, then writes query-store-correlation.json under the replay artifact directory by default.");
-        Console.WriteLine(
-            "  [--debug] advise --replay-artifact-dir <path> [--query-store-correlation-file <path>] [--json-output-file <path>] --model-provider openai --openai-api-key <key> [--read-only-connection-string <connection-string>] [--sqlserver-dacpac-file <path>] [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
         Console.WriteLine("    Advice derives operation-level tuning guidance from query-store-correlation.json plus SQL Server schema extracted from a DACPAC, then writes tuning-advice.json, sql-tuning-proposal.json, and sql-tuning-proposal.sql under the replay artifact directory by default.");
         Console.WriteLine("    OpenAI advice requires --model-provider openai, --openai-api-key, and a schema source: --sqlserver-schema-file, --sqlserver-dacpac-file, or --read-only-connection-string.");
         Console.WriteLine("    Use --debug to print per-stage diagnostics to stderr. With advise, debug prints the redacted OpenAI request and response payloads.");
@@ -79,7 +71,7 @@ internal sealed class HostConsoleWriter
     public void PrintNoCommandHint()
     {
         Console.WriteLine("Use tune <path> to start the harness and run the full replay, observe, correlate, and advise workflow in one command.");
-        Console.WriteLine("Use init to scaffold the sqloom-harness agent skill into this repository.");
+        Console.WriteLine("Use init to scaffold the sqloom agent skill into this repository.");
         Console.WriteLine("Use observe to capture a readonly SQL Server or Azure SQL Query Store snapshot.");
         Console.WriteLine("Use replay <path> to execute OpenAPI-driven in-process ASP.NET Core replays explicitly.");
         Console.WriteLine("Standalone replay accepts a harness project, harness assembly, solution, solution filter, or directory path immediately after the replay verb.");
@@ -95,7 +87,7 @@ internal sealed class HostConsoleWriter
 
     public void PrintInitResult(InitResult result)
     {
-        Console.WriteLine($"Scaffolded sqloom-harness skill for agent selection '{result.AgentSelection}' in {result.RepositoryRoot}.");
+        Console.WriteLine($"Scaffolded sqloom skill for agent selection '{result.AgentSelection}' in {result.RepositoryRoot}.");
         foreach (var file in result.Files)
         {
             Console.WriteLine($"- {file.Status.ToString().ToLowerInvariant()}: {file.Path}");

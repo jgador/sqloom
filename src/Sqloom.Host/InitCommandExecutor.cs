@@ -12,13 +12,13 @@ namespace Sqloom.Host;
 internal sealed class InitCommandExecutor
 {
     private const string DefaultAgent = "codex";
-    private const string ResourcePrefix = "Sqloom.Host.InitAssets/skills/sqloom-harness/";
+    private const string ResourcePrefix = "Sqloom.Host.InitAssets/skills/sqloom/";
 
     private static readonly InitAgentTarget[] AgentTargets =
     [
-        new("codex", ".agents/skills/sqloom-harness"),
-        new("claude", ".claude/skills/sqloom-harness"),
-        new("copilot", ".github/skills/sqloom-harness"),
+        new("codex", ".agents/skills/sqloom"),
+        new("claude", ".claude/skills/sqloom"),
+        new("copilot", ".github/skills/sqloom"),
     ];
 
     private readonly Assembly _assembly;

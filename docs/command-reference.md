@@ -31,7 +31,7 @@ sqloom [--debug] advise --replay-artifact-dir <path> [options]
 
 ## `init`
 
-Use `init` from a Git repository root to scaffold Sqloom's embedded `sqloom-harness` agent skill. The command requires the current directory to contain a `.git` directory or file.
+Use `init` from a Git repository root to scaffold Sqloom's embedded `sqloom` agent skill. The command requires the current directory to contain a `.git` directory or file.
 
 ```powershell
 sqloom init
@@ -44,9 +44,9 @@ Default agent: `codex`.
 
 | Agent | Target root |
 | --- | --- |
-| `codex` | `.agents/skills/sqloom-harness/` |
-| `claude` | `.claude/skills/sqloom-harness/` |
-| `copilot` | `.github/skills/sqloom-harness/` |
+| `codex` | `.agents/skills/sqloom/` |
+| `claude` | `.claude/skills/sqloom/` |
+| `copilot` | `.github/skills/sqloom/` |
 | `all` | all target roots |
 
 `init` creates missing directories, leaves identical files unchanged, and refuses to overwrite changed existing files unless `--overwrite` is supplied.

@@ -35,8 +35,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="..\..\.agents\skills\sqloom-harness\**\*">
-      <LogicalName>Sqloom.Host.InitAssets/skills/sqloom-harness/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    <EmbeddedResource Include="..\..\.agents\skills\sqloom\**\*">
+      <LogicalName>Sqloom.Host.InitAssets/skills/sqloom/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
   </ItemGroup>
 </Project>

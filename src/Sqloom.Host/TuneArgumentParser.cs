@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
 using Sqloom.Testing;
@@ -12,52 +13,6 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class TuneArgumentParser
 {
-    private static readonly HashSet<string> SupportedSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--read-only-connection-string",
-        "--lookback-hours",
-        "--max-plans",
-        "--max-waits",
-        "--command-timeout-seconds",
-        "--app-only",
-        "--show-classification",
-        "--openapi-file",
-        "--sqlserver-dacpac-file",
-        "--sqlserver-seed-sql-file",
-        "--artifact-dir",
-        "--max-operations",
-        "--target",
-        "--replay-data-agent",
-        "--replay-data-agent-model",
-        "--model-provider",
-        "--sqlserver-schema-file",
-        "--openai-model",
-        "--openai-base-url",
-        "--openai-api-key",
-    };
-
-    private static readonly HashSet<string> ValueSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--read-only-connection-string",
-        "--lookback-hours",
-        "--max-plans",
-        "--max-waits",
-        "--command-timeout-seconds",
-        "--openapi-file",
-        "--sqlserver-dacpac-file",
-        "--sqlserver-seed-sql-file",
-        "--artifact-dir",
-        "--max-operations",
-        "--target",
-        "--replay-data-agent",
-        "--replay-data-agent-model",
-        "--model-provider",
-        "--sqlserver-schema-file",
-        "--openai-model",
-        "--openai-base-url",
-        "--openai-api-key",
-    };
-
     private static readonly HashSet<string> ObserveSwitches = new(StringComparer.OrdinalIgnoreCase)
     {
         "--lookback-hours",
@@ -117,11 +72,7 @@ internal sealed class TuneArgumentParser
     {
         ArgumentNullException.ThrowIfNull(manifest);
 
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Tune,
-            SupportedSwitches,
-            ValueSwitches);
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Tune);
 
         var validationPath = Path.Combine(
             currentDirectory,
@@ -164,11 +115,7 @@ internal sealed class TuneArgumentParser
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
 
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Tune,
-            SupportedSwitches,
-            ValueSwitches);
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Tune);
 
         var workflowArtifactDir = workflowArtifactDirOverride
             ?? GetWorkflowArtifactDir(args, currentDirectory);
@@ -263,7 +210,9 @@ internal sealed class TuneArgumentParser
                 continue;
             }
 
-            var hasValue = ValueSwitches.Contains(argument);
+            var hasValue = CommandCatalog.GetRequired(HostCommandKind.Tune).Options
+                .Any(option => option.TakesValue
+                    && string.Equals(option.Name, argument, StringComparison.OrdinalIgnoreCase));
             if (!includedSwitches.Contains(argument))
             {
                 if (hasValue)

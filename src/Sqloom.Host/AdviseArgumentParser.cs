@@ -10,43 +10,11 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class AdviseArgumentParser
 {
-    private static readonly HashSet<string> SupportedSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--replay-artifact-dir",
-        "--query-store-correlation-file",
-        "--read-only-connection-string",
-        "--sqlserver-schema-file",
-        "--sqlserver-dacpac-file",
-        "--json-output-file",
-        "--model-provider",
-        "--openai-model",
-        "--openai-base-url",
-        "--openai-api-key",
-    };
-
-    private static readonly HashSet<string> ValueSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--replay-artifact-dir",
-        "--query-store-correlation-file",
-        "--read-only-connection-string",
-        "--sqlserver-schema-file",
-        "--sqlserver-dacpac-file",
-        "--json-output-file",
-        "--model-provider",
-        "--openai-model",
-        "--openai-base-url",
-        "--openai-api-key",
-    };
-
     public AdviseArguments Parse(
         string[] args,
         string? currentDirectory = null)
     {
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Advise,
-            SupportedSwitches,
-            ValueSwitches);
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Advise);
 
         var replayArtifactDirectory = Path.GetFullPath(
             CommandArgumentSupport.GetRequiredArgumentValue(args, "--replay-artifact-dir"));

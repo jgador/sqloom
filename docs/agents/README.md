@@ -15,3 +15,4 @@ Keep user-facing product commands, quick starts, and workflows in [README.md](..
 - Update [.codex/atlas/repo-map.md](../../.codex/atlas/repo-map.md) when durable ownership, runtime flow, artifact routing, or source-to-test routing changes.
 - Update [AGENTS.md](../../AGENTS.md) and the relevant [.codex/agents/](../../.codex/agents/) TOML prompts in the same change when Atlas workflow changes.
 - Do not duplicate the full architecture docs here; link agents to the canonical source instead.
+- Sqloom command metadata is authored in `src/Sqloom.Host/CommandCatalog.cs`. Regenerate the Sqloom skill command reference with `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --write` and verify it with the corresponding `--check` command.

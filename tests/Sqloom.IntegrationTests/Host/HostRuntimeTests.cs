@@ -381,7 +381,7 @@ public sealed class HostRuntimeTests
         }, currentDirectory);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Contains("init [--agent codex|claude|copilot|all] [--overwrite]", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("init [--agent <codex|claude|copilot|all>] [--overwrite]", result.StdOut, StringComparison.Ordinal);
         Assert.Equal(string.Empty, result.StdErr);
     }
 
@@ -408,9 +408,9 @@ public sealed class HostRuntimeTests
             }, currentDirectory);
 
             Assert.Equal(0, result.ExitCode);
-            Assert.Contains(".github/skills/sqloom-harness/SKILL.md", result.StdOut, StringComparison.Ordinal);
+            Assert.Contains(".github/skills/sqloom/SKILL.md", result.StdOut, StringComparison.Ordinal);
             Assert.Equal(string.Empty, result.StdErr);
-            Assert.True(File.Exists(Path.Combine(currentDirectory, ".github", "skills", "sqloom-harness", "SKILL.md")));
+            Assert.True(File.Exists(Path.Combine(currentDirectory, ".github", "skills", "sqloom", "SKILL.md")));
         }
         finally
         {
