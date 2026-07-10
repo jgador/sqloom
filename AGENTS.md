@@ -150,4 +150,4 @@ Recent history mixes short imperative subjects with scoped prefixes such as `fea
 
 ## Security & Configuration Tips
 
-Do not commit secrets. Pass `OPENAI_API_KEY` through the environment. Prefer `localhost` for sample SQL Server connection strings unless the task explicitly targets another host. Do not hand-edit generated snapshots, replay outputs, or SQL proposal artifacts unless the task is specifically about those generated files.
+Do not commit secrets. Do not introduce environment-variable reads or writes in runtime code unless the variable is explicitly whitelisted here. The whitelist is `OPENAI_API_KEY`, `ASPNETCORE_ENVIRONMENT`, and `PATH` (`Path` on Windows); use normal configuration and explicit parameters for all other values. Prefer `localhost` for sample SQL Server connection strings unless the task explicitly targets another host. Do not hand-edit generated snapshots, replay outputs, or SQL proposal artifacts unless the task is specifically about those generated files.
