@@ -20,8 +20,8 @@ public sealed class TuneArgumentParserTests
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var workflowRoot = Path.Combine(currentDirectory, "custom-tune-run");
-        var dacpacPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.dacpac");
-        var seedSqlPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.seed.sql");
+        var dacpacPath = Path.Combine(currentDirectory, "test-schema-source.dacpac");
+        var seedSqlPath = Path.Combine(currentDirectory, "test-seed.sql");
         var openApiPath = Path.Combine(currentDirectory, "openapi.json");
         var schemaPath = Path.Combine(currentDirectory, "manual.schema.sql");
         File.WriteAllText(dacpacPath, "sqloom");
@@ -239,7 +239,7 @@ public sealed class TuneArgumentParserTests
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
-        var dacpacPath = Path.Combine(currentDirectory, "AdventureWorksLT2025.dacpac");
+        var dacpacPath = Path.Combine(currentDirectory, "manifest-schema-source.dacpac");
         File.WriteAllText(dacpacPath, "sqloom");
         var manifest = new SqloomApplicationManifest
         {

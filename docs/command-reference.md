@@ -58,6 +58,7 @@ Use `tune` for the normal end-to-end workflow. It starts the harness session, ru
 ```powershell
 sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
   --target "GET /api/products/by-category" `
+  --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
   --model-provider openai `
   --openai-api-key $env:OPENAI_API_KEY `
   --openai-model "gpt-5.5" `
@@ -86,8 +87,8 @@ sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
 | `--app-only` | Filters the console view to App-classified Query Store entries and implies `--show-classification`. |
 | `--show-classification` | Prints classification kind, confidence, and reasons for displayed plans and waits. |
 | `--openapi-file <path>` | Overrides the app-owned OpenAPI document for this run. |
-| `--sqlserver-dacpac-file <path>` | Overrides the harness DACPAC for SQL Server replay and provides the preferred schema source for advice when `--sqlserver-schema-file` is not supplied. If tune has no DACPAC override or harness manifest DACPAC and the command line supplies `--read-only-connection-string`, Sqloom exports a DACPAC from that connection before replay and reuses it for advice. |
-| `--sqlserver-seed-sql-file <path>` | Overrides the SQL seed script applied after the effective replay DACPAC. The effective DACPAC can come from `--sqlserver-dacpac-file`, the harness manifest, or the DACPAC exported from the command-line read-only connection. |
+| `--sqlserver-dacpac-file <path>` | Overrides the SQL Server DACPAC schema source when `--sqlserver-schema-file` is not supplied. If tune has no DACPAC override or harness manifest DACPAC and the command line supplies `--read-only-connection-string`, Sqloom exports a DACPAC from that connection before replay and reuses it for advice. |
+| `--sqlserver-seed-sql-file <path>` | Passes a SQL seed script path to custom harnesses that implement post-DACPAC seed behavior. |
 | `--artifact-dir <path>` | Uses a custom workflow root. Default: `artifacts/sqloom/tune/tune-<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target "METHOD /path/template"` | Replays one exact operation. The method must be uppercase, with one space before a leading-slash route and no trailing slash. |
@@ -136,8 +137,8 @@ sqloom replay .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
 | Option | Description |
 | --- | --- |
 | `--openapi-file <path>` | Uses a different OpenAPI document instead of the harness manifest default. |
-| `--sqlserver-dacpac-file <path>` | Overrides the harness DACPAC for SQL Server replay. Sqloom does not build the DACPAC. |
-| `--sqlserver-seed-sql-file <path>` | Overrides the SQL seed script applied after the DACPAC. Requires `--sqlserver-dacpac-file`. |
+| `--sqlserver-dacpac-file <path>` | Passes a DACPAC path to the harness replay launch options. Sqloom does not build the DACPAC during `replay`. |
+| `--sqlserver-seed-sql-file <path>` | Passes a SQL seed script path to the harness replay launch options. Requires `--sqlserver-dacpac-file`. |
 | `--artifact-dir <path>` | Uses a custom replay output folder. Default: `artifacts/sqloom/replay/<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target "METHOD /path/template"` | Replays one exact operation such as `GET /api/products/by-category`. |
@@ -273,20 +274,23 @@ By default, `advise` writes these files under the replay artifact directory:
 
 Rollback SQL is helpful but optional in the OpenAI path. If the model omits `rollbackSqlScript`, Sqloom keeps the proposal, records a warning, and writes a placeholder rollback note in the `.sql` file.
 
-## Sample Harness Defaults
+## Sample Harness
 
 The sample harness at [tests/Sqloom.TestApp.Harness/Sqloom.TestApp.Harness.csproj](../tests/Sqloom.TestApp.Harness/Sqloom.TestApp.Harness.csproj) supplies:
 
 - app name: `Sqloom Test App`
 - OpenAPI document: [tests/Sqloom.TestApp/openapi.json](../tests/Sqloom.TestApp/openapi.json)
 - sample target: `GET /api/products/by-category`
-- DACPAC: [tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.dacpac](../tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.dacpac)
-- seed script: [tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.seed.sql](../tests/Sqloom.TestApp.Harness/AdventureWorksLT2025.seed.sql)
 
-Regenerate the sample seed script from a local `AdventureWorksLT2025` database on `localhost` with:
+The repository does not check in an `AdventureWorksLT2025` DACPAC or seed SQL file. For the SQL-backed sample workflow, restore `AdventureWorksLT2025` on your local SQL Server and pass that database through `--read-only-connection-string`. Sqloom exports `sqlserver-schema-source.dacpac` and extracts `sqlserver-schema.sql` into the run artifacts.
 
 ```powershell
-pwsh .\tests\Sqloom.TestApp.Harness\Export-AdventureWorksLT2025SeedSql.ps1
+sqloom-local tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
+  --target "GET /api/products/by-category" `
+  --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
+  --replay-data-agent required `
+  --model-provider openai `
+  --openai-api-key $env:OPENAI_API_KEY
 ```
 
 ## SQL Server Permissions

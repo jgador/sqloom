@@ -46,13 +46,13 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("    Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
         Console.WriteLine("    Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string. When no DACPAC override or harness manifest DACPAC is available, tune exports a DACPAC from the command-line read-only connection before replay and reuses it for advice schema extraction.");
         Console.WriteLine("    Use --replay-data-agent auto or required with --openai-api-key to let Microsoft Agent Framework fill missing replay path/query/header/body values.");
-        Console.WriteLine("    --sqlserver-dacpac-file and --sqlserver-seed-sql-file are replay bootstrap overrides; the replay data agent does not generate seed SQL.");
+        Console.WriteLine("    --sqlserver-dacpac-file and --sqlserver-seed-sql-file are harness replay launch overrides; the replay data agent does not generate DACPACs or seed SQL.");
         Console.WriteLine("    When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.");
         Console.WriteLine("    Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.");
         Console.WriteLine("    Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.");
         Console.WriteLine("    Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.");
         Console.WriteLine("    If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.");
-        Console.WriteLine("    SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; --sqlserver-dacpac-file and --sqlserver-seed-sql-file override them.");
+        Console.WriteLine("    SQL Server-backed replay harnesses can consume app-owned DACPAC and seed launch options when they implement that setup.");
         Console.WriteLine("    The replay data agent fills HTTP replay inputs only; it does not generate DACPACs or seed SQL.");
         Console.WriteLine("    The replay data agent is replay-only. When enabled, it requires --openai-api-key, uses Microsoft Agent Framework, and writes replay-data-prep.json.");
         Console.WriteLine("    Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".");
@@ -76,7 +76,7 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("Use replay <path> to execute OpenAPI-driven in-process ASP.NET Core replays explicitly.");
         Console.WriteLine("Standalone replay accepts a harness project, harness assembly, solution, solution filter, or directory path immediately after the replay verb.");
         Console.WriteLine("Sqloom resolves the target to exactly one public non-abstract ISqloomApplication implementation.");
-        Console.WriteLine("SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; CLI paths override them.");
+        Console.WriteLine("SQL Server-backed replay harnesses can consume DACPAC and seed launch options when they implement that setup.");
         Console.WriteLine("Replay target selection uses --target \"METHOD /path/template\" when you need one exact operation.");
         Console.WriteLine("Use correlate to map replay SQL back to captured Query Store rows.");
         Console.WriteLine("Use advise to turn a correlation artifact into operation-level tuning guidance.");

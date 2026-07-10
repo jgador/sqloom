@@ -75,8 +75,8 @@ sqloom [--debug] tune <path> [--dotnet-command <command>] [--no-build] [--read-o
 - `--app-only` - Filters the console view to App-classified entries and implies --show-classification.
 - `--show-classification` - Prints classification details for displayed plans and waits.
 - `--openapi-file <path>` - Overrides the app-owned OpenAPI document.
-- `--sqlserver-dacpac-file <path>` - Overrides the harness DACPAC for replay and advice schema extraction.
-- `--sqlserver-seed-sql-file <path>` - Overrides the SQL seed script applied after the effective DACPAC.
+- `--sqlserver-dacpac-file <path>` - Overrides the DACPAC schema source used by replay launch options and advice extraction.
+- `--sqlserver-seed-sql-file <path>` - Passes a SQL seed script path to custom harness replay launch options.
 - `--artifact-dir <path>` - Uses a custom tune workflow root. Default: `artifacts/sqloom/tune/tune-<timestamp>`.
 - `--max-operations <count>` - Caps replayed operations after filtering. Default: `25`.
 - `--target <METHOD /path/template>` - Replays one exact operation in the form METHOD /path/template.
@@ -107,8 +107,8 @@ sqloom [--debug] replay <path> [--dotnet-command <command>] [--no-build] [--open
 #### Command options
 
 - `--openapi-file <path>` - Overrides the app-owned OpenAPI document.
-- `--sqlserver-dacpac-file <path>` - Overrides the harness DACPAC for SQL Server replay.
-- `--sqlserver-seed-sql-file <path>` - Overrides the SQL seed script applied after the DACPAC.
+- `--sqlserver-dacpac-file <path>` - Passes a DACPAC path to harness replay launch options.
+- `--sqlserver-seed-sql-file <path>` - Passes a SQL seed script path to harness replay launch options.
 - `--artifact-dir <path>` - Uses a custom replay output directory. Default: `artifacts/sqloom/replay/<timestamp>`.
 - `--max-operations <count>` - Caps replayed operations after filtering. Default: `25`.
 - `--target <METHOD /path/template>` - Replays one exact operation in the form METHOD /path/template.

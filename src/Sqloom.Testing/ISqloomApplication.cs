@@ -23,5 +23,7 @@ public sealed class SqloomApplicationContext
 {
     public string CurrentDirectory { get; init; } = string.Empty;
 
+    public string? ApplicationConnectionString { get; init; }
+
     public ReplayLaunchOptions ReplayLaunchOptions { get; init; } = new();
 }

@@ -16,7 +16,7 @@ namespace Sqloom.Host.Tests;
 [Collection("ConsoleHostRuntime")]
 public sealed class HostRuntimeTests
 {
-    [RequiresDockerFact]
+    [Fact]
     [Trait("Category", "Integration")]
     public async Task WithReplayProjectWithoutBuild_ReportsMissingQueryData()
     {
@@ -43,7 +43,7 @@ public sealed class HostRuntimeTests
         AssertReplayRequiresPreparedQueryData(result);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     [Trait("Category", "Integration")]
     public async Task WithReplayDebug_ReportsMissingQueryData()
     {
@@ -74,85 +74,6 @@ public sealed class HostRuntimeTests
             $"target_filter={CatalogScenario.OperationKey}",
             result.StdErr,
             StringComparison.Ordinal);
-    }
-
-    [RequiresDockerFact]
-    [Trait("Category", "Integration")]
-    public async Task WithSqlServerDacpacFile_ReportsMissingQueryData()
-    {
-        var projectPath = SqloomTestAppPaths.GetProjectPath();
-        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
-        var currentDirectory = Directory.GetCurrentDirectory();
-
-        var result = await CaptureConsoleAsync(static async state =>
-        {
-            return await HostRuntime
-                .RunAsync(
-                    [
-                        "replay",
-                        state.ProjectPath,
-                        "--dotnet-command",
-                        "dotnet",
-                        "--no-build",
-                        "--sqlserver-dacpac-file",
-                        state.DacpacPath,
-                        "--target",
-                        CatalogScenario.OperationKey,
-                    ],
-                    state.CurrentDirectory)
-                .ConfigureAwait(false);
-        }, (ProjectPath: projectPath, DacpacPath: dacpacPath, CurrentDirectory: currentDirectory))
-            .ConfigureAwait(false);
-
-        AssertReplayRequiresPreparedQueryData(result);
-    }
-
-    [RequiresDockerFact]
-    [Trait("Category", "Integration")]
-    public async Task WithSqlSeedScript_ReportsMissingQueryData()
-    {
-        var projectPath = SqloomTestAppPaths.GetProjectPath();
-        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
-        var currentDirectory = Directory.GetCurrentDirectory();
-        var tempDirectory = CreateTempDir();
-        var seedScriptPath = Path.Combine(tempDirectory, "AdventureWorksLT2025.seed.sql");
-        File.WriteAllText(
-            seedScriptPath,
-            SqloomTestAppSeedScripts.CreateCustomSeedScript());
-
-        try
-        {
-            var result = await CaptureConsoleAsync(static async state =>
-            {
-                return await HostRuntime
-                    .RunAsync(
-                        [
-                            "replay",
-                            state.ProjectPath,
-                            "--dotnet-command",
-                            "dotnet",
-                            "--no-build",
-                            "--sqlserver-dacpac-file",
-                            state.DacpacPath,
-                            "--sqlserver-seed-sql-file",
-                            state.SeedScriptPath,
-                            "--target",
-                            CatalogScenario.OperationKey,
-                        ],
-                        state.CurrentDirectory)
-                    .ConfigureAwait(false);
-            }, (ProjectPath: projectPath, DacpacPath: dacpacPath, SeedScriptPath: seedScriptPath, CurrentDirectory: currentDirectory))
-                .ConfigureAwait(false);
-
-            AssertReplayRequiresPreparedQueryData(result);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDirectory))
-            {
-                Directory.Delete(tempDirectory, recursive: true);
-            }
-        }
     }
 
     [Fact]

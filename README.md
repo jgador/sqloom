@@ -8,7 +8,7 @@ Most users start with `sqloom tune`. It runs the full workflow:
 replay -> observe -> correlate -> advise
 ```
 
-This repo includes a sample app and harness for `GET /api/products/by-category`. The quick start uses the sample harness DACPAC and seed defaults, then points Sqloom at a read-only Query Store connection so the Query Store source is explicit.
+This repo includes a sample app and harness for `GET /api/products/by-category`. The SQL-backed quick start expects `AdventureWorksLT2025` to exist on the local SQL Server instance; Sqloom exports the schema DACPAC from the supplied connection string during the run.
 
 ![Sqloom tuning pipeline diagram](docs/images/sqloom-diagram.png)
 
@@ -29,7 +29,7 @@ dotnet tool update --global sqloom
 
 ## Quick Start
 
-Set `OPENAI_API_KEY`, then run the sample `tune` workflow from the repo root. The sample harness supplies replay DACPAC and seed defaults, so the command only needs the harness project, target operation, read-only Query Store connection, replay-data agent mode, and OpenAI settings.
+Set `OPENAI_API_KEY`, make sure `AdventureWorksLT2025` is restored on your local SQL Server, then run the sample `tune` workflow from the repo root. The connection string is used for the sample app replay, Query Store reads, and DACPAC/schema extraction.
 
 ```powershell
 sqloom-local tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
@@ -42,7 +42,7 @@ sqloom-local tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
  --debug
 ```
 
-That command starts the sample harness, uses the harness DACPAC and seed SQL defaults to prepare the replay database, runs the selected API request, captures the SQL it caused, reads Query Store through the supplied read-only connection string, correlates the captured SQL to Query Store rows, and asks OpenAI for operation-level tuning advice. If `tune` receives a command-line read-only connection string and no `--sqlserver-dacpac-file` or harness manifest DACPAC is available, Sqloom exports `sqlserver-schema-source.dacpac` before replay and reuses it for advice schema extraction. `--sqlserver-dacpac-file` and `--sqlserver-seed-sql-file` remain replay bootstrap overrides, and `--sqlserver-schema-file` remains the expert advice-only schema SQL override. `--debug` prints stage details to `stderr`, including redacted OpenAI request and response details during the advice step.
+That command starts the sample harness against the local `AdventureWorksLT2025` database, runs the selected API request, captures the SQL it caused, reads Query Store through the supplied connection string, correlates the captured SQL to Query Store rows, and asks OpenAI for operation-level tuning advice. Because no sample DACPAC is checked in, `tune` exports `replay/sqlserver-schema-source.dacpac` from the connection string and extracts `replay/sqlserver-schema.sql` for advice. `--sqlserver-dacpac-file` remains an expert schema-source override, `--sqlserver-seed-sql-file` remains available for custom harnesses that consume it, and `--sqlserver-schema-file` remains the advice-only schema SQL override. `--debug` prints stage details to `stderr`, including redacted OpenAI request and response details during the advice step.
 
 The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 

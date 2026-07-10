@@ -81,6 +81,7 @@ internal sealed class TuneCommand
         var applicationContext = new SqloomApplicationContext
         {
             CurrentDirectory = context.CurrentDirectory,
+            ApplicationConnectionString = commandLineReadOnlyConnectionString,
             ReplayLaunchOptions = launchOptions,
         };
 

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Json;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -21,7 +20,6 @@ using Sqloom.Core.Execution;
 using Sqloom.TestApp.Harness;
 using Sqloom.Testing;
 using Xunit;
-using SqloomTestApp = global::Sqloom.TestApp;
 
 namespace Sqloom.Host.Tests;
 
@@ -32,61 +30,21 @@ namespace Sqloom.Host.Tests;
 public sealed class HostCatalogAdviceTests
 {
     private const string DefaultConnectionKey = "ConnectionStrings:DefaultConnection";
+    private const string LocalhostConnectionString =
+        "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True";
     private static readonly JsonSerializerOptions _correlationSerializerOptions = CreateCorrelationSerializerOptions();
 
-    [RequiresDockerFact]
+    [Fact(Explicit = true)]
     [Trait("Category", "Integration")]
-    public async Task WithSqlServerDacpac_SeedsByCategoryEndpoint()
-    {
-        ReplayHostFactory replayHostFactory = new();
-        var replayHost = await replayHostFactory
-            .CreateAsync(
-                new ReplayLaunchOptions
-                {
-                    DacpacPath = SqloomTestAppPaths.GetDacpacPath(),
-                })
-            .ConfigureAwait(false);
-
-        await using (replayHost.ConfigureAwait(false))
-        {
-            using var response = await replayHost.Client
-                .GetAsync(CatalogScenario.CreateRequestPath())
-                .ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-
-            var products = await response.Content
-                .ReadFromJsonAsync<List<SqloomTestApp.ProductResponse>>()
-                .ConfigureAwait(false);
-
-            Assert.NotNull(products);
-            Assert.True(products.Count > 300, "Expected the seeded hot category to return a large filtered result set.");
-            Assert.All(
-                products,
-                product => Assert.StartsWith("HOT-", product.ProductNumber, StringComparison.Ordinal));
-            Assert.All(
-                products,
-                product => Assert.True(
-                    product.ListPrice >= CatalogScenario.ReplayMinPrice,
-                    $"Expected all list prices to be >= {CatalogScenario.ReplayMinPrice}, but found {product.ListPrice}."));
-            AssertSortedByListPriceDescending(products);
-        }
-    }
-
-    [RequiresDockerFact]
-    [Trait("Category", "Integration")]
+    [Trait("Category", "LocalSqlServer")]
     [Trait("Category", "OpenAI")]
     public async Task HostRuntime_WithOpenAIAdviceReadOnlyConnection_ExportsDacpacAndPersistsByCategoryProposal()
     {
         var artifactDirectory = CreateTempDir();
-        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
         var currentDirectory = Directory.GetCurrentDirectory();
-        QueryStoreEnabledReplayHostFactory replayHostFactory = new(
-            new ReplayLaunchOptions
-            {
-                DacpacPath = dacpacPath,
-            });
+        QueryStoreEnabledReplayHostFactory replayHostFactory = new(LocalhostConnectionString);
 
-        await using (replayHostFactory.ConfigureAwait(false))
+        await using (replayHostFactory.ConfigureAwait(true))
         {
             try
             {
@@ -94,10 +52,7 @@ public sealed class HostCatalogAdviceTests
                 var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
                 {
                     CurrentDirectory = currentDirectory,
-                    ReplayLaunchOptions = new ReplayLaunchOptions
-                    {
-                        DacpacPath = dacpacPath,
-                    },
+                    ApplicationConnectionString = LocalhostConnectionString,
                 });
                 var replayProfile = manifest.ReplayProfile;
                 EndpointReplayRunner replayRunner = new();
@@ -110,10 +65,7 @@ public sealed class HostCatalogAdviceTests
                             ReplayArtifactDir = artifactDirectory,
                             ReplayProfile = replayProfile,
                             ReplayHostFactory = replayHostFactory,
-                            ReplayLaunchOptions = new ReplayLaunchOptions
-                            {
-                                DacpacPath = dacpacPath,
-                            },
+                            ReplayLaunchOptions = new ReplayLaunchOptions(),
                             ReplayDataAgentOptions = new ReplayDataAgentOptions
                             {
                                 Mode = ReplayDataAgentMode.Required,
@@ -122,7 +74,7 @@ public sealed class HostCatalogAdviceTests
                             ReplayDataPreparer = new StaticCatalogReplayDataPreparer(),
                             TargetFilter = CatalogScenario.OperationKey,
                         })
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(true);
 
                 var replayOperation = Assert.Single(replayResult.Results);
                 Assert.Equal("replayed", replayOperation.Status);
@@ -138,21 +90,21 @@ public sealed class HostCatalogAdviceTests
                 var applicationConnectionString = replayHostFactory.ApplicationConnectionString
                     ?? throw new InvalidOperationException("The retained Sqloom replay host did not expose an application connection string.");
 
-                await WarmQueryStoreAsync(replayHostFactory.Client).ConfigureAwait(false);
+                await WarmQueryStoreAsync(replayHostFactory.Client).ConfigureAwait(true);
 
                 var correlationReport = await CaptureCorrelationWithRetriesAsync(
                         currentDirectory,
                         artifactDirectory,
                         applicationConnectionString)
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(true);
                 Assert.True(
                     HasMatchedProductCorrelation(correlationReport),
                     FormatCorrelationFailureMessage(correlationReport));
 
                 var fakeOpenAiServer = await FakeOpenAiServer
                     .StartAsync(CreateOpenAiAdviceResponse())
-                    .ConfigureAwait(false);
-                await using (fakeOpenAiServer.ConfigureAwait(false))
+                    .ConfigureAwait(true);
+                await using (fakeOpenAiServer.ConfigureAwait(true))
                 {
                     var adviseResult = await RunHostRuntimeAsync(
                             [
@@ -169,7 +121,7 @@ public sealed class HostCatalogAdviceTests
                                 fakeOpenAiServer.BaseUrl.AbsoluteUri,
                             ],
                             currentDirectory)
-                        .ConfigureAwait(false);
+                        .ConfigureAwait(true);
                     AssertCommandSucceeded("advise", adviseResult.ExitCode, adviseResult.StdOut, adviseResult.StdErr);
                     Assert.DoesNotContain(
                         "proposal kind 'nonclustered_index' is not locally validated",
@@ -182,14 +134,14 @@ public sealed class HostCatalogAdviceTests
 
                     var adviceReport = await ReadAdviceReportAsync(
                             ArtifactLayout.GetReplayTuningAdvicePath(artifactDirectory))
-                        .ConfigureAwait(false);
+                        .ConfigureAwait(true);
                     var proposalReport = await ReadProposalReportAsync(
                             ArtifactLayout.GetSqlProposalPath(artifactDirectory))
-                        .ConfigureAwait(false);
+                        .ConfigureAwait(true);
                     var proposalScript = await File
                         .ReadAllTextAsync(
                             ArtifactLayout.GetSqlProposalScriptPath(artifactDirectory))
-                        .ConfigureAwait(false);
+                        .ConfigureAwait(true);
                     Assert.True(
                         string.Equals(adviceReport.ModelProvider, "openai", StringComparison.OrdinalIgnoreCase),
                         $"Expected an OpenAI advice report, but model provider was '{adviceReport.ModelProvider}'.");
@@ -220,7 +172,7 @@ public sealed class HostCatalogAdviceTests
                         $"Expected exported DACPAC '{generatedDacpacPath}' to be non-empty.");
                     var generatedSchemaSql = await File
                         .ReadAllTextAsync(generatedSchemaPath)
-                        .ConfigureAwait(false);
+                        .ConfigureAwait(true);
                     Assert.True(
                         ContainsProductTableReference(generatedSchemaSql),
                         $"Expected generated schema to contain SalesLT.Product, but schema started with:{Environment.NewLine}{Truncate(generatedSchemaSql)}");
@@ -239,21 +191,24 @@ public sealed class HostCatalogAdviceTests
         }
     }
 
-    [RequiresDockerFact]
+    [Fact(Explicit = true)]
     [Trait("Category", "Integration")]
+    [Trait("Category", "LocalSqlServer")]
     [Trait("Category", "OpenAI")]
-    public async Task HostRuntime_WithTuneManifestDacpac_GeneratesSchema()
+    public async Task HostRuntime_WithTuneReadOnlyConnection_ExportsDacpacAndGeneratesSchema()
     {
         var artifactDirectory = CreateTempDir();
         var currentDirectory = Directory.GetCurrentDirectory();
         var fakeOpenAiServer = await FakeOpenAiServer
             .StartAsync(CreateOpenAiAdviceResponse())
-            .ConfigureAwait(false);
+            .ConfigureAwait(true);
 
-        await using (fakeOpenAiServer.ConfigureAwait(false))
+        await using (fakeOpenAiServer.ConfigureAwait(true))
         {
             try
             {
+                await EnableQueryStoreAsync(LocalhostConnectionString).ConfigureAwait(true);
+
                 var tuneResult = await RunHostRuntimeAsync(
                         [
                             "tune",
@@ -265,21 +220,29 @@ public sealed class HostCatalogAdviceTests
                             "openai",
                             "--openai-api-key",
                             "sqloom-test-key",
+                            "--read-only-connection-string",
+                            LocalhostConnectionString,
                             "--openai-base-url",
                             fakeOpenAiServer.BaseUrl.AbsoluteUri,
                         ],
                         currentDirectory,
                         new StaticReplayDataSampleApplication())
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(true);
                 AssertCommandSucceeded("tune", tuneResult.ExitCode, tuneResult.StdOut, tuneResult.StdErr);
 
                 var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDir(artifactDirectory);
                 var generatedSchemaPath = ArtifactLayout.GetSqlServerSchemaPath(replayArtifactDirectory);
                 Assert.True(File.Exists(generatedSchemaPath), $"Expected generated schema at '{generatedSchemaPath}'.");
+                var generatedDacpacPath = ArtifactLayout.GetSqlServerDacpacPath(replayArtifactDirectory);
+                FileInfo generatedDacpac = new(generatedDacpacPath);
+                Assert.True(generatedDacpac.Exists, $"Expected exported DACPAC at '{generatedDacpacPath}'.");
+                Assert.True(
+                    generatedDacpac.Length > 0,
+                    $"Expected exported DACPAC '{generatedDacpacPath}' to be non-empty.");
 
                 var generatedSchemaSql = await File
                     .ReadAllTextAsync(generatedSchemaPath)
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(true);
                 Assert.True(
                     ContainsProductTableReference(generatedSchemaSql),
                     $"Expected generated schema to contain SalesLT.Product, but schema started with:{Environment.NewLine}{Truncate(generatedSchemaSql)}");
@@ -325,7 +288,7 @@ public sealed class HostCatalogAdviceTests
                         snapshotPath,
                     ],
                     currentDirectory)
-                .ConfigureAwait(false);
+                        .ConfigureAwait(true);
             AssertCommandSucceeded("observe", observeResult.ExitCode, observeResult.StdOut, observeResult.StdErr);
 
             var correlateResult = await RunHostRuntimeAsync(
@@ -339,7 +302,7 @@ public sealed class HostCatalogAdviceTests
                         applicationConnectionString,
                     ],
                     currentDirectory)
-                .ConfigureAwait(false);
+                        .ConfigureAwait(true);
             AssertCommandSucceeded("correlate", correlateResult.ExitCode, correlateResult.StdOut, correlateResult.StdErr);
 
             lastReport = await ReadCorrelationReportAsync(
@@ -536,7 +499,7 @@ public sealed class HostCatalogAdviceTests
                         state.Application,
                         state.Args,
                         state.CurrentDirectory)
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(true);
                 return new HostRuntimeCommandResult(
                     exitCode,
                     string.Empty,
@@ -669,16 +632,6 @@ public sealed class HostCatalogAdviceTests
         }
     }
 
-    private static void AssertSortedByListPriceDescending(IReadOnlyList<SqloomTestApp.ProductResponse> products)
-    {
-        for (var index = 1; index < products.Count; index++)
-        {
-            Assert.True(
-                products[index - 1].ListPrice >= products[index].ListPrice,
-                $"Expected descending list prices, but row {index - 1} had {products[index - 1].ListPrice} before {products[index].ListPrice}.");
-        }
-    }
-
     private static void AssertCommandSucceeded(
         string stageName,
         int exitCode,
@@ -759,13 +712,12 @@ public sealed class HostCatalogAdviceTests
     /// </summary>
     private sealed class QueryStoreEnabledReplayHostFactory : IReplayHostFactory, IAsyncDisposable
     {
-        private readonly ReplayHostFactory _inner = new();
-        private readonly ReplayLaunchOptions _launchOptions;
+        private readonly ReplayHostFactory _inner;
         private RetainedReplayHost? _retainedHost;
 
-        public QueryStoreEnabledReplayHostFactory(ReplayLaunchOptions launchOptions)
+        public QueryStoreEnabledReplayHostFactory(string applicationConnectionString)
         {
-            _launchOptions = launchOptions;
+            _inner = new ReplayHostFactory(applicationConnectionString);
         }
 
         public string? ApplicationConnectionString { get; private set; }
@@ -777,12 +729,8 @@ public sealed class HostCatalogAdviceTests
             ReplayLaunchOptions? launchOptions = null,
             CancellationToken cancellationToken = default)
         {
-            var effectiveLaunchOptions = launchOptions is null
-                || string.IsNullOrWhiteSpace(launchOptions.DacpacPath)
-                    ? _launchOptions
-                    : launchOptions;
             var replayHost = await _inner
-                .CreateAsync(effectiveLaunchOptions, cancellationToken)
+                .CreateAsync(launchOptions, cancellationToken)
                 .ConfigureAwait(false);
             var configuration = replayHost.Services.GetRequiredService<IConfiguration>();
             ApplicationConnectionString = configuration[DefaultConnectionKey]
