@@ -11,6 +11,9 @@ namespace Sqloom.Host.QueryStore;
 /// </summary>
 public sealed class ReadOnlySqlConnectionFactory
 {
+    /// <summary>
+    /// Creates a SQL Server connection builder and supplies Sqloom's application name when none is configured.
+    /// </summary>
     public SqlConnectionStringBuilder CreateBuilder(string readOnlyConnectionString)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(readOnlyConnectionString);
@@ -29,6 +32,9 @@ public sealed class ReadOnlySqlConnectionFactory
         return builder;
     }
 
+    /// <summary>
+    /// Opens a SQL Server connection from the normalized readonly connection string.
+    /// </summary>
     public async Task<SqlConnection> CreateOpenConnectionAsync(
         string readOnlyConnectionString,
         CancellationToken cancellationToken = default)

@@ -7,6 +7,9 @@ namespace Sqloom.Host;
 /// </summary>
 public static class Program
 {
+    /// <summary>
+    /// Runs the packaged Sqloom command-line tool and returns its process exit code.
+    /// </summary>
     public static async Task<int> Main(string[] args)
     {
         return await HostRuntime.RunAsync(args).ConfigureAwait(false);

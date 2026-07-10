@@ -10,11 +10,17 @@ namespace Sqloom.Host;
 /// </summary>
 public static class HostRuntime
 {
+    /// <summary>
+    /// Runs Sqloom with the process working directory and resolves the application harness from the command line.
+    /// </summary>
     public static Task<int> RunAsync(string[] args)
     {
         return RunAsync(args, Environment.CurrentDirectory);
     }
 
+    /// <summary>
+    /// Runs Sqloom from an explicit working directory and resolves the application harness from the command line.
+    /// </summary>
     public static async Task<int> RunAsync(
         string[] args,
         string currentDirectory)
@@ -26,6 +32,9 @@ public static class HostRuntime
             .ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Runs Sqloom against an application harness supplied by the caller.
+    /// </summary>
     public static Task<int> RunAsync(
         ISqloomApplication application,
         string[] args)
@@ -36,6 +45,9 @@ public static class HostRuntime
             Environment.CurrentDirectory);
     }
 
+    /// <summary>
+    /// Runs Sqloom against a caller-supplied application harness from an explicit working directory.
+    /// </summary>
     public static async Task<int> RunAsync(
         ISqloomApplication application,
         string[] args,

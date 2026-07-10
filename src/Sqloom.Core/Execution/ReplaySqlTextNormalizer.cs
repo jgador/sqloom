@@ -10,6 +10,9 @@ namespace Sqloom.Core.Execution;
 /// </summary>
 public static partial class ReplaySqlTextNormalizer
 {
+    /// <summary>
+    /// Normalizes captured SQL text for stable replay comparison.
+    /// </summary>
     public static string Normalize(string sql)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
@@ -19,6 +22,9 @@ public static partial class ReplaySqlTextNormalizer
         return collapsedWhitespace.Trim();
     }
 
+    /// <summary>
+    /// Computes a stable fingerprint from normalized captured SQL text.
+    /// </summary>
     public static string ComputeFingerprint(string sql)
     {
         var normalized = Normalize(sql).ToLowerInvariant();

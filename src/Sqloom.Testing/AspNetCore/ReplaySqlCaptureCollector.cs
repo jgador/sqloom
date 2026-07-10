@@ -25,6 +25,9 @@ public sealed class ReplaySqlCaptureCollector
         return new ReplaySqlCaptureScope(this, current, previous);
     }
 
+    /// <summary>
+    /// Records a SQL command in the active replay capture scope.
+    /// </summary>
     public void Record(CapturedSqlCommand command)
     {
         var current = _currentScope.Value;

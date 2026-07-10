@@ -8,6 +8,9 @@ namespace Sqloom.Core.Execution;
 /// </summary>
 public sealed class PipelineReport
 {
+    /// <summary>
+    /// Gets the stages.
+    /// </summary>
     [JsonPropertyName("stages")]
     public required IReadOnlyList<PipelineStageReport> Stages { get; init; }
 }
@@ -17,15 +20,27 @@ public sealed class PipelineReport
 /// </summary>
 public sealed class PipelineStageReport
 {
+    /// <summary>
+    /// Gets the name.
+    /// </summary>
     [JsonPropertyName("name")]
     public required string Name { get; init; }
 
+    /// <summary>
+    /// Gets the status.
+    /// </summary>
     [JsonPropertyName("status")]
     public required string Status { get; init; }
 
+    /// <summary>
+    /// Gets the summary.
+    /// </summary>
     [JsonPropertyName("summary")]
     public required string Summary { get; init; }
 
+    /// <summary>
+    /// Gets the artifact path.
+    /// </summary>
     [JsonPropertyName("artifactPath")]
     public string? ArtifactPath { get; init; }
 }
@@ -35,10 +50,25 @@ public sealed class PipelineStageReport
 /// </summary>
 public static class PipelineStageNames
 {
+    /// <summary>
+    /// Defines the observe value.
+    /// </summary>
     public const string Observe = "observe";
+    /// <summary>
+    /// Defines the replay value.
+    /// </summary>
     public const string Replay = "replay";
+    /// <summary>
+    /// Defines the capture value.
+    /// </summary>
     public const string Capture = "capture";
+    /// <summary>
+    /// Defines the correlate value.
+    /// </summary>
     public const string Correlate = "correlate";
+    /// <summary>
+    /// Defines the advise value.
+    /// </summary>
     public const string Advise = "advise";
 }
 
@@ -47,6 +77,12 @@ public static class PipelineStageNames
 /// </summary>
 public static class PipelineStageStatuses
 {
+    /// <summary>
+    /// Defines the available value.
+    /// </summary>
     public const string Available = "available";
+    /// <summary>
+    /// Defines the completed value.
+    /// </summary>
     public const string Completed = "completed";
 }

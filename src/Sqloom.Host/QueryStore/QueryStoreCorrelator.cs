@@ -19,12 +19,18 @@ public sealed class QueryStoreCorrelator
     private const double StatementHandleExactConfidence = 1.00d;
     private readonly ISqlHandleResolver _statementHandleResolver;
 
+    /// <summary>
+    /// Creates a correlator that uses the supplied resolver for exact statement-handle matching.
+    /// </summary>
     public QueryStoreCorrelator(ISqlHandleResolver statementHandleResolver)
     {
         _statementHandleResolver = statementHandleResolver
             ?? throw new ArgumentNullException(nameof(statementHandleResolver));
     }
 
+    /// <summary>
+    /// Correlates replay SQL with Query Store plans using statement handles, exact text, and fingerprints.
+    /// </summary>
     public async Task<QueryCorrelationReport> CorrelateAsync(
         QueryStoreSnapshot snapshot,
         IReadOnlyList<EndpointReplayResult> replayResults,

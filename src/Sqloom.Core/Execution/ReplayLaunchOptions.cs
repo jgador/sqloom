@@ -7,9 +7,15 @@ namespace Sqloom.Core.Execution;
 /// </summary>
 public sealed class ReplayLaunchOptions
 {
+    /// <summary>
+    /// Gets the dacpac path.
+    /// </summary>
     [JsonPropertyName("dacpacPath")]
     public string? DacpacPath { get; init; }
 
+    /// <summary>
+    /// Gets the seed sql path.
+    /// </summary>
     [JsonPropertyName("seedSqlPath")]
     public string? SeedSqlPath { get; init; }
 }

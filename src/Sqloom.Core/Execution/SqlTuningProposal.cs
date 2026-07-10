@@ -9,9 +9,15 @@ namespace Sqloom.Core.Execution;
 /// </summary>
 public sealed class SqlTuningProposal
 {
+    /// <summary>
+    /// Gets the title.
+    /// </summary>
     [JsonPropertyName("title")]
     public required string Title { get; init; }
 
+    /// <summary>
+    /// Gets the diagnosis.
+    /// </summary>
     [JsonPropertyName("diagnosis")]
     public required string Diagnosis { get; init; }
 
@@ -39,18 +45,33 @@ public sealed class SqlTuningProposal
     [JsonPropertyName("rollbackSqlScript")]
     public string? RollbackSqlScript { get; init; }
 
+    /// <summary>
+    /// Gets the expected benefit.
+    /// </summary>
     [JsonPropertyName("expectedBenefit")]
     public required string ExpectedBenefit { get; init; }
 
+    /// <summary>
+    /// Gets the verification metric.
+    /// </summary>
     [JsonPropertyName("verificationMetric")]
     public required string VerificationMetric { get; init; }
 
+    /// <summary>
+    /// Gets the confidence.
+    /// </summary>
     [JsonPropertyName("confidence")]
     public double Confidence { get; init; }
 
+    /// <summary>
+    /// Gets the source command ordinals.
+    /// </summary>
     [JsonPropertyName("sourceCommandOrdinals")]
     public IReadOnlyList<int> SourceCommandOrdinals { get; init; } = Array.Empty<int>();
 
+    /// <summary>
+    /// Gets the matched plan ids.
+    /// </summary>
     [JsonPropertyName("matchedPlanIds")]
     public IReadOnlyList<long> MatchedPlanIds { get; init; } = Array.Empty<long>();
 }

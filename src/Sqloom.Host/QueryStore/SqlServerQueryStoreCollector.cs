@@ -149,16 +149,23 @@ public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
 
     private readonly ReadOnlySqlConnectionFactory _connectionFactory;
 
+    /// <summary>
+    /// Creates a collector with the default readonly SQL connection factory.
+    /// </summary>
     public SqlServerQueryStoreCollector()
         : this(new ReadOnlySqlConnectionFactory())
     {
     }
 
+    /// <summary>
+    /// Creates a collector with an explicit readonly SQL connection factory.
+    /// </summary>
     public SqlServerQueryStoreCollector(ReadOnlySqlConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
     }
 
+    /// <inheritdoc />
     public async Task<QueryStoreSnapshot> CaptureAsync(
         string readOnlyConnectionString,
         QueryStoreOptions options,

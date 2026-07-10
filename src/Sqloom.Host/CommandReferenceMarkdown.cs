@@ -3,10 +3,19 @@ using System.Text;
 
 namespace Sqloom.Host;
 
+/// <summary>
+/// Renders the deterministic command reference from the Sqloom command catalog.
+/// </summary>
 public static class CommandReferenceMarkdown
 {
+    /// <summary>
+    /// Gets the repository-relative path of the generated command reference.
+    /// </summary>
     public const string RelativePath = ".agents/skills/sqloom/references/commands.md";
 
+    /// <summary>
+    /// Renders the complete command reference as Markdown.
+    /// </summary>
     public static string Render()
     {
         StringBuilder builder = new();

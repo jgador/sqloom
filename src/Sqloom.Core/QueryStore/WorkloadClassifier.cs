@@ -29,6 +29,9 @@ public sealed class WorkloadClassifier
         "backup_metadata_store",
     ];
 
+    /// <summary>
+    /// Applies workload classifications to every plan and wait in a Query Store snapshot.
+    /// </summary>
     public QueryStoreSnapshot ApplyClassification(
         QueryStoreSnapshot snapshot,
         WorkloadProfile? profile = null)
@@ -99,6 +102,9 @@ public sealed class WorkloadClassifier
         };
     }
 
+    /// <summary>
+    /// Classifies a Query Store plan against explicit and discovered workload rules.
+    /// </summary>
     public QueryWorkloadClassification ClassifyPlan(
         QueryStorePlanRecord plan,
         WorkloadProfile? profile = null)

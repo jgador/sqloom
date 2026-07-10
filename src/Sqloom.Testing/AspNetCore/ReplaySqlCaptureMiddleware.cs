@@ -11,11 +11,17 @@ public sealed class ReplaySqlCaptureMiddleware
 {
     private readonly RequestDelegate _next;
 
+    /// <summary>
+    /// Creates middleware that delegates requests after establishing any requested capture scope.
+    /// </summary>
     public ReplaySqlCaptureMiddleware(RequestDelegate next)
     {
         _next = next;
     }
 
+    /// <summary>
+    /// Captures SQL emitted while processing a request carrying the Sqloom capture header.
+    /// </summary>
     public async Task InvokeAsync(
         HttpContext httpContext,
         ReplaySqlCaptureCollector captureCollector)

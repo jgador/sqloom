@@ -9,6 +9,9 @@ namespace Sqloom.Host.QueryStore;
 /// </summary>
 public interface IQueryStoreCollector
 {
+    /// <summary>
+    /// Captures a bounded Query Store snapshot through a readonly connection.
+    /// </summary>
     Task<QueryStoreSnapshot> CaptureAsync(
         string readOnlyConnectionString,
         QueryStoreOptions options,

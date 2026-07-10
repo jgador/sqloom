@@ -21,6 +21,9 @@ public static partial class QueryStoreSqlText
         "WITH",
     ];
 
+    /// <summary>
+    /// Extracts normalized statement candidates used for Query Store correlation.
+    /// </summary>
     public static IReadOnlyList<string> GetComparableStatements(string sql)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
@@ -57,6 +60,9 @@ public static partial class QueryStoreSqlText
             : [trimmed];
     }
 
+    /// <summary>
+    /// Removes outer SQL noise while preserving executable statement text.
+    /// </summary>
     public static string TrimOuterNoise(string sql)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
@@ -77,6 +83,9 @@ public static partial class QueryStoreSqlText
         }
     }
 
+    /// <summary>
+    /// Removes leading SET statements from captured SQL text.
+    /// </summary>
     public static string TrimLeadingSetStatements(string sql)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);
@@ -86,6 +95,9 @@ public static partial class QueryStoreSqlText
         return stripped.Length == 0 ? trimmed : stripped;
     }
 
+    /// <summary>
+    /// Removes a leading parameter-definition prefix from captured SQL text.
+    /// </summary>
     public static string TrimLeadingParameterDefinitionPrefix(string sql)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sql);

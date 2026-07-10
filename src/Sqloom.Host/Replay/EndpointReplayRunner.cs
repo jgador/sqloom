@@ -21,6 +21,9 @@ public sealed class EndpointReplayRunner
     private readonly ReplayRequestExecutor _requestExecutor = new();
     private readonly ReplayRequestResolver _requestResolver = new();
 
+    /// <summary>
+    /// Discovers, prepares, executes, and records the configured endpoint replay operations.
+    /// </summary>
     public async Task<EndpointReplayRunResult> RunAsync(
         ReplayRunnerOptions options,
         CancellationToken cancellationToken = default)

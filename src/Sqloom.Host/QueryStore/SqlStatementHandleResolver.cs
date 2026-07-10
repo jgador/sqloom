@@ -38,6 +38,9 @@ public sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
     private readonly ReadOnlySqlConnectionFactory _connectionFactory;
     private readonly int _commandTimeoutSeconds;
 
+    /// <summary>
+    /// Creates a resolver for the target database with an optional connection factory and command timeout.
+    /// </summary>
     public SqlStatementHandleResolver(
         string connectionString,
         ReadOnlySqlConnectionFactory? connectionFactory = null,
@@ -55,6 +58,7 @@ public sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
                 "The command timeout must be positive.");
     }
 
+    /// <inheritdoc />
     public async Task<SqlHandleResolution> ResolveAsync(
         string sqlText,
         IReadOnlyList<SqlHandleParameter> parameters,
