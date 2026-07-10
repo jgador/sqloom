@@ -320,7 +320,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task WithTuneWithoutSchemaSource_DefersSchemaResolutionUntilSessionConnection()
+    public async Task WithTuneWithoutCommandLineSchemaSource_DefersSchemaResolutionUntilSessionConnection()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -330,8 +330,6 @@ public sealed class HostRuntimeTests
                     new NoSchemaTestApplication(),
                     [
                         "tune",
-                        "--read-only-connection-string",
-                        "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                         "--model-provider",
                         "openai",
                         "--openai-api-key",

@@ -47,7 +47,8 @@ internal sealed class ReplayArgumentParser
         IReplayHost replayHost,
         string currentDirectory,
         string? artifactDirectoryOverride = null,
-        string? openApiPathOverride = null)
+        string? openApiPathOverride = null,
+        ReplayLaunchOptions? replayLaunchOptionsOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
@@ -68,7 +69,8 @@ internal sealed class ReplayArgumentParser
             CommandArgumentSupport.GetArgumentValue(args, "--target"));
         var replayArtifactDirectory = artifactDirectoryOverride
             ?? GetReplayArtifactDir(args, currentDirectory);
-        var replayLaunchOptions = CreateReplayLaunchOptions(args, currentDirectory);
+        var replayLaunchOptions = replayLaunchOptionsOverride
+            ?? CreateReplayLaunchOptions(args, currentDirectory);
         var replayDataAgentOptions = CreateReplayDataAgentOptions(args);
 
         return new ReplayArguments
@@ -153,7 +155,8 @@ internal sealed class ReplayArgumentParser
 
     internal ReplayLaunchOptions CreateReplayLaunchOptions(
         string[] args,
-        string currentDirectory)
+        string currentDirectory,
+        bool requireDacpacForSeed = true)
     {
         var dacpacPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-dacpac-file");
         var seedSqlPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-seed-sql-file");
@@ -167,8 +170,17 @@ internal sealed class ReplayArgumentParser
         if (string.IsNullOrWhiteSpace(dacpacPath)
             && !string.IsNullOrWhiteSpace(seedSqlPath))
         {
-            throw new ArgumentException(
-                "The post-DACPAC SQL seed script requires --sqlserver-dacpac-file <path>.");
+            var seedOnlySqlPath = ResolveSeedSqlPath(seedSqlPath, currentDirectory);
+            if (requireDacpacForSeed)
+            {
+                throw new ArgumentException(
+                    "The post-DACPAC SQL seed script requires --sqlserver-dacpac-file <path>.");
+            }
+
+            return new ReplayLaunchOptions
+            {
+                SeedSqlPath = seedOnlySqlPath,
+            };
         }
 
         var fullDacpacPath = Path.GetFullPath(dacpacPath!, currentDirectory);
@@ -181,12 +193,7 @@ internal sealed class ReplayArgumentParser
         string? fullSeedSqlPath = null;
         if (!string.IsNullOrWhiteSpace(seedSqlPath))
         {
-            fullSeedSqlPath = Path.GetFullPath(seedSqlPath, currentDirectory);
-            if (!File.Exists(fullSeedSqlPath))
-            {
-                throw new ArgumentException(
-                    $"The SQL seed script '{fullSeedSqlPath}' does not exist.");
-            }
+            fullSeedSqlPath = ResolveSeedSqlPath(seedSqlPath, currentDirectory);
         }
 
         return new ReplayLaunchOptions
@@ -194,6 +201,20 @@ internal sealed class ReplayArgumentParser
             DacpacPath = fullDacpacPath,
             SeedSqlPath = fullSeedSqlPath,
         };
+    }
+
+    private static string ResolveSeedSqlPath(
+        string seedSqlPath,
+        string currentDirectory)
+    {
+        var fullSeedSqlPath = Path.GetFullPath(seedSqlPath, currentDirectory);
+        if (!File.Exists(fullSeedSqlPath))
+        {
+            throw new ArgumentException(
+                $"The SQL seed script '{fullSeedSqlPath}' does not exist.");
+        }
+
+        return fullSeedSqlPath;
     }
 
     internal ReplayDataAgentOptions CreateReplayDataAgentOptions(string[] args)

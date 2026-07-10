@@ -106,7 +106,8 @@ internal sealed class TuneArgumentParser
     {
         return _replayArgumentParser.CreateReplayLaunchOptions(
             ExtractSwitchArguments(args, ReplaySwitches),
-            currentDirectory);
+            currentDirectory,
+            requireDacpacForSeed: false);
     }
 
     public void ValidateBeforeSession(
@@ -155,7 +156,10 @@ internal sealed class TuneArgumentParser
         IReplayHost replayHost,
         string readOnlyConnectionString,
         string currentDirectory,
-        string? openApiPathOverride = null)
+        string? openApiPathOverride = null,
+        string? workflowArtifactDirOverride = null,
+        ReplayLaunchOptions? replayLaunchOptionsOverride = null,
+        string? adviceDacpacPathOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
@@ -166,7 +170,8 @@ internal sealed class TuneArgumentParser
             SupportedSwitches,
             ValueSwitches);
 
-        var workflowArtifactDir = GetWorkflowArtifactDir(args, currentDirectory);
+        var workflowArtifactDir = workflowArtifactDirOverride
+            ?? GetWorkflowArtifactDir(args, currentDirectory);
         var snapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(workflowArtifactDir);
         var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDir(workflowArtifactDir);
         var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
@@ -186,13 +191,15 @@ internal sealed class TuneArgumentParser
             replayHost,
             currentDirectory,
             replayArtifactDirectory,
-            openApiPathOverride);
+            openApiPathOverride,
+            replayLaunchOptionsOverride);
         var adviseArguments = _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             replayArtifactDirectory,
             correlationPath,
             advicePath,
-            defaultDacpacPath: manifest.SqlServerDacpacPath,
+            defaultDacpacPath: adviceDacpacPathOverride
+                ?? manifest.SqlServerDacpacPath,
             currentDirectory: currentDirectory,
             defaultReadOnlyConnectionString: readOnlyConnectionString);
 

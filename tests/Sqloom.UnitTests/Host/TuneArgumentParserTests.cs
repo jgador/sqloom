@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using Sqloom.Core.Artifacts;
+using Sqloom.Core.Execution;
 using Sqloom.Host.Replay;
 using Sqloom.TestApp.Harness;
 using Sqloom.Testing;
@@ -312,6 +313,70 @@ public sealed class TuneArgumentParserTests
             ],
             ManifestFactory.CreateManifest(),
             currentDirectory);
+    }
+
+    [Fact]
+    public void CreateReplayLaunchOptions_AllowsSeedSqlWithoutExplicitDacpac()
+    {
+        TuneArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+        var seedSqlPath = Path.Combine(currentDirectory, "seed.sql");
+        File.WriteAllText(seedSqlPath, "SELECT 1;");
+
+        var launchOptions = parser.CreateReplayLaunchOptions(
+            [
+                "tune",
+                "--sqlserver-seed-sql-file",
+                seedSqlPath,
+            ],
+            currentDirectory);
+
+        Assert.Null(launchOptions.DacpacPath);
+        Assert.Equal(
+            Path.GetFullPath(seedSqlPath),
+            launchOptions.SeedSqlPath,
+            StringComparer.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void Parse_UsesResolvedDacpacForReplayAndAdvice()
+    {
+        TuneArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+        var workflowRoot = Path.Combine(currentDirectory, "tune-output");
+        var exportedDacpacPath = Path.Combine(currentDirectory, "exported.dacpac");
+        File.WriteAllText(exportedDacpacPath, "sqloom");
+        const string readOnlyConnectionString =
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
+
+        var arguments = parser.Parse(
+            [
+                "tune",
+                "--read-only-connection-string",
+                readOnlyConnectionString,
+                "--model-provider",
+                "openai",
+                "--openai-api-key",
+                "openai-key",
+            ],
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            readOnlyConnectionString,
+            currentDirectory,
+            workflowArtifactDirOverride: workflowRoot,
+            replayLaunchOptionsOverride: new ReplayLaunchOptions
+            {
+                DacpacPath = exportedDacpacPath,
+            },
+            adviceDacpacPathOverride: exportedDacpacPath);
+
+        Assert.Equal(workflowRoot, arguments.WorkflowArtifactDir, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(
+            exportedDacpacPath,
+            arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.DacpacPath,
+            StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(exportedDacpacPath, arguments.AdviseArguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(arguments.AdviseArguments.ReadOnlyConnectionString);
     }
 
     [Fact]

@@ -1,6 +1,9 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Sqloom.Core.Artifacts;
+using Sqloom.Core.Execution;
 using Sqloom.Testing;
 
 namespace Sqloom.Host;
@@ -11,8 +14,27 @@ namespace Sqloom.Host;
 internal sealed class TuneCommand
     : ICommandHandler
 {
-    private readonly TuneArgumentParser _argumentParser = new();
-    private readonly TuneWorkflowRunner _workflowRunner = new();
+    private readonly TuneArgumentParser _argumentParser;
+    private readonly TuneWorkflowRunner _workflowRunner;
+    private readonly ISqlServerDacpacExporter _dacpacExporter;
+
+    public TuneCommand()
+        : this(
+            new TuneArgumentParser(),
+            new TuneWorkflowRunner(),
+            new SqlServerDacpacExporter())
+    {
+    }
+
+    internal TuneCommand(
+        TuneArgumentParser argumentParser,
+        TuneWorkflowRunner workflowRunner,
+        ISqlServerDacpacExporter dacpacExporter)
+    {
+        _argumentParser = argumentParser;
+        _workflowRunner = workflowRunner;
+        _dacpacExporter = dacpacExporter;
+    }
 
     public HostCommandKind CommandKind => HostCommandKind.Tune;
 
@@ -21,15 +43,15 @@ internal sealed class TuneCommand
         var application = context.Application
             ?? throw new InvalidOperationException(
                 "Sqloom tune requires one resolved app harness.");
-        var launchOptions = _argumentParser.CreateReplayLaunchOptions(
+        var requestedLaunchOptions = _argumentParser.CreateReplayLaunchOptions(
             context.Arguments,
             context.CurrentDirectory);
-        var applicationContext = new SqloomApplicationContext
+        var requestedApplicationContext = new SqloomApplicationContext
         {
             CurrentDirectory = context.CurrentDirectory,
-            ReplayLaunchOptions = launchOptions,
+            ReplayLaunchOptions = requestedLaunchOptions,
         };
-        var manifest = application.Describe(applicationContext);
+        var manifest = application.Describe(requestedApplicationContext);
 
         context.ConsoleWriter.PrintBanner(
             manifest.Name,
@@ -43,11 +65,29 @@ internal sealed class TuneCommand
             context.Arguments,
             manifest,
             context.CurrentDirectory);
+        var workflowArtifactDir = _argumentParser.GetWorkflowArtifactDir(
+            context.Arguments,
+            context.CurrentDirectory);
+        var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDir(workflowArtifactDir);
+        var commandLineReadOnlyConnectionString = _argumentParser
+            .GetQueryStoreConnectionString(context.Arguments);
+        var launchOptions = await ResolveReplayLaunchOptionsAsync(
+                requestedLaunchOptions,
+                manifest,
+                context.CurrentDirectory,
+                replayArtifactDirectory,
+                commandLineReadOnlyConnectionString)
+            .ConfigureAwait(false);
+        var applicationContext = new SqloomApplicationContext
+        {
+            CurrentDirectory = context.CurrentDirectory,
+            ReplayLaunchOptions = launchOptions,
+        };
 
         await using var session = await application
             .StartAsync(applicationContext)
             .ConfigureAwait(false);
-        var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments)
+        var readOnlyConnectionString = commandLineReadOnlyConnectionString
             ?? session.ReadOnlyConnection;
         if (string.IsNullOrWhiteSpace(readOnlyConnectionString))
         {
@@ -62,7 +102,10 @@ internal sealed class TuneCommand
             session.ReplayHost,
             readOnlyConnectionString,
             context.CurrentDirectory,
-            openApiPath);
+            openApiPath,
+            workflowArtifactDir,
+            launchOptions,
+            launchOptions.DacpacPath);
         arguments.DebugWriter = context.DebugWriter;
         arguments.ObserveArguments.DebugWriter = context.DebugWriter;
         arguments.ReplayArguments.DebugWriter = context.DebugWriter;
@@ -80,5 +123,52 @@ internal sealed class TuneCommand
         CancellationToken cancellationToken = default)
     {
         return _workflowRunner.RunAsync(arguments, cancellationToken);
+    }
+
+    internal async Task<ReplayLaunchOptions> ResolveReplayLaunchOptionsAsync(
+        ReplayLaunchOptions requestedOptions,
+        SqloomApplicationManifest manifest,
+        string currentDirectory,
+        string replayArtifactDirectory,
+        string? commandLineReadOnlyConnectionString,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(requestedOptions);
+        ArgumentNullException.ThrowIfNull(manifest);
+        ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
+        ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
+
+        var dacpacPath = requestedOptions.DacpacPath;
+        if (string.IsNullOrWhiteSpace(dacpacPath)
+            && !string.IsNullOrWhiteSpace(manifest.SqlServerDacpacPath))
+        {
+            dacpacPath = Path.GetFullPath(
+                manifest.SqlServerDacpacPath,
+                currentDirectory);
+        }
+
+        if (string.IsNullOrWhiteSpace(dacpacPath)
+            && !string.IsNullOrWhiteSpace(commandLineReadOnlyConnectionString))
+        {
+            dacpacPath = await _dacpacExporter
+                .ExportAsync(
+                    commandLineReadOnlyConnectionString,
+                    replayArtifactDirectory,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (string.IsNullOrWhiteSpace(dacpacPath)
+            && !string.IsNullOrWhiteSpace(requestedOptions.SeedSqlPath))
+        {
+            throw new ArgumentException(
+                "The post-DACPAC SQL seed script requires --sqlserver-dacpac-file <path>, a harness manifest DACPAC, or --read-only-connection-string <connection-string>.");
+        }
+
+        return new ReplayLaunchOptions
+        {
+            DacpacPath = dacpacPath,
+            SeedSqlPath = requestedOptions.SeedSqlPath,
+        };
     }
 }

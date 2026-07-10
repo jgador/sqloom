@@ -8,7 +8,7 @@ Most users start with `sqloom tune`. It runs the full workflow:
 replay -> observe -> correlate -> advise
 ```
 
-This repo includes a sample app and harness for `GET /api/products/by-category`. The quick start points Sqloom at the sample DACPAC, seed SQL, and read-only Query Store connection explicitly, so the replay database inputs and Query Store source are visible.
+This repo includes a sample app and harness for `GET /api/products/by-category`. The quick start uses the sample harness DACPAC and seed defaults, then points Sqloom at a read-only Query Store connection so the Query Store source is explicit.
 
 ![Sqloom tuning pipeline diagram](docs/images/sqloom-diagram.png)
 
@@ -29,21 +29,20 @@ dotnet tool update --global sqloom
 
 ## Quick Start
 
-Set `OPENAI_API_KEY`, then run the sample `tune` workflow from the repo root. These are the minimum explicit inputs for the sample replay database: harness project, target operation, DACPAC, seed SQL, read-only Query Store connection, and OpenAI settings.
+Set `OPENAI_API_KEY`, then run the sample `tune` workflow from the repo root. The sample harness supplies replay DACPAC and seed defaults, so the command only needs the harness project, target operation, read-only Query Store connection, replay-data agent mode, and OpenAI settings.
 
 ```powershell
-sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
+sqloom-local tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
  --target "GET /api/products/by-category" `
- --sqlserver-dacpac-file .\tests\Sqloom.TestApp.Harness\AdventureWorksLT2025.dacpac `
- --sqlserver-seed-sql-file .\tests\Sqloom.TestApp.Harness\AdventureWorksLT2025.seed.sql `
  --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
+ --replay-data-agent required `
  --model-provider openai `
  --openai-api-key $env:OPENAI_API_KEY `
- --openai-model "gpt-5.5" `
+ --openai-model "gpt-5.4-mini" `
  --debug
 ```
 
-That command starts the sample harness, uses the DACPAC and seed SQL to prepare the replay database, runs the selected API request, captures the SQL it caused, reads Query Store through the supplied read-only connection string, correlates the captured SQL to Query Store rows, and asks OpenAI for operation-level tuning advice. If the advice step does not receive `--sqlserver-schema-file`, `--sqlserver-dacpac-file`, or a harness manifest DACPAC, Sqloom exports a DACPAC from the read-only connection and extracts schema from that artifact. `--debug` prints stage details to `stderr`, including redacted OpenAI request and response details during the advice step.
+That command starts the sample harness, uses the harness DACPAC and seed SQL defaults to prepare the replay database, runs the selected API request, captures the SQL it caused, reads Query Store through the supplied read-only connection string, correlates the captured SQL to Query Store rows, and asks OpenAI for operation-level tuning advice. If `tune` receives a command-line read-only connection string and no `--sqlserver-dacpac-file` or harness manifest DACPAC is available, Sqloom exports `sqlserver-schema-source.dacpac` before replay and reuses it for advice schema extraction. `--sqlserver-dacpac-file` and `--sqlserver-seed-sql-file` remain replay bootstrap overrides, and `--sqlserver-schema-file` remains the expert advice-only schema SQL override. `--debug` prints stage details to `stderr`, including redacted OpenAI request and response details during the advice step.
 
 The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 
@@ -52,6 +51,7 @@ The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 - `replay/replay-data-prep.json` when `--replay-data-agent` is enabled
 - `replay/query-store-correlation.json`
 - `replay/sqlserver-schema-source.dacpac` when Sqloom exports the schema source from the read-only connection
+- `replay/sqlserver-dacpac-extract/model.sql` when schema is extracted from a DACPAC
 - `replay/sqlserver-schema.sql`
 - `replay/tuning-advice.json`
 - `replay/sql-tuning-proposal.json`

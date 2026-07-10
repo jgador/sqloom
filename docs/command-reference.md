@@ -86,12 +86,12 @@ sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
 | `--app-only` | Filters the console view to App-classified Query Store entries and implies `--show-classification`. |
 | `--show-classification` | Prints classification kind, confidence, and reasons for displayed plans and waits. |
 | `--openapi-file <path>` | Overrides the app-owned OpenAPI document for this run. |
-| `--sqlserver-dacpac-file <path>` | Overrides the harness DACPAC for SQL Server replay and provides the preferred schema source for advice when `--sqlserver-schema-file` is not supplied. If advice has no schema file, DACPAC, or harness manifest DACPAC, it exports a DACPAC from the read-only connection string. |
-| `--sqlserver-seed-sql-file <path>` | Overrides the SQL seed script applied after the DACPAC. Requires `--sqlserver-dacpac-file`. |
+| `--sqlserver-dacpac-file <path>` | Overrides the harness DACPAC for SQL Server replay and provides the preferred schema source for advice when `--sqlserver-schema-file` is not supplied. If tune has no DACPAC override or harness manifest DACPAC and the command line supplies `--read-only-connection-string`, Sqloom exports a DACPAC from that connection before replay and reuses it for advice. |
+| `--sqlserver-seed-sql-file <path>` | Overrides the SQL seed script applied after the effective replay DACPAC. The effective DACPAC can come from `--sqlserver-dacpac-file`, the harness manifest, or the DACPAC exported from the command-line read-only connection. |
 | `--artifact-dir <path>` | Uses a custom workflow root. Default: `artifacts/sqloom/tune/tune-<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target "METHOD /path/template"` | Replays one exact operation. The method must be uppercase, with one space before a leading-slash route and no trailing slash. |
-| `--replay-data-agent off\|auto\|required` | Enables replay-only request data preparation. Default: `off`. `auto` and `required` use Microsoft Agent Framework with OpenAI and require `--openai-api-key`. `off` is the only non-agent mode. |
+| `--replay-data-agent off\|auto\|required` | Enables replay-only HTTP request data preparation. Default: `off`. `auto` and `required` use Microsoft Agent Framework with OpenAI and require `--openai-api-key`. The agent fills path/query/header/body values; it does not generate DACPACs or seed SQL. `off` is the only non-agent mode. |
 | `--replay-data-agent-model <id>` | Model id for the replay data agent. Default: `gpt-5.4-mini`. This is separate from the advice `--openai-model`. |
 | `--sqlserver-schema-file <path>` | Expert override for manually supplied schema SQL. This wins over DACPAC extraction. |
 | `--openai-model <id>` | OpenAI model id. Default: `gpt-5.4-mini`. |
@@ -110,6 +110,7 @@ Without `--artifact-dir`, `tune` writes under `artifacts/sqloom/tune/tune-<times
 - `replay/operations/<ordinal>-<operation>.json`
 - `replay/query-store-correlation.json`
 - `replay/sqlserver-schema-source.dacpac` when advice exports the schema source from the read-only connection
+- `replay/sqlserver-dacpac-extract/model.sql` when schema is extracted from a DACPAC
 - `replay/sqlserver-schema.sql`
 - `replay/tuning-advice.json`
 - `replay/sql-tuning-proposal.json`
@@ -253,7 +254,7 @@ Advice also needs a schema source. Supply `--sqlserver-schema-file <path>`, `--s
 | --- | --- |
 | `--query-store-correlation-file <path>` | Uses a correlation file outside the replay artifact directory. |
 | `--json-output-file <path>` | Writes advice to a specific JSON path. Default: `tuning-advice.json` under the replay artifact directory. |
-| `--sqlserver-dacpac-file <path>` | Extracts SQL Server schema SQL from a DACPAC and writes `sqlserver-schema.sql` beside the advice artifacts. |
+| `--sqlserver-dacpac-file <path>` | Extracts SQL Server schema SQL from a DACPAC, keeps the raw DacFx unpack under `sqlserver-dacpac-extract`, and writes `sqlserver-schema.sql` beside the advice artifacts. |
 | `--read-only-connection-string <connection-string>` | Exports `sqlserver-schema-source.dacpac` from the target database when no schema file or DACPAC path is supplied, then extracts `sqlserver-schema.sql` from the exported DACPAC. |
 | `--sqlserver-schema-file <path>` | Expert override for manually supplied schema SQL. This wins over DACPAC extraction. |
 | `--openai-model <id>` | OpenAI model id. Default: `gpt-5.4-mini`. |
@@ -267,6 +268,7 @@ By default, `advise` writes these files under the replay artifact directory:
 - `sql-tuning-proposal.json`
 - `sql-tuning-proposal.sql`
 - `sqlserver-schema.sql` when schema is extracted from a DACPAC
+- `sqlserver-dacpac-extract/model.sql` when schema is extracted from a DACPAC
 - `sqlserver-schema-source.dacpac` when Sqloom exports a DACPAC from `--read-only-connection-string`
 
 Rollback SQL is helpful but optional in the OpenAI path. If the model omits `rollbackSqlScript`, Sqloom keeps the proposal, records a warning, and writes a placeholder rollback note in the `.sql` file.

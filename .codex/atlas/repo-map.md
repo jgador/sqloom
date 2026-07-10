@@ -203,6 +203,8 @@ flowchart TB
 - User-facing pipeline: `replay -> observe -> correlate -> advise`.
 - Setup command: `init` scaffolds the embedded `sqloom-harness` agent skill and skips harness resolution.
 - Convenience front door: `tune` runs the common workflow and writes stage-owned artifacts under `artifacts/sqloom/`.
+- `tune` can export a DACPAC from an explicit command-line read-only connection before harness startup when no CLI DACPAC or harness manifest DACPAC exists; this exported package is replay bootstrap input and the advice schema source.
+- DACPAC-backed advice keeps the raw DacFx unpack under `replay/sqlserver-dacpac-extract/` and writes the normalized schema copy to `replay/sqlserver-schema.sql`.
 - [src/Sqloom.Host/Program.cs](../../src/Sqloom.Host/Program.cs) calls `HostRuntime.RunAsync`.
 - [src/Sqloom.Host/HostRuntime.cs](../../src/Sqloom.Host/HostRuntime.cs) parses startup options, handles help/version, creates `HostApplication`, and delegates command execution.
 - [src/Sqloom.Host/Dispatch/HostApplication.cs](../../src/Sqloom.Host/Dispatch/HostApplication.cs) resolves the selected harness or bound `ISqloomApplication`, chooses a `HostCommandKind`, creates command context, and dispatches through `CommandRegistry`.
@@ -252,4 +254,4 @@ flowchart TB
 - Do not use Atlas as a file inventory, test inventory, symbol graph, reference graph, artifact cache, or source cache.
 - Ignore first: `artifacts/`, `TestResults/`, `.vs/`, `.tools/`, `bin/`, `obj/`, and package output unless the task is explicitly about generated artifacts, local tooling, or packaging.
 
-Last verified: `2026-07-08`
+Last verified: `2026-07-10`
