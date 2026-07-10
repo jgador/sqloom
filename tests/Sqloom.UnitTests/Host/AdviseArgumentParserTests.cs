@@ -89,6 +89,36 @@ public sealed class AdviseArgumentParserTests
 
         Assert.Null(arguments.SchemaPath);
         Assert.Equal(dacpacPath, arguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(arguments.ReadOnlyConnectionString);
+    }
+
+    [Fact]
+    public void WithOpenAIModelProvider_AcceptsReadOnlyConnectionSchemaSource()
+    {
+        AdviseArgumentParser parser = new();
+        var replayDirectory = CreateTempDir();
+        var correlationPath = Path.Combine(replayDirectory, "query-store-correlation.json");
+        File.WriteAllText(correlationPath, "{}");
+        const string readOnlyConnectionString =
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
+
+        var arguments = parser.Parse(
+            [
+                "--replay-artifact-dir",
+                replayDirectory,
+                "--query-store-correlation-file",
+                correlationPath,
+                "--model-provider",
+                "openai",
+                "--openai-api-key",
+                "openai-key",
+                "--read-only-connection-string",
+                readOnlyConnectionString,
+            ]);
+
+        Assert.Null(arguments.SchemaPath);
+        Assert.Null(arguments.DacpacPath);
+        Assert.Equal(readOnlyConnectionString, arguments.ReadOnlyConnectionString);
     }
 
     [Fact]
@@ -227,6 +257,7 @@ public sealed class AdviseArgumentParserTests
 
         Assert.Contains("--sqlserver-schema-file", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("DACPAC", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("--read-only-connection-string", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

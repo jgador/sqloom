@@ -145,6 +145,18 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
+    public void GetSqlServerDacpacPath_UsesReplayArtifactDir()
+    {
+        var path = ArtifactLayout.GetSqlServerDacpacPath(ReplayArtifactDir);
+
+        Assert.Equal(
+            Path.Combine(
+                ReplayArtifactDir,
+                "sqlserver-schema-source.dacpac"),
+            path);
+    }
+
+    [Fact]
     public void GetSqlProposalPath_UsesReplayArtifactDir()
     {
         var path = ArtifactLayout.GetSqlProposalPath(ReplayArtifactDir);

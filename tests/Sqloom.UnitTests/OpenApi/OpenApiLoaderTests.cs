@@ -34,8 +34,7 @@ public sealed class OpenApiLoaderTests
                       "content": {
                         "application/json": {
                           "example": {
-                            "email": "user@example.com",
-                            "password": "password"
+                            "email": "user@example.com"
                           }
                         }
                       }

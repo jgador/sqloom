@@ -75,7 +75,7 @@ public sealed class HostCatalogAdviceTests
     [RequiresDockerFact]
     [Trait("Category", "Integration")]
     [Trait("Category", "OpenAI")]
-    public async Task HostRuntime_WithOpenAIAdvice_PersistsByCategoryProposal()
+    public async Task HostRuntime_WithOpenAIAdviceReadOnlyConnection_ExportsDacpacAndPersistsByCategoryProposal()
     {
         var artifactDirectory = CreateTempDir();
         var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
@@ -163,8 +163,8 @@ public sealed class HostCatalogAdviceTests
                                 "openai",
                                 "--openai-api-key",
                                 "sqloom-test-key",
-                                "--sqlserver-dacpac-file",
-                                dacpacPath,
+                                "--read-only-connection-string",
+                                applicationConnectionString,
                                 "--openai-base-url",
                                 fakeOpenAiServer.BaseUrl.AbsoluteUri,
                             ],
@@ -212,6 +212,12 @@ public sealed class HostCatalogAdviceTests
                     Assert.Contains("ListPrice", proposalScript, StringComparison.OrdinalIgnoreCase);
                     var generatedSchemaPath = ArtifactLayout.GetSqlServerSchemaPath(artifactDirectory);
                     Assert.True(File.Exists(generatedSchemaPath), $"Expected generated schema at '{generatedSchemaPath}'.");
+                    var generatedDacpacPath = ArtifactLayout.GetSqlServerDacpacPath(artifactDirectory);
+                    FileInfo generatedDacpac = new(generatedDacpacPath);
+                    Assert.True(generatedDacpac.Exists, $"Expected exported DACPAC at '{generatedDacpacPath}'.");
+                    Assert.True(
+                        generatedDacpac.Length > 0,
+                        $"Expected exported DACPAC '{generatedDacpacPath}' to be non-empty.");
                     var generatedSchemaSql = await File
                         .ReadAllTextAsync(generatedSchemaPath)
                         .ConfigureAwait(false);

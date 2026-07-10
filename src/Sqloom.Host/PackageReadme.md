@@ -23,7 +23,7 @@ dotnet tool update --global sqloom
 - `observe`: read recent Query Store data with an explicit `--read-only-connection-string <connection-string>`
 - `replay`: replay API operations through an app-specific harness and capture SQL
 - `correlate`: match replayed SQL back to a Query Store snapshot
-- `advise`: send replay evidence, Query Store matches, and DACPAC-derived schema SQL to OpenAI
+- `advise`: send replay evidence, Query Store matches, and SQL Server schema SQL to OpenAI
 - `tune`: run the full `replay -> observe -> correlate -> advise` flow
 
 ## Required inputs
@@ -34,9 +34,9 @@ dotnet tool update --global sqloom
 
 - `--model-provider openai`
 - `--openai-api-key <key>`
-- `--sqlserver-dacpac-file <path>` for `advise`, unless you pass the expert `--sqlserver-schema-file <path>` override
+- a schema source for `advise`: `--sqlserver-schema-file <path>`, `--sqlserver-dacpac-file <path>`, or `--read-only-connection-string <connection-string>`
 
-For `tune`, a harness can provide a default DACPAC path in its manifest. When advice runs from a DACPAC, Sqloom extracts `model.sql` with DacFx and persists the generated schema as `sqlserver-schema.sql` beside the advice artifacts.
+For `tune`, a harness can provide a default DACPAC path in its manifest, or the running harness session can provide the read-only connection string. When advice runs from a DACPAC, Sqloom extracts `model.sql` with DacFx and persists the generated schema as `sqlserver-schema.sql` beside the advice artifacts. When advice only has a read-only connection string, Sqloom first exports `sqlserver-schema-source.dacpac` beside the replay artifacts, then extracts `sqlserver-schema.sql` from that DACPAC.
 
 SQL Server-backed replay harnesses can provide default DACPAC, seed script, replay profile, and Query Store profile values. CLI switches such as `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--sqlserver-schema-file <path>`, and `--read-only-connection-string <connection-string>` let you point at different inputs when needed.
 

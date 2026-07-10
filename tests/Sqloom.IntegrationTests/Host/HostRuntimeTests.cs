@@ -320,13 +320,12 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task WithTuneWithoutSchemaSource_RequiresSchemaSource()
+    public async Task WithTuneWithoutSchemaSource_DefersSchemaResolutionUntilSessionConnection()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
-        var result = await CaptureConsoleAsync(static async state =>
-        {
-            return await HostRuntime
+        var exception = await Assert.ThrowsAsync<NotSupportedException>(
+            async () => await HostRuntime
                 .RunAsync(
                     new NoSchemaTestApplication(),
                     [
@@ -338,19 +337,13 @@ public sealed class HostRuntimeTests
                         "--openai-api-key",
                         "openai-key",
                     ],
-                    state)
-                .ConfigureAwait(false);
-        }, currentDirectory);
+                    currentDirectory)
+                .ConfigureAwait(false));
 
-        Assert.Equal(1, result.ExitCode);
         Assert.Contains(
-            "--sqlserver-schema-file",
-            result.StdErr,
+            "Schema resolution should wait for the harness session read-only connection.",
+            exception.Message,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "DACPAC",
-            result.StdErr,
-            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -598,7 +591,7 @@ internal sealed class NoSchemaTestApplication : ISqloomApplication
         SqloomApplicationContext context,
         CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException("Schema validation should run before the harness session starts.");
+        throw new NotSupportedException("Schema resolution should wait for the harness session read-only connection.");
     }
 }
 

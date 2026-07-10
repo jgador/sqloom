@@ -13,6 +13,8 @@ internal sealed class AdviseArguments
 
     public string? DacpacPath { get; init; }
 
+    public string? ReadOnlyConnectionString { get; init; }
+
     public required string JsonOutputPath { get; init; }
 
     public required ModelProviderKind ModelProvider { get; init; }

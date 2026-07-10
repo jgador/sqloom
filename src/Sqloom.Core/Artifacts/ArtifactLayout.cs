@@ -115,6 +115,13 @@ public static class ArtifactLayout
         return Path.Combine(replayArtifactDirectory, "sqlserver-schema.sql");
     }
 
+    public static string GetSqlServerDacpacPath(string replayArtifactDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
+
+        return Path.Combine(replayArtifactDirectory, "sqlserver-schema-source.dacpac");
+    }
+
     public static string GetSqlProposalPath(string replayArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);

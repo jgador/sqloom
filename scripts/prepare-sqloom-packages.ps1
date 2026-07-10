@@ -49,7 +49,8 @@ try
     if (-not $SkipSmoke)
     {
         $sampleHarnessProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj"
-        & $verifyExePath replay $sampleHarnessProject --target "GET /api/products/by-category"
+        # Exercise harness bootstrap and OpenAPI discovery without requiring generated replay query values.
+        & $verifyExePath replay $sampleHarnessProject --target "GET /api/products/by-category" --max-operations 0
         if ($LASTEXITCODE -ne 0)
         {
             throw "Prepared sqloom package smoke check failed."

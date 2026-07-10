@@ -86,7 +86,7 @@ sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
 | `--app-only` | Filters the console view to App-classified Query Store entries and implies `--show-classification`. |
 | `--show-classification` | Prints classification kind, confidence, and reasons for displayed plans and waits. |
 | `--openapi-file <path>` | Overrides the app-owned OpenAPI document for this run. |
-| `--sqlserver-dacpac-file <path>` | Overrides the harness DACPAC for SQL Server replay and provides the schema source for advice when `--sqlserver-schema-file` is not supplied. |
+| `--sqlserver-dacpac-file <path>` | Overrides the harness DACPAC for SQL Server replay and provides the preferred schema source for advice when `--sqlserver-schema-file` is not supplied. If advice has no schema file, DACPAC, or harness manifest DACPAC, it exports a DACPAC from the read-only connection string. |
 | `--sqlserver-seed-sql-file <path>` | Overrides the SQL seed script applied after the DACPAC. Requires `--sqlserver-dacpac-file`. |
 | `--artifact-dir <path>` | Uses a custom workflow root. Default: `artifacts/sqloom/tune/tune-<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
@@ -109,6 +109,7 @@ Without `--artifact-dir`, `tune` writes under `artifacts/sqloom/tune/tune-<times
 - `replay/replay-summary.json`
 - `replay/operations/<ordinal>-<operation>.json`
 - `replay/query-store-correlation.json`
+- `replay/sqlserver-schema-source.dacpac` when advice exports the schema source from the read-only connection
 - `replay/sqlserver-schema.sql`
 - `replay/tuning-advice.json`
 - `replay/sql-tuning-proposal.json`
@@ -233,7 +234,7 @@ sqloom advise `
   --replay-artifact-dir ".\artifacts\sqloom\replay\replay-20260608T040506000Z" `
   --model-provider openai `
   --openai-api-key "<api-key>" `
-  --sqlserver-dacpac-file "<dacpac-file>"
+  --read-only-connection-string "<connection-string>"
 ```
 
 ### Required Arguments
@@ -244,7 +245,7 @@ sqloom advise `
 | `--model-provider openai` | Selects the OpenAI-backed advice provider. |
 | `--openai-api-key <key>` | API key used by the OpenAI advice step. |
 
-Advice also needs a schema source. Supply either `--sqlserver-dacpac-file <path>` or the expert `--sqlserver-schema-file <path>` override.
+Advice also needs a schema source. Supply `--sqlserver-schema-file <path>`, `--sqlserver-dacpac-file <path>`, or `--read-only-connection-string <connection-string>`. When only the read-only connection is supplied, Sqloom exports a DACPAC into the replay artifact directory and extracts schema from that generated package.
 
 ### Options
 
@@ -253,6 +254,7 @@ Advice also needs a schema source. Supply either `--sqlserver-dacpac-file <path>
 | `--query-store-correlation-file <path>` | Uses a correlation file outside the replay artifact directory. |
 | `--json-output-file <path>` | Writes advice to a specific JSON path. Default: `tuning-advice.json` under the replay artifact directory. |
 | `--sqlserver-dacpac-file <path>` | Extracts SQL Server schema SQL from a DACPAC and writes `sqlserver-schema.sql` beside the advice artifacts. |
+| `--read-only-connection-string <connection-string>` | Exports `sqlserver-schema-source.dacpac` from the target database when no schema file or DACPAC path is supplied, then extracts `sqlserver-schema.sql` from the exported DACPAC. |
 | `--sqlserver-schema-file <path>` | Expert override for manually supplied schema SQL. This wins over DACPAC extraction. |
 | `--openai-model <id>` | OpenAI model id. Default: `gpt-5.4-mini`. |
 | `--openai-base-url <url>` | OpenAI base URL. Default: `https://api.openai.com`. |
@@ -265,6 +267,7 @@ By default, `advise` writes these files under the replay artifact directory:
 - `sql-tuning-proposal.json`
 - `sql-tuning-proposal.sql`
 - `sqlserver-schema.sql` when schema is extracted from a DACPAC
+- `sqlserver-schema-source.dacpac` when Sqloom exports a DACPAC from `--read-only-connection-string`
 
 Rollback SQL is helpful but optional in the OpenAI path. If the model omits `rollbackSqlScript`, Sqloom keeps the proposal, records a warning, and writes a placeholder rollback note in the `.sql` file.
 

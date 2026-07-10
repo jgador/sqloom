@@ -132,8 +132,10 @@ internal sealed class TuneArgumentParser
             currentDirectory,
             validationPath,
             validationPath,
-            manifest.SqlServerDacpacPath,
-            currentDirectory);
+            defaultDacpacPath: manifest.SqlServerDacpacPath,
+            currentDirectory: currentDirectory,
+            defaultReadOnlyConnectionString: GetQueryStoreConnectionString(args),
+            allowMissingSchemaSource: true);
     }
 
     public string GetOpenApiPath(
@@ -190,8 +192,9 @@ internal sealed class TuneArgumentParser
             replayArtifactDirectory,
             correlationPath,
             advicePath,
-            manifest.SqlServerDacpacPath,
-            currentDirectory);
+            defaultDacpacPath: manifest.SqlServerDacpacPath,
+            currentDirectory: currentDirectory,
+            defaultReadOnlyConnectionString: readOnlyConnectionString);
 
         return new TuneArguments
         {

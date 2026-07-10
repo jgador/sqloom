@@ -19,23 +19,33 @@ internal sealed class AdviceCommand
     private readonly AdviseArgumentParser _argumentParser = new();
     private readonly Func<OpenAIAdviceOptions, IAdviceReportGenerator>? _generatorFactory;
     private readonly ISqlServerDacpacSchemaExtractor _schemaExtractor;
+    private readonly ISqlServerDacpacExporter _dacpacExporter;
 
     public AdviceCommand()
-        : this(null, new SqlServerDacpacSchemaExtractor())
+        : this(null, new SqlServerDacpacSchemaExtractor(), new SqlServerDacpacExporter())
     {
     }
 
     internal AdviceCommand(Func<OpenAIAdviceOptions, IAdviceReportGenerator> generatorFactory)
-        : this(generatorFactory, new SqlServerDacpacSchemaExtractor())
+        : this(generatorFactory, new SqlServerDacpacSchemaExtractor(), new SqlServerDacpacExporter())
     {
     }
 
     internal AdviceCommand(
         Func<OpenAIAdviceOptions, IAdviceReportGenerator>? generatorFactory,
         ISqlServerDacpacSchemaExtractor schemaExtractor)
+        : this(generatorFactory, schemaExtractor, new SqlServerDacpacExporter())
+    {
+    }
+
+    internal AdviceCommand(
+        Func<OpenAIAdviceOptions, IAdviceReportGenerator>? generatorFactory,
+        ISqlServerDacpacSchemaExtractor schemaExtractor,
+        ISqlServerDacpacExporter dacpacExporter)
     {
         _generatorFactory = generatorFactory;
         _schemaExtractor = schemaExtractor ?? throw new ArgumentNullException(nameof(schemaExtractor));
+        _dacpacExporter = dacpacExporter ?? throw new ArgumentNullException(nameof(dacpacExporter));
     }
 
     public HostCommandKind CommandKind => HostCommandKind.Advise;
@@ -125,15 +135,31 @@ internal sealed class AdviceCommand
             return arguments.SchemaPath;
         }
 
-        if (string.IsNullOrWhiteSpace(arguments.DacpacPath))
+        if (!string.IsNullOrWhiteSpace(arguments.DacpacPath))
         {
-            throw new ArgumentException(
-                "Sqloom advice needs either --sqlserver-schema-file or a DACPAC source.");
+            return await _schemaExtractor
+                .ExtractAsync(
+                    arguments.DacpacPath,
+                    arguments.ReplayArtifactDir,
+                    cancellationToken)
+                .ConfigureAwait(false);
         }
 
+        if (string.IsNullOrWhiteSpace(arguments.ReadOnlyConnectionString))
+        {
+            throw new ArgumentException(
+                "Sqloom advice needs --sqlserver-schema-file, --sqlserver-dacpac-file, or --read-only-connection-string.");
+        }
+
+        var exportedDacpacPath = await _dacpacExporter
+            .ExportAsync(
+                arguments.ReadOnlyConnectionString,
+                arguments.ReplayArtifactDir,
+                cancellationToken)
+            .ConfigureAwait(false);
         return await _schemaExtractor
             .ExtractAsync(
-                arguments.DacpacPath,
+                exportedDacpacPath,
                 arguments.ReplayArtifactDir,
                 cancellationToken)
             .ConfigureAwait(false);

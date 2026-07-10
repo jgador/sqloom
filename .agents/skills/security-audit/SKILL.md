@@ -17,11 +17,12 @@ The audit has two main-agent tracks:
 ## Workflow
 
 1. Size and scope the repository first with `git status --short --branch`, `git rev-list --all --count`, `git ls-files`, `git ls-files -o --exclude-standard`, and `Get-Command gitleaks,trufflehog -ErrorAction SilentlyContinue`. The pipeline-based history scans below are practical for small histories (roughly under a few thousand commits); for large repositories, prefer a dedicated scanner such as gitleaks or trufflehog for layers 2 and 3.
-2. Run the code-level review checklist in the main agent. Use search results to identify security-sensitive code paths, then verify every suspected issue by reading the actual code.
-3. Run all three secret-scan layers: working tree, full git history, and every blob in the object database.
-4. For .NET repositories with a solution or project file, run package metadata checks such as `dotnet list <solution-or-project> package --vulnerable --include-transitive` and `dotnet list <solution-or-project> package --deprecated --include-transitive`. For other ecosystems, run the nearest read-only package audit command when available.
-5. For any hit, locate the introducing commit with `git log --all -S '<string>' --oneline --name-only` before deciding whether history rewriting (git-filter-repo or BFG) is needed. Use the literal string locally for tracing, but keep raw secret material out of the final report.
-6. Report findings with file or commit, severity, a one-sentence description, and a concrete exploitation scenario. Explicitly list the areas verified clean, commands or checks run, limitations, and whether git-history cleanup is needed.
+2. Read [AGENTS.md](../../../AGENTS.md#checked-in-password-exceptions) and treat its checked-in password exception subsection as the sole, exhaustive allowlist. Do not define or infer exceptions in this skill.
+3. Run the code-level review checklist in the main agent. Use search results to identify security-sensitive code paths, then verify every suspected issue by reading the actual code.
+4. Run all three secret-scan layers: working tree, full git history, and every blob in the object database.
+5. For .NET repositories with a solution or project file, run package metadata checks such as `dotnet list <solution-or-project> package --vulnerable --include-transitive` and `dotnet list <solution-or-project> package --deprecated --include-transitive`. For other ecosystems, run the nearest read-only package audit command when available.
+6. For any hit, locate the introducing commit with `git log --all -S '<string>' --oneline --name-only` before deciding whether history rewriting (git-filter-repo or BFG) is needed. Use the literal string locally for tracing, but keep raw secret material out of the final report.
+7. Report findings with file or commit, severity, a one-sentence description, and a concrete exploitation scenario. Explicitly list the areas verified clean, commands or checks run, limitations, and whether git-history cleanup is needed.
 
 ## Code-Level Vulnerability Review Checklist
 
@@ -71,6 +72,8 @@ $tokenPatterns = 'AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|gho_[A-Za-z0-9]{36}|githu
 ### Layer 1: working tree
 
 Scan tracked files and non-ignored untracked files for `$tokenPatterns` with the session's native search tool (for example `Grep`, `rg`, or `git grep -I -E`), plus a looser case-insensitive pass for `(password|passwd|secret|api[_-]?key|apikey|token|credential|connectionstring|pwd)\s*[:=]`. Expect and dismiss benign hits such as `CancellationToken`, syntax tokens, and `Environment.GetEnvironmentVariable("SOME_API_KEY")` (reads from the environment; no value committed). Keep ignored or local-only files separate from committed evidence: enumerate them with `git status --short --ignored`, and inspect obvious sensitive filenames such as `.env`, `secrets.json`, `.vscode/launch.json`, or local credential files only when needed.
+
+Independently inventory concrete password, password-equivalent fixture, password-hash, and password-salt values in every tracked source, test, script, configuration, documentation, generated, and seed-data file. Treat [AGENTS.md](../../../AGENTS.md#checked-in-password-exceptions) as the sole allowlist. For value-scoped exceptions, require exact value and location matches. For generated-file field exceptions, require an exact file-path match plus the documented allowed field scope. Continue token and secret scanning for files with generated-file field exceptions; only the documented password-hash or password-salt field scope is excepted. Fail the audit for every unlisted value, every allowlisted value outside its documented location or purpose, every password-shaped value outside an allowed generated-file field scope, and every placeholder used as executable configuration or fixture data. Do not dismiss a value because it is local, test-only, inert, sample, generated, hashed, or salted. Identifiers, schema/property names, detection expressions, and non-executable documentation placeholders are not values. This allowlist enforcement is intentionally scoped to the current tracked tree; do not report historical password-shaped values or recommend history rewriting solely because of this repository-specific check. Existing high-confidence token scans across history and all blobs remain required.
 
 ### Layer 2: full git history
 

@@ -265,32 +265,53 @@ public sealed class TuneArgumentParserTests
 
         Assert.Null(arguments.AdviseArguments.SchemaPath);
         Assert.Equal(Path.GetFullPath(dacpacPath), arguments.AdviseArguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
+        Assert.Null(arguments.AdviseArguments.ReadOnlyConnectionString);
     }
 
     [Fact]
-    public void WithOpenAIModelProvider_RequiresSchemaSource()
+    public void Parse_UsesReadOnlyConnectionStringForAdviceSchemaSource()
+    {
+        TuneArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+        const string readOnlyConnectionString =
+            "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
+
+        var arguments = parser.Parse(
+            [
+                "tune",
+                "--read-only-connection-string",
+                readOnlyConnectionString,
+                "--model-provider",
+                "openai",
+                "--openai-api-key",
+                "openai-key",
+            ],
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            readOnlyConnectionString,
+            currentDirectory);
+
+        Assert.Null(arguments.AdviseArguments.SchemaPath);
+        Assert.Null(arguments.AdviseArguments.DacpacPath);
+        Assert.Equal(readOnlyConnectionString, arguments.AdviseArguments.ReadOnlyConnectionString);
+    }
+
+    [Fact]
+    public void ValidateBeforeSession_AllowsSessionReadOnlyConnectionSchemaSource()
     {
         TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
-        var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
-                [
-                    "tune",
-                    "--read-only-connection-string",
-                    "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
-                    "--model-provider",
-                    "openai",
-                    "--openai-api-key",
-                    "openai-key",
-                ],
-                ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
-                currentDirectory));
-
-        Assert.Contains("--sqlserver-schema-file", exception.Message, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("DACPAC", exception.Message, StringComparison.OrdinalIgnoreCase);
+        parser.ValidateBeforeSession(
+            [
+                "tune",
+                "--model-provider",
+                "openai",
+                "--openai-api-key",
+                "openai-key",
+            ],
+            ManifestFactory.CreateManifest(),
+            currentDirectory);
     }
 
     [Fact]

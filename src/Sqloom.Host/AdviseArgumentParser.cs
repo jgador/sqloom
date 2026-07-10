@@ -14,6 +14,7 @@ internal sealed class AdviseArgumentParser
     {
         "--replay-artifact-dir",
         "--query-store-correlation-file",
+        "--read-only-connection-string",
         "--sqlserver-schema-file",
         "--sqlserver-dacpac-file",
         "--json-output-file",
@@ -27,6 +28,7 @@ internal sealed class AdviseArgumentParser
     {
         "--replay-artifact-dir",
         "--query-store-correlation-file",
+        "--read-only-connection-string",
         "--sqlserver-schema-file",
         "--sqlserver-dacpac-file",
         "--json-output-file",
@@ -80,7 +82,9 @@ internal sealed class AdviseArgumentParser
         string queryStoreCorrelationPath,
         string jsonOutputPath,
         string? defaultDacpacPath = null,
-        string? currentDirectory = null)
+        string? currentDirectory = null,
+        string? defaultReadOnlyConnectionString = null,
+        bool allowMissingSchemaSource = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(queryStoreCorrelationPath);
@@ -91,7 +95,9 @@ internal sealed class AdviseArgumentParser
         var schemaSource = ResolveSchemaSource(
             args,
             defaultDacpacPath,
-            currentDirectory);
+            defaultReadOnlyConnectionString,
+            currentDirectory,
+            allowMissingSchemaSource);
 
         return new AdviseArguments
         {
@@ -99,6 +105,7 @@ internal sealed class AdviseArgumentParser
             QueryStoreCorrelationPath = queryStoreCorrelationPath,
             SchemaPath = schemaSource.SchemaPath,
             DacpacPath = schemaSource.DacpacPath,
+            ReadOnlyConnectionString = schemaSource.ReadOnlyConnectionString,
             JsonOutputPath = jsonOutputPath,
             ModelProvider = modelProvider,
             OpenAIOptions = openAIOptions,
@@ -146,7 +153,9 @@ internal sealed class AdviseArgumentParser
     private static AdviceSchemaSource ResolveSchemaSource(
         string[] args,
         string? defaultDacpacPath,
-        string? currentDirectory)
+        string? defaultReadOnlyConnectionString,
+        string? currentDirectory,
+        bool allowMissingSchemaSource)
     {
         var baseDirectory = string.IsNullOrWhiteSpace(currentDirectory)
             ? Directory.GetCurrentDirectory()
@@ -171,25 +180,40 @@ internal sealed class AdviseArgumentParser
 
         var rawDacpacPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-dacpac-file")
             ?? defaultDacpacPath;
-        if (string.IsNullOrWhiteSpace(rawDacpacPath))
+        if (!string.IsNullOrWhiteSpace(rawDacpacPath))
         {
-            throw new ArgumentException(
-                "Sqloom advice needs either --sqlserver-schema-file or a DACPAC source.");
+            var sqlServerDacpacPath = Path.GetFullPath(
+                rawDacpacPath,
+                baseDirectory);
+            if (!File.Exists(sqlServerDacpacPath))
+            {
+                throw new ArgumentException(
+                    $"The SQL Server DACPAC '{sqlServerDacpacPath}' does not exist.");
+            }
+
+            return new AdviceSchemaSource
+            {
+                DacpacPath = sqlServerDacpacPath,
+            };
         }
 
-        var sqlServerDacpacPath = Path.GetFullPath(
-            rawDacpacPath,
-            baseDirectory);
-        if (!File.Exists(sqlServerDacpacPath))
+        var readOnlyConnectionString = CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string")
+            ?? defaultReadOnlyConnectionString;
+        if (!string.IsNullOrWhiteSpace(readOnlyConnectionString))
         {
-            throw new ArgumentException(
-                $"The SQL Server DACPAC '{sqlServerDacpacPath}' does not exist.");
+            return new AdviceSchemaSource
+            {
+                ReadOnlyConnectionString = readOnlyConnectionString,
+            };
         }
 
-        return new AdviceSchemaSource
+        if (allowMissingSchemaSource)
         {
-            DacpacPath = sqlServerDacpacPath,
-        };
+            return new AdviceSchemaSource();
+        }
+
+        throw new ArgumentException(
+            "Sqloom advice needs --sqlserver-schema-file, --sqlserver-dacpac-file, or --read-only-connection-string.");
     }
 }
 
@@ -198,4 +222,6 @@ internal sealed class AdviceSchemaSource
     public string? SchemaPath { get; init; }
 
     public string? DacpacPath { get; init; }
+
+    public string? ReadOnlyConnectionString { get; init; }
 }
