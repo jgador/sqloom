@@ -28,7 +28,7 @@ function Get-SqloomToolingContext
 
     if ($packageVersion.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase))
     {
-        throw "Directory.Build.props <Version> must use a bare NuGet version like 0.2.0, not v0.2.0. Use the leading 'v' only for Git tags or release titles."
+        throw "Directory.Build.props <Version> must use a bare NuGet version like 0.3.0, not v0.3.0. Use the leading 'v' only for Git tags or release titles."
     }
 
     return [pscustomobject]@{

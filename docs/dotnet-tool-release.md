@@ -16,7 +16,7 @@ The release version comes from [Directory.Build.props](../Directory.Build.props)
 
 ## 1. Update release metadata
 
-1. Set the new `<Version>` in [Directory.Build.props](../Directory.Build.props) using a bare NuGet version such as `0.2.0`. Use the leading `v` only for Git tags or release titles such as `v0.2.0`.
+1. Set the new `<Version>` in [Directory.Build.props](../Directory.Build.props) using a bare NuGet version such as `0.3.0`. Use the leading `v` only for Git tags or release titles such as `v0.3.0`.
 2. Confirm [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj) still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
 3. Confirm [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md) still matches the current CLI behavior and install story.
 4. If the public CLI surface, harness contract surface, or documented workflow changed, update [README.md](../README.md) in the same change.
