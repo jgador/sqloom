@@ -44,7 +44,7 @@ try
     {
         $sampleHarnessProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj"
         # Exercise harness resolution and OpenAPI discovery without requiring generated replay query values.
-        & $localCommand replay $sampleHarnessProject --target "GET /api/products/by-category" --max-operations 0
+        & $localCommand replay $sampleHarnessProject --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
         if ($LASTEXITCODE -ne 0)
         {
             throw "sqloom-local sample app smoke check failed."
