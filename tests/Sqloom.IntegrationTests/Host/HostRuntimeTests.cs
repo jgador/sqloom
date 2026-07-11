@@ -34,7 +34,9 @@ public sealed class HostRuntimeTests
                         "dotnet",
                         "--no-build",
                         "--target",
-                        CatalogScenario.OperationKey,
+                        SampleCatalogReplayScenario.OperationKey,
+                        "--replay-data-agent",
+                        "off",
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
@@ -62,7 +64,9 @@ public sealed class HostRuntimeTests
                         "dotnet",
                         "--no-build",
                         "--target",
-                        CatalogScenario.OperationKey,
+                        SampleCatalogReplayScenario.OperationKey,
+                        "--replay-data-agent",
+                        "off",
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
@@ -71,7 +75,7 @@ public sealed class HostRuntimeTests
         AssertReplayRequiresPreparedQueryData(result);
         Assert.Contains("[sqloom debug] [replay] resolved inputs", result.StdErr, StringComparison.Ordinal);
         Assert.Contains(
-            $"target_filter={CatalogScenario.OperationKey}",
+            $"target_filter={SampleCatalogReplayScenario.OperationKey}",
             result.StdErr,
             StringComparison.Ordinal);
     }

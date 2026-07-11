@@ -3,7 +3,6 @@ using System.IO;
 using Sqloom.Core.Execution;
 using Sqloom.Host.Replay;
 using Sqloom.Testing;
-using Sqloom.TestApp.Harness;
 using Sqloom.Tests;
 using Xunit;
 
@@ -35,7 +34,9 @@ public sealed class ReplayArgumentParserTests
                 "--openapi-file",
                 openApiPath,
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
+                "--openai-api-key",
+                "openai-key",
             ],
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
@@ -44,7 +45,7 @@ public sealed class ReplayArgumentParserTests
         Assert.Equal(
             Path.GetFullPath(openApiPath),
             arguments.RunnerOptions.OpenApiPath);
-        Assert.Equal(CatalogScenario.OperationKey, arguments.RunnerOptions.TargetFilter);
+        Assert.Equal(SampleCatalogReplayScenario.OperationKey, arguments.RunnerOptions.TargetFilter);
         Assert.Equal(
             Path.GetFullPath(dacpacPath),
             arguments.RunnerOptions.ReplayLaunchOptions.DacpacPath);
@@ -60,7 +61,10 @@ public sealed class ReplayArgumentParserTests
         var currentDirectory = CreateTempDir();
 
         var arguments = parser.Parse(
-            [],
+            [
+                "--openai-api-key",
+                "openai-key",
+            ],
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
             currentDirectory);
@@ -69,6 +73,27 @@ public sealed class ReplayArgumentParserTests
             RepositoryPaths.GetTestAppOpenApiPath(),
             arguments.RunnerOptions.OpenApiPath,
             StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(ReplayDataAgentMode.Required, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+    }
+
+    [Fact]
+    public void WithReplayDataAgentOff_DisablesAgentPreparer()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var arguments = parser.Parse(
+            [
+                "--replay-data-agent",
+                "off",
+            ],
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory);
+
+        Assert.Equal(ReplayDataAgentMode.Off, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.Null(arguments.RunnerOptions.ReplayDataPreparer);
     }
 
     [Fact]
@@ -309,10 +334,10 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Theory]
-    [InlineData("get /api/products/by-category", "The HTTP method must be uppercase.", CatalogScenario.OperationKey)]
-    [InlineData("GET api/products/by-category", "The route template must start with '/'.", CatalogScenario.OperationKey)]
-    [InlineData("GET /api/products/by-category/", "Do not include a trailing '/' in the route template.", CatalogScenario.OperationKey)]
-    [InlineData("GET //api/products/by-category", "Do not include repeated '/' characters in the route template.", CatalogScenario.OperationKey)]
+    [InlineData("get /api/products/by-category", "The HTTP method must be uppercase.", SampleCatalogReplayScenario.OperationKey)]
+    [InlineData("GET api/products/by-category", "The route template must start with '/'.", SampleCatalogReplayScenario.OperationKey)]
+    [InlineData("GET /api/products/by-category/", "Do not include a trailing '/' in the route template.", SampleCatalogReplayScenario.OperationKey)]
+    [InlineData("GET //api/products/by-category", "Do not include repeated '/' characters in the route template.", SampleCatalogReplayScenario.OperationKey)]
     public void RejectsMalformedTargetValues(
         string targetFilter,
         string expectedReason,

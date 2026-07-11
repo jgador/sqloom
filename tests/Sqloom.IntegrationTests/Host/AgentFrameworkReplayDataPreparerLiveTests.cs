@@ -3,7 +3,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using Sqloom.Core.Execution;
 using Sqloom.Host.Replay;
-using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -40,7 +39,7 @@ public sealed class AgentFrameworkReplayDataPreparerLiveTests
 
         Assert.Equal("microsoft-agent-framework-openai", result.Strategy);
         Assert.Equal("generated", result.Status);
-        Assert.Equal(CatalogScenario.OperationKey, result.OperationKey);
+        Assert.Equal(SampleCatalogReplayScenario.OperationKey, result.OperationKey);
         Assert.True(result.PreparedData.QueryValues.ContainsKey("categoryId"));
         Assert.True(result.PreparedData.QueryValues.ContainsKey("minPrice"));
         Assert.Contains("microsoft-agent-framework", result.SourcesUsed);
@@ -51,7 +50,7 @@ public sealed class AgentFrameworkReplayDataPreparerLiveTests
         var operations = await new OpenApiCatalogLoader()
             .LoadAsync(SqloomTestAppPaths.GetOpenApiPath());
         var operation = operations.Single(operation =>
-            string.Equals(operation.StableOperationKey, CatalogScenario.OperationKey, StringComparison.Ordinal));
+            string.Equals(operation.StableOperationKey, SampleCatalogReplayScenario.OperationKey, StringComparison.Ordinal));
 
         Assert.Contains(
             operation.Parameters,

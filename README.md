@@ -35,7 +35,6 @@ Set `OPENAI_API_KEY`, make sure `AdventureWorksLT2025` is restored on your local
 sqloom-local tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
  --target "GET /api/products/by-category" `
  --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
- --replay-data-agent required `
  --model-provider openai `
  --openai-api-key $env:OPENAI_API_KEY `
  --openai-model "gpt-5.4-mini" `
@@ -48,7 +47,7 @@ The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 
 - `query-store-snapshot.json`
 - `tune-summary.json`
-- `replay/replay-data-prep.json` when `--replay-data-agent` is enabled
+- `replay/replay-data-prep.json`
 - `replay/query-store-correlation.json`
 - `replay/sqlserver-schema-source.dacpac` when Sqloom exports the schema source from the read-only connection
 - `replay/sqlserver-dacpac-extract/model.sql` when schema is extracted from a DACPAC
@@ -59,7 +58,7 @@ The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 
 The important review artifact is usually `replay/sql-tuning-proposal.sql`, with the JSON files available when you want the full evidence chain.
 
-If the harness does not already provide enough path, query, header, or body values for replay, add `--replay-data-agent auto` with `--openai-api-key`. Sqloom uses Microsoft Agent Framework with OpenAI to fill missing replay inputs before the replay stage and keeps the generated values in `replay/replay-data-prep.json`. `off` is the only non-agent mode.
+Sqloom uses Microsoft Agent Framework with OpenAI by default to fill missing replay path, query, header, and body values before the replay stage. Pass `--openai-api-key` for the agent call; pass `--replay-data-agent off` only when you want to opt out and rely entirely on harness-supplied replay values.
 
 ## Commands
 

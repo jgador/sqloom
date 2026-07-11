@@ -33,7 +33,7 @@ public sealed class SampleApplication : ISqloomApplication
             Name = "Sqloom Test App",
             OpenApiPath = OpenApiDoc.FindRequired(
                 ResolveTestAppDirectory()),
-            ReplayProfile = CreateReplayProfile(),
+            ReplayProfile = new ReplayProfile(),
             WorkloadProfile = new WorkloadProfile
             {
                 Name = "SqloomTestApp",
@@ -55,29 +55,6 @@ public sealed class SampleApplication : ISqloomApplication
                 cancellationToken)
             .ConfigureAwait(false);
         return new SampleSession(replayHost);
-    }
-
-    private static ReplayProfile CreateReplayProfile()
-    {
-        return new ReplayProfile
-        {
-            Personas =
-            [
-                new ReplayPersonaDefinition
-                {
-                    Name = "sqloom-test-user",
-                },
-            ],
-            OperationOverlays =
-            [
-                new ReplayOverlay
-                {
-                    OperationKey = CatalogScenario.OperationKey,
-                    Persona = "sqloom-test-user",
-                    Notes = "AdventureWorks product query intentionally seeded without a supporting nonclustered index for tuning advice coverage.",
-                },
-            ],
-        };
     }
 
     private static string ResolveTestAppDirectory()

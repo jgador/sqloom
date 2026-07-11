@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -32,7 +31,9 @@ public sealed class HostProcessTests
                 "--dotnet-command",
                 "dotnet",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
+                "--replay-data-agent",
+                "off",
             ]);
 
         Assert.True(
@@ -64,7 +65,7 @@ public sealed class HostProcessTests
                 "--",
                 targetProjectPath,
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ]);
 
         Assert.True(

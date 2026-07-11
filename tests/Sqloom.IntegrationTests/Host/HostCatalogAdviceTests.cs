@@ -72,7 +72,7 @@ public sealed class HostCatalogAdviceTests
                                 ModelName = "test-replay-data",
                             },
                             ReplayDataPreparer = new StaticCatalogReplayDataPreparer(),
-                            TargetFilter = CatalogScenario.OperationKey,
+                            TargetFilter = SampleCatalogReplayScenario.OperationKey,
                         })
                     .ConfigureAwait(true);
 
@@ -148,7 +148,7 @@ public sealed class HostCatalogAdviceTests
 
                     var adviceOperation = Assert.Single(adviceReport.Operations);
                     var proposalOperation = Assert.Single(proposalReport.Operations);
-                    Assert.Equal(CatalogScenario.OperationKey, adviceOperation.OperationKey);
+                    Assert.Equal(SampleCatalogReplayScenario.OperationKey, adviceOperation.OperationKey);
                     Assert.True(
                         HasSurvivingProductProposal(adviceOperation),
                         FormatAdviceFailureMessage(adviceReport));
@@ -215,7 +215,7 @@ public sealed class HostCatalogAdviceTests
                             "--artifact-dir",
                             artifactDirectory,
                             "--target",
-                            CatalogScenario.OperationKey,
+                            SampleCatalogReplayScenario.OperationKey,
                             "--model-provider",
                             "openai",
                             "--openai-api-key",
@@ -327,7 +327,7 @@ public sealed class HostCatalogAdviceTests
         for (var iteration = 0; iteration < 6; iteration++)
         {
             using var response = await client
-                .GetAsync(CatalogScenario.CreateRequestPath())
+                .GetAsync(SampleCatalogReplayScenario.CreateRequestPath())
                 .ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
         }
@@ -359,7 +359,7 @@ public sealed class HostCatalogAdviceTests
     private static bool HasMatchedProductCorrelation(QueryCorrelationReport report)
     {
         return report.Records.Any(record =>
-            string.Equals(record.OperationKey, CatalogScenario.OperationKey, StringComparison.OrdinalIgnoreCase)
+            string.Equals(record.OperationKey, SampleCatalogReplayScenario.OperationKey, StringComparison.OrdinalIgnoreCase)
             && record.CapturedCommand.SourceKind == CapturedSqlSourceKind.EntityFramework
             && record.MatchKind != CorrelationMatchKind.Unmatched
             && record.MatchedPlans.Count > 0);
@@ -516,8 +516,8 @@ public sealed class HostCatalogAdviceTests
             Persona = "sqloom-test-user",
             QueryValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                ["categoryId"] = CatalogScenario.HotCategoryId.ToString(),
-                ["minPrice"] = CatalogScenario.MinPriceText,
+                ["categoryId"] = SampleCatalogReplayScenario.HotCategoryId.ToString(),
+                ["minPrice"] = SampleCatalogReplayScenario.MinPriceText,
             },
         };
     }
@@ -537,7 +537,7 @@ public sealed class HostCatalogAdviceTests
             [
                 new ReplayOverlay
                 {
-                    OperationKey = CatalogScenario.OperationKey,
+                    OperationKey = SampleCatalogReplayScenario.OperationKey,
                     Persona = "sqloom-test-user",
                     QueryValues = CreateCatalogReplayPreparedData().QueryValues,
                     Notes = "Test-only replay data for deterministic advice coverage.",
@@ -650,7 +650,7 @@ public sealed class HostCatalogAdviceTests
                 $"{record.OperationKey}:{record.MatchKind}:{record.MatchedPlans.Count}:{Truncate(record.ComparableSqlText)}")
             .ToArray();
         return
-            $"Expected a matched Query Store record for '{CatalogScenario.OperationKey}', but found: {string.Join(" | ", summaries)}.";
+            $"Expected a matched Query Store record for '{SampleCatalogReplayScenario.OperationKey}', but found: {string.Join(" | ", summaries)}.";
     }
 
     private static string FormatAdviceFailureMessage(AdviceReport report)
@@ -677,7 +677,7 @@ public sealed class HostCatalogAdviceTests
             .ToArray();
 
         return
-            $"Expected the SQL proposal sidecars to keep an index proposal for '{CatalogScenario.OperationKey}', but proposals were [{string.Join(" | ", proposalSummaries)}] and script was [{Truncate(proposalScript)}].";
+            $"Expected the SQL proposal sidecars to keep an index proposal for '{SampleCatalogReplayScenario.OperationKey}', but proposals were [{string.Join(" | ", proposalSummaries)}] and script was [{Truncate(proposalScript)}].";
     }
 
     private static string Truncate(string value)

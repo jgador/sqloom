@@ -4,7 +4,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Core.Execution;
 using Sqloom.Host.Replay;
-using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.Host.Tests.Replay;
@@ -103,7 +102,7 @@ public sealed class AgentFrameworkReplayDataPreparerTests
 
         Assert.Equal("microsoft-agent-framework-openai", result.Strategy);
         Assert.Equal("generated", result.Status);
-        Assert.Equal(CatalogScenario.OperationKey, result.OperationKey);
+        Assert.Equal(SampleCatalogReplayScenario.OperationKey, result.OperationKey);
         Assert.Equal("1", result.PreparedData.QueryValues["categoryId"]);
         Assert.Equal("900", result.PreparedData.QueryValues["minPrice"]);
         Assert.False(result.PreparedData.QueryValues.ContainsKey("extra"));
@@ -194,9 +193,9 @@ public sealed class AgentFrameworkReplayDataPreparerTests
         {
             Operation = new OpenApiOperation
             {
-                StableOperationKey = CatalogScenario.OperationKey,
+                StableOperationKey = SampleCatalogReplayScenario.OperationKey,
                 HttpMethod = "GET",
-                Route = CatalogScenario.Route,
+                Route = SampleCatalogReplayScenario.Route,
                 Parameters =
                 [
                     new OpenApiParameter
@@ -217,9 +216,9 @@ public sealed class AgentFrameworkReplayDataPreparerTests
             },
             ResolvedOperation = new ResolvedReplayOperation
             {
-                OperationKey = CatalogScenario.OperationKey,
+                OperationKey = SampleCatalogReplayScenario.OperationKey,
                 HttpMethod = "GET",
-                Route = CatalogScenario.Route,
+                Route = SampleCatalogReplayScenario.Route,
                 QueryValues = queryValues
                     ?? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
             },

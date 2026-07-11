@@ -191,7 +191,10 @@ internal sealed class ReplayArgumentParser
             CommandArgumentSupport.GetArgumentValue(args, "--replay-data-agent"));
         if (mode == ReplayDataAgentMode.Off)
         {
-            return new ReplayDataAgentOptions();
+            return new ReplayDataAgentOptions
+            {
+                Mode = ReplayDataAgentMode.Off,
+            };
         }
 
         return new ReplayDataAgentOptions
@@ -221,7 +224,7 @@ internal sealed class ReplayArgumentParser
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             throw new ArgumentException(
-                "Sqloom replay data agent requires --openai-api-key when --replay-data-agent is auto or required.");
+                "Sqloom replay data agent requires --openai-api-key unless --replay-data-agent off is supplied.");
         }
 
         return new AgentFrameworkReplayDataPreparer(
@@ -238,7 +241,7 @@ internal sealed class ReplayArgumentParser
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return ReplayDataAgentMode.Off;
+            return ReplayDataAgentMode.Required;
         }
 
         return value.Trim().ToLowerInvariant() switch

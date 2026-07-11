@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Sqloom.TestApp.Harness;
 using Sqloom.Tests;
 using Xunit;
 
@@ -24,7 +23,7 @@ public sealed class HostStartupCommandLineTests
                 relativeProjectPath,
                 "--no-build",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -38,7 +37,7 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(CatalogScenario.OperationKey, item));
+            item => Assert.Equal(SampleCatalogReplayScenario.OperationKey, item));
     }
 
     [Fact]
@@ -55,7 +54,7 @@ public sealed class HostStartupCommandLineTests
                 "--read-only-connection-string",
                 "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -70,7 +69,7 @@ public sealed class HostStartupCommandLineTests
             item => Assert.Equal("--read-only-connection-string", item),
             item => Assert.Equal("Server=localhost;Database=Sqloom;Trusted_Connection=True;", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(CatalogScenario.OperationKey, item));
+            item => Assert.Equal(SampleCatalogReplayScenario.OperationKey, item));
     }
 
     [Fact]
@@ -113,7 +112,7 @@ public sealed class HostStartupCommandLineTests
                 "--dotnet-command",
                 "custom-dotnet",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -126,7 +125,7 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(CatalogScenario.OperationKey, item));
+            item => Assert.Equal(SampleCatalogReplayScenario.OperationKey, item));
     }
 
     [Fact]
@@ -142,7 +141,7 @@ public sealed class HostStartupCommandLineTests
                 relativeProjectPath,
                 "--debug",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -155,7 +154,7 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(CatalogScenario.OperationKey, item));
+            item => Assert.Equal(SampleCatalogReplayScenario.OperationKey, item));
     }
 
     [Theory]
@@ -171,7 +170,7 @@ public sealed class HostStartupCommandLineTests
                 [
                     relativeTargetPath,
                     "--target",
-                    CatalogScenario.OperationKey,
+                    SampleCatalogReplayScenario.OperationKey,
                 ],
                 currentDirectory));
 

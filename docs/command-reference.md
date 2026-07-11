@@ -96,7 +96,7 @@ sqloom tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
 | `--artifact-dir <path>` | Uses a custom workflow root. Default: `artifacts/sqloom/tune/tune-<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target "METHOD /path/template"` | Replays one exact operation. The method must be uppercase, with one space before a leading-slash route and no trailing slash. |
-| `--replay-data-agent off\|auto\|required` | Enables replay-only HTTP request data preparation. Default: `off`. `auto` and `required` use Microsoft Agent Framework with OpenAI and require `--openai-api-key`. The agent fills path/query/header/body values; it does not generate DACPACs or seed SQL. `off` is the only non-agent mode. |
+| `--replay-data-agent off\|auto\|required` | Controls replay-only HTTP request data preparation. Default: `required`. `auto` and `required` use Microsoft Agent Framework with OpenAI and require `--openai-api-key`. The agent fills path/query/header/body values; it does not generate DACPACs or seed SQL. `off` is the only non-agent mode. |
 | `--replay-data-agent-model <id>` | Model id for the replay data agent. Default: `gpt-5.4-mini`. This is separate from the advice `--openai-model`. |
 | `--sqlserver-schema-file <path>` | Expert override for manually supplied schema SQL. This wins over DACPAC extraction. |
 | `--openai-model <id>` | OpenAI model id. Default: `gpt-5.4-mini`. |
@@ -110,7 +110,7 @@ Without `--artifact-dir`, `tune` writes under `artifacts/sqloom/tune/tune-<times
 - `tune-summary.json`
 - `replay/discovered-operations.json`
 - `replay/replay-plan.json`
-- `replay/replay-data-prep.json` when `--replay-data-agent` is enabled
+- `replay/replay-data-prep.json` unless `--replay-data-agent off` is supplied
 - `replay/replay-summary.json`
 - `replay/operations/<ordinal>-<operation>.json`
 - `replay/query-store-correlation.json`
@@ -127,7 +127,8 @@ Use `replay` when you only want to execute API operations through a harness and 
 
 ```powershell
 sqloom replay .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
-  --target "GET /api/products/by-category"
+  --target "GET /api/products/by-category" `
+  --openai-api-key $env:OPENAI_API_KEY
 ```
 
 ### Required Arguments
@@ -146,9 +147,9 @@ sqloom replay .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
 | `--artifact-dir <path>` | Uses a custom replay output folder. Default: `artifacts/sqloom/replay/<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target "METHOD /path/template"` | Replays one exact operation such as `GET /api/products/by-category`. |
-| `--replay-data-agent off\|auto\|required` | Enables replay-only request data preparation. Default: `off`. `auto` and `required` use Microsoft Agent Framework with OpenAI and require `--openai-api-key`. `off` is the only non-agent mode. |
+| `--replay-data-agent off\|auto\|required` | Controls replay-only request data preparation. Default: `required`. `auto` and `required` use Microsoft Agent Framework with OpenAI and require `--openai-api-key`. `off` is the only non-agent mode. |
 | `--replay-data-agent-model <id>` | Model id for the replay data agent. Default: `gpt-5.4-mini`. |
-| `--openai-api-key <key>` | API key used when the replay data agent calls Microsoft Agent Framework. Required when `--replay-data-agent` is `auto` or `required`. |
+| `--openai-api-key <key>` | API key used when the replay data agent calls Microsoft Agent Framework. Required unless `--replay-data-agent off` is supplied. |
 | `--openai-base-url <url>` | OpenAI base URL for the replay data agent. Default: `https://api.openai.com`. |
 
 Sqloom replays authenticated `GET` operations by default plus app overlays enabled by default. Non-`GET` operations must be allowed by the app through replay overlays and selected when needed.
@@ -157,7 +158,7 @@ Sqloom replays authenticated `GET` operations by default plus app overlays enabl
 
 - `discovered-operations.json`
 - `replay-plan.json`
-- `replay-data-prep.json` when `--replay-data-agent` is enabled
+- `replay-data-prep.json` unless `--replay-data-agent off` is supplied
 - `replay-summary.json`
 - `operations/<ordinal>-<operation>.json`
 
@@ -292,7 +293,6 @@ The repository does not check in an `AdventureWorksLT2025` DACPAC or seed SQL fi
 sqloom-local tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
   --target "GET /api/products/by-category" `
   --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
-  --replay-data-agent required `
   --model-provider openai `
   --openai-api-key $env:OPENAI_API_KEY
 ```

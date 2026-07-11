@@ -122,7 +122,7 @@ sqloom tune <path> --model-provider <openai> --openai-api-key <key> [options]
 | `--artifact-dir <path>` | Uses a custom tune workflow root. Default: `artifacts/sqloom/tune/tune-<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target <METHOD /path/template>` | Replays one exact operation in the form METHOD /path/template. |
-| `--replay-data-agent <off\|auto\|required>` | Controls replay request data preparation. Allowed values: off, auto, required. Default: `off`. |
+| `--replay-data-agent <off\|auto\|required>` | Controls replay request data preparation. Allowed values: off, auto, required. Default: `required`. |
 | `--replay-data-agent-model <id>` | Selects the replay data agent model. Default: `gpt-5.4-mini`. |
 | `--model-provider <openai>` | Selects the advice provider. The supported value is openai. Required. |
 | `--sqlserver-schema-file <path>` | Uses manually supplied schema SQL instead of DACPAC extraction. |
@@ -136,7 +136,7 @@ sqloom tune <path> --model-provider <openai> --openai-api-key <key> [options]
 - Tune writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.
 - Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string.
 - When no DACPAC override or harness manifest DACPAC is available, tune exports a DACPAC from the command-line read-only connection before replay and reuses it for advice schema extraction.
-- Use --replay-data-agent auto or required with --openai-api-key to let Microsoft Agent Framework fill missing replay path, query, header, and body values.
+- By default, Microsoft Agent Framework fills missing replay path, query, header, and body values; pass --replay-data-agent off to opt out.
 - --sqlserver-dacpac-file and --sqlserver-seed-sql-file are harness replay launch overrides; the replay data agent does not generate DACPACs or seed SQL.
 - When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.
 
@@ -170,7 +170,7 @@ sqloom replay <path> [options]
 | `--artifact-dir <path>` | Uses a custom replay output directory. Default: `artifacts/sqloom/replay/<timestamp>`. |
 | `--max-operations <count>` | Caps replayed operations after filtering. Default: `25`. |
 | `--target <METHOD /path/template>` | Replays one exact operation in the form METHOD /path/template. |
-| `--replay-data-agent <off\|auto\|required>` | Controls replay request data preparation. Allowed values: off, auto, required. Default: `off`. |
+| `--replay-data-agent <off\|auto\|required>` | Controls replay request data preparation. Allowed values: off, auto, required. Default: `required`. |
 | `--replay-data-agent-model <id>` | Selects the replay data agent model. Default: `gpt-5.4-mini`. |
 | `--openai-base-url <url>` | Sets the OpenAI base URL for the replay data agent. Default: `https://api.openai.com`. |
 | `--openai-api-key <key>` | Supplies the OpenAI API key used by the replay data agent. |
@@ -183,7 +183,7 @@ sqloom replay <path> [options]
 - If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.
 - SQL Server-backed replay harnesses can consume app-owned DACPAC and seed launch options when they implement that setup.
 - The replay data agent fills HTTP replay inputs only; it does not generate DACPACs or seed SQL.
-- The replay data agent is replay-only. When enabled, it requires --openai-api-key, uses Microsoft Agent Framework, and writes replay-data-prep.json.
+- The replay data agent is replay-only. It defaults to required, uses Microsoft Agent Framework, requires --openai-api-key unless --replay-data-agent off is supplied, and writes replay-data-prep.json.
 - Replay targets must use the exact form 'METHOD /path/template', for example --target "GET /api/expenses/dashboard".
 - Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.
 

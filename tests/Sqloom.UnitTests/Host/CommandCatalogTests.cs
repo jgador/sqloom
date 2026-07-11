@@ -38,6 +38,7 @@ public sealed class CommandCatalogTests
         var replay = CommandCatalog.GetRequired(HostCommandKind.Replay);
         Assert.Equal(CommandTargetKind.Required, replay.TargetKind);
         Assert.True(replay.Options.Single(option => option.Name == "--max-operations").TakesValue);
+        Assert.Equal("required", replay.Options.Single(option => option.Name == "--replay-data-agent").DefaultValue);
         Assert.False(replay.Options.Single(option => option.Name == "--openai-api-key").IsRequired);
     }
 

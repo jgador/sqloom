@@ -3,7 +3,6 @@ using System.IO;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
 using Sqloom.Host.Replay;
-using Sqloom.TestApp.Harness;
 using Sqloom.Testing;
 using Xunit;
 
@@ -55,7 +54,7 @@ public sealed class TuneArgumentParserTests
                 "--openapi-file",
                 openApiPath,
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
                 "--replay-data-agent",
                 "auto",
                 "--replay-data-agent-model",
@@ -99,7 +98,7 @@ public sealed class TuneArgumentParserTests
             Path.GetFullPath(seedSqlPath),
             arguments.ReplayArguments.RunnerOptions.ReplayLaunchOptions.SeedSqlPath,
             StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(CatalogScenario.OperationKey, arguments.ReplayArguments.RunnerOptions.TargetFilter);
+        Assert.Equal(SampleCatalogReplayScenario.OperationKey, arguments.ReplayArguments.RunnerOptions.TargetFilter);
         Assert.Equal(ReplayDataAgentMode.Auto, arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.Equal("gpt-replay", arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
         Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.ReplayArguments.RunnerOptions.ReplayDataPreparer);
@@ -154,6 +153,8 @@ public sealed class TuneArgumentParserTests
                     "tune",
                     "--read-only-connection-string",
                     "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                    "--openai-api-key",
+                    "openai-key",
                 ],
                 ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
@@ -235,6 +236,26 @@ public sealed class TuneArgumentParserTests
     }
 
     [Fact]
+    public void ValidateBeforeSession_RequiresOpenAIKeyForDefaultReplayDataAgent()
+    {
+        TuneArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.ValidateBeforeSession(
+                [
+                    "tune",
+                    "--model-provider",
+                    "openai",
+                ],
+                ManifestFactory.CreateManifest(),
+                currentDirectory));
+
+        Assert.Contains("replay data agent", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void Parse_UsesManifestDacpacForAdviceSchemaSource()
     {
         TuneArgumentParser parser = new();
@@ -267,6 +288,8 @@ public sealed class TuneArgumentParserTests
         Assert.Null(arguments.AdviseArguments.SchemaPath);
         Assert.Equal(Path.GetFullPath(dacpacPath), arguments.AdviseArguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
         Assert.Null(arguments.AdviseArguments.ReadOnlyConnectionString);
+        Assert.Equal(ReplayDataAgentMode.Required, arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.ReplayArguments.RunnerOptions.ReplayDataPreparer);
     }
 
     [Fact]
