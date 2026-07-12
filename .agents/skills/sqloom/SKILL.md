@@ -27,6 +27,16 @@ Use [references/commands.md](references/commands.md) for exact Sqloom commands, 
 - Before forming a command, check the command reference for current provider, API key, replay-data-agent, schema-source, and connection-string requirements.
 - Treat `$env:OPENAI_API_KEY` examples as shell expansion into the `--openai-api-key` option, not as automatic Sqloom environment-variable loading.
 
+## Reference `Sqloom.Testing` From Consumer Harnesses
+
+When creating or updating an app-owned harness outside the Sqloom repository, add a NuGet `PackageReference` to the public `Sqloom.Testing` package instead of using a repo-local project reference:
+
+```powershell
+dotnet add <harness-project.csproj> package Sqloom.Testing
+```
+
+Use `using Sqloom.Testing;` for `ISqloomApplication`, manifest, and session contracts. Use `using Sqloom.Testing.AspNetCore;` only when the harness needs the ASP.NET Core replay SQL capture helpers. Do not ask the user to reference `Sqloom.Core` directly for normal harness work; `Sqloom.Testing` brings in the shared Sqloom contracts transitively.
+
 ## Start With Evidence
 
 Inspect the target app, OpenAPI document, and existing tests before asking questions. Look for:
@@ -72,4 +82,4 @@ Before writing harness files, confirm the complete intake:
 - database bootstrap path
 - whether the default replay data agent stays enabled or the user is opting out with `--replay-data-agent off`
 
-Generate the smallest harness that can start the app, expose `ISqloomApplication`, locate the app-owned OpenAPI document, and run the selected Sqloom command. Keep app-specific setup in the harness; do not add Sqloom runtime features for one app's setup. Keep `ReplayProfile` minimal: do not add personas or overlays solely to supply path, query, header, or body values when the default replay data agent can prepare them. Use overlays for app-owned deterministic values, non-GET opt-in, and skip rules.
+Generate the smallest harness project that references the public `Sqloom.Testing` package, starts the app, exposes `ISqloomApplication`, locates the app-owned OpenAPI document, and runs the selected Sqloom command. Keep app-specific setup in the harness; do not add Sqloom runtime features for one app's setup. Keep `ReplayProfile` minimal: do not add personas or overlays solely to supply path, query, header, or body values when the default replay data agent can prepare them. Use overlays for app-owned deterministic values, non-GET opt-in, and skip rules.
