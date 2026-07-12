@@ -72,7 +72,7 @@ internal sealed class AppResolver
             0 => throw new AppResolutionException(
                 $"The Sqloom target '{Path.GetFullPath(targetPath)}' does not contain an {nameof(ISqloomApplication)} implementation."),
             > 1 => throw new AppResolutionException(
-                $"The Sqloom target '{Path.GetFullPath(targetPath)}' contains multiple public {nameof(ISqloomApplication)} implementations: {string.Join(", ", appTypes.Select(static item => item.Type.FullName))}. Pass a narrower target in v1."),
+                $"The Sqloom target '{Path.GetFullPath(targetPath)}' contains multiple public {nameof(ISqloomApplication)} implementations: {string.Join(", ", appTypes.Select(static item => item.Type.FullName))}. Pass a narrower target."),
             _ => appTypes[0],
         };
 

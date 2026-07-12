@@ -64,7 +64,7 @@ internal sealed class AppProjectResolver
         IReadOnlyCollection<ResolvedAssemblySelection> assemblySelections)
     {
         return new AppResolutionException(
-            $"The Sqloom target '{Path.GetFullPath(targetPath)}' resolved to multiple harness assembly candidates: {string.Join(", ", assemblySelections.Select(static selection => selection.AssemblyPath))}. Pass a narrower target in v1.");
+            $"The Sqloom target '{Path.GetFullPath(targetPath)}' resolved to multiple harness assembly candidates: {string.Join(", ", assemblySelections.Select(static selection => selection.AssemblyPath))}. Pass a narrower target.");
     }
 
     private async Task<string> ResolveAssemblyPathAsync(

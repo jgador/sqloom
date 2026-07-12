@@ -46,7 +46,7 @@ public sealed class ReplayPlanBuilderTests
             item =>
             {
                 Assert.Equal("skipped", item.Status);
-                Assert.Equal("Anonymous operations are not replayed by default in V1.", item.Reason);
+                Assert.Equal("Anonymous operations are not replayed by default.", item.Reason);
             },
             item =>
             {

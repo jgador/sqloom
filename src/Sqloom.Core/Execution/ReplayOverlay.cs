@@ -28,7 +28,7 @@ public sealed class ReplayOverlay
     public bool ReplayByDefault { get; init; } = true;
 
     /// <summary>
-    /// Bypasses the V1 GET-only safety rule for this operation.
+    /// Bypasses the GET-only safety rule for this operation.
     /// </summary>
     [JsonPropertyName("allowNonGetReplay")]
     public bool AllowNonGetReplay { get; init; }

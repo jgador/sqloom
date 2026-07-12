@@ -16,7 +16,7 @@ The release version comes from [Directory.Build.props](../Directory.Build.props)
 
 ## 1. Update release metadata
 
-1. Set the new `<Version>` in [Directory.Build.props](../Directory.Build.props) using a bare NuGet version such as `0.3.0`. Use the leading `v` only for Git tags or release titles such as `v0.3.0`.
+1. Set the new `<Version>` in [Directory.Build.props](../Directory.Build.props) using a bare NuGet package version. Use the leading `v` only for Git tags or release titles.
 2. Confirm [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj) still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
 3. Confirm [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md) still matches the current install story and points exact command syntax back to the generated command reference instead of duplicating option tables.
 4. If command metadata changed, update [src/Sqloom.Host/CommandCatalog.cs](../src/Sqloom.Host/CommandCatalog.cs), regenerate [.agents/skills/sqloom/references/commands.md](../.agents/skills/sqloom/references/commands.md), and verify it with the generator check command.
