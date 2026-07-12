@@ -32,13 +32,13 @@ public sealed class OpenAITuningAdviceRequest
     public required string Route { get; init; }
 
     /// <summary>
-    /// Gets the artifact manifest json.
+    /// Gets pre-rendered JSON manifest content embedded verbatim into the model prompt.
     /// </summary>
     [JsonPropertyName("artifactManifestJson")]
     public required string ArtifactManifestJson { get; init; }
 
     /// <summary>
-    /// Gets the source evidence json.
+    /// Gets pre-rendered JSON evidence for the selected operation and Query Store data.
     /// </summary>
     [JsonPropertyName("sourceEvidenceJson")]
     public required string SourceEvidenceJson { get; init; }

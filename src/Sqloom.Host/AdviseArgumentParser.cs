@@ -125,6 +125,7 @@ internal sealed class AdviseArgumentParser
         string? currentDirectory,
         bool allowMissingSchemaSource)
     {
+        // Resolve schema input by precedence: explicit schema SQL, DACPAC, then read-only connection.
         var baseDirectory = string.IsNullOrWhiteSpace(currentDirectory)
             ? Directory.GetCurrentDirectory()
             : currentDirectory!;

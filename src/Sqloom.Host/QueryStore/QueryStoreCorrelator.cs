@@ -180,6 +180,7 @@ public sealed class QueryStoreCorrelator
         IDictionary<string, SqlHandleResolution> cache,
         CancellationToken cancellationToken)
     {
+        // Statement-handle lookup depends on SQL shape and parameter metadata, not runtime parameter values.
         var cacheKey = string.Concat(
             capturedCommand.CommandText,
             "\n--sqloom-parameters--\n",
@@ -226,6 +227,7 @@ public sealed class QueryStoreCorrelator
         double confidence;
         string[] notes;
 
+        // Choose correlation ownership by descending trust: handle, exact text, then local fingerprint.
         if (matchedPlans.Count > 0)
         {
             matchKind = CorrelationMatchKind.StatementHandleExact;

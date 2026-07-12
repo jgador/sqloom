@@ -201,6 +201,7 @@ internal sealed class ReplayPlanBuilder
             return null;
         }
 
+        // Keep --target suggestions conservative: nudge nearby operation keys without guessing across verbs.
         var targetMethod = GetMethod(targetFilter);
         var closestCandidate = availableOperationKeys
             .Select(operationKey => new
@@ -283,6 +284,7 @@ internal sealed class ReplayPlanBuilder
             return true;
         }
 
+        // V1 replays only authenticated GETs by default; anonymous and non-GET operations need opt-in.
         return replayProfile.IncludeAuthGetOps
             && operation.RequiresAuthentication
             && string.Equals(operation.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase);
@@ -306,6 +308,9 @@ internal sealed class ReplayPlanBuilder
         return "Operation did not satisfy the V1 replay-safe filter.";
     }
 
+    /// <summary>
+    /// Holds the discovered operation plus overlay/resolved data while replay filters decide inclusion.
+    /// </summary>
     private sealed record ReplayPlanCandidate(
         OpenApiOperation DiscoveredOperation,
         ReplayOverlay? Overlay,

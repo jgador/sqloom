@@ -489,6 +489,9 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
         }
     }
 
+    /// <summary>
+    /// Carries agent-prepared replay data after validation plus warnings for values Sqloom ignored.
+    /// </summary>
     private sealed record PreparedDataValidationResult(
         ReplayPreparedData PreparedData,
         IReadOnlyList<string> Warnings);

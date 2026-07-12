@@ -33,6 +33,8 @@ public static class JsonFileReader
         CancellationToken cancellationToken = default)
     {
         var json = await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false);
+
+        // Keep reads aligned with persisted artifact contracts instead of web serializer defaults.
         JsonSerializerOptions serializerOptions = new();
         configureOptions?.Invoke(serializerOptions);
         return JsonSerializer.Deserialize<T>(json, serializerOptions);

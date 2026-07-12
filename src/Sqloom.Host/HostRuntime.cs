@@ -147,6 +147,7 @@ public static class HostRuntime
         HostConsoleWriter consoleWriter,
         out int exitCode)
     {
+        // Handle global actions before dispatch and reject target paths when this host is already app-bound.
         if (startupOptions.ShowVersion)
         {
             consoleWriter.PrintVersion(GetDisplayVersion());

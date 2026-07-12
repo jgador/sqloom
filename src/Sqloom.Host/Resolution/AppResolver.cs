@@ -56,6 +56,8 @@ internal sealed class AppResolver
         string targetPath,
         IReadOnlyList<ResolvedAssemblySelection> assemblySelections)
     {
+        // Gather public concrete ISqloomApplication implementations across all resolved assemblies,
+        // then require the target to identify exactly one harness application.
         List<SqloomApplicationTypeSelection> appTypes = [];
         foreach (var assemblySelection in assemblySelections)
         {
@@ -245,6 +247,9 @@ internal sealed class AppResolver
         string assemblyPath)
     {
         var fullAssemblyPath = Path.GetFullPath(assemblyPath);
+
+        // Register the dependency probe before loading through the default context so harness
+        // dependencies resolve from the original target directory.
         RegisterDefaultAssemblyProbe(fullAssemblyPath);
 
         var assemblyName = AssemblyName.GetAssemblyName(fullAssemblyPath).Name
@@ -254,6 +259,9 @@ internal sealed class AppResolver
             ?? loadContext.LoadFromAssemblyPath(fullAssemblyPath);
     }
 
+    /// <summary>
+    /// Keeps a loaded harness assembly paired with the dependency resolver for its original directory.
+    /// </summary>
     private sealed record AssemblyProbe(
         string MainAssemblyPath,
         string AssemblyDirectory,

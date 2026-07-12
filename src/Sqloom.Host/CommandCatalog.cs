@@ -4,13 +4,25 @@ using System.Linq;
 
 namespace Sqloom.Host;
 
+/// <summary>
+/// Defines how a command participates in harness target binding and usage generation.
+/// </summary>
 internal enum CommandTargetKind
 {
     None,
+
+    /// <summary>
+    /// The command accepts a harness target path when one is supplied, but also has a no-harness mode.
+    /// </summary>
     Optional,
+
     Required,
 }
 
+/// <summary>
+/// Describes one command switch for help output, generated references, and shared switch validation.
+/// Required/default values here document the CLI contract; command parsers still apply runtime defaults.
+/// </summary>
 internal sealed record CommandOptionSpec(
     string Name,
     string Description,
@@ -25,6 +37,9 @@ internal sealed record CommandOptionSpec(
         : Name;
 }
 
+/// <summary>
+/// Describes one Sqloom verb across dispatch metadata, target binding, help output, and command docs.
+/// </summary>
 internal sealed record CommandSpec(
     HostCommandKind Kind,
     string Verb,
@@ -39,6 +54,7 @@ internal sealed record CommandSpec(
     {
         get
         {
+            // Keep usage compact: show target shape and required switches, then collapse everything else.
             List<string> parts = [];
             parts.Add(Verb);
             if (TargetKind == CommandTargetKind.Optional)
@@ -100,6 +116,7 @@ internal static class CommandCatalog
             HostCommandKind.Observe,
             "observe",
             "Collects SQL Server Query Store evidence and workload classification.",
+            // Observe can run against Query Store without a harness; a target adds manifest data for classification.
             CommandTargetKind.Optional,
             SupportsDebug: true,
             SupportsHarnessOptions: true,

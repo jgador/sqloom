@@ -8,5 +8,8 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class HostCommandBindings
 {
+    /// <summary>
+    /// Null means the command is intentionally running without a resolved harness application.
+    /// </summary>
     public ISqloomApplication? Application { get; init; }
 }

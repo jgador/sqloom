@@ -416,6 +416,7 @@ internal sealed class HostConsoleWriter
 
     private static CommandSpec? ResolveHelpCommand(string[] applicationArguments)
     {
+        // Normalize both "help <command>" and "<command> --help" onto the same command lookup.
         if (applicationArguments.Length == 0)
         {
             return null;

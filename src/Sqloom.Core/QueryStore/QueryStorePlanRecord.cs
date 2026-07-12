@@ -27,7 +27,7 @@ public sealed class QueryStorePlanRecord
     public required long QueryTextId { get; init; }
 
     /// <summary>
-    /// Gets the statement sql handle.
+    /// Gets the normalized statement_sql_handle used as the highest-confidence correlation key.
     /// </summary>
     [JsonPropertyName("statementSqlHandle")]
     public string? StatementSqlHandle { get; init; }
@@ -57,7 +57,7 @@ public sealed class QueryStorePlanRecord
     public string? ObjectName { get; init; }
 
     /// <summary>
-    /// Gets the query parameterization type.
+    /// Gets the raw Query Store parameterization mode code preserved for handle-resolution evidence.
     /// </summary>
     [JsonPropertyName("queryParameterizationType")]
     public int QueryParameterizationType { get; init; }

@@ -393,16 +393,25 @@ public sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
         return value is > 0 ? value.Value : fallback;
     }
 
+    /// <summary>
+    /// Records one SQL Server handle-resolution attempt for a query text shape and parameterization mode.
+    /// </summary>
     internal sealed record SqlHandleCandidateRecord(
         string QueryTextShape,
         string RequestedParamType,
         int? QueryParameterizationType,
         string? StatementSqlHandle);
 
+    /// <summary>
+    /// Captures one query text variant tried against sys.fn_stmt_sql_handle_from_sql_stmt.
+    /// </summary>
     internal sealed record SqlStatementQueryTextCandidate(
         string QueryTextShape,
         string QuerySqlText);
 
+    /// <summary>
+    /// Represents one requested parameterization mode accepted by SQL Server handle resolution.
+    /// </summary>
     private sealed record RequestedParamType(
         byte? Value,
         string Description);

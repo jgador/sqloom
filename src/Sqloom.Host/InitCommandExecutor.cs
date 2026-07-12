@@ -246,8 +246,14 @@ internal sealed class InitCommandExecutor
         return "codex, claude, copilot, all";
     }
 
+    /// <summary>
+    /// Maps a supported agent name to the repository-relative skill bundle root it owns.
+    /// </summary>
     private sealed record InitAgentTarget(string Agent, string BundleRoot);
 
+    /// <summary>
+    /// Represents one packaged init resource after converting its embedded name to a bundle-relative path.
+    /// </summary>
     private sealed record InitAsset(string RelativePath, byte[] Content);
 
     private sealed record InitCommandOptions(
@@ -271,6 +277,9 @@ internal sealed record InitFileResult(
     string Path,
     InitFileStatus Status);
 
+/// <summary>
+/// Describes how init handled one scaffolded file on disk.
+/// </summary>
 internal enum InitFileStatus
 {
     Created,

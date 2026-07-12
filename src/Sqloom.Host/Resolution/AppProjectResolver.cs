@@ -333,12 +333,18 @@ internal sealed class AppProjectResolver
         };
     }
 
+    /// <summary>
+    /// Captures dotnet process output so build and TargetPath failures can preserve stderr context.
+    /// </summary>
     private sealed record DotNetCommandResult(
         int ExitCode,
         string StandardOutput,
         string StandardError);
 }
 
+/// <summary>
+/// Links a resolved target selection to the assembly path that the host will load.
+/// </summary>
 internal sealed record ResolvedAssemblySelection(
     ResolvedTargetSelection TargetSelection,
     string AssemblyPath);

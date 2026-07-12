@@ -588,6 +588,7 @@ internal sealed class HostDebugWriter
             return "none";
         }
 
+        // Redaction must survive malformed strings: parse structured values first, then fall back to segments.
         try
         {
             DbConnectionStringBuilder builder = new()

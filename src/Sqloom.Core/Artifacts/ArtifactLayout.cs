@@ -219,6 +219,7 @@ public static class ArtifactLayout
         Span<char> invalidCharacters = stackalloc char[Path.GetInvalidFileNameChars().Length];
         Path.GetInvalidFileNameChars().CopyTo(invalidCharacters);
 
+        // Keep operation slugs readable and stable: route separators become '-', invalid filename chars become '_'.
         var buffer = value.ToCharArray();
         for (var index = 0; index < buffer.Length; index++)
         {

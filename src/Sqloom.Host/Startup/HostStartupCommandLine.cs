@@ -123,6 +123,8 @@ internal sealed class HostStartupCommandLine
         string[] args,
         string currentDirectory)
     {
+        // Only the first value after a target-aware verb is treated as the harness path; later path-like
+        // values belong to command-specific options and must stay in ApplicationArguments.
         if (args.Length < 2
             || !args[0].Equals("help", StringComparison.OrdinalIgnoreCase)
                 && CommandCatalog.Find(args[0]) is not { TargetKind: not CommandTargetKind.None })
@@ -159,6 +161,8 @@ internal sealed class HostStartupCommandLine
             return true;
         }
 
+        // Missing paths are still target candidates when their shape is unambiguously path-like, so
+        // the resolver can produce the command-specific missing-target error.
         if (value == "."
             || value == ".."
             || value.Contains(Path.DirectorySeparatorChar)

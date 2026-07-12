@@ -139,6 +139,7 @@ internal sealed class TuneCommand
         ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
 
+        // Replay bootstrap inputs resolve in precedence order: CLI DACPAC, manifest DACPAC, exported DACPAC.
         var dacpacPath = requestedOptions.DacpacPath;
         if (string.IsNullOrWhiteSpace(dacpacPath)
             && !string.IsNullOrWhiteSpace(manifest.SqlServerDacpacPath))

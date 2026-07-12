@@ -10,6 +10,7 @@ namespace Sqloom.Core.QueryStore;
 /// </summary>
 public sealed class WorkloadClassifier
 {
+    // Metadata-query phrases classified as Tooling before app-object matching is attempted.
     private static readonly string[] _defaultToolingPatterns =
     [
         "sys.all_objects",
@@ -22,6 +23,7 @@ public sealed class WorkloadClassifier
         "information_schema",
     ];
 
+    // Platform/service query phrases classified before app-object matching is attempted.
     private static readonly string[] _defaultPlatformPatterns =
     [
         "sys.dm_db_resource_stats",
@@ -339,6 +341,9 @@ public sealed class WorkloadClassifier
         return builder.ToString();
     }
 
+    /// <summary>
+    /// Stores phrase and token-normalized views so classification can match both SQL snippets and identifiers.
+    /// </summary>
     private readonly record struct QueryTextView(string? Value)
     {
         public string PhraseText { get; } = NormalizePhrase(Value);

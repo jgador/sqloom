@@ -43,6 +43,7 @@ internal sealed class TargetPathResolver
 
     private static IReadOnlyList<ResolvedTargetSelection> ResolveTargetSelectionsFromDirectory(string directoryPath)
     {
+        // Directory targets resolve by precedence: direct projects, then solution containers, then loose assemblies.
         var directProjectSelections = Directory
             .EnumerateFiles(directoryPath, "*.*proj", SearchOption.TopDirectoryOnly)
             .Where(IsSupportedProjectPath)
@@ -299,12 +300,18 @@ internal sealed class TargetPathResolver
     }
 }
 
+/// <summary>
+/// Distinguishes targets that need a build from already-built harness assemblies.
+/// </summary>
 internal enum ResolvedTargetKind
 {
     Project,
     Assembly,
 }
 
+/// <summary>
+/// Carries both the user-supplied target and the concrete project or assembly selected from it.
+/// </summary>
 internal sealed record ResolvedTargetSelection(
     string RequestedTargetPath,
     string TargetPath,

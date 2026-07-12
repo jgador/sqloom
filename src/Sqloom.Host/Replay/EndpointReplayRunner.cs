@@ -291,6 +291,7 @@ public sealed class EndpointReplayRunner
         ResolvedReplayOperation resolvedOperation,
         ReplayPreparedData preparedData)
     {
+        // Agent-prepared data is backfill only; explicit resolved operation values always win.
         return new ResolvedReplayOperation
         {
             OperationKey = resolvedOperation.OperationKey,

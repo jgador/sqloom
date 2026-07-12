@@ -41,6 +41,7 @@ public static class JsonFileWriter
             Directory.CreateDirectory(directoryPath);
         }
 
+        // Artifact contracts own wire names with explicit attributes; avoid ambient naming policies here.
         JsonSerializerOptions serializerOptions = new()
         {
             WriteIndented = true,

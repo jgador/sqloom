@@ -22,13 +22,13 @@ public sealed class ReplayOverlay
     public string? Persona { get; init; }
 
     /// <summary>
-    /// Gets the replay by default.
+    /// When false, keeps this operation opt-in even if it passes the default replay-safe filter.
     /// </summary>
     [JsonPropertyName("replayByDefault")]
     public bool ReplayByDefault { get; init; } = true;
 
     /// <summary>
-    /// Gets the allow non get replay.
+    /// Bypasses the V1 GET-only safety rule for this operation.
     /// </summary>
     [JsonPropertyName("allowNonGetReplay")]
     public bool AllowNonGetReplay { get; init; }

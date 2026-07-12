@@ -38,6 +38,7 @@ internal sealed class SqlServerDacpacSchemaExtractor : ISqlServerDacpacSchemaExt
         }
 
         var schemaPath = ArtifactLayout.GetSqlServerSchemaPath(replayArtifactDirectory);
+        // Refresh the extract directory and publish only model.sql as the stable schema artifact.
         var schemaDirectory = Path.GetDirectoryName(schemaPath);
         if (!string.IsNullOrWhiteSpace(schemaDirectory))
         {

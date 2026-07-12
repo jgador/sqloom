@@ -10,7 +10,7 @@ namespace Sqloom.Core.Execution;
 public sealed class ReplayProfile
 {
     /// <summary>
-    /// Gets the include auth get ops.
+    /// Controls the default rule that lets authenticated GET operations replay without per-operation overlays.
     /// </summary>
     [JsonPropertyName("includeAuthGetOps")]
     public bool IncludeAuthGetOps { get; init; } = true;

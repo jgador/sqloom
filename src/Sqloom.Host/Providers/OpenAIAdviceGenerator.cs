@@ -465,6 +465,7 @@ internal sealed class OpenAIAdviceClient
 
     private static object BuildResponseSchema()
     {
+        // Keep the Responses schema closed and small so model output normalizes into reviewable artifacts.
         return new
         {
             type = "object",
@@ -614,6 +615,8 @@ internal sealed class OpenAIAdviceClient
     private static string ReadResponseOutputText(string responseJson)
     {
         using var document = JsonDocument.Parse(responseJson);
+
+        // Responses payloads can expose output text either at the root or under output[].content[].
         if (TryReadStringProperty(document.RootElement, "output_text", out var outputText))
         {
             return outputText;
@@ -729,6 +732,7 @@ internal sealed class OpenAIAdviceClient
             };
         }
 
+        // Normalize model output into stable review artifacts without discarding rollback-warning cases.
         List<SqlTuningProposal> normalizedProposals = new(proposals.Count);
         List<string> warnings = [];
         foreach (var proposal in proposals)
@@ -789,6 +793,9 @@ internal sealed class OpenAIAdviceClient
     }
 }
 
+/// <summary>
+/// Carries cleaned SQL proposals together with non-fatal issues found during normalization.
+/// </summary>
 internal sealed class NormalizedProposalResult
 {
     public required IReadOnlyList<SqlTuningProposal> Proposals { get; init; }

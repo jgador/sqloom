@@ -134,6 +134,7 @@ internal sealed class ObserveCommand
         }
         catch (SqlException sqlException)
         {
+            // Object discovery is best-effort: keep Query Store evidence usable when metadata capture fails.
             return new DbObjectCatalog
             {
                 CapturedAtUtc = DateTimeOffset.UtcNow,

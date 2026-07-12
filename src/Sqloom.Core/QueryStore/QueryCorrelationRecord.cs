@@ -54,7 +54,7 @@ public sealed class QueryCorrelationRecord
     public required CapturedSqlCommand CapturedCommand { get; init; }
 
     /// <summary>
-    /// Gets the comparable sql text.
+    /// Gets the normalized SQL text used for Query Store correlation, not the original command text.
     /// </summary>
     [JsonPropertyName("comparableSqlText")]
     public required string ComparableSqlText { get; init; }
@@ -66,7 +66,7 @@ public sealed class QueryCorrelationRecord
     public string? StatementSqlHandle { get; init; }
 
     /// <summary>
-    /// Gets the sql handle candidates.
+    /// Gets the ordered statement-handle resolution attempts used before text and fingerprint fallback.
     /// </summary>
     [JsonPropertyName("sqlHandleCandidates")]
     public IReadOnlyList<SqlHandleCandidate> SqlHandleCandidates { get; init; } =
@@ -79,7 +79,7 @@ public sealed class QueryCorrelationRecord
     public CorrelationMatchKind MatchKind { get; init; }
 
     /// <summary>
-    /// Gets the confidence.
+    /// Gets the confidence tier assigned from the selected correlation match strategy.
     /// </summary>
     [JsonPropertyName("confidence")]
     public double Confidence { get; init; }

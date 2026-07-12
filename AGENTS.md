@@ -137,6 +137,7 @@ Follow the existing style in touched files. Keep 4-space indentation, file-scope
 - Preserve the current surviving `Sqloom.*` project names and follow the repo-specific ownership and boundary docs instead of inventing a new project split.
 - Keep comments sparse. Prefer clear names first and add only short comments for non-obvious behavior.
 - Keep every publicly visible C# API in production projects documented with a concise XML `<summary>` that gives RoslynKit useful semantic context. Do not add routine `<param>` comments; use `<inheritdoc />` for straightforward implementations and overrides. CS1591 is enforced for production code and intentionally suppressed under `tests/` for tests, samples, and generated fixtures.
+- When doing C# comment or XML-doc work, review all non-trivial symbols, not just classes and methods: records, record parameters and properties, enum members, fields, option/spec carrier types, nullable bindings, and nested helper types. Explain the behavior, contract, precedence, or safety boundary that is not obvious from the identifier; do not add boilerplate summaries such as `Gets the X` or comments that only restate the member name.
 - For public-facing ASP.NET Core contracts, prefer `Request` and `Response` suffixes over `Dto`.
 - Use structured logging, typed options, and pass `CancellationToken` last and downstream.
 - If a public API, public CLI or package surface, public contract, configuration surface, or documented workflow changes, update [README.md](README.md) or the relevant docs in the same change.

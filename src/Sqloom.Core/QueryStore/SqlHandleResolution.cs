@@ -28,7 +28,7 @@ public sealed class SqlHandleResolution
     public string? StatementSqlHandle { get; init; }
 
     /// <summary>
-    /// Gets the candidates.
+    /// Gets candidate statement_sql_handle matches; downstream correlation may still fall back to text or fingerprint matching.
     /// </summary>
     [JsonPropertyName("candidates")]
     public IReadOnlyList<SqlHandleCandidate> Candidates { get; init; } =

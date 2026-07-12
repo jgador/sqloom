@@ -21,7 +21,7 @@ public sealed class QueryWorkloadClassification
     public required double Confidence { get; init; }
 
     /// <summary>
-    /// Gets the include in app only.
+    /// True when this row should appear in app-only summaries; tooling, platform, and unknown rows stay in full views.
     /// </summary>
     [JsonPropertyName("includeInAppOnly")]
     public required bool IncludeInAppOnly { get; init; }

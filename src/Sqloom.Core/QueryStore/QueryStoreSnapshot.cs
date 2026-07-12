@@ -70,7 +70,7 @@ public sealed class QueryStoreDatabaseOptions
     public required string ActualState { get; init; }
 
     /// <summary>
-    /// Gets the read only reason.
+    /// Gets the raw SQL Server Query Store readonly_reason code captured at snapshot time.
     /// </summary>
     [JsonPropertyName("readOnlyReason")]
     public long ReadOnlyReason { get; init; }

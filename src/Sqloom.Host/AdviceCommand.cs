@@ -130,6 +130,7 @@ internal sealed class AdviceCommand
         AdviseArguments arguments,
         CancellationToken cancellationToken)
     {
+        // Materialize advice schema as one SQL file, whether it starts as SQL, DACPAC, or a live database.
         if (!string.IsNullOrWhiteSpace(arguments.SchemaPath))
         {
             return arguments.SchemaPath;

@@ -72,6 +72,7 @@ internal sealed class TuneArgumentParser
     {
         ArgumentNullException.ThrowIfNull(manifest);
 
+        // Validate tune sub-arguments before replay/observe artifacts exist; placeholder paths stand in.
         CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Tune);
 
         var validationPath = Path.Combine(
