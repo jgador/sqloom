@@ -11,6 +11,9 @@ namespace Sqloom.Core.Artifacts;
 /// </summary>
 public static class JsonFileWriter
 {
+    /// <summary>
+    /// Writes a JSON artifact with Sqloom's default serializer options.
+    /// </summary>
     public static Task WriteAsync<T>(
         string path,
         T value,
@@ -23,6 +26,9 @@ public static class JsonFileWriter
             cancellationToken);
     }
 
+    /// <summary>
+    /// Writes a JSON artifact after applying caller-provided serializer configuration.
+    /// </summary>
     public static async Task WriteAsync<T>(
         string path,
         T value,
@@ -35,6 +41,7 @@ public static class JsonFileWriter
             Directory.CreateDirectory(directoryPath);
         }
 
+        // Artifact contracts own wire names with explicit attributes; avoid ambient naming policies here.
         JsonSerializerOptions serializerOptions = new()
         {
             WriteIndented = true,

@@ -10,22 +10,6 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class CorrelateArgumentParser
 {
-    private static readonly HashSet<string> SupportedSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--replay-artifact-dir",
-        "--query-store-snapshot-file",
-        "--read-only-connection-string",
-        "--json-output-file",
-    };
-
-    private static readonly HashSet<string> ValueSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--replay-artifact-dir",
-        "--query-store-snapshot-file",
-        "--read-only-connection-string",
-        "--json-output-file",
-    };
-
     public string? GetQueryStoreConnectionString(string[] args)
     {
         return CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string");
@@ -35,11 +19,7 @@ internal sealed class CorrelateArgumentParser
         string[] args,
         string connectionString)
     {
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Correlate,
-            SupportedSwitches,
-            ValueSwitches);
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Correlate);
 
         var replayArtifactDirectory = Path.GetFullPath(
             CommandArgumentSupport.GetRequiredArgumentValue(args, "--replay-artifact-dir"));

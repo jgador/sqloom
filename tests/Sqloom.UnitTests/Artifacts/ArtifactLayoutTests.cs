@@ -22,7 +22,7 @@ public sealed class ArtifactLayoutTests
         Path.Combine(ArtifactRoot, "replay", "replay-20260608T040506000Z");
 
     [Fact]
-    public void GetQueryStoreSnapshotPath_UsesQueryStoreFolderAndTimestampedFileName()
+    public void GetQueryStoreSnapshotPath_UsesTimestampedFileName()
     {
         DateTimeOffset capturedAtUtc = new(2026, 6, 7, 13, 39, 58, TimeSpan.Zero);
 
@@ -121,6 +121,18 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
+    public void GetReplayDataPreparationPath_UsesReplayArtifactDir()
+    {
+        var path = ArtifactLayout.GetReplayDataPreparationPath(ReplayArtifactDir);
+
+        Assert.Equal(
+            Path.Combine(
+                ReplayArtifactDir,
+                "replay-data-prep.json"),
+            path);
+    }
+
+    [Fact]
     public void GetSqlServerSchemaPath_UsesReplayArtifactDir()
     {
         var path = ArtifactLayout.GetSqlServerSchemaPath(ReplayArtifactDir);
@@ -129,6 +141,30 @@ public sealed class ArtifactLayoutTests
             Path.Combine(
                 ReplayArtifactDir,
                 "sqlserver-schema.sql"),
+            path);
+    }
+
+    [Fact]
+    public void GetSqlServerDacpacPath_UsesReplayArtifactDir()
+    {
+        var path = ArtifactLayout.GetSqlServerDacpacPath(ReplayArtifactDir);
+
+        Assert.Equal(
+            Path.Combine(
+                ReplayArtifactDir,
+                "sqlserver-schema-source.dacpac"),
+            path);
+    }
+
+    [Fact]
+    public void GetSqlServerDacpacExtractDir_UsesReplayArtifactDir()
+    {
+        var path = ArtifactLayout.GetSqlServerDacpacExtractDir(ReplayArtifactDir);
+
+        Assert.Equal(
+            Path.Combine(
+                ReplayArtifactDir,
+                "sqlserver-dacpac-extract"),
             path);
     }
 

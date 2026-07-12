@@ -5,7 +5,13 @@ namespace Sqloom.Showplan.Plans;
 /// </summary>
 public sealed class ShowplanWarning
 {
+    /// <summary>
+    /// Gets the code.
+    /// </summary>
     public required string Code { get; init; }
 
+    /// <summary>
+    /// Gets the message.
+    /// </summary>
     public required string Message { get; init; }
 }

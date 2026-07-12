@@ -24,33 +24,6 @@ internal static class SqloomTestAppPaths
             "Sqloom.TestApp.Harness.csproj");
     }
 
-    public static string GetDacpacPath()
-    {
-        return Path.Combine(
-            GetRepositoryRoot(),
-            "tests",
-            "Sqloom.TestApp.Harness",
-            "AdventureWorksLT2025.dacpac");
-    }
-
-    public static string GetSeedExportScriptPath()
-    {
-        return Path.Combine(
-            GetRepositoryRoot(),
-            "tests",
-            "Sqloom.TestApp.Harness",
-            "Export-AdventureWorksLT2025SeedSql.ps1");
-    }
-
-    public static string GetSqlServerSeedScriptPath()
-    {
-        return Path.Combine(
-            GetRepositoryRoot(),
-            "tests",
-            "Sqloom.TestApp.Harness",
-            "AdventureWorksLT2025.seed.sql");
-    }
-
     public static string GetOpenApiPath()
     {
         return Path.Combine(

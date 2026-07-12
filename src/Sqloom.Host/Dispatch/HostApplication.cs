@@ -8,7 +8,7 @@ using Sqloom.Testing;
 namespace Sqloom.Host;
 
 /// <summary>
-/// Coordinates the observe, tune, replay, correlate, and advise stages.
+/// Coordinates the init, observe, tune, replay, correlate, and advise commands.
 /// </summary>
 internal sealed class HostApplication
 {
@@ -88,8 +88,14 @@ internal sealed class HostApplication
         switch (commandKind)
         {
             case HostCommandKind.Help:
-                _consoleWriter.PrintUsage();
+                _consoleWriter.PrintHelp(startupOptions.ApplicationArguments);
                 return 0;
+            case HostCommandKind.Init:
+                return await RunTargetIndependentHandlerAsync(
+                        commandKind,
+                        startupOptions,
+                        currentDirectory)
+                    .ConfigureAwait(false);
             case HostCommandKind.Correlate:
             case HostCommandKind.Observe:
             case HostCommandKind.Replay:
@@ -160,6 +166,21 @@ internal sealed class HostApplication
             .ConfigureAwait(false);
     }
 
+    private async Task<int> RunTargetIndependentHandlerAsync(
+        HostCommandKind commandKind,
+        HostStartupOptions startupOptions,
+        string currentDirectory)
+    {
+        var context = _contextFactory.Create(
+            startupOptions,
+            currentDirectory);
+
+        return await _commandRegistry
+            .GetRequiredHandler(commandKind)
+            .ExecuteAsync(context)
+            .ConfigureAwait(false);
+    }
+
     private async Task<int> HandleNoCommandAsync(
         HostStartupOptions startupOptions,
         string currentDirectory,
@@ -195,6 +216,7 @@ internal sealed class HostApplication
     private static CommandRegistry CreateDefaultRegistry()
     {
         return new CommandRegistry(
+            new InitCommand(),
             new ObserveCommand(),
             new TuneCommand(),
             new ReplayCommand(),

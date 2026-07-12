@@ -38,46 +38,39 @@ internal sealed class SqlServerDacpacSchemaExtractor : ISqlServerDacpacSchemaExt
         }
 
         var schemaPath = ArtifactLayout.GetSqlServerSchemaPath(replayArtifactDirectory);
+        // Refresh the extract directory and publish only model.sql as the stable schema artifact.
         var schemaDirectory = Path.GetDirectoryName(schemaPath);
         if (!string.IsNullOrWhiteSpace(schemaDirectory))
         {
             Directory.CreateDirectory(schemaDirectory);
         }
 
-        var unpackDirectory = Path.Combine(
-            Path.GetTempPath(),
-            "sqloom-dacpac-schema",
-            Guid.NewGuid().ToString("N"));
+        var unpackDirectory = ArtifactLayout.GetSqlServerDacpacExtractDir(replayArtifactDirectory);
+        if (Directory.Exists(unpackDirectory))
+        {
+            Directory.Delete(
+                unpackDirectory,
+                recursive: true);
+        }
+
         Directory.CreateDirectory(unpackDirectory);
 
-        try
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            using var dacPackage = DacPackage.Load(fullDacpacPath);
-            dacPackage.Unpack(unpackDirectory);
-            cancellationToken.ThrowIfCancellationRequested();
+        cancellationToken.ThrowIfCancellationRequested();
+        using var dacPackage = DacPackage.Load(fullDacpacPath);
+        dacPackage.Unpack(unpackDirectory);
+        cancellationToken.ThrowIfCancellationRequested();
 
-            var modelSqlPath = Path.Combine(unpackDirectory, DacpacModelSqlFileName);
-            if (!File.Exists(modelSqlPath))
-            {
-                throw new InvalidOperationException(
-                    $"The SQL Server DACPAC '{fullDacpacPath}' did not contain '{DacpacModelSqlFileName}'.");
-            }
-
-            File.Copy(
-                modelSqlPath,
-                schemaPath,
-                overwrite: true);
-            return Task.FromResult(schemaPath);
-        }
-        finally
+        var modelSqlPath = Path.Combine(unpackDirectory, DacpacModelSqlFileName);
+        if (!File.Exists(modelSqlPath))
         {
-            if (Directory.Exists(unpackDirectory))
-            {
-                Directory.Delete(
-                    unpackDirectory,
-                    recursive: true);
-            }
+            throw new InvalidOperationException(
+                $"The SQL Server DACPAC '{fullDacpacPath}' did not contain '{DacpacModelSqlFileName}'.");
         }
+
+        File.Copy(
+            modelSqlPath,
+            schemaPath,
+            overwrite: true);
+        return Task.FromResult(schemaPath);
     }
 }

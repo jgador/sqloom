@@ -62,7 +62,7 @@ public sealed class SqlServerDiscoveredObjectCollectorTests
     }
 
     [Fact]
-    public void FinalizeCatalog_CreatesPartialCatalogWithWarningWhenModuleDiscoveryIsIncomplete()
+    public void FinalizeCatalog_WarnsWhenModuleDiscoveryIsIncomplete()
     {
         var catalog = SqlServerDiscoveredObjectCollector.FinalizeCatalog(
             "sqloom-local",

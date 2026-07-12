@@ -13,7 +13,7 @@ namespace Sqloom.Host.Tests.Replay;
 public sealed class ReplayPlanBuilderTests
 {
     [Fact]
-    public void BuildInitialPlan_PlansAuthenticatedGetOperationsWithoutAppOverlays()
+    public void PlansAuthenticatedGetOperationsWithoutAppOverlays()
     {
         ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
@@ -30,7 +30,7 @@ public sealed class ReplayPlanBuilderTests
     }
 
     [Fact]
-    public void BuildInitialPlan_SkipsUnsafeOperationsWithoutReplayOverlays()
+    public void SkipsUnsafeOperationsWithoutReplayOverlays()
     {
         ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
@@ -46,7 +46,7 @@ public sealed class ReplayPlanBuilderTests
             item =>
             {
                 Assert.Equal("skipped", item.Status);
-                Assert.Equal("Anonymous operations are not replayed by default in V1.", item.Reason);
+                Assert.Equal("Anonymous operations are not replayed by default.", item.Reason);
             },
             item =>
             {
@@ -56,7 +56,7 @@ public sealed class ReplayPlanBuilderTests
     }
 
     [Fact]
-    public void BuildInitialPlan_SkipsOptInReplayWhenItWasNotSelectedExplicitly()
+    public void SkipsUnselectedOptInReplay()
     {
         ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
@@ -89,7 +89,7 @@ public sealed class ReplayPlanBuilderTests
     }
 
     [Fact]
-    public void BuildInitialPlan_AllowsOptInReplayWhenTargetMatchesOperationKey()
+    public void AllowsOptInReplayWhenTargetMatchesOperationKey()
     {
         ReplayPlanBuilder builder = new();
         var plan = builder.BuildInitialPlan(
@@ -121,7 +121,7 @@ public sealed class ReplayPlanBuilderTests
     }
 
     [Fact]
-    public void BuildInitialPlan_ThrowsWhenTargetMatchesOperationIdInsteadOfOperationKey()
+    public void ThrowsWhenTargetMatchesOperationId()
     {
         ReplayPlanBuilder builder = new();
         var exception = Assert.Throws<ArgumentException>(
@@ -143,7 +143,7 @@ public sealed class ReplayPlanBuilderTests
     }
 
     [Fact]
-    public void BuildInitialPlan_ThrowsWhenTargetDoesNotMatchAnyOperation()
+    public void ThrowsWhenTargetMatchesNoOperation()
     {
         ReplayPlanBuilder builder = new();
         var exception = Assert.Throws<ArgumentException>(
@@ -166,7 +166,7 @@ public sealed class ReplayPlanBuilderTests
     }
 
     [Fact]
-    public void BuildInitialPlan_ThrowsWhenTargetUsesInvalidOperationKeySyntax()
+    public void ThrowsWhenTargetUsesInvalidOperationKeySyntax()
     {
         ReplayPlanBuilder builder = new();
 

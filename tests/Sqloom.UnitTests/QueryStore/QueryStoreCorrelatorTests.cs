@@ -22,7 +22,7 @@ public sealed class QueryStoreCorrelatorTests
         Path.Combine(ArtifactRoot, "operations", "01-expenses-dashboard.json");
 
     [Fact]
-    public async Task CorrelateAsync_PrefersStatementHandleMatchesOverTextAndFingerprintFallback()
+    public async Task PrefersStatementHandleOverTextAndFingerprintFallback()
     {
         var snapshot = CreateSnapshot(
             CreatePlan(
@@ -76,7 +76,7 @@ public sealed class QueryStoreCorrelatorTests
     }
 
     [Fact]
-    public async Task CorrelateAsync_UsesTrimmedOuterNoiseForExactQueryTextMatches()
+    public async Task UsesTrimmedOuterNoiseForExactQueryTextMatches()
     {
         var snapshot = CreateSnapshot(
             CreatePlan(
@@ -110,7 +110,7 @@ public sealed class QueryStoreCorrelatorTests
     }
 
     [Fact]
-    public async Task CorrelateAsync_UsesExactQueryTextForStatementInsideCapturedBatch()
+    public async Task UsesExactQueryTextForStatementInsideCapturedBatch()
     {
         var snapshot = CreateSnapshot(
             CreatePlan(
@@ -144,7 +144,7 @@ public sealed class QueryStoreCorrelatorTests
     }
 
     [Fact]
-    public async Task CorrelateAsync_UsesFingerprintFallbackForDiagnostics_WhenNoSafeExactMatchExists()
+    public async Task UsesDiagnosticFingerprintFallbackWithoutExactMatch()
     {
         const string snapshotText = "SELECT * FROM [dbo].[ExpenseRecord] WHERE [Id] = @userId";
         const string capturedText = "SELECT * FROM [dbo].[ExpenseRecord] WHERE [Id] = @p0";
@@ -174,7 +174,7 @@ public sealed class QueryStoreCorrelatorTests
     }
 
     [Fact]
-    public async Task CorrelateAsync_LeavesUnmatchedSqlExplicitlyUnmatched()
+    public async Task LeavesUnmatchedSqlExplicitlyUnmatched()
     {
         var snapshot = CreateSnapshot(
             CreatePlan(
@@ -202,7 +202,7 @@ public sealed class QueryStoreCorrelatorTests
     }
 
     [Fact]
-    public async Task CorrelateAsync_PreservesStoredProcedureObjectContext()
+    public async Task PreservesStoredProcedureObjectContext()
     {
         var snapshot = CreateSnapshot(
             CreatePlan(

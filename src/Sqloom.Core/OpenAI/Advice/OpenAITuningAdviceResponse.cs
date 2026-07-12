@@ -9,15 +9,27 @@ namespace Sqloom.OpenAI.Advice;
 /// </summary>
 public sealed class OpenAITuningAdviceResponse
 {
+    /// <summary>
+    /// Gets the recommendations.
+    /// </summary>
     [JsonPropertyName("recommendations")]
     public required IReadOnlyList<SqlTuningRecommendation> Recommendations { get; init; }
 
+    /// <summary>
+    /// Gets the proposals.
+    /// </summary>
     [JsonPropertyName("proposals")]
     public required IReadOnlyList<SqlTuningProposal> Proposals { get; init; }
 
+    /// <summary>
+    /// Gets the warnings.
+    /// </summary>
     [JsonPropertyName("warnings")]
     public IReadOnlyList<string> Warnings { get; init; } = [];
 
+    /// <summary>
+    /// Gets the model name.
+    /// </summary>
     [JsonPropertyName("modelName")]
     public string? ModelName { get; init; }
 }

@@ -38,6 +38,8 @@ internal sealed class HostCommandIntegrationResolver
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
 
+        // Map command kinds to harness requirements: optional for observe, required for replay/tune,
+        // and pre-bound-only for artifact-only follow-up commands.
         switch (commandKind)
         {
             case HostCommandKind.Observe:
@@ -88,6 +90,8 @@ internal sealed class HostCommandIntegrationResolver
             return _boundApplication;
         }
 
+        // Observe can collect Query Store evidence without a harness; a supplied target only adds
+        // application manifest data for workload profile classification.
         if (!startupOptions.HasTargetSelection)
         {
             return null;

@@ -25,7 +25,7 @@ public sealed class ObserveArgumentParserTests
     }
 
     [Fact]
-    public void GetQueryStoreConnectionString_ReturnsNullWhenExplicitConnectionStringIsMissing()
+    public void GetQueryStoreConnectionString_ReturnsNullWhenExplicitMissing()
     {
         ObserveArgumentParser parser = new();
 

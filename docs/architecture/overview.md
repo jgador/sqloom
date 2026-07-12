@@ -21,7 +21,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 - `Sqloom.Host`: generic runner for harness project, harness assembly, solution, solution-filter, or directory targets
 - `Sqloom.Testing`: harness contract library containing `ISqloomApplication`, `ISqloomApplicationSession`, and manifest types that app harnesses implement
 - `Sqloom.TestApp`: sample target app in this repo
-- `Sqloom.TestApp.Harness`: sample harness loaded by the host for generic replay coverage, SQL Server DACPAC bootstrap, seed setup, Query Store profile, and the DACPAC schema source used by advice
+- `Sqloom.TestApp.Harness`: sample harness loaded by the host for generic replay coverage, replay profile, and local SQL Server-backed sample runs
 - Additional app-owned harnesses can follow the same pattern without changing the host
 - The host scans loadable harness assemblies for public non-abstract `ISqloomApplication` implementations and requires exactly one implementation for a run
 - Replay, correlation, and advice artifacts keep explicit stage metadata so downstream steps stay tied to the right pipeline state
@@ -32,7 +32,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 - `Sqloom.Testing`: app-harness runner contracts, manifest types, and harness-facing ASP.NET Core SQL capture helpers used by harness projects and the sample harness
 - `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, library-harness loading, ASP.NET Core replay implementation, live SQL Server Query Store collection, statement-handle resolution, replay-to-Query Store correlation, DACPAC schema extraction, advice generation, and the composition root
 - `Sqloom.TestApp`: sample target app for generic host coverage
-- `Sqloom.TestApp.Harness`: sample replay harness, replay profile, DACPAC bootstrap, seed setup, Query Store profile, and sample SQL Server setup
+- `Sqloom.TestApp.Harness`: sample replay harness, replay profile, and local SQL Server-backed sample startup
 - `Sqloom.UnitTests`: unit-test lane for core libraries and host-adjacent logic
 - `Sqloom.IntegrationTests`: process and host integration lane for the standalone repository
 

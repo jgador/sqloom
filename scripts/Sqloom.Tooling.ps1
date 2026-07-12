@@ -28,7 +28,7 @@ function Get-SqloomToolingContext
 
     if ($packageVersion.StartsWith("v", [System.StringComparison]::OrdinalIgnoreCase))
     {
-        throw "Directory.Build.props <Version> must use a bare NuGet version like 0.2.0, not v0.2.0. Use the leading 'v' only for Git tags or release titles."
+        throw "Directory.Build.props <Version> must use a bare NuGet package version without a leading 'v'. Use the leading 'v' only for Git tags or release titles."
     }
 
     return [pscustomobject]@{
@@ -81,6 +81,8 @@ function Get-SqloomPublicPackagePaths
     )
 
     return @(
+        Join-Path $Context.PackageFeedPath "Sqloom.Core.$($Context.PackageVersion).nupkg"
+        Join-Path $Context.PackageFeedPath "Sqloom.Testing.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
     )
 }
@@ -358,6 +360,91 @@ function Assert-SqloomPackagesExist
     }
 }
 
+function Test-SqloomTestingPackageRestore
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Context
+    )
+
+    $verifyRoot = Join-Path $Context.RepoRoot "artifacts\tools\sqloom-testing-verify"
+    $packageCachePath = Join-Path $verifyRoot "packages"
+    $projectPath = Join-Path $verifyRoot "SqloomTestingVerify.csproj"
+    $sourcePath = Join-Path $verifyRoot "Program.cs"
+    $nugetConfigPath = Join-Path $verifyRoot "NuGet.config"
+
+    Reset-Directory -Path $verifyRoot -RootPath $Context.RepoRoot -Label "Sqloom.Testing package verification project"
+    New-Item -ItemType Directory -Path $packageCachePath -Force | Out-Null
+
+    Set-Content -LiteralPath $projectPath -Encoding UTF8 -Value @"
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <PackageReference Include="Sqloom.Testing" Version="$($Context.PackageVersion)" />
+  </ItemGroup>
+</Project>
+"@
+
+    Set-Content -LiteralPath $sourcePath -Encoding UTF8 -Value @"
+using System;
+using System.IO;
+using Sqloom.Core.Execution;
+using Sqloom.Testing;
+
+internal static class Program
+{
+    private static void Main()
+    {
+        var context = new SqloomApplicationContext
+        {
+            CurrentDirectory = Directory.GetCurrentDirectory(),
+            ReplayLaunchOptions = new ReplayLaunchOptions()
+        };
+
+        Console.WriteLine(context.CurrentDirectory);
+    }
+}
+"@
+
+    Set-Content -LiteralPath $nugetConfigPath -Encoding UTF8 -Value @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="sqloom-local" value="$($Context.PackageFeedPath)" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+"@
+
+    Invoke-DotNet -Context $Context -Arguments @(
+        "restore"
+        $projectPath
+        "--configfile"
+        $nugetConfigPath
+        "-p:RestorePackagesPath=$packageCachePath"
+    )
+
+    Invoke-DotNet -Context $Context -Arguments @(
+        "build"
+        $projectPath
+        "--no-restore"
+        "--tl:off"
+        "--nologo"
+        "-clp:ErrorsOnly;NoSummary"
+        "-p:RestorePackagesPath=$packageCachePath"
+    )
+}
+
 function Show-SqloomPublishCommands
 {
     param(
@@ -366,7 +453,7 @@ function Show-SqloomPublishCommands
     )
 
     Write-Host ""
-    Write-Host "Manual NuGet.org publish command for the public package:"
+    Write-Host "Manual NuGet.org publish commands for the public packages, in dependency order:"
     foreach ($packagePath in (Get-SqloomPublicPackagePaths -Context $Context))
     {
         Write-Host "dotnet nuget push `"$packagePath`" --source https://api.nuget.org/v3/index.json --api-key <nuget-api-key>"

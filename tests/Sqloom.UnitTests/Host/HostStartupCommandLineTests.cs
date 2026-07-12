@@ -1,6 +1,5 @@
 using System;
 using System.IO;
-using Sqloom.TestApp.Harness;
 using Sqloom.Tests;
 using Xunit;
 
@@ -12,7 +11,7 @@ namespace Sqloom.Host.Tests;
 public sealed class HostStartupCommandLineTests
 {
     [Fact]
-    public void Parse_WithProjectPathAfterReplayVerb_SelectsProjectAndRemovesItFromApplicationArguments()
+    public void ReplayProjectPath_SelectsProjectAndRemovesApplicationArg()
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -24,7 +23,7 @@ public sealed class HostStartupCommandLineTests
                 relativeProjectPath,
                 "--no-build",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -38,11 +37,11 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(CatalogScenario.OperationKey, item));
+            item => Assert.Equal(SampleCatalogReplayScenario.OperationKey, item));
     }
 
     [Fact]
-    public void Parse_WithProjectPathAfterTuneVerb_SelectsProjectAndRemovesItFromApplicationArguments()
+    public void TuneProjectPath_SelectsProjectAndRemovesApplicationArg()
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -55,7 +54,7 @@ public sealed class HostStartupCommandLineTests
                 "--read-only-connection-string",
                 "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -70,11 +69,11 @@ public sealed class HostStartupCommandLineTests
             item => Assert.Equal("--read-only-connection-string", item),
             item => Assert.Equal("Server=localhost;Database=Sqloom;Trusted_Connection=True;", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(CatalogScenario.OperationKey, item));
+            item => Assert.Equal(SampleCatalogReplayScenario.OperationKey, item));
     }
 
     [Fact]
-    public void Parse_WithSolutionPathAfterObserveVerb_SelectsTargetAndRemovesItFromApplicationArguments()
+    public void ObserveSolutionPath_SelectsTargetAndRemovesApplicationArg()
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -100,7 +99,7 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Fact]
-    public void Parse_WithDotNetCommandAfterReplayVerb_StoresExplicitCommandAndRemovesItFromApplicationArguments()
+    public void DotNetCommandAfterReplay_StoresCommandAndRemovesArg()
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -113,7 +112,7 @@ public sealed class HostStartupCommandLineTests
                 "--dotnet-command",
                 "custom-dotnet",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -126,11 +125,11 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(CatalogScenario.OperationKey, item));
+            item => Assert.Equal(SampleCatalogReplayScenario.OperationKey, item));
     }
 
     [Fact]
-    public void Parse_WithGlobalDebugSwitch_SetsDebugEnabledAndRemovesItFromApplicationArguments()
+    public void GlobalDebugSwitch_SetsDebugAndRemovesApplicationArg()
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -142,7 +141,7 @@ public sealed class HostStartupCommandLineTests
                 relativeProjectPath,
                 "--debug",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ],
             currentDirectory);
 
@@ -155,13 +154,13 @@ public sealed class HostStartupCommandLineTests
             startupOptions.ApplicationArguments,
             item => Assert.Equal("replay", item),
             item => Assert.Equal("--target", item),
-            item => Assert.Equal(CatalogScenario.OperationKey, item));
+            item => Assert.Equal(SampleCatalogReplayScenario.OperationKey, item));
     }
 
     [Theory]
     [InlineData(@".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj")]
     [InlineData(@".\tests\Sqloom.TestApp.Harness")]
-    public void Parse_WithLeadingTargetPath_ThrowsWhenStageVerbIsMissing(string relativeTargetPath)
+    public void WithLeadingTargetPath_ThrowsWhenStageVerbIsMissing(string relativeTargetPath)
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -171,7 +170,7 @@ public sealed class HostStartupCommandLineTests
                 [
                     relativeTargetPath,
                     "--target",
-                    CatalogScenario.OperationKey,
+                    SampleCatalogReplayScenario.OperationKey,
                 ],
                 currentDirectory));
 
@@ -182,7 +181,7 @@ public sealed class HostStartupCommandLineTests
     [InlineData("--app-assembly")]
     [InlineData("--app-assembly-file")]
     [InlineData("--project")]
-    public void Parse_ThrowsWhenUnsupportedStartupSwitchIsUsed(string switchName)
+    public void ThrowsWhenUnsupportedStartupSwitchIsUsed(string switchName)
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -201,7 +200,7 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenDotNetCommandValueIsMissing()
+    public void ThrowsWhenDotNetCommandValueIsMissing()
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -219,7 +218,7 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Fact]
-    public void Parse_WithVersionSwitch_SetsShowVersionAndSkipsTargetSelection()
+    public void WithVersionSwitch_SetsShowVersionAndSkipsTargetSelection()
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();
@@ -238,7 +237,73 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenUnknownLeadingCommandIsUsed()
+    public void WithHelpVerb_KeepsVerbArgumentsAndSkipsTargetSelection()
+    {
+        HostStartupCommandLine commandLine = new();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+
+        var startupOptions = commandLine.Parse(
+            [
+                "help",
+                "replay",
+            ],
+            currentDirectory);
+
+        Assert.False(startupOptions.ShowHelp);
+        Assert.False(startupOptions.HasTargetSelection);
+        Assert.Null(startupOptions.AppTargetPath);
+        Assert.Collection(
+            startupOptions.ApplicationArguments,
+            item => Assert.Equal("help", item),
+            item => Assert.Equal("replay", item));
+    }
+
+    [Fact]
+    public void WithInitVerb_KeepsArgumentsAndSkipsTargetSelection()
+    {
+        HostStartupCommandLine commandLine = new();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+
+        var startupOptions = commandLine.Parse(
+            [
+                "init",
+                "--agent",
+                "codex",
+            ],
+            currentDirectory);
+
+        Assert.False(startupOptions.HasTargetSelection);
+        Assert.Null(startupOptions.AppTargetPath);
+        Assert.Collection(
+            startupOptions.ApplicationArguments,
+            item => Assert.Equal("init", item),
+            item => Assert.Equal("--agent", item),
+            item => Assert.Equal("codex", item));
+    }
+
+    [Fact]
+    public void WithInitAndPathLikeArgument_DoesNotSelectHarnessTarget()
+    {
+        HostStartupCommandLine commandLine = new();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+
+        var startupOptions = commandLine.Parse(
+            [
+                "init",
+                ".",
+            ],
+            currentDirectory);
+
+        Assert.False(startupOptions.HasTargetSelection);
+        Assert.Null(startupOptions.AppTargetPath);
+        Assert.Collection(
+            startupOptions.ApplicationArguments,
+            item => Assert.Equal("init", item),
+            item => Assert.Equal(".", item));
+    }
+
+    [Fact]
+    public void ThrowsWhenUnknownLeadingCommandIsUsed()
     {
         HostStartupCommandLine commandLine = new();
         var currentDirectory = RepositoryPaths.GetRepositoryRoot();

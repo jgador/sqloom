@@ -123,7 +123,11 @@ internal sealed class HostStartupCommandLine
         string[] args,
         string currentDirectory)
     {
-        if (args.Length < 2 || !IsVerb(args[0]))
+        // Only the first value after a target-aware verb is treated as the harness path; later path-like
+        // values belong to command-specific options and must stay in ApplicationArguments.
+        if (args.Length < 2
+            || !args[0].Equals("help", StringComparison.OrdinalIgnoreCase)
+                && CommandCatalog.Find(args[0]) is not { TargetKind: not CommandTargetKind.None })
         {
             return null;
         }
@@ -133,14 +137,10 @@ internal sealed class HostStartupCommandLine
             : null;
     }
 
-    private static bool IsVerb(string value)
+    private static bool IsSupportedCommand(string value)
     {
         return value.Equals("help", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("observe", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("tune", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("replay", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("correlate", StringComparison.OrdinalIgnoreCase)
-            || value.Equals("advise", StringComparison.OrdinalIgnoreCase);
+            || CommandCatalog.Find(value) is not null;
     }
 
     private static bool LooksLikeTargetPath(
@@ -161,6 +161,8 @@ internal sealed class HostStartupCommandLine
             return true;
         }
 
+        // Missing paths are still target candidates when their shape is unambiguously path-like, so
+        // the resolver can produce the command-specific missing-target error.
         if (value == "."
             || value == ".."
             || value.Contains(Path.DirectorySeparatorChar)
@@ -204,10 +206,10 @@ internal sealed class HostStartupCommandLine
                 $"Sqloom now requires an explicit stage verb before the target path. Use 'tune {argument}', 'replay {argument}', or 'observe {argument}'.");
         }
 
-        if (!IsSwitch(argument) && !IsVerb(argument))
+        if (!IsSwitch(argument) && !IsSupportedCommand(argument))
         {
             throw new ArgumentException(
-                $"Unknown Sqloom command '{argument}'. Use tune, observe, replay, correlate, advise, --help, or --version.");
+                $"Unknown Sqloom command '{argument}'. Use init, tune, observe, replay, correlate, advise, --help, or --version.");
         }
     }
 

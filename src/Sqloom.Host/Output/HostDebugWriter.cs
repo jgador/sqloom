@@ -83,6 +83,8 @@ internal sealed class HostDebugWriter
                 $"target_filter={options.TargetFilter ?? "default"}",
                 $"sqlserver_dacpac={options.ReplayLaunchOptions.DacpacPath ?? "none"}",
                 $"sqlserver_seed_sql={options.ReplayLaunchOptions.SeedSqlPath ?? "none"}",
+                $"replay_data_agent={options.ReplayDataAgentOptions.Mode}",
+                $"replay_data_agent_model={options.ReplayDataAgentOptions.ModelName ?? "n/a"}",
             ]);
     }
 
@@ -125,6 +127,7 @@ internal sealed class HostDebugWriter
                 $"query_store_correlation={arguments.QueryStoreCorrelationPath}",
                 $"sqlserver_schema_file={arguments.SchemaPath ?? "none"}",
                 $"sqlserver_dacpac_file={arguments.DacpacPath ?? "none"}",
+                $"sqlserver_schema_connection={RedactConnectionString(arguments.ReadOnlyConnectionString)}",
                 $"json_output_path={arguments.JsonOutputPath}",
                 $"model_provider={arguments.ModelProvider}",
                 $"openai_base_url={arguments.OpenAIOptions?.BaseUrl ?? "n/a"}",
@@ -148,8 +151,10 @@ internal sealed class HostDebugWriter
                 $"replay_artifact_directory={arguments.ReplayArguments.RunnerOptions.ReplayArtifactDir}",
                 $"query_store_correlation={arguments.CorrelateArguments.JsonOutputPath}",
                 $"tuning_advice={arguments.AdviseArguments.JsonOutputPath}",
+                $"replay_data_agent={arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.Mode}",
                 $"sqlserver_schema_file={arguments.AdviseArguments.SchemaPath ?? "none"}",
                 $"sqlserver_dacpac_file={arguments.AdviseArguments.DacpacPath ?? "none"}",
+                $"sqlserver_schema_connection={RedactConnectionString(arguments.AdviseArguments.ReadOnlyConnectionString)}",
                 $"model_provider={arguments.AdviseArguments.ModelProvider}",
                 $"openai_model={arguments.AdviseArguments.OpenAIOptions?.Model ?? "n/a"}",
             ]);
@@ -583,6 +588,7 @@ internal sealed class HostDebugWriter
             return "none";
         }
 
+        // Redaction must survive malformed strings: parse structured values first, then fall back to segments.
         try
         {
             DbConnectionStringBuilder builder = new()

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Sqloom.Core.Artifacts;
 using Sqloom.Core.Execution;
 using Sqloom.Testing;
@@ -12,48 +13,6 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class TuneArgumentParser
 {
-    private static readonly HashSet<string> SupportedSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--read-only-connection-string",
-        "--lookback-hours",
-        "--max-plans",
-        "--max-waits",
-        "--command-timeout-seconds",
-        "--app-only",
-        "--show-classification",
-        "--openapi-file",
-        "--sqlserver-dacpac-file",
-        "--sqlserver-seed-sql-file",
-        "--artifact-dir",
-        "--max-operations",
-        "--target",
-        "--model-provider",
-        "--sqlserver-schema-file",
-        "--openai-model",
-        "--openai-base-url",
-        "--openai-api-key",
-    };
-
-    private static readonly HashSet<string> ValueSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--read-only-connection-string",
-        "--lookback-hours",
-        "--max-plans",
-        "--max-waits",
-        "--command-timeout-seconds",
-        "--openapi-file",
-        "--sqlserver-dacpac-file",
-        "--sqlserver-seed-sql-file",
-        "--artifact-dir",
-        "--max-operations",
-        "--target",
-        "--model-provider",
-        "--sqlserver-schema-file",
-        "--openai-model",
-        "--openai-base-url",
-        "--openai-api-key",
-    };
-
     private static readonly HashSet<string> ObserveSwitches = new(StringComparer.OrdinalIgnoreCase)
     {
         "--lookback-hours",
@@ -71,6 +30,10 @@ internal sealed class TuneArgumentParser
         "--sqlserver-seed-sql-file",
         "--max-operations",
         "--target",
+        "--replay-data-agent",
+        "--replay-data-agent-model",
+        "--openai-base-url",
+        "--openai-api-key",
     };
 
     private static readonly HashSet<string> AdviceSwitches = new(StringComparer.OrdinalIgnoreCase)
@@ -98,7 +61,8 @@ internal sealed class TuneArgumentParser
     {
         return _replayArgumentParser.CreateReplayLaunchOptions(
             ExtractSwitchArguments(args, ReplaySwitches),
-            currentDirectory);
+            currentDirectory,
+            requireDacpacForSeed: false);
     }
 
     public void ValidateBeforeSession(
@@ -108,22 +72,23 @@ internal sealed class TuneArgumentParser
     {
         ArgumentNullException.ThrowIfNull(manifest);
 
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Tune,
-            SupportedSwitches,
-            ValueSwitches);
+        // Validate tune sub-arguments before replay/observe artifacts exist; placeholder paths stand in.
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Tune);
 
         var validationPath = Path.Combine(
             currentDirectory,
             "sqloom-validation-placeholder.json");
+        _replayArgumentParser.ValidateReplayDataAgentOptions(
+            ExtractSwitchArguments(args, ReplaySwitches));
         _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             currentDirectory,
             validationPath,
             validationPath,
-            manifest.SqlServerDacpacPath,
-            currentDirectory);
+            defaultDacpacPath: manifest.SqlServerDacpacPath,
+            currentDirectory: currentDirectory,
+            defaultReadOnlyConnectionString: GetQueryStoreConnectionString(args),
+            allowMissingSchemaSource: true);
     }
 
     public string GetOpenApiPath(
@@ -143,18 +108,18 @@ internal sealed class TuneArgumentParser
         IReplayHost replayHost,
         string readOnlyConnectionString,
         string currentDirectory,
-        string? openApiPathOverride = null)
+        string? openApiPathOverride = null,
+        string? workflowArtifactDirOverride = null,
+        ReplayLaunchOptions? replayLaunchOptionsOverride = null,
+        string? adviceDacpacPathOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
 
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Tune,
-            SupportedSwitches,
-            ValueSwitches);
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Tune);
 
-        var workflowArtifactDir = GetWorkflowArtifactDir(args, currentDirectory);
+        var workflowArtifactDir = workflowArtifactDirOverride
+            ?? GetWorkflowArtifactDir(args, currentDirectory);
         var snapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(workflowArtifactDir);
         var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDir(workflowArtifactDir);
         var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
@@ -174,14 +139,17 @@ internal sealed class TuneArgumentParser
             replayHost,
             currentDirectory,
             replayArtifactDirectory,
-            openApiPathOverride);
+            openApiPathOverride,
+            replayLaunchOptionsOverride);
         var adviseArguments = _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             replayArtifactDirectory,
             correlationPath,
             advicePath,
-            manifest.SqlServerDacpacPath,
-            currentDirectory);
+            defaultDacpacPath: adviceDacpacPathOverride
+                ?? manifest.SqlServerDacpacPath,
+            currentDirectory: currentDirectory,
+            defaultReadOnlyConnectionString: readOnlyConnectionString);
 
         return new TuneArguments
         {
@@ -243,7 +211,9 @@ internal sealed class TuneArgumentParser
                 continue;
             }
 
-            var hasValue = ValueSwitches.Contains(argument);
+            var hasValue = CommandCatalog.GetRequired(HostCommandKind.Tune).Options
+                .Any(option => option.TakesValue
+                    && string.Equals(option.Name, argument, StringComparison.OrdinalIgnoreCase));
             if (!includedSwitches.Contains(argument))
             {
                 if (hasValue)

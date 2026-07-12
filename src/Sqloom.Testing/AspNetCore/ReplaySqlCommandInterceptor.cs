@@ -18,11 +18,15 @@ public sealed class ReplaySqlCommandInterceptor : DbCommandInterceptor
 
     private readonly ReplaySqlCaptureCollector _collector;
 
+    /// <summary>
+    /// Creates an interceptor that records commands through the replay capture collector.
+    /// </summary>
     public ReplaySqlCommandInterceptor(ReplaySqlCaptureCollector collector)
     {
         _collector = collector;
     }
 
+    /// <inheritdoc />
     public override DbDataReader ReaderExecuted(
         DbCommand command,
         CommandExecutedEventData eventData,
@@ -32,6 +36,7 @@ public sealed class ReplaySqlCommandInterceptor : DbCommandInterceptor
         return base.ReaderExecuted(command, eventData, result);
     }
 
+    /// <inheritdoc />
     public override object? ScalarExecuted(
         DbCommand command,
         CommandExecutedEventData eventData,
@@ -41,6 +46,7 @@ public sealed class ReplaySqlCommandInterceptor : DbCommandInterceptor
         return base.ScalarExecuted(command, eventData, result);
     }
 
+    /// <inheritdoc />
     public override int NonQueryExecuted(
         DbCommand command,
         CommandExecutedEventData eventData,
@@ -50,6 +56,7 @@ public sealed class ReplaySqlCommandInterceptor : DbCommandInterceptor
         return base.NonQueryExecuted(command, eventData, result);
     }
 
+    /// <inheritdoc />
     public override ValueTask<DbDataReader> ReaderExecutedAsync(
         DbCommand command,
         CommandExecutedEventData eventData,
@@ -60,6 +67,7 @@ public sealed class ReplaySqlCommandInterceptor : DbCommandInterceptor
         return base.ReaderExecutedAsync(command, eventData, result, cancellationToken);
     }
 
+    /// <inheritdoc />
     public override ValueTask<object?> ScalarExecutedAsync(
         DbCommand command,
         CommandExecutedEventData eventData,
@@ -70,6 +78,7 @@ public sealed class ReplaySqlCommandInterceptor : DbCommandInterceptor
         return base.ScalarExecutedAsync(command, eventData, result, cancellationToken);
     }
 
+    /// <inheritdoc />
     public override ValueTask<int> NonQueryExecutedAsync(
         DbCommand command,
         CommandExecutedEventData eventData,

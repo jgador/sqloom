@@ -66,28 +66,16 @@ internal sealed class CommandRegistry
             return null;
         }
 
-        return args[0].ToLowerInvariant() switch
+        if (string.Equals(args[0], "help", StringComparison.OrdinalIgnoreCase))
         {
-            "help" => HostCommandKind.Help,
-            "observe" => HostCommandKind.Observe,
-            "tune" => HostCommandKind.Tune,
-            "replay" => HostCommandKind.Replay,
-            "correlate" => HostCommandKind.Correlate,
-            "advise" => HostCommandKind.Advise,
-            _ => null,
-        };
+            return HostCommandKind.Help;
+        }
+
+        return CommandCatalog.Find(args[0])?.Kind;
     }
 
     internal static string GetCommandVerb(HostCommandKind commandKind)
     {
-        return commandKind switch
-        {
-            HostCommandKind.Observe => "observe",
-            HostCommandKind.Tune => "tune",
-            HostCommandKind.Replay => "replay",
-            HostCommandKind.Correlate => "correlate",
-            HostCommandKind.Advise => "advise",
-            _ => throw new ArgumentOutOfRangeException(nameof(commandKind), commandKind, null),
-        };
+        return CommandCatalog.GetRequired(commandKind).Verb;
     }
 }

@@ -14,7 +14,7 @@ namespace Sqloom.Host.Tests;
 public sealed class AppResolverTests
 {
     [Fact]
-    public async Task Resolve_LoadsApplicationFromExplicitHarnessProjectPathWithoutBuild()
+    public async Task Resolve_LoadsExplicitHarnessProjectWithoutBuild()
     {
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()
@@ -154,7 +154,7 @@ public sealed class AppResolverTests
     }
 
     [Fact]
-    public async Task ResolveAssemblyPath_WithHarnessProjectPathWithoutBuild_ReturnsBuildOutputPath()
+    public async Task ResolveAssemblyPath_WithoutBuild_ReturnsBuildOutputPath()
     {
         AppResolver resolver = new();
         HostStartupOptions startupOptions = new()

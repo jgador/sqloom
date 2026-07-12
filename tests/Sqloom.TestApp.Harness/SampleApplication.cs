@@ -33,12 +33,11 @@ public sealed class SampleApplication : ISqloomApplication
             Name = "Sqloom Test App",
             OpenApiPath = OpenApiDoc.FindRequired(
                 ResolveTestAppDirectory()),
-            ReplayProfile = CreateReplayProfile(),
+            ReplayProfile = new ReplayProfile(),
             WorkloadProfile = new WorkloadProfile
             {
                 Name = "SqloomTestApp",
             },
-            SqlServerDacpacPath = ResolveHarnessFilePath(ReplayConstants.DacpacFileName),
         };
     }
 
@@ -51,61 +50,11 @@ public sealed class SampleApplication : ISqloomApplication
         ReplayHostFactory replayHostFactory = new();
         var replayHost = await replayHostFactory
             .CreateAsync(
-                ResolveLaunchOptions(context.ReplayLaunchOptions),
+                context.ApplicationConnectionString,
+                context.ReplayLaunchOptions,
                 cancellationToken)
             .ConfigureAwait(false);
         return new SampleSession(replayHost);
-    }
-
-    private static ReplayProfile CreateReplayProfile()
-    {
-        return new ReplayProfile
-        {
-            Personas =
-            [
-                new ReplayPersonaDefinition
-                {
-                    Name = "sqloom-test-user",
-                },
-            ],
-            OperationOverlays =
-            [
-                new ReplayOverlay
-                {
-                    OperationKey = CatalogScenario.OperationKey,
-                    Persona = "sqloom-test-user",
-                    QueryValues = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                    {
-                        ["categoryId"] = CatalogScenario.HotCategoryId.ToString(),
-                        ["minPrice"] = CatalogScenario.MinPriceText,
-                    },
-                    Notes = "AdventureWorks product query intentionally seeded without a supporting nonclustered index for tuning advice coverage.",
-                },
-            ],
-        };
-    }
-
-    private static ReplayLaunchOptions ResolveLaunchOptions(ReplayLaunchOptions requestedOptions)
-    {
-        return new ReplayLaunchOptions
-        {
-            DacpacPath = requestedOptions.DacpacPath
-                ?? ResolveHarnessFilePath(ReplayConstants.DacpacFileName),
-            SeedSqlPath = requestedOptions.SeedSqlPath
-                ?? ResolveHarnessFilePath(ReplayConstants.SeedSqlFileName),
-        };
-    }
-
-    private static string ResolveHarnessFilePath(string fileName)
-    {
-        var repositoryRoot = RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
-            ?? RepositoryRootLocator.TryFind(Directory.GetCurrentDirectory())
-            ?? throw new InvalidOperationException("Could not locate the repository root for the Sqloom Test App harness.");
-        return Path.Combine(
-            repositoryRoot,
-            "tests",
-            "Sqloom.TestApp.Harness",
-            fileName);
     }
 
     private static string ResolveTestAppDirectory()

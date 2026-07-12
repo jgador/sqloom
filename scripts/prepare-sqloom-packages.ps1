@@ -21,6 +21,14 @@ Push-Location $context.RepoRoot
 try
 {
     Invoke-DotNet -Context $context -Arguments @(
+        "run"
+        "--file"
+        (Join-Path $context.RepoRoot "tools\Sqloom.CommandDocs.cs")
+        "--"
+        "--check"
+    )
+
+    Invoke-DotNet -Context $context -Arguments @(
         "restore"
         $context.SolutionPath
     )
@@ -37,6 +45,7 @@ try
 
     Invoke-SqloomPackSet -Context $context -NoBuild -NoRestore
     Assert-SqloomPackagesExist -Context $context
+    Test-SqloomTestingPackageRestore -Context $context
     Install-SqloomToolPath -Context $context -ToolPath $context.VerifyToolPath
 
     $verifyExePath = Join-Path $context.VerifyToolPath "sqloom.exe"
@@ -49,7 +58,8 @@ try
     if (-not $SkipSmoke)
     {
         $sampleHarnessProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj"
-        & $verifyExePath replay $sampleHarnessProject --target "GET /api/products/by-category"
+        # Exercise harness resolution and OpenAPI discovery without requiring generated replay query values.
+        & $verifyExePath replay $sampleHarnessProject --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
         if ($LASTEXITCODE -ne 0)
         {
             throw "Prepared sqloom package smoke check failed."

@@ -11,7 +11,30 @@ namespace Sqloom.Host.Tests;
 public sealed class HostApplicationTests
 {
     [Fact]
-    public async Task RunAsync_WithAdviseVerb_InvokesMatchingHandler()
+    public async Task WithInitVerb_InvokesHandlerWithoutApplication()
+    {
+        StubCommandHandler handler = new(HostCommandKind.Init, 13);
+        HostApplication application = new(
+            new AppResolver(),
+            new HostConsoleWriter(),
+            new CommandRegistry(handler));
+        HostStartupOptions startupOptions = new()
+        {
+            ApplicationArguments = ["init"],
+        };
+
+        var result = await application.RunAsync(
+            startupOptions,
+            Directory.GetCurrentDirectory());
+
+        Assert.Equal(13, result);
+        Assert.NotNull(handler.LastContext);
+        Assert.Null(handler.LastContext!.Application);
+        Assert.Equal("init", Assert.Single(handler.LastContext.Arguments));
+    }
+
+    [Fact]
+    public async Task WithAdviseVerb_InvokesMatchingHandler()
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 17);
         HostApplication application = new(
@@ -33,7 +56,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithTuneVerb_InvokesMatchingHandler()
+    public async Task WithTuneVerb_InvokesMatchingHandler()
     {
         var applicationHarness = new TestApplicationA();
         StubCommandHandler handler = new(HostCommandKind.Tune, 23);
@@ -66,7 +89,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithDebugEnabled_DispatchesEnabledDebugWriter()
+    public async Task WithDebugEnabled_DispatchesEnabledDebugWriter()
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 19);
         HostApplication application = new(
@@ -89,7 +112,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithReplayVerb_UsesBoundApplication()
+    public async Task WithReplayVerb_UsesBoundApplication()
     {
         var applicationHarness = new TestApplicationA();
         StubCommandHandler handler = new(HostCommandKind.Replay, 29);
@@ -112,7 +135,7 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task RunAsync_WithoutCommand_PrintsNoCommandHint()
+    public async Task WithoutCommand_PrintsNoCommandHint()
     {
         HostApplication application = new(
             new AppResolver(),
@@ -132,7 +155,7 @@ public sealed class HostApplicationTests
 
             Assert.Equal(0, result);
             Assert.Contains(
-                "Use --help to print the available host arguments.",
+                "Use sqloom help to list commands.",
                 stdOut.ToString(),
                 StringComparison.Ordinal);
         }

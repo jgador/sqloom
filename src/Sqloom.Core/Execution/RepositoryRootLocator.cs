@@ -9,6 +9,9 @@ namespace Sqloom.Core.Execution;
 /// </summary>
 public static class RepositoryRootLocator
 {
+    /// <summary>
+    /// Searches upward from a path for the nearest Git repository root.
+    /// </summary>
     public static string? TryFind(string startPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(startPath);

@@ -1,8 +1,8 @@
 using System;
 using System.IO;
 using Sqloom.Core.Execution;
+using Sqloom.Host.Replay;
 using Sqloom.Testing;
-using Sqloom.TestApp.Harness;
 using Sqloom.Tests;
 using Xunit;
 
@@ -14,7 +14,7 @@ namespace Sqloom.Host.Tests;
 public sealed class ReplayArgumentParserTests
 {
     [Fact]
-    public void Parse_WithSqlServerDacpac_ResolvesReplayLaunchOptions()
+    public void WithSqlServerDacpac_ResolvesReplayLaunchOptions()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -34,7 +34,9 @@ public sealed class ReplayArgumentParserTests
                 "--openapi-file",
                 openApiPath,
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
+                "--openai-api-key",
+                "openai-key",
             ],
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
@@ -43,7 +45,7 @@ public sealed class ReplayArgumentParserTests
         Assert.Equal(
             Path.GetFullPath(openApiPath),
             arguments.RunnerOptions.OpenApiPath);
-        Assert.Equal(CatalogScenario.OperationKey, arguments.RunnerOptions.TargetFilter);
+        Assert.Equal(SampleCatalogReplayScenario.OperationKey, arguments.RunnerOptions.TargetFilter);
         Assert.Equal(
             Path.GetFullPath(dacpacPath),
             arguments.RunnerOptions.ReplayLaunchOptions.DacpacPath);
@@ -53,13 +55,16 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_UsesManifestOpenApiPathByDefault()
+    public void UsesManifestOpenApiPathByDefault()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var arguments = parser.Parse(
-            [],
+            [
+                "--openai-api-key",
+                "openai-key",
+            ],
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
             currentDirectory);
@@ -68,10 +73,136 @@ public sealed class ReplayArgumentParserTests
             RepositoryPaths.GetTestAppOpenApiPath(),
             arguments.RunnerOptions.OpenApiPath,
             StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(ReplayDataAgentMode.Required, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
     }
 
     [Fact]
-    public void Parse_ThrowsWhenManifestOpenApiPathIsRelative()
+    public void WithReplayDataAgentOff_DisablesAgentPreparer()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var arguments = parser.Parse(
+            [
+                "--replay-data-agent",
+                "off",
+            ],
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory);
+
+        Assert.Equal(ReplayDataAgentMode.Off, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.Null(arguments.RunnerOptions.ReplayDataPreparer);
+    }
+
+    [Fact]
+    public void WithReplayDataAgentAuto_CreatesAgentPreparer()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var arguments = parser.Parse(
+            [
+                "--replay-data-agent",
+                "auto",
+                "--replay-data-agent-model",
+                "gpt-test",
+                "--openai-api-key",
+                "openai-key",
+            ],
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory);
+
+        Assert.Equal(ReplayDataAgentMode.Auto, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.Equal("gpt-test", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
+        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+    }
+
+    [Fact]
+    public void WithReplayDataAgentAuto_RequiresOpenAIKey()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.Parse(
+                [
+                    "--replay-data-agent",
+                    "auto",
+                ],
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory));
+
+        Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void WithRequiredReplayDataAgent_CreatesAgentPreparer()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var arguments = parser.Parse(
+            [
+                "--replay-data-agent",
+                "required",
+                "--openai-api-key",
+                "openai-key",
+                "--openai-base-url",
+                "https://api.openai.com",
+            ],
+            ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory);
+
+        Assert.Equal(ReplayDataAgentMode.Required, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
+        Assert.Equal("gpt-5.4-mini", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
+        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+    }
+
+    [Fact]
+    public void WithReplayDataAgentRequired_RequiresOpenAIKey()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.Parse(
+                [
+                    "--replay-data-agent",
+                    "required",
+                ],
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory));
+
+        Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void RejectsInvalidReplayDataAgentMode()
+    {
+        ReplayArgumentParser parser = new();
+        var currentDirectory = CreateTempDir();
+
+        var exception = Assert.Throws<ArgumentException>(
+            () => parser.Parse(
+                [
+                    "--replay-data-agent",
+                    "always",
+                ],
+                ManifestFactory.CreateManifest(),
+            new ReplayHostFake(),
+            currentDirectory));
+
+        Assert.Contains("--replay-data-agent", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void ThrowsWhenManifestOpenApiPathIsRelative()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -94,7 +225,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenSqlServerDacpacIsMissing()
+    public void ThrowsWhenSqlServerDacpacIsMissing()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -114,7 +245,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenSqlSeedScriptIsMissing()
+    public void ThrowsWhenSqlSeedScriptIsMissing()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -138,7 +269,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void Parse_ThrowsWhenSqlSeedScriptIsSuppliedWithoutDacpac()
+    public void ThrowsWhenSqlSeedScriptIsSuppliedWithoutDacpac()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -161,7 +292,7 @@ public sealed class ReplayArgumentParserTests
     [Theory]
     [InlineData("--workload", "GET /api/expenses/dashboard")]
     [InlineData("--operation", "GET /api/expenses/dashboard")]
-    public void Parse_RejectsLegacyOperationSwitches(string legacySwitch, string value)
+    public void RejectsLegacyOperationSwitches(string legacySwitch, string value)
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -183,7 +314,7 @@ public sealed class ReplayArgumentParserTests
     [Theory]
     [InlineData("--openapi-path", "openapi.json")]
     [InlineData("--sqlserver-dacpac", "SqloomTestApp.dacpac")]
-    public void Parse_RejectsLegacyPathSwitches(string legacySwitch, string fileName)
+    public void RejectsLegacyPathSwitches(string legacySwitch, string fileName)
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -203,11 +334,11 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Theory]
-    [InlineData("get /api/products/by-category", "The HTTP method must be uppercase.", CatalogScenario.OperationKey)]
-    [InlineData("GET api/products/by-category", "The route template must start with '/'.", CatalogScenario.OperationKey)]
-    [InlineData("GET /api/products/by-category/", "Do not include a trailing '/' in the route template.", CatalogScenario.OperationKey)]
-    [InlineData("GET //api/products/by-category", "Do not include repeated '/' characters in the route template.", CatalogScenario.OperationKey)]
-    public void Parse_RejectsMalformedTargetValues(
+    [InlineData("get /api/products/by-category", "The HTTP method must be uppercase.", SampleCatalogReplayScenario.OperationKey)]
+    [InlineData("GET api/products/by-category", "The route template must start with '/'.", SampleCatalogReplayScenario.OperationKey)]
+    [InlineData("GET /api/products/by-category/", "Do not include a trailing '/' in the route template.", SampleCatalogReplayScenario.OperationKey)]
+    [InlineData("GET //api/products/by-category", "Do not include repeated '/' characters in the route template.", SampleCatalogReplayScenario.OperationKey)]
+    public void RejectsMalformedTargetValues(
         string targetFilter,
         string expectedReason,
         string expectedSuggestion)
@@ -233,7 +364,7 @@ public sealed class ReplayArgumentParserTests
     [Theory]
     [InlineData("expenses.dashboard")]
     [InlineData("GetSecure")]
-    public void Parse_RejectsNonOperationKeyTargetValues(string targetFilter)
+    public void RejectsNonOperationKeyTargetValues(string targetFilter)
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -257,7 +388,7 @@ public sealed class ReplayArgumentParserTests
     [InlineData("--replay")]
     [InlineData("--correlate")]
     [InlineData("--advise")]
-    public void Parse_RejectsLegacyStageAliasSwitches(string legacySwitch)
+    public void RejectsLegacyStageAliasSwitches(string legacySwitch)
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();

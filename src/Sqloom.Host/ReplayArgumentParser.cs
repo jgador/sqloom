@@ -13,42 +13,19 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class ReplayArgumentParser
 {
-    private static readonly HashSet<string> SupportedSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--openapi-file",
-        "--sqlserver-dacpac-file",
-        "--sqlserver-seed-sql-file",
-        "--artifact-dir",
-        "--max-operations",
-        "--target",
-    };
-
-    private static readonly HashSet<string> ValueSwitches = new(StringComparer.OrdinalIgnoreCase)
-    {
-        "--openapi-file",
-        "--sqlserver-dacpac-file",
-        "--sqlserver-seed-sql-file",
-        "--artifact-dir",
-        "--max-operations",
-        "--target",
-    };
-
     public ReplayArguments Parse(
         string[] args,
         SqloomApplicationManifest manifest,
         IReplayHost replayHost,
         string currentDirectory,
         string? artifactDirectoryOverride = null,
-        string? openApiPathOverride = null)
+        string? openApiPathOverride = null,
+        ReplayLaunchOptions? replayLaunchOptionsOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
         ArgumentNullException.ThrowIfNull(replayHost);
 
-        CommandArgumentSupport.ValidateArguments(
-            args,
-            HostCommandKind.Replay,
-            SupportedSwitches,
-            ValueSwitches);
+        CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Replay);
 
         var replayProfile = manifest.ReplayProfile;
         var openApiPath = openApiPathOverride
@@ -60,7 +37,9 @@ internal sealed class ReplayArgumentParser
             CommandArgumentSupport.GetArgumentValue(args, "--target"));
         var replayArtifactDirectory = artifactDirectoryOverride
             ?? GetReplayArtifactDir(args, currentDirectory);
-        var replayLaunchOptions = CreateReplayLaunchOptions(args, currentDirectory);
+        var replayLaunchOptions = replayLaunchOptionsOverride
+            ?? CreateReplayLaunchOptions(args, currentDirectory);
+        var replayDataAgentOptions = CreateReplayDataAgentOptions(args);
 
         return new ReplayArguments
         {
@@ -72,6 +51,8 @@ internal sealed class ReplayArgumentParser
                 ReplayProfile = replayProfile,
                 ReplayHost = replayHost,
                 ReplayLaunchOptions = replayLaunchOptions,
+                ReplayDataAgentOptions = replayDataAgentOptions,
+                ReplayDataPreparer = CreateReplayDataPreparer(args, replayDataAgentOptions),
                 MaxOperations = CommandArgumentSupport.GetIntArgumentValue(args, "--max-operations") ?? 25,
                 TargetFilter = targetFilter,
             },
@@ -142,7 +123,8 @@ internal sealed class ReplayArgumentParser
 
     internal ReplayLaunchOptions CreateReplayLaunchOptions(
         string[] args,
-        string currentDirectory)
+        string currentDirectory,
+        bool requireDacpacForSeed = true)
     {
         var dacpacPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-dacpac-file");
         var seedSqlPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-seed-sql-file");
@@ -156,8 +138,17 @@ internal sealed class ReplayArgumentParser
         if (string.IsNullOrWhiteSpace(dacpacPath)
             && !string.IsNullOrWhiteSpace(seedSqlPath))
         {
-            throw new ArgumentException(
-                "The post-DACPAC SQL seed script requires --sqlserver-dacpac-file <path>.");
+            var seedOnlySqlPath = ResolveSeedSqlPath(seedSqlPath, currentDirectory);
+            if (requireDacpacForSeed)
+            {
+                throw new ArgumentException(
+                    "The post-DACPAC SQL seed script requires --sqlserver-dacpac-file <path>.");
+            }
+
+            return new ReplayLaunchOptions
+            {
+                SeedSqlPath = seedOnlySqlPath,
+            };
         }
 
         var fullDacpacPath = Path.GetFullPath(dacpacPath!, currentDirectory);
@@ -170,18 +161,96 @@ internal sealed class ReplayArgumentParser
         string? fullSeedSqlPath = null;
         if (!string.IsNullOrWhiteSpace(seedSqlPath))
         {
-            fullSeedSqlPath = Path.GetFullPath(seedSqlPath, currentDirectory);
-            if (!File.Exists(fullSeedSqlPath))
-            {
-                throw new ArgumentException(
-                    $"The SQL seed script '{fullSeedSqlPath}' does not exist.");
-            }
+            fullSeedSqlPath = ResolveSeedSqlPath(seedSqlPath, currentDirectory);
         }
 
         return new ReplayLaunchOptions
         {
             DacpacPath = fullDacpacPath,
             SeedSqlPath = fullSeedSqlPath,
+        };
+    }
+
+    private static string ResolveSeedSqlPath(
+        string seedSqlPath,
+        string currentDirectory)
+    {
+        var fullSeedSqlPath = Path.GetFullPath(seedSqlPath, currentDirectory);
+        if (!File.Exists(fullSeedSqlPath))
+        {
+            throw new ArgumentException(
+                $"The SQL seed script '{fullSeedSqlPath}' does not exist.");
+        }
+
+        return fullSeedSqlPath;
+    }
+
+    internal ReplayDataAgentOptions CreateReplayDataAgentOptions(string[] args)
+    {
+        var mode = ParseReplayDataAgentMode(
+            CommandArgumentSupport.GetArgumentValue(args, "--replay-data-agent"));
+        if (mode == ReplayDataAgentMode.Off)
+        {
+            return new ReplayDataAgentOptions
+            {
+                Mode = ReplayDataAgentMode.Off,
+            };
+        }
+
+        return new ReplayDataAgentOptions
+        {
+            Mode = mode,
+            ModelName = CommandArgumentSupport.GetArgumentValue(args, "--replay-data-agent-model")
+                ?? "gpt-5.4-mini",
+        };
+    }
+
+    internal void ValidateReplayDataAgentOptions(string[] args)
+    {
+        var replayDataAgentOptions = CreateReplayDataAgentOptions(args);
+        _ = CreateReplayDataPreparer(args, replayDataAgentOptions);
+    }
+
+    private static IReplayDataPreparer? CreateReplayDataPreparer(
+        string[] args,
+        ReplayDataAgentOptions options)
+    {
+        if (options.Mode == ReplayDataAgentMode.Off)
+        {
+            return null;
+        }
+
+        var apiKey = CommandArgumentSupport.GetArgumentValue(args, "--openai-api-key");
+        if (string.IsNullOrWhiteSpace(apiKey))
+        {
+            throw new ArgumentException(
+                "Sqloom replay data agent requires --openai-api-key unless --replay-data-agent off is supplied.");
+        }
+
+        return new AgentFrameworkReplayDataPreparer(
+            new OpenAIAdviceOptions
+            {
+                ApiKey = apiKey,
+                BaseUrl = CommandArgumentSupport.GetArgumentValue(args, "--openai-base-url")
+                    ?? "https://api.openai.com",
+                Model = options.ModelName ?? "gpt-5.4-mini",
+            });
+    }
+
+    private static ReplayDataAgentMode ParseReplayDataAgentMode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return ReplayDataAgentMode.Required;
+        }
+
+        return value.Trim().ToLowerInvariant() switch
+        {
+            "off" => ReplayDataAgentMode.Off,
+            "auto" => ReplayDataAgentMode.Auto,
+            "required" => ReplayDataAgentMode.Required,
+            _ => throw new ArgumentException(
+                "The value for --replay-data-agent must be 'off', 'auto', or 'required'."),
         };
     }
 }

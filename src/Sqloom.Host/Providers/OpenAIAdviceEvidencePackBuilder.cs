@@ -58,6 +58,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
         ArgumentException.ThrowIfNullOrWhiteSpace(sqlServerSchemaPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(schemaSql);
 
+        // Missing optional artifacts weaken the OpenAI evidence pack; warnings carry that gap forward.
         HashSet<string> warnings = new(StringComparer.Ordinal);
         var queryStoreSnapshot = await LoadQueryStoreSnapshotAsync(
                 queryStoreSnapshotPath,
@@ -95,6 +96,7 @@ internal sealed class OpenAIAdviceEvidencePackBuilder
             warnings.Add(warning);
         }
 
+        // Advice can still run with correlation-only evidence when the replay operation artifact is unavailable.
         var replayOperation = await LoadReplayOperationAsync(
                 operation,
                 warnings,

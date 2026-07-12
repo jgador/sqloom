@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,7 @@ namespace Sqloom.Host.Tests.Replay;
 public sealed class EndpointReplayRunnerTests
 {
     [Fact]
-    public async Task RunAsync_MergesPreparedRequestValuesAndSendsAuthenticatedRequest()
+    public async Task MergesPreparedValuesAndSendsAuthenticatedRequest()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
@@ -146,6 +147,251 @@ public sealed class EndpointReplayRunnerTests
                 && stage.Status == PipelineStageStatuses.Completed);
     }
 
+    [Fact]
+    public async Task WithReplayDataPreparer_FillsValuesAndWritesArtifact()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDirectory);
+        var documentPath = Path.Combine(tempDirectory, "openapi.json");
+        await File.WriteAllTextAsync(
+            documentPath,
+            """
+            {
+              "openapi": "3.0.1",
+              "security": [
+                { "Bearer": [] }
+              ],
+              "paths": {
+                "/api/items/{itemId}": {
+                  "get": {
+                    "parameters": [
+                      {
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "integer" }
+                      },
+                      {
+                        "name": "since",
+                        "in": "query",
+                        "required": true,
+                        "schema": { "type": "string", "format": "date-time" }
+                      },
+                      {
+                        "name": "x-trace",
+                        "in": "header",
+                        "required": true,
+                        "schema": { "type": "string" }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+            """);
+
+        using CapturingHandler handler = new();
+        using var services = new ServiceCollection().BuildServiceProvider();
+        using FakeReplayHost replayHost = new(
+            new HttpClient(handler, disposeHandler: false)
+            {
+                BaseAddress = new Uri("http://localhost")
+            },
+            services,
+            new PreparedReplayOperation
+            {
+                AccessToken = "token-123"
+            });
+
+        EndpointReplayRunner runner = new();
+        var result = await runner.RunAsync(
+            new ReplayRunnerOptions
+            {
+                AppName = "TestApp",
+                OpenApiPath = documentPath,
+                ReplayArtifactDir = tempDirectory,
+                ReplayProfile = new ReplayProfile(),
+                ReplayHost = replayHost,
+                ReplayDataAgentOptions = new ReplayDataAgentOptions
+                {
+                    Mode = ReplayDataAgentMode.Auto,
+                    ModelName = "gpt-test",
+                },
+                ReplayDataPreparer = new StubReplayDataPreparer(
+                    new ReplayDataPreparationOperation
+                    {
+                        OperationKey = "GET /api/items/{itemId}",
+                        Strategy = "test-preparer",
+                        Status = "generated",
+                        Confidence = 0.8,
+                        PreparedData = new ReplayPreparedData
+                        {
+                            PathValues = new Dictionary<string, string>
+                            {
+                                ["itemId"] = "1",
+                            },
+                            QueryValues = new Dictionary<string, string>
+                            {
+                                ["since"] = "2026-01-01T00:00:00Z",
+                            },
+                            HeaderValues = new Dictionary<string, string>
+                            {
+                                ["x-trace"] = "sqloom",
+                            },
+                        },
+                    }),
+            });
+
+        var replay = Assert.Single(result.Results);
+        Assert.Equal("replayed", replay.Status);
+        Assert.Equal("/api/items/1?since=2026-01-01T00%3A00%3A00Z", replay.Request.RelativePathAndQuery);
+        Assert.Equal("sqloom", Assert.Single(handler.RequestHeaders["x-trace"]));
+        Assert.NotNull(replayHost.LastResolvedOperation);
+        Assert.Equal("1", replayHost.LastResolvedOperation!.PathValues["itemId"]);
+        Assert.Equal("2026-01-01T00:00:00Z", replayHost.LastResolvedOperation.QueryValues["since"]);
+        Assert.Equal("sqloom", replayHost.LastResolvedOperation.HeaderValues["x-trace"]);
+        Assert.Equal(Path.Combine(tempDirectory, "replay-data-prep.json"), result.ReplayDataPreparationPath);
+        Assert.True(File.Exists(result.ReplayDataPreparationPath));
+        Assert.NotNull(result.ReplayDataPreparation);
+        Assert.Equal("auto", result.ReplayDataPreparation!.Mode);
+        Assert.Equal("gpt-test", result.ReplayDataPreparation.ModelName);
+
+        var persistedReport = JsonSerializer.Deserialize<ReplayDataPreparationReport>(
+            await File.ReadAllTextAsync(result.ReplayDataPreparationPath),
+            JsonSerializerOptions.Web);
+        Assert.NotNull(persistedReport);
+        var preparedOperation = Assert.Single(persistedReport!.Operations);
+        Assert.Equal("GET /api/items/{itemId}", preparedOperation.OperationKey);
+        Assert.Equal("generated", preparedOperation.Status);
+        Assert.Equal("1", preparedOperation.PreparedData.PathValues["itemId"]);
+    }
+
+    [Fact]
+    public async Task WithReplayDataAgentOff_SkipsReplayDataAndArtifact()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDirectory);
+        var documentPath = Path.Combine(tempDirectory, "openapi.json");
+        await File.WriteAllTextAsync(
+            documentPath,
+            """
+            {
+              "openapi": "3.0.1",
+              "security": [
+                { "Bearer": [] }
+              ],
+              "paths": {
+                "/api/items": {
+                  "get": { }
+                }
+              }
+            }
+            """);
+
+        using CapturingHandler handler = new();
+        using var services = new ServiceCollection().BuildServiceProvider();
+        using FakeReplayHost replayHost = new(
+            new HttpClient(handler, disposeHandler: false)
+            {
+                BaseAddress = new Uri("http://localhost")
+            },
+            services,
+            new PreparedReplayOperation());
+
+        EndpointReplayRunner runner = new();
+        var result = await runner.RunAsync(
+            new ReplayRunnerOptions
+            {
+                AppName = "TestApp",
+                OpenApiPath = documentPath,
+                ReplayArtifactDir = tempDirectory,
+                ReplayProfile = new ReplayProfile(),
+                ReplayHost = replayHost,
+                ReplayDataAgentOptions = new ReplayDataAgentOptions
+                {
+                    Mode = ReplayDataAgentMode.Off,
+                },
+                ReplayDataPreparer = new ThrowingReplayDataPreparer(),
+            });
+
+        Assert.Null(result.ReplayDataPreparationPath);
+        Assert.Null(result.ReplayDataPreparation);
+        Assert.False(File.Exists(Path.Combine(tempDirectory, "replay-data-prep.json")));
+        Assert.Single(result.Results);
+    }
+
+    [Fact]
+    public async Task WhenReplayDataPreparerFails_WritesFailedArtifact()
+    {
+        var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDirectory);
+        var documentPath = Path.Combine(tempDirectory, "openapi.json");
+        await File.WriteAllTextAsync(
+            documentPath,
+            """
+            {
+              "openapi": "3.0.1",
+              "security": [
+                { "Bearer": [] }
+              ],
+              "paths": {
+                "/api/items/{itemId}": {
+                  "get": {
+                    "parameters": [
+                      {
+                        "name": "itemId",
+                        "in": "path",
+                        "required": true,
+                        "schema": { "type": "integer" }
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+            """);
+
+        using CapturingHandler handler = new();
+        using var services = new ServiceCollection().BuildServiceProvider();
+        using FakeReplayHost replayHost = new(
+            new HttpClient(handler, disposeHandler: false)
+            {
+                BaseAddress = new Uri("http://localhost")
+            },
+            services,
+            new PreparedReplayOperation());
+
+        EndpointReplayRunner runner = new();
+        var result = await runner.RunAsync(
+            new ReplayRunnerOptions
+            {
+                AppName = "TestApp",
+                OpenApiPath = documentPath,
+                ReplayArtifactDir = tempDirectory,
+                ReplayProfile = new ReplayProfile(),
+                ReplayHost = replayHost,
+                ReplayDataAgentOptions = new ReplayDataAgentOptions
+                {
+                    Mode = ReplayDataAgentMode.Auto,
+                    ModelName = "gpt-test",
+                },
+                ReplayDataPreparer = new ThrowingReplayDataPreparer("prep failed"),
+            });
+
+        var replay = Assert.Single(result.Results);
+        Assert.Equal("failed", replay.Status);
+        Assert.Contains("prep failed", replay.ErrorMessage);
+        Assert.Null(replayHost.LastResolvedOperation);
+        Assert.Equal(Path.Combine(tempDirectory, "replay-data-prep.json"), result.ReplayDataPreparationPath);
+        Assert.NotNull(result.ReplayDataPreparation);
+
+        var preparedOperation = Assert.Single(result.ReplayDataPreparation!.Operations);
+        Assert.Equal("GET /api/items/{itemId}", preparedOperation.OperationKey);
+        Assert.Equal("failed", preparedOperation.Status);
+        Assert.Equal("replay-data-agent", preparedOperation.Strategy);
+        Assert.Contains("prep failed", preparedOperation.Warnings);
+    }
+
     /// <summary>
     /// Provides a fake replay host factory for replay runner tests.
     /// </summary>
@@ -192,6 +438,8 @@ public sealed class EndpointReplayRunnerTests
 
         public ReplayBootstrapReport Bootstrap { get; } = new();
 
+        public ResolvedReplayOperation? LastResolvedOperation { get; private set; }
+
         public ValueTask DisposeAsync()
         {
             Dispose();
@@ -207,6 +455,7 @@ public sealed class EndpointReplayRunnerTests
             ResolvedReplayOperation operation,
             CancellationToken cancellationToken = default)
         {
+            LastResolvedOperation = operation;
             return Task.FromResult(_preparedOperation);
         }
     }
@@ -244,6 +493,40 @@ public sealed class EndpointReplayRunnerTests
             {
                 Content = new StringContent("""{"ok":true}""", Encoding.UTF8, "application/json")
             };
+        }
+    }
+
+    private sealed class ThrowingReplayDataPreparer : IReplayDataPreparer
+    {
+        private readonly string _message;
+
+        public ThrowingReplayDataPreparer(string message = "Replay data preparer should not be called.")
+        {
+            _message = message;
+        }
+
+        public Task<ReplayDataPreparationOperation> PrepareAsync(
+            ReplayDataPreparationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            throw new InvalidOperationException(_message);
+        }
+    }
+
+    private sealed class StubReplayDataPreparer : IReplayDataPreparer
+    {
+        private readonly ReplayDataPreparationOperation _operation;
+
+        public StubReplayDataPreparer(ReplayDataPreparationOperation operation)
+        {
+            _operation = operation;
+        }
+
+        public Task<ReplayDataPreparationOperation> PrepareAsync(
+            ReplayDataPreparationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_operation);
         }
     }
 }

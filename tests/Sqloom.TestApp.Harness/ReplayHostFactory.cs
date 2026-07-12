@@ -1,12 +1,10 @@
 using System;
-using System.IO;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Sqloom.Core.Execution;
-using Testcontainers.MsSql;
 
 namespace Sqloom.TestApp.Harness;
 
@@ -15,97 +13,58 @@ namespace Sqloom.TestApp.Harness;
 /// </summary>
 public sealed class ReplayHostFactory : IReplayHostFactory
 {
-    private readonly ReplayBootstrapper _databaseBootstrapper = new();
+    private readonly string? _applicationConnectionString;
+
+    public ReplayHostFactory()
+    {
+    }
+
+    public ReplayHostFactory(string? applicationConnectionString)
+    {
+        _applicationConnectionString = applicationConnectionString;
+    }
 
     public async Task<IReplayHost> CreateAsync(
         ReplayLaunchOptions? launchOptions = null,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(launchOptions?.DacpacPath)
-            && !string.IsNullOrWhiteSpace(launchOptions?.SeedSqlPath))
-        {
-            throw new ArgumentException(
-                "Sqloom Test App replay requires --sqlserver-dacpac-file <path> when --sqlserver-seed-sql-file <path> is supplied.");
-        }
+        return await CreateAsync(
+                _applicationConnectionString,
+                launchOptions,
+                cancellationToken)
+            .ConfigureAwait(false);
+    }
 
-        if (string.IsNullOrWhiteSpace(launchOptions?.DacpacPath))
-        {
-            return await ReplayHost
-                .CreateAsync(
-                    sqlServer: null,
-                    applicationConnectionString: null,
-                    new ReplayBootstrapReport(),
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        var dacpacPath = DacpacPathResolver.ResolveRequiredPath(launchOptions);
-        if (!string.Equals(
-            Path.GetFileName(dacpacPath),
-            ReplayConstants.DacpacFileName,
-            StringComparison.OrdinalIgnoreCase))
-        {
-            // The sample harness only provisions SQL when callers point it at the committed
-            // AdventureWorks DACPAC. Other apps can still replay this endpoint through the
-            // in-memory fallback when they share a generic host invocation.
-            return await ReplayHost
-                .CreateAsync(
-                    sqlServer: null,
-                    applicationConnectionString: null,
-                    new ReplayBootstrapReport(),
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-
-        var sqlServer = new MsSqlBuilder(ReplayConstants.SqlServerImage)
-            .WithPassword(ReplayConstants.SqlServerPassword)
-            .Build();
-        await sqlServer.StartAsync(cancellationToken).ConfigureAwait(false);
-
-        try
-        {
-            var replayBootstrap = await _databaseBootstrapper
-                .BootstrapAsync(
-                    sqlServer,
-                    launchOptions,
-                    cancellationToken)
-                .ConfigureAwait(false);
-
-            return await ReplayHost
-                .CreateAsync(
-                    sqlServer,
-                    replayBootstrap.ApplicationConnectionString,
-                    replayBootstrap.Bootstrap,
-                    cancellationToken)
-                .ConfigureAwait(false);
-        }
-        catch
-        {
-            await sqlServer.DisposeAsync().AsTask().ConfigureAwait(false);
-            throw;
-        }
+    internal async Task<IReplayHost> CreateAsync(
+        string? applicationConnectionString,
+        ReplayLaunchOptions? launchOptions = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await ReplayHost
+            .CreateAsync(
+                applicationConnectionString,
+                new ReplayBootstrapReport(),
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 }
 
 /// <summary>
-/// Owns the in-memory host and optional SQL Server container used by the sample replay harness.
+/// Owns the in-memory or externally supplied SQL Server-backed host used by the sample replay harness.
 /// </summary>
 internal sealed class ReplayHost : IReplayHost
 {
-    private readonly MsSqlContainer? _sqlServer;
     private readonly WebApplication _application;
     private readonly HttpClient _client;
     private readonly ReplayBootstrapReport _bootstrap;
     private readonly string? _readOnlyConnectionString;
 
     private ReplayHost(
-        MsSqlContainer? sqlServer,
         WebApplication application,
         HttpClient client,
         string? readOnlyConnectionString,
         ReplayBootstrapReport bootstrap)
     {
-        _sqlServer = sqlServer;
         _application = application;
         _client = client;
         _readOnlyConnectionString = readOnlyConnectionString;
@@ -121,7 +80,6 @@ internal sealed class ReplayHost : IReplayHost
     public string? ReadOnlyConnection => _readOnlyConnectionString;
 
     public static async Task<ReplayHost> CreateAsync(
-        MsSqlContainer? sqlServer,
         string? applicationConnectionString,
         ReplayBootstrapReport bootstrap,
         CancellationToken cancellationToken)
@@ -136,7 +94,6 @@ internal sealed class ReplayHost : IReplayHost
         client.BaseAddress = new Uri("http://localhost");
 
         return new ReplayHost(
-            sqlServer,
             application,
             client,
             applicationConnectionString,
@@ -163,9 +120,5 @@ internal sealed class ReplayHost : IReplayHost
     {
         _client.Dispose();
         await _application.DisposeAsync().ConfigureAwait(false);
-        if (_sqlServer is not null)
-        {
-            await _sqlServer.DisposeAsync().AsTask().ConfigureAwait(false);
-        }
     }
 }

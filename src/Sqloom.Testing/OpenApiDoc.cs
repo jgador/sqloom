@@ -8,8 +8,14 @@ namespace Sqloom.Testing;
 /// </summary>
 public static class OpenApiDoc
 {
+    /// <summary>
+    /// Defines the conventional OpenAPI document file name used by a harness.
+    /// </summary>
     public const string DefaultFileName = "openapi.json";
 
+    /// <summary>
+    /// Resolves a required OpenAPI document beneath an application directory.
+    /// </summary>
     public static string FindRequired(
         string applicationDirectory,
         string fileName = DefaultFileName)

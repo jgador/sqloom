@@ -16,9 +16,9 @@ namespace Sqloom.Host.Tests;
 [Collection("ConsoleHostRuntime")]
 public sealed class HostRuntimeTests
 {
-    [RequiresDockerFact]
+    [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithReplayProjectWithoutBuild_ReplaysWorkload()
+    public async Task WithReplayProjectWithoutBuild_ReportsMissingQueryData()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();
@@ -34,24 +34,20 @@ public sealed class HostRuntimeTests
                         "dotnet",
                         "--no-build",
                         "--target",
-                        CatalogScenario.OperationKey,
+                        SampleCatalogReplayScenario.OperationKey,
+                        "--replay-data-agent",
+                        "off",
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
         }, (ProjectPath: projectPath, CurrentDirectory: currentDirectory));
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains("App: Sqloom Test App", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains(
-            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
-            result.StdOut,
-            StringComparison.Ordinal);
+        AssertReplayRequiresPreparedQueryData(result);
     }
 
-    [RequiresDockerFact]
+    [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithReplayDebug_PrintsStageDiagnosticsToStandardError()
+    public async Task WithReplayDebug_ReportsMissingQueryData()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();
@@ -68,120 +64,25 @@ public sealed class HostRuntimeTests
                         "dotnet",
                         "--no-build",
                         "--target",
-                        CatalogScenario.OperationKey,
+                        SampleCatalogReplayScenario.OperationKey,
+                        "--replay-data-agent",
+                        "off",
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
         }, (ProjectPath: projectPath, CurrentDirectory: currentDirectory));
 
-        Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
+        AssertReplayRequiresPreparedQueryData(result);
         Assert.Contains("[sqloom debug] [replay] resolved inputs", result.StdErr, StringComparison.Ordinal);
         Assert.Contains(
-            $"target_filter={CatalogScenario.OperationKey}",
+            $"target_filter={SampleCatalogReplayScenario.OperationKey}",
             result.StdErr,
             StringComparison.Ordinal);
     }
 
-    [RequiresDockerFact]
-    [Trait("Category", "Integration")]
-    public async Task RunAsync_WithSqlServerDacpacFile_ReplaysWorkloadAndPrintsBootstrap()
-    {
-        var projectPath = SqloomTestAppPaths.GetProjectPath();
-        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
-        var currentDirectory = Directory.GetCurrentDirectory();
-
-        var result = await CaptureConsoleAsync(static async state =>
-        {
-            return await HostRuntime
-                .RunAsync(
-                    [
-                        "replay",
-                        state.ProjectPath,
-                        "--dotnet-command",
-                        "dotnet",
-                        "--no-build",
-                        "--sqlserver-dacpac-file",
-                        state.DacpacPath,
-                        "--target",
-                        CatalogScenario.OperationKey,
-                    ],
-                    state.CurrentDirectory)
-                .ConfigureAwait(false);
-        }, (ProjectPath: projectPath, DacpacPath: dacpacPath, CurrentDirectory: currentDirectory))
-            .ConfigureAwait(false);
-
-        Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains("App: Sqloom Test App", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains("SQL Server DACPAC: AdventureWorksLT2025.dacpac", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains($"DACPAC path: {dacpacPath}", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains(
-            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
-            result.StdOut,
-            StringComparison.Ordinal);
-    }
-
-    [RequiresDockerFact]
-    [Trait("Category", "Integration")]
-    public async Task RunAsync_WithSqlSeedScript_ReplaysWorkloadAndPrintsSeedBootstrap()
-    {
-        var projectPath = SqloomTestAppPaths.GetProjectPath();
-        var dacpacPath = SqloomTestAppPaths.GetDacpacPath();
-        var currentDirectory = Directory.GetCurrentDirectory();
-        var tempDirectory = CreateTempDir();
-        var seedScriptPath = Path.Combine(tempDirectory, "AdventureWorksLT2025.seed.sql");
-        File.WriteAllText(
-            seedScriptPath,
-            SqloomTestAppSeedScripts.CreateCustomSeedScript());
-
-        try
-        {
-            var result = await CaptureConsoleAsync(static async state =>
-            {
-                return await HostRuntime
-                    .RunAsync(
-                        [
-                            "replay",
-                            state.ProjectPath,
-                            "--dotnet-command",
-                            "dotnet",
-                            "--no-build",
-                            "--sqlserver-dacpac-file",
-                            state.DacpacPath,
-                            "--sqlserver-seed-sql-file",
-                            state.SeedScriptPath,
-                            "--target",
-                            CatalogScenario.OperationKey,
-                        ],
-                        state.CurrentDirectory)
-                    .ConfigureAwait(false);
-            }, (ProjectPath: projectPath, DacpacPath: dacpacPath, SeedScriptPath: seedScriptPath, CurrentDirectory: currentDirectory))
-                .ConfigureAwait(false);
-
-            Assert.Equal(0, result.ExitCode);
-            Assert.Contains("Replay summary:", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains("App: Sqloom Test App", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains("SQL Server DACPAC: AdventureWorksLT2025.dacpac", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains("SQL seed script: AdventureWorksLT2025.seed.sql", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains($"Seed script path: {seedScriptPath}", result.StdOut, StringComparison.Ordinal);
-            Assert.Contains(
-                $"{CatalogScenario.OperationKey}: status=replayed, http=200",
-                result.StdOut,
-                StringComparison.Ordinal);
-        }
-        finally
-        {
-            if (Directory.Exists(tempDirectory))
-            {
-                Directory.Delete(tempDirectory, recursive: true);
-            }
-        }
-    }
-
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithObserveWithoutConnectionStringSwitch_StillRequiresExplicitConnectionStringSwitch()
+    public async Task ObserveWithoutConnectionString_RequiresExplicitSwitch()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -206,7 +107,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithTuneWithoutConnectionStringSwitch_StillRequiresExplicitConnectionStringSwitch()
+    public async Task TuneWithoutConnectionString_RequiresExplicitSwitch()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var dacpacPath = Path.Combine(CreateTempDir(), "schema-source.dacpac");
@@ -239,7 +140,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithOpenAIAdviceWithoutApiKey_StillRequiresExplicitApiKey()
+    public async Task OpenAIAdviceWithoutApiKey_RequiresExplicitApiKey()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var replayArtifactDirectory = CreateTempDir();
@@ -294,7 +195,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithOpenAIAdviceWithoutSchemaSource_RequiresSchemaSource()
+    public async Task OpenAIAdviceWithoutSchemaSource_RequiresSchemaSource()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var replayArtifactDirectory = CreateTempDir();
@@ -344,42 +245,33 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithTuneWithoutSchemaSource_RequiresSchemaSource()
+    public async Task WithTuneWithoutCommandLineSchemaSource_DefersSchemaResolutionUntilSessionConnection()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
-        var result = await CaptureConsoleAsync(static async state =>
-        {
-            return await HostRuntime
+        var exception = await Assert.ThrowsAsync<NotSupportedException>(
+            async () => await HostRuntime
                 .RunAsync(
                     new NoSchemaTestApplication(),
                     [
                         "tune",
-                        "--read-only-connection-string",
-                        "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                         "--model-provider",
                         "openai",
                         "--openai-api-key",
                         "openai-key",
                     ],
-                    state)
-                .ConfigureAwait(false);
-        }, currentDirectory);
+                    currentDirectory)
+                .ConfigureAwait(false));
 
-        Assert.Equal(1, result.ExitCode);
         Assert.Contains(
-            "--sqlserver-schema-file",
-            result.StdErr,
+            "Schema resolution should wait for the harness session read-only connection.",
+            exception.Message,
             StringComparison.Ordinal);
-        Assert.Contains(
-            "DACPAC",
-            result.StdErr,
-            StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithoutAppSelection_PrintsNoCommandHint()
+    public async Task WithoutAppSelection_PrintsNoCommandHint()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
 
@@ -393,12 +285,137 @@ public sealed class HostRuntimeTests
         }, currentDirectory);
 
         Assert.Equal(0, result.ExitCode);
-        Assert.Contains("Use --help to print the available host arguments.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Use sqloom help to list commands.", result.StdOut, StringComparison.Ordinal);
     }
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithVersion_PrintsToolVersion()
+    public async Task WithHelp_PrintsTopLevelSections()
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+
+        var result = await CaptureConsoleAsync(static async state =>
+        {
+            return await HostRuntime
+                .RunAsync(
+                    [
+                        "--help",
+                    ],
+                    state)
+                .ConfigureAwait(false);
+        }, currentDirectory);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Usage:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("tool-options:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("commands:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("  replay     Starts the harness and replays selected OpenAPI operations.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Run 'sqloom help <command>' for more information on a command.", result.StdOut, StringComparison.Ordinal);
+        Assert.Equal(string.Empty, result.StdErr);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task WithHelpReplay_PrintsCommandSections()
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+
+        var result = await CaptureConsoleAsync(static async state =>
+        {
+            return await HostRuntime
+                .RunAsync(
+                    [
+                        "help",
+                        "replay",
+                    ],
+                    state)
+                .ConfigureAwait(false);
+        }, currentDirectory);
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Description:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Starts the harness and replays selected OpenAPI operations.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Usage:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("sqloom replay <path> [options]", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Arguments:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("startup-options:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("options:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Replay targets must use the exact form 'METHOD /path/template'", result.StdOut, StringComparison.Ordinal);
+        Assert.Equal(string.Empty, result.StdErr);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task WithReplayHelp_PrintsSameOutputAsHelpReplay()
+    {
+        var currentDirectory = Directory.GetCurrentDirectory();
+
+        var helpReplay = await CaptureConsoleAsync(static async state =>
+        {
+            return await HostRuntime
+                .RunAsync(
+                    [
+                        "help",
+                        "replay",
+                    ],
+                    state)
+                .ConfigureAwait(false);
+        }, currentDirectory);
+        var replayHelp = await CaptureConsoleAsync(static async state =>
+        {
+            return await HostRuntime
+                .RunAsync(
+                    [
+                        "replay",
+                        "--help",
+                    ],
+                    state)
+                .ConfigureAwait(false);
+        }, currentDirectory);
+
+        Assert.Equal(0, helpReplay.ExitCode);
+        Assert.Equal(0, replayHelp.ExitCode);
+        Assert.Equal(helpReplay.StdOut, replayHelp.StdOut);
+        Assert.Equal(string.Empty, helpReplay.StdErr);
+        Assert.Equal(string.Empty, replayHelp.StdErr);
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task WithInit_ScaffoldsSkillWithoutHarnessTarget()
+    {
+        var currentDirectory = CreateTempDir();
+        Directory.CreateDirectory(Path.Combine(currentDirectory, ".git"));
+
+        try
+        {
+            var result = await CaptureConsoleAsync(static async state =>
+            {
+                return await HostRuntime
+                    .RunAsync(
+                        [
+                            "init",
+                            "--agent",
+                            "copilot",
+                        ],
+                        state)
+                    .ConfigureAwait(false);
+            }, currentDirectory);
+
+            Assert.Equal(0, result.ExitCode);
+            Assert.Contains(".github/skills/sqloom/SKILL.md", result.StdOut, StringComparison.Ordinal);
+            Assert.Equal(string.Empty, result.StdErr);
+            Assert.True(File.Exists(Path.Combine(currentDirectory, ".github", "skills", "sqloom", "SKILL.md")));
+        }
+        finally
+        {
+            Directory.Delete(currentDirectory, recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Category", "Integration")]
+    public async Task WithVersion_PrintsToolVersion()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
         var expectedVersion = typeof(HostRuntime)
@@ -434,7 +451,7 @@ public sealed class HostRuntimeTests
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task RunAsync_WithBoundAppIntegration_RejectsExplicitTargetPathSelection()
+    public async Task WithBoundAppIntegration_RejectsExplicitTargetPathSelection()
     {
         var projectPath = SqloomTestAppPaths.GetProjectPath();
         var currentDirectory = Directory.GetCurrentDirectory();
@@ -485,6 +502,16 @@ public sealed class HostRuntimeTests
         int ExitCode,
         string StdOut,
         string StdErr);
+
+    private static void AssertReplayRequiresPreparedQueryData(ConsoleCaptureResult result)
+    {
+        Assert.Equal(1, result.ExitCode);
+        var output = result.StdOut + result.StdErr;
+        Assert.Contains(
+            "missing required query parameter 'categoryId'",
+            output,
+            StringComparison.Ordinal);
+    }
 
     private static string CreateTempDir()
     {
@@ -557,7 +584,7 @@ internal sealed class NoSchemaTestApplication : ISqloomApplication
         SqloomApplicationContext context,
         CancellationToken cancellationToken = default)
     {
-        throw new NotSupportedException("Schema validation should run before the harness session starts.");
+        throw new NotSupportedException("Schema resolution should wait for the harness session read-only connection.");
     }
 }
 

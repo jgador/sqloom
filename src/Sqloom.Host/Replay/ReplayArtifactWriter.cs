@@ -26,6 +26,11 @@ internal sealed class ReplayArtifactWriter
         return ArtifactLayout.GetReplaySummaryPath(replayArtifactDirectory);
     }
 
+    public string GetReplayDataPreparationPath(string replayArtifactDirectory)
+    {
+        return ArtifactLayout.GetReplayDataPreparationPath(replayArtifactDirectory);
+    }
+
     public string GetOperationArtifactPath(
         string replayArtifactDirectory,
         int ordinal,
@@ -66,5 +71,13 @@ internal sealed class ReplayArtifactWriter
         CancellationToken cancellationToken)
     {
         return JsonFileWriter.WriteAsync(path, runResult, cancellationToken);
+    }
+
+    public Task WriteReplayDataPreparationAsync(
+        string path,
+        ReplayDataPreparationReport report,
+        CancellationToken cancellationToken)
+    {
+        return JsonFileWriter.WriteAsync(path, report, cancellationToken);
     }
 }

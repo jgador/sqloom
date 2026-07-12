@@ -25,6 +25,9 @@ public sealed class OpenApiCatalogLoader
         "options"
     ];
 
+    /// <summary>
+    /// Loads supported operations from an OpenAPI document in stable route and method order.
+    /// </summary>
     public async Task<IReadOnlyList<OpenApiOperation>> LoadAsync(
         string openApiPath,
         CancellationToken cancellationToken = default)
@@ -84,6 +87,9 @@ public sealed class OpenApiCatalogLoader
             .ToArray();
     }
 
+    /// <summary>
+    /// Builds the canonical method-and-route key used to identify a replay operation.
+    /// </summary>
     public static string BuildStableOperationKey(string httpMethod, string route)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(httpMethod);

@@ -1,7 +1,6 @@
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
-using Sqloom.TestApp.Harness;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -14,7 +13,7 @@ public sealed class HostProcessTests
 {
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task DotNetRun_WithHostAndTestAppProject_ReplaysWorkload()
+    public async Task WithHostAndTestAppProject_ReportsMissingQueryData()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
@@ -32,24 +31,26 @@ public sealed class HostProcessTests
                 "--dotnet-command",
                 "dotnet",
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
+                "--replay-data-agent",
+                "off",
             ]);
 
         Assert.True(
-            result.ExitCode == 0,
+            result.ExitCode == 1,
             FormatFailureMessage(result));
+        var output = result.StandardOutput + result.StandardError;
         Assert.Contains("Sqloom host", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains("App: Sqloom Test App", result.StandardOutput, StringComparison.Ordinal);
-        Assert.Contains("Replay summary:", result.StandardOutput, StringComparison.Ordinal);
         Assert.Contains(
-            $"{CatalogScenario.OperationKey}: status=replayed, http=200",
-            result.StandardOutput,
+            "missing required query parameter 'categoryId'",
+            output,
             StringComparison.Ordinal);
     }
 
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task DotNetRun_WithLeadingTargetPath_FailsWithoutStageVerb()
+    public async Task WithLeadingTargetPath_FailsWithoutStageVerb()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
@@ -64,7 +65,7 @@ public sealed class HostProcessTests
                 "--",
                 targetProjectPath,
                 "--target",
-                CatalogScenario.OperationKey,
+                SampleCatalogReplayScenario.OperationKey,
             ]);
 
         Assert.True(

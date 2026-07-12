@@ -100,7 +100,7 @@ public sealed class WorkloadClassifierTests
     }
 
     [Fact]
-    public void ClassifyPlan_DoesNotTreatSeparatedSchemaAndObjectTokensAsQualifiedReference()
+    public void ClassifyPlan_IgnoresSeparatedSchemaAndObjectTokens()
     {
         WorkloadClassifier classifier = new();
         var classification = classifier.ClassifyPlan(
@@ -111,7 +111,7 @@ public sealed class WorkloadClassifierTests
     }
 
     [Fact]
-    public void ApplyClassification_AnnotatesPlansSnapshotMetadataAndInheritedWaits()
+    public void ApplyClassification_AnnotatesSnapshotAndInheritedWaits()
     {
         WorkloadClassifier classifier = new();
         QueryStoreSnapshot snapshot = new()

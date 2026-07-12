@@ -131,6 +131,7 @@ internal sealed class TuneWorkflowRunner
             WorkflowArtifactDir = arguments.WorkflowArtifactDir,
             QueryStoreSnapshotPath = observeResult.JsonOutputPath,
             ReplayArtifactDir = replayResult.ReplayResult.ReplayArtifactDir,
+            ReplayDataPreparationPath = replayResult.ReplayResult.ReplayDataPreparationPath,
             QueryStoreCorrelationPath = correlateResult.JsonOutputPath,
             TuningAdvicePath = adviceResult.JsonOutputPath,
             SqlProposalJsonPath = adviceResult.Report.SqlProposalJsonPath,

@@ -28,7 +28,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
         Path.Combine("artifacts", "sqloom", "tuning-advice.json");
 
     [Fact]
-    public void CreateReport_EmitsDeterministicRecommendationsForMatchedHotspots()
+    public void EmitsRecommendationsForMatchedHotspots()
     {
         const string matchedHotspotSql = """
             SELECT [e].[ExpenseRecordId], [e].[UserId], [e].[OccurredAtUtc], [e].[Amount]
@@ -135,7 +135,7 @@ public sealed class QueryStoreCorrelationAdvisorTests
     }
 
     [Fact]
-    public void CreateReport_UsesRecoveryAdviceWhenReplayEvidenceIsIncomplete()
+    public void UsesRecoveryAdviceWhenReplayEvidenceIsIncomplete()
     {
         QueryStoreCorrelationAdvisor advisor = new();
         QueryCorrelationReport correlationReport = new()

@@ -19,12 +19,18 @@ public sealed class QueryStoreCorrelator
     private const double StatementHandleExactConfidence = 1.00d;
     private readonly ISqlHandleResolver _statementHandleResolver;
 
+    /// <summary>
+    /// Creates a correlator that uses the supplied resolver for exact statement-handle matching.
+    /// </summary>
     public QueryStoreCorrelator(ISqlHandleResolver statementHandleResolver)
     {
         _statementHandleResolver = statementHandleResolver
             ?? throw new ArgumentNullException(nameof(statementHandleResolver));
     }
 
+    /// <summary>
+    /// Correlates replay SQL with Query Store plans using statement handles, exact text, and fingerprints.
+    /// </summary>
     public async Task<QueryCorrelationReport> CorrelateAsync(
         QueryStoreSnapshot snapshot,
         IReadOnlyList<EndpointReplayResult> replayResults,
@@ -174,6 +180,7 @@ public sealed class QueryStoreCorrelator
         IDictionary<string, SqlHandleResolution> cache,
         CancellationToken cancellationToken)
     {
+        // Statement-handle lookup depends on SQL shape and parameter metadata, not runtime parameter values.
         var cacheKey = string.Concat(
             capturedCommand.CommandText,
             "\n--sqloom-parameters--\n",
@@ -220,6 +227,7 @@ public sealed class QueryStoreCorrelator
         double confidence;
         string[] notes;
 
+        // Choose correlation ownership by descending trust: handle, exact text, then local fingerprint.
         if (matchedPlans.Count > 0)
         {
             matchKind = CorrelationMatchKind.StatementHandleExact;

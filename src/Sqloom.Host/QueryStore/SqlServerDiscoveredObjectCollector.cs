@@ -58,16 +58,23 @@ public sealed class SqlServerDiscoveredObjectCollector : IDbObjectCollector
 
     private readonly ReadOnlySqlConnectionFactory _connectionFactory;
 
+    /// <summary>
+    /// Creates a collector with the default readonly SQL connection factory.
+    /// </summary>
     public SqlServerDiscoveredObjectCollector()
         : this(new ReadOnlySqlConnectionFactory())
     {
     }
 
+    /// <summary>
+    /// Creates a collector with an explicit readonly SQL connection factory.
+    /// </summary>
     public SqlServerDiscoveredObjectCollector(ReadOnlySqlConnectionFactory connectionFactory)
     {
         _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
     }
 
+    /// <inheritdoc />
     public async Task<DbObjectCatalog> CaptureAsync(
         string readOnlyConnectionString,
         DbObjectScanOptions options,

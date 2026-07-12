@@ -25,6 +25,9 @@ internal sealed class TuneWorkflowReport
     [JsonPropertyName("replayArtifactDir")]
     public required string ReplayArtifactDir { get; init; }
 
+    [JsonPropertyName("replayDataPreparationPath")]
+    public string? ReplayDataPreparationPath { get; init; }
+
     [JsonPropertyName("queryStoreCorrelationPath")]
     public required string QueryStoreCorrelationPath { get; init; }
 

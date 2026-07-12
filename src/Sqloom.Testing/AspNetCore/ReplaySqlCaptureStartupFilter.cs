@@ -9,6 +9,7 @@ namespace Sqloom.Testing.AspNetCore;
 /// </summary>
 public sealed class ReplaySqlCaptureStartupFilter : IStartupFilter
 {
+    /// <inheritdoc />
     public Action<IApplicationBuilder> Configure(Action<IApplicationBuilder> next)
     {
         return applicationBuilder =>

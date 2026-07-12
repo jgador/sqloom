@@ -9,6 +9,9 @@ namespace Sqloom.Core.Execution;
 /// </summary>
 public static class SqlTuningProposalArtifacts
 {
+    /// <summary>
+    /// Converts an advice report into a validated SQL tuning proposal report.
+    /// </summary>
     public static SqlTuningProposalReport CreateReport(
         AdviceReport adviceReport,
         string adviceOutputPath)
@@ -48,6 +51,9 @@ public static class SqlTuningProposalArtifacts
         };
     }
 
+    /// <summary>
+    /// Renders a SQL tuning proposal as a reviewable SQL script.
+    /// </summary>
     public static string RenderSqlScript(SqlTuningProposalReport report)
     {
         ArgumentNullException.ThrowIfNull(report);

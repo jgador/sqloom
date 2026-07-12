@@ -13,7 +13,34 @@ Keep this file focused on agent-specific working rules. Do not restate the full 
 
 ## Agent Workflow
 
-The user explicitly authorizes Codex to spawn and coordinate sub-agents for non-trivial work in this repository. Use sub-agents when the correct files are not already known, when multiple projects may need coordinated changes, or when a change can affect CLI contracts, artifact formats, package output, database or test-harness behavior, or build and test workflows.
+The user explicitly authorizes Codex to spawn and coordinate repo-defined sub-agents for non-trivial work in this repository. Treat this section as standing explicit authorization and instruction to use sub-agents for Sqloom repository work.
+
+Use only sub-agents defined in this repository under [.codex/agents/](.codex/agents/) unless the user explicitly asks otherwise. Do not use generic or built-in sub-agents such as `default`, `explorer`, `reviewer`, or `worker` unless this repository defines and lists them.
+
+Allowed repo-defined sub-agents:
+- `advisor`
+- `atlas-csharp-mapper`
+- `atlas-doc-mapper`
+- `atlas-test-mapper`
+- `scout`
+
+For every non-trivial repository task, use at least one non-scout repo-defined sub-agent before finalizing the answer or implementation. Non-trivial tasks include code, tests, docs, configuration, build behavior, CLI behavior, artifacts, architecture, review, debugging, tracing, and file discovery.
+
+Preferred qualifying sub-agents:
+- Use `advisor` for overall request analysis and sub-agent routing recommendations.
+- Use `atlas-csharp-mapper` for C#/.NET source, project, symbol, or semantic mapping.
+- Use `atlas-doc-mapper` for docs, config, build scripts, packaging metadata, CI-adjacent files, prompts, or agent-policy surfaces.
+- Use `atlas-test-mapper` for nearest tests, focused validation commands, and coverage-gap mapping.
+- Use `scout` only for bounded literal file discovery inside an already selected scope.
+
+Minimum rule:
+- At least one non-scout repo-defined sub-agent must be used for every non-trivial repository task.
+- `advisor` satisfies the minimum rule when the main need is request analysis, task classification, or deciding which specialist should run next.
+- `scout` does not satisfy the minimum rule unless the user's task is purely file/path discovery.
+- If the correct specialist is already obvious, skip `advisor` and use the relevant Atlas mapper directly.
+- If tests or validation matter, use `atlas-test-mapper` after the source or domain scope is known.
+
+Skip sub-agents only when the environment does not expose repo-defined sub-agents, the user explicitly says not to use sub-agents, the task is a trivial direct answer or one-line command, or the task is a single-file read with no repo-impact decision. When sub-agents are skipped, briefly state why.
 
 Do not use Repository Synapse in this repository. Do not run `synapse ensure`, `synapse recall`, `synapse tests`, or any other command that creates `.synapse/` repo-local cache files. Use Atlas, scout agents, direct file/test inspection, and build/test output instead.
 
@@ -21,9 +48,10 @@ Do not use Repository Synapse in this repository. Do not run `synapse ensure`, `
 
 - Load [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) into the active agent context before broad source reading. Treat it as required structural context for this repository, not optional reference material.
 - When [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) contains a runtime, architecture, artifact, or test spine for the task domain, convert that spine into the first read order before broad literal search or scout discovery.
-- The main agent owns Atlas routing. With [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) in context, identify the task domain, choose the first read order, and decide whether a specialist Atlas mapper should run. Do not add or use a separate Atlas router role.
+- The main agent owns Atlas routing. With [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) in context, identify the task domain, choose the first read order, and decide whether a specialist Atlas mapper should run. Use `advisor` when a non-trivial task needs request classification or sub-agent routing recommendations before that decision. Do not add or use a separate Atlas router role.
 - Do not use `scout` for Atlas domain routing. Use `scout` only after the main agent has bounded a domain, path prefix, diff scope, symbol area, artifact area, or mapper handoff.
-- When the current environment exposes Atlas sub-agents, the read-only Atlas mapper roles are approved by default for Sqloom repo work. The main agent may dispatch them without an explicit user prompt when the task benefits from specialist or parallel mapping.
+- When the current environment exposes repo-defined sub-agents, the read-only repo roles are approved by default for Sqloom repo work. The main agent may dispatch them without an explicit user prompt when the task benefits from specialist or parallel mapping.
+- Route overall request analysis, task classification, and sub-agent routing recommendations to `advisor` when the task is non-trivial and the correct specialist is not already obvious.
 - Route C# source, project files, solution files, MSBuild files, C# symbols, and semantic inspection to `atlas-csharp-mapper` before broad C# source reads when the task benefits from delegation. When Atlas sub-agents are unavailable or the task is too small to delegate, use [.agents/skills/roslynkit/SKILL.md](.agents/skills/roslynkit/SKILL.md) and direct inspection as appropriate.
 - Route docs, config, build scripts, packaging metadata, CI-adjacent files, and agent-prompt or Atlas-policy surfaces to `atlas-doc-mapper` when Atlas sub-agents are available and the task benefits from delegation.
 - Route nearest-test discovery, focused validation commands, and obvious coverage-gap mapping to `atlas-test-mapper` after the source or domain scope is known.
@@ -77,11 +105,12 @@ After scouts return:
 
 ## Build and Verification
 
-[README.md](README.md) is the canonical command reference.
+[.agents/skills/sqloom/references/commands.md](.agents/skills/sqloom/references/commands.md) is the generated canonical command reference. Keep [README.md](README.md) as the user-facing quick start and workflow overview.
 
 - Run .NET commands from the repo root.
 - Use the narrowest relevant restore, build, or test command first.
 - After CLI surface changes that affect `sqloom-local`, redeploy the local wrapper before trusting manual runs.
+- After command metadata changes, regenerate `.agents/skills/sqloom/references/commands.md` with `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --write` and run the same file app with `--check`.
 - For replay, correlate, advise, and tune issues, inspect `artifacts/sqloom/` before guessing from code alone.
 - If deeper verification requires Docker, SQL Server assets, or OpenAI credentials, say exactly what you ran and what you skipped.
 
@@ -107,6 +136,8 @@ Follow the existing style in touched files. Keep 4-space indentation, file-scope
 
 - Preserve the current surviving `Sqloom.*` project names and follow the repo-specific ownership and boundary docs instead of inventing a new project split.
 - Keep comments sparse. Prefer clear names first and add only short comments for non-obvious behavior.
+- Keep every publicly visible C# API in production projects documented with a concise XML `<summary>` that gives RoslynKit useful semantic context. Do not add routine `<param>` comments; use `<inheritdoc />` for straightforward implementations and overrides. CS1591 is enforced for production code and intentionally suppressed under `tests/` for tests, samples, and generated fixtures.
+- When doing C# comment or XML-doc work, review all non-trivial symbols, not just classes and methods: records, record parameters and properties, enum members, fields, option/spec carrier types, nullable bindings, and nested helper types. Explain the behavior, contract, precedence, or safety boundary that is not obvious from the identifier; do not add boilerplate summaries such as `Gets the X` or comments that only restate the member name.
 - For public-facing ASP.NET Core contracts, prefer `Request` and `Response` suffixes over `Dto`.
 - Use structured logging, typed options, and pass `CancellationToken` last and downstream.
 - If a public API, public CLI or package surface, public contract, configuration surface, or documented workflow changes, update [README.md](README.md) or the relevant docs in the same change.
@@ -122,4 +153,10 @@ Recent history mixes short imperative subjects with scoped prefixes such as `fea
 
 ## Security & Configuration Tips
 
-Do not commit secrets. Pass `OPENAI_API_KEY` through the environment. Prefer `localhost` for sample SQL Server connection strings unless the task explicitly targets another host. Do not hand-edit generated snapshots, replay outputs, or SQL proposal artifacts unless the task is specifically about those generated files.
+Do not commit secrets. Do not introduce environment-variable reads or writes in runtime code unless the variable is explicitly whitelisted here. The whitelist is `OPENAI_API_KEY`, `ASPNETCORE_ENVIRONMENT`, and `PATH` (`Path` on Windows); use normal configuration and explicit parameters for all other values. Prefer `localhost` for sample SQL Server connection strings unless the task explicitly targets another host. Do not hand-edit generated snapshots, replay outputs, or SQL proposal artifacts unless the task is specifically about those generated files.
+
+### Checked-In Password Exceptions
+
+Do not check in concrete passwords, password-equivalent fixture values, password hashes, or password salts unless an exception below explicitly allows either an exact value at a documented location or a named generated file with explicitly scoped allowed password-bearing fields and purpose. Password-related identifiers, schema and property names, detection patterns, and non-executable documentation placeholders such as `<strong-password>` are not values. This list is exhaustive: no unlisted value or generated-file field exception is allowed, including values described as local, test-only, inert, sample, generated, hashed, or salted. Update this single list deliberately whenever an exception is added, changed, or removed; do not duplicate the exception list elsewhere.
+
+No checked-in password exceptions are currently allowed.

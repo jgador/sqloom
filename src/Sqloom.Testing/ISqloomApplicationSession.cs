@@ -8,9 +8,18 @@ namespace Sqloom.Testing;
 /// </summary>
 public interface ISqloomApplicationSession : IAsyncDisposable
 {
+    /// <summary>
+    /// Gets the running host used to execute replay operations.
+    /// </summary>
     IReplayHost ReplayHost { get; }
 
+    /// <summary>
+    /// Gets the read-only database connection available to Sqloom observation stages.
+    /// </summary>
     string? ReadOnlyConnection { get; }
 
+    /// <summary>
+    /// Gets metadata captured while starting the application session.
+    /// </summary>
     ReplayBootstrapReport Bootstrap { get; }
 }

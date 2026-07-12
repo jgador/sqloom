@@ -30,39 +30,33 @@ internal sealed class HostConsoleWriter
 
     public void PrintUsage()
     {
-        Console.WriteLine("Sqloom host usage:");
-        Console.WriteLine("  --help");
-        Console.WriteLine("  --version");
-        Console.WriteLine("  [--debug] observe [<path>] --read-only-connection-string <connection-string> [options]");
-        Console.WriteLine("  [--debug] tune <path> [--read-only-connection-string <connection-string>] [options]");
-        Console.WriteLine("  [--debug] replay <path> [options]");
-        Console.WriteLine("  [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [options]");
-        Console.WriteLine("  [--debug] advise --replay-artifact-dir <path> [options]");
-        Console.WriteLine(
-            "  [--debug] observe [<path>] [--dotnet-command <command>] [--no-build] --read-only-connection-string <connection-string> [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--json-output-file <path>] [--app-only] [--show-classification]");
-        Console.WriteLine("    --app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.");
-        Console.WriteLine(
-            "  [--debug] tune <path> [--dotnet-command <command>] [--no-build] [--read-only-connection-string <connection-string>] [--lookback-hours <hours>] [--max-plans <count>] [--max-waits <count>] [--command-timeout-seconds <seconds>] [--app-only] [--show-classification] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"] --model-provider openai --openai-api-key <key> [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
-        Console.WriteLine("    Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session. It writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.");
-        Console.WriteLine("    Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string. Advice uses --sqlserver-schema-file when supplied, otherwise it extracts schema SQL from --sqlserver-dacpac-file or the harness manifest DACPAC.");
-        Console.WriteLine("    When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.");
-        Console.WriteLine(
-            "  [--debug] replay <path> [--dotnet-command <command>] [--no-build] [--openapi-file <path>] [--sqlserver-dacpac-file <path>] [--sqlserver-seed-sql-file <path>] [--artifact-dir <path>] [--max-operations <count>] [--target \"<METHOD /path/template>\"]");
-        Console.WriteLine("    Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.");
-        Console.WriteLine("    Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.");
-        Console.WriteLine("    Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.");
-        Console.WriteLine("    If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.");
-        Console.WriteLine("    SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; --sqlserver-dacpac-file and --sqlserver-seed-sql-file override them.");
-        Console.WriteLine("    Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".");
-        Console.WriteLine("    Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.");
-        Console.WriteLine(
-            "  [--debug] correlate --replay-artifact-dir <path> --query-store-snapshot-file <path> --read-only-connection-string <connection-string> [--json-output-file <path>]");
-        Console.WriteLine("    Correlation resolves statement_sql_handle against captured replay SQL, then writes query-store-correlation.json under the replay artifact directory by default.");
-        Console.WriteLine(
-            "  [--debug] advise --replay-artifact-dir <path> [--query-store-correlation-file <path>] [--json-output-file <path>] --model-provider openai --openai-api-key <key> [--sqlserver-dacpac-file <path>] [--sqlserver-schema-file <path>] [--openai-model <id>] [--openai-base-url <url>]");
-        Console.WriteLine("    Advice derives operation-level tuning guidance from query-store-correlation.json plus SQL Server schema extracted from a DACPAC, then writes tuning-advice.json, sql-tuning-proposal.json, and sql-tuning-proposal.sql under the replay artifact directory by default.");
-        Console.WriteLine("    OpenAI advice requires --model-provider openai, --openai-api-key, and either --sqlserver-dacpac-file or the expert --sqlserver-schema-file override.");
-        Console.WriteLine("    Use --debug to print per-stage diagnostics to stderr. With advise, debug prints the redacted OpenAI request and response payloads.");
+        Console.WriteLine("Sqloom");
+        Console.WriteLine();
+        Console.WriteLine("Usage:");
+        Console.WriteLine("  sqloom [tool-options]");
+        Console.WriteLine("  sqloom <command> [arguments] [options]");
+        Console.WriteLine("  sqloom help [command]");
+        Console.WriteLine();
+
+        PrintRows(
+            "tool-options:",
+            CommandCatalog.ToolOptions.Select(static option => FormatOptionRow(option)));
+        PrintRows(
+            "commands:",
+            CommandCatalog.Commands.Select(static command => (command.Verb, command.Description)));
+        Console.WriteLine("Run 'sqloom help <command>' for more information on a command.");
+    }
+
+    public void PrintHelp(string[] applicationArguments)
+    {
+        var command = ResolveHelpCommand(applicationArguments);
+        if (command is null)
+        {
+            PrintUsage();
+            return;
+        }
+
+        PrintCommandHelp(command);
     }
 
     public void PrintVersion(string version)
@@ -72,18 +66,19 @@ internal sealed class HostConsoleWriter
 
     public void PrintNoCommandHint()
     {
-        Console.WriteLine("Use tune <path> to start the harness and run the full replay, observe, correlate, and advise workflow in one command.");
-        Console.WriteLine("Use observe to capture a readonly SQL Server or Azure SQL Query Store snapshot.");
-        Console.WriteLine("Use replay <path> to execute OpenAPI-driven in-process ASP.NET Core replays explicitly.");
-        Console.WriteLine("Standalone replay accepts a harness project, harness assembly, solution, solution filter, or directory path immediately after the replay verb.");
-        Console.WriteLine("Sqloom resolves the target to exactly one public non-abstract ISqloomApplication implementation.");
-        Console.WriteLine("SQL Server-backed replay harnesses can provide app-owned DACPAC and seed defaults; CLI paths override them.");
-        Console.WriteLine("Replay target selection uses --target \"METHOD /path/template\" when you need one exact operation.");
-        Console.WriteLine("Use correlate to map replay SQL back to captured Query Store rows.");
-        Console.WriteLine("Use advise to turn a correlation artifact into operation-level tuning guidance.");
-        Console.WriteLine("Use --debug to print per-stage diagnostics to stderr.");
-        Console.WriteLine("Use --help to print the available host arguments.");
-        Console.WriteLine("Use --version to print the installed Sqloom tool version.");
+        Console.WriteLine("Use sqloom help to list commands.");
+        Console.WriteLine("Use sqloom help tune to see the end-to-end workflow.");
+        Console.WriteLine("Use sqloom init to scaffold the sqloom agent skill into this repository.");
+        Console.WriteLine("Use sqloom --version to print the installed Sqloom tool version.");
+    }
+
+    public void PrintInitResult(InitResult result)
+    {
+        Console.WriteLine($"Scaffolded sqloom skill for agent selection '{result.AgentSelection}' in {result.RepositoryRoot}.");
+        foreach (var file in result.Files)
+        {
+            Console.WriteLine($"- {file.Status.ToString().ToLowerInvariant()}: {file.Path}");
+        }
     }
 
     public void PrintQueryStoreSnapshot(
@@ -205,6 +200,11 @@ internal sealed class HostConsoleWriter
 
         Console.WriteLine($"- Discovery artifact: {replayResult.DiscoveredOpsPath}");
         Console.WriteLine($"- Replay plan artifact: {replayResult.ReplayPlanArtifactPath}");
+        if (!string.IsNullOrWhiteSpace(replayResult.ReplayDataPreparationPath))
+        {
+            Console.WriteLine($"- Replay data prep artifact: {replayResult.ReplayDataPreparationPath}");
+        }
+
         Console.WriteLine($"- Summary artifact: {replayResult.SummaryArtifactPath}");
         PrintPipeline(runReport.Pipeline);
 
@@ -348,6 +348,11 @@ internal sealed class HostConsoleWriter
         Console.WriteLine($"- Workflow artifact directory: {report.WorkflowArtifactDir}");
         Console.WriteLine($"- Query Store snapshot: {report.QueryStoreSnapshotPath}");
         Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
+        if (!string.IsNullOrWhiteSpace(report.ReplayDataPreparationPath))
+        {
+            Console.WriteLine($"- Replay data prep artifact: {report.ReplayDataPreparationPath}");
+        }
+
         Console.WriteLine($"- Correlation artifact: {report.QueryStoreCorrelationPath}");
         Console.WriteLine($"- Advice artifact: {report.TuningAdvicePath}");
         Console.WriteLine($"- SQL proposal JSON: {report.SqlProposalJsonPath}");
@@ -374,6 +379,140 @@ internal sealed class HostConsoleWriter
         }
 
         PrintPipeline(report.Pipeline);
+    }
+
+    private static void PrintCommandHelp(CommandSpec command)
+    {
+        Console.WriteLine("Description:");
+        Console.WriteLine($"  {command.Description}");
+        Console.WriteLine();
+        Console.WriteLine("Usage:");
+        Console.WriteLine($"  sqloom {command.Usage}");
+        Console.WriteLine();
+
+        PrintRows(
+            "Arguments:",
+            GetArgumentRows(command));
+        PrintRows(
+            "startup-options:",
+            GetStartupOptions(command).Select(static option => FormatOptionRow(option)));
+        PrintRows(
+            "options:",
+            command.Options.Select(static option => FormatOptionRow(option)));
+
+        if (command.Notes.Count == 0)
+        {
+            return;
+        }
+
+        Console.WriteLine("Notes:");
+        foreach (var note in command.Notes)
+        {
+            Console.WriteLine($"  - {note}");
+        }
+
+        Console.WriteLine();
+    }
+
+    private static CommandSpec? ResolveHelpCommand(string[] applicationArguments)
+    {
+        // Normalize both "help <command>" and "<command> --help" onto the same command lookup.
+        if (applicationArguments.Length == 0)
+        {
+            return null;
+        }
+
+        if (string.Equals(applicationArguments[0], "help", StringComparison.OrdinalIgnoreCase))
+        {
+            return applicationArguments.Length switch
+            {
+                1 => null,
+                2 => FindHelpCommand(applicationArguments[1]),
+                _ => throw new ArgumentException(
+                    $"Unexpected Sqloom help argument '{applicationArguments[2]}'. Use 'sqloom help <command>'."),
+            };
+        }
+
+        foreach (var argument in applicationArguments)
+        {
+            if (CommandArgumentSupport.IsSwitch(argument))
+            {
+                continue;
+            }
+
+            return FindHelpCommand(argument);
+        }
+
+        return null;
+    }
+
+    private static CommandSpec FindHelpCommand(string verb)
+    {
+        return CommandCatalog.Find(verb)
+            ?? throw new ArgumentException(
+                $"Unknown Sqloom command '{verb}'. Use 'sqloom help' to list commands.");
+    }
+
+    private static IReadOnlyList<CommandOptionSpec> GetStartupOptions(CommandSpec command)
+    {
+        return CommandCatalog.StartupOptions
+            .Where(option =>
+                option.Name == "--debug"
+                    ? command.SupportsDebug
+                    : command.SupportsHarnessOptions)
+            .ToArray();
+    }
+
+    private static IReadOnlyList<(string Syntax, string Description)> GetArgumentRows(CommandSpec command)
+    {
+        return command.TargetKind switch
+        {
+            CommandTargetKind.Required =>
+            [
+                ("<path>", "Harness project, harness assembly, solution, solution filter, or directory."),
+            ],
+            CommandTargetKind.Optional =>
+            [
+                ("[<path>]", "Optional harness project, harness assembly, solution, solution filter, or directory."),
+            ],
+            _ => Array.Empty<(string Syntax, string Description)>(),
+        };
+    }
+
+    private static (string Syntax, string Description) FormatOptionRow(CommandOptionSpec option)
+    {
+        var description = option.Description;
+        if (option.IsRequired)
+        {
+            description += " Required.";
+        }
+
+        if (option.DefaultValue is not null)
+        {
+            description += $" Default: {option.DefaultValue}.";
+        }
+
+        return (option.Syntax, description);
+    }
+
+    private static void PrintRows(
+        string heading,
+        IEnumerable<(string Syntax, string Description)> rows)
+    {
+        var materializedRows = rows.ToArray();
+        if (materializedRows.Length == 0)
+        {
+            return;
+        }
+
+        var width = materializedRows.Max(static row => row.Syntax.Length);
+        Console.WriteLine(heading);
+        foreach (var row in materializedRows)
+        {
+            Console.WriteLine($"  {row.Syntax.PadRight(width)}  {row.Description}");
+        }
+
+        Console.WriteLine();
     }
 
     private static string FormatTimestamp(DateTimeOffset? value)
