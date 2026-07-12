@@ -21,6 +21,14 @@ Push-Location $context.RepoRoot
 try
 {
     Invoke-DotNet -Context $context -Arguments @(
+        "run"
+        "--file"
+        (Join-Path $context.RepoRoot "tools\Sqloom.CommandDocs.cs")
+        "--"
+        "--check"
+    )
+
+    Invoke-DotNet -Context $context -Arguments @(
         "restore"
         $context.SolutionPath
     )

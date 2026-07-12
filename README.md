@@ -71,7 +71,7 @@ Sqloom has one setup command, one common front door, and four lower-level stages
 - `correlate`: match replay-captured SQL back to a Query Store snapshot.
 - `advise`: turn replay, correlation, and schema evidence into tuning advice and SQL proposal files.
 
-See [docs/command-reference.md](docs/command-reference.md) for the exhaustive command syntax, arguments, defaults, outputs, and additional options.
+See the generated command reference at [.agents/skills/sqloom/references/commands.md](.agents/skills/sqloom/references/commands.md) for exact command syntax, required options, allowed values, defaults, and command-specific notes.
 
 ## How It Fits Into An App
 

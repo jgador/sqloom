@@ -105,7 +105,7 @@ After scouts return:
 
 ## Build and Verification
 
-[README.md](README.md) is the canonical command reference.
+[.agents/skills/sqloom/references/commands.md](.agents/skills/sqloom/references/commands.md) is the generated canonical command reference. Keep [README.md](README.md) as the user-facing quick start and workflow overview.
 
 - Run .NET commands from the repo root.
 - Use the narrowest relevant restore, build, or test command first.

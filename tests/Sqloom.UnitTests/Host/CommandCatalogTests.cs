@@ -63,11 +63,13 @@ public sealed class CommandCatalogTests
     {
         var markdown = CommandReferenceMarkdown.Render();
 
+        Assert.Contains("## Agent use", markdown, StringComparison.Ordinal);
         Assert.Contains("## Usage", markdown, StringComparison.Ordinal);
         Assert.Contains("| Command | Description |", markdown, StringComparison.Ordinal);
         Assert.Contains("### `replay`", markdown, StringComparison.Ordinal);
+        Assert.Contains("#### Required options", markdown, StringComparison.Ordinal);
         Assert.Contains("#### Startup options", markdown, StringComparison.Ordinal);
-        Assert.Contains("#### Notes", markdown, StringComparison.Ordinal);
+        Assert.Contains("#### Agent notes", markdown, StringComparison.Ordinal);
         Assert.Contains("sqloom replay <path> [options]", markdown, StringComparison.Ordinal);
         Assert.DoesNotContain("sqloom [--debug] replay <path> [--dotnet-command", markdown, StringComparison.Ordinal);
     }

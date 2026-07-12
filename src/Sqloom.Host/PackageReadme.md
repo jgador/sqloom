@@ -17,36 +17,17 @@ To update an existing install:
 dotnet tool update --global sqloom
 ```
 
-## Main commands
+## Command reference
 
-- `init`: scaffold the `sqloom` agent skill into `.agents`, `.claude`, or `.github`
-- `observe`: read recent Query Store data with an explicit `--read-only-connection-string <connection-string>`
-- `replay`: replay API operations through an app-specific harness and capture SQL
-- `correlate`: match replayed SQL back to a Query Store snapshot
-- `advise`: send replay evidence, Query Store matches, and SQL Server schema SQL to OpenAI
-- `tune`: run the full `replay -> observe -> correlate -> advise` flow
+Use `tune` for the full `replay -> observe -> correlate -> advise` flow. Use `replay`, `observe`, `correlate`, or `advise` when you need a focused stage, and `init` when you want to scaffold the bundled `sqloom` agent skill into a repository.
 
-## Required inputs
+The canonical command reference is generated from the Sqloom command catalog into `.agents/skills/sqloom/references/commands.md` in the repository. Use that generated file, or `sqloom help <command>` from an installed tool, for exact syntax, required options, allowed values, defaults, and command-specific notes.
 
-`observe` and `correlate` require `--read-only-connection-string <connection-string>`. `tune` can use either `--read-only-connection-string` or a read-only connection string supplied by the harness session.
+SQL Server-backed replay harnesses can provide replay profile, Query Store profile, and app startup behavior. The Microsoft Agent Framework replay data agent fills HTTP replay path, query, header, and body values only; it does not generate DACPACs or seed SQL.
 
-`advise` and `tune` use OpenAI for the advice step. Pass:
+## Next steps
 
-- `--model-provider openai`
-- `--openai-api-key <key>`
-- a schema source for `advise`: `--sqlserver-schema-file <path>`, `--sqlserver-dacpac-file <path>`, or `--read-only-connection-string <connection-string>`
-
-For `tune`, a harness can provide a default DACPAC path in its manifest, or the command line can supply a read-only connection string that Sqloom exports to `sqlserver-schema-source.dacpac` before replay when no DACPAC override or manifest DACPAC exists. When advice runs from a DACPAC, Sqloom extracts `model.sql` with DacFx, stores the raw unpack under `sqlserver-dacpac-extract`, and persists the generated schema as `sqlserver-schema.sql` beside the advice artifacts. When advice only has a session-provided read-only connection string, Sqloom exports the DACPAC during advice instead.
-
-SQL Server-backed replay harnesses can provide replay profile, Query Store profile, and app startup behavior. CLI switches such as `--sqlserver-dacpac-file <path>`, `--sqlserver-seed-sql-file <path>`, `--sqlserver-schema-file <path>`, and `--read-only-connection-string <connection-string>` let you point at different inputs when needed. The Microsoft Agent Framework replay data agent fills HTTP replay path, query, header, and body values only; it does not generate DACPACs or seed SQL.
-
-Use the global `--debug` switch when you want stage-owned diagnostics on `stderr`. In particular, `advise --debug` prints readable, redacted OpenAI request and response payloads, and `tune --debug` cascades the same debug mode through `observe`, `replay`, `correlate`, and `advise`.
-
-## Example
-
-```powershell
-sqloom replay .\tests\MyApi.Harness\MyApi.Harness.csproj --target "GET /api/orders/{id}"
-```
+For a runnable end-to-end sample, use the repository README. For exact command syntax, use the generated command reference or `sqloom help <command>` from the installed tool.
 
 Harness projects expose exactly one public non-abstract `ISqloomApplication` implementation for the app under test. The CLI accepts a harness project, harness assembly, solution, solution filter, or directory containing harness projects.
 

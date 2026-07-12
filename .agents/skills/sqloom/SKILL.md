@@ -21,13 +21,11 @@ Use the individual commands as focused tools:
 
 ## Use Exact Sqloom Syntax
 
-Use [references/commands.md](references/commands.md) for the exact generated Sqloom commands, arguments, defaults, and option names. Do not infer CLI syntax from examples or prose when the generated reference covers it.
+Use [references/commands.md](references/commands.md) for the exact generated Sqloom commands, arguments, required options, defaults, allowed values, and option names. Do not infer CLI syntax from examples or prose when the generated reference covers it.
 
 - Lead with `sqloom tune` for tuning unless the user asks for a specific stage or artifact-level command.
-- Explain that `--replay-data-agent` defaults to `required`; pass `--replay-data-agent off` only when the user wants to rely entirely on harness-supplied replay values.
-- For `replay`, pass `--openai-api-key` unless `--replay-data-agent off` is supplied.
-- For `tune` and `advise`, pass `--model-provider openai` and `--openai-api-key` for advice generation.
-- Do not imply Sqloom automatically reads `OPENAI_API_KEY`; `$env:OPENAI_API_KEY` in examples is shell expansion into `--openai-api-key`.
+- Before forming a command, check the generated reference for current provider, API key, replay-data-agent, schema-source, and connection-string requirements.
+- Treat `$env:OPENAI_API_KEY` examples as shell expansion into the generated `--openai-api-key` option, not as automatic Sqloom environment-variable loading.
 
 ## Start With Evidence
 

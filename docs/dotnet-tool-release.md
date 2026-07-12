@@ -18,14 +18,16 @@ The release version comes from [Directory.Build.props](../Directory.Build.props)
 
 1. Set the new `<Version>` in [Directory.Build.props](../Directory.Build.props) using a bare NuGet version such as `0.3.0`. Use the leading `v` only for Git tags or release titles such as `v0.3.0`.
 2. Confirm [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj) still has the correct public package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
-3. Confirm [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md) still matches the current CLI behavior and install story.
-4. If the public CLI surface, harness contract surface, or documented workflow changed, update [README.md](../README.md) in the same change.
+3. Confirm [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md) still matches the current install story and points exact command syntax back to the generated command reference instead of duplicating option tables.
+4. If command metadata changed, update [src/Sqloom.Host/CommandCatalog.cs](../src/Sqloom.Host/CommandCatalog.cs), regenerate [.agents/skills/sqloom/references/commands.md](../.agents/skills/sqloom/references/commands.md), and verify it with the generator check command.
+5. If the public CLI surface, harness contract surface, or documented workflow changed, update [README.md](../README.md) in the same change without duplicating generated command tables.
 
 ## 2. Validate the repo before packing
 
 Run the standard repo validation lane first:
 
 ```powershell
+dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --check
 dotnet restore .\Sqloom.slnx
 dotnet build .\Sqloom.slnx --tl:off --nologo "-clp:ErrorsOnly;NoSummary"
 dotnet test --solution .\Sqloom.UnitTests.slnf
