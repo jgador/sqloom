@@ -31,6 +31,14 @@ For a runnable end-to-end sample, use the repository README. For exact command s
 
 Harness projects expose exactly one public non-abstract `ISqloomApplication` implementation for the app under test. The CLI accepts a harness project, harness assembly, solution, solution filter, or directory containing harness projects.
 
+For app-owned harness projects outside the Sqloom repository, add a package reference to `Sqloom.Testing`:
+
+```powershell
+dotnet add package Sqloom.Testing
+```
+
+`Sqloom.Testing` brings in `Sqloom.Core` transitively for the shared replay, Query Store, and artifact contracts.
+
 ## Install from a local feed
 
 Install the tool from a local folder feed:
@@ -39,7 +47,7 @@ Install the tool from a local folder feed:
 dotnet tool install --tool-path <tool-path> sqloom --add-source <local-feed-path> --ignore-failed-sources
 ```
 
-The published `sqloom` tool package is sufficient for local folder-feed installs and public NuGet.org installs.
+The published `sqloom` tool package is sufficient for CLI installs. Harness projects still need `Sqloom.Testing` at compile time.
 
 See the repository README for the full end-to-end sample and maintainer workflow:
 

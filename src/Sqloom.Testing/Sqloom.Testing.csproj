@@ -6,6 +6,7 @@
     <Description>Application harness contracts for loading apps under test with Sqloom.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/jgador/sqloom</PackageProjectUrl>
+    <PackageReadmeFile>PackageReadme.md</PackageReadmeFile>
     <PackageTags>sqloom;performance;tuning;testing;harness</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/jgador/sqloom</RepositoryUrl>
@@ -18,5 +19,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="PackageReadme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

@@ -27,6 +27,14 @@ Update an existing install with:
 dotnet tool update --global sqloom
 ```
 
+App harness projects that compile against Sqloom should reference `Sqloom.Testing`:
+
+```powershell
+dotnet add package Sqloom.Testing
+```
+
+`Sqloom.Testing` depends on `Sqloom.Core`, so normal package restore brings in the shared Sqloom contracts transitively.
+
 ## Quick Start
 
 Set `OPENAI_API_KEY`, make sure `AdventureWorksLT2025` is restored on your local SQL Server, then run the sample `tune` workflow from the repo root. The connection string is used for the sample app replay, Query Store reads, and DACPAC/schema extraction.
@@ -76,6 +84,8 @@ See [Sqloom command documentation](docs/command-reference.md) for exact command 
 ## How It Fits Into An App
 
 Sqloom stays generic. Your app supplies a small harness project that exposes exactly one public non-abstract `ISqloomApplication`. The harness tells Sqloom where the app-owned OpenAPI document lives, how to start the app for replay, and which replay defaults are safe for that app.
+
+For app-owned harnesses outside this repository, install the `sqloom` tool for the CLI and reference `Sqloom.Testing` from the harness project. `Sqloom.Core` is the shared contract dependency of `Sqloom.Testing`.
 
 In this repo:
 

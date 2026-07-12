@@ -45,6 +45,7 @@ try
 
     Invoke-SqloomPackSet -Context $context -NoBuild -NoRestore
     Assert-SqloomPackagesExist -Context $context
+    Test-SqloomTestingPackageRestore -Context $context
     Install-SqloomToolPath -Context $context -ToolPath $context.VerifyToolPath
 
     $verifyExePath = Join-Path $context.VerifyToolPath "sqloom.exe"

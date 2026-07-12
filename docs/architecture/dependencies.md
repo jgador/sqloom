@@ -28,8 +28,9 @@ Sqloom.IntegrationTests -> Sqloom.Core, Sqloom.Testing, Sqloom.Host, Sqloom.Test
 ## Packaging and Publication
 
 - This document describes project references first, then the public package surface.
-- The public release artifact is the `sqloom` .NET tool produced from `Sqloom.Host`.
-- The package-prep flow may emit `Sqloom.Core` and `Sqloom.Testing` packages into the local folder feed for verification, but they are not public upload targets for the tool-only release.
+- Public releases include the `Sqloom.Core` contracts package, the `Sqloom.Testing` harness package, and the `sqloom` .NET tool produced from `Sqloom.Host`.
+- `Sqloom.Testing` references `Sqloom.Core`, and package preparation verifies that a consumer project can restore and build against `Sqloom.Testing` through that transitive dependency.
+- Upload `Sqloom.Core` before `Sqloom.Testing` so the dependency exists by the time NuGet.org validates the harness package.
 - SQL Server observation, DACPAC schema extraction, ASP.NET Core replay, Query Store correlation, and advice stage implementations live in `Sqloom.Host`.
 
 ## Boundary Rules
