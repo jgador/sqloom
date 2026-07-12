@@ -71,6 +71,10 @@ public sealed class CommandCatalogTests
         Assert.Contains("#### Startup options", markdown, StringComparison.Ordinal);
         Assert.Contains("#### Agent notes", markdown, StringComparison.Ordinal);
         Assert.Contains("sqloom replay <path> [options]", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("src/Sqloom.Host/CommandCatalog.cs", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("tools/Sqloom.CommandDocs.cs", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("repo docs", markdown, StringComparison.Ordinal);
+        Assert.DoesNotContain("Generated from", markdown, StringComparison.Ordinal);
         Assert.DoesNotContain("sqloom [--debug] replay <path> [--dotnet-command", markdown, StringComparison.Ordinal);
     }
 

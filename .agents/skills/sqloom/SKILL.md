@@ -5,7 +5,7 @@ description: Guide tune-first Sqloom harness setup and command usage for ASP.NET
 
 # Sqloom Harness And Commands
 
-Use this skill when helping a user create or update a Sqloom harness, scaffold the repo skill with `sqloom init`, or run Sqloom against an ASP.NET Core app. Default to `sqloom tune` when the user wants tuning or the complete Sqloom workflow. If a usable harness already exists, skip harness generation intake and route to the requested command. Do not generate harness files until the required intake is complete.
+Use this skill when helping a user create or update a Sqloom harness, scaffold the Sqloom skill with `sqloom init`, or run Sqloom against an ASP.NET Core app. Default to `sqloom tune` when the user wants tuning or the complete Sqloom workflow. If a usable harness already exists, skip harness generation intake and route to the requested command. Do not generate harness files until the required intake is complete.
 
 ## Default To `sqloom tune`
 
@@ -17,15 +17,15 @@ Use the individual commands as focused tools:
 - Use `sqloom observe` when the user only needs Query Store evidence.
 - Use `sqloom correlate` when replay and Query Store artifacts already exist.
 - Use `sqloom advise` when correlation evidence already exists and the user only needs advice or SQL proposals.
-- Use `sqloom init` only to scaffold the embedded agent skill into a repository.
+- Use `sqloom init` only to scaffold the Sqloom agent skill into a repository.
 
 ## Use Exact Sqloom Syntax
 
-Use [references/commands.md](references/commands.md) for the exact generated Sqloom commands, arguments, required options, defaults, allowed values, and option names. Do not infer CLI syntax from examples or prose when the generated reference covers it.
+Use [references/commands.md](references/commands.md) for exact Sqloom commands, arguments, required options, defaults, allowed values, and option names. Do not infer CLI syntax from examples or prose when the command reference covers it.
 
 - Lead with `sqloom tune` for tuning unless the user asks for a specific stage or artifact-level command.
-- Before forming a command, check the generated reference for current provider, API key, replay-data-agent, schema-source, and connection-string requirements.
-- Treat `$env:OPENAI_API_KEY` examples as shell expansion into the generated `--openai-api-key` option, not as automatic Sqloom environment-variable loading.
+- Before forming a command, check the command reference for current provider, API key, replay-data-agent, schema-source, and connection-string requirements.
+- Treat `$env:OPENAI_API_KEY` examples as shell expansion into the `--openai-api-key` option, not as automatic Sqloom environment-variable loading.
 
 ## Start With Evidence
 
@@ -39,7 +39,7 @@ Inspect the target app, OpenAPI document, and existing tests before asking quest
 - database setup, seed data, DACPAC, and SQL Server connection patterns
 - replay overlays for non-GET operations, skips, or app-specific deterministic values
 
-Prefer concrete evidence from the repo over assumptions.
+Prefer concrete evidence from the target repository over assumptions.
 
 ## Ask Only For Missing Required Inputs
 
@@ -48,18 +48,18 @@ Ask at most three questions at a time. By default, Sqloom `replay` and `tune` us
 - the user will opt out with `--replay-data-agent off`
 - the user wants deterministic fixture values in the harness
 - the value is app-owned auth, tenant, or security setup that the harness must provide
-- the repo already declares app-specific values that should be confirmed
+- the target repository already declares app-specific values that should be confirmed
 
 Collect only the missing non-agent inputs needed for the intended command:
 
 - endpoint method and route
 - target harness project, harness assembly, solution, solution filter, or directory
-- OpenAPI source when the repo does not expose one clearly
+- OpenAPI source when the target repository does not expose one clearly
 - auth and tenant requirements
 - database bootstrap choice, such as existing test setup, DACPAC, seed SQL, or user-provided setup, when the app needs it
 - OpenAI API key availability for the default replay data agent and advice workflows, without asking the user to paste secrets into source
 
-When the repo already answers one of these, state the observed value and do not ask for it again.
+When the target repository already answers one of these, state the observed value and do not ask for it again.
 
 ## Generate Only After Intake Completes
 

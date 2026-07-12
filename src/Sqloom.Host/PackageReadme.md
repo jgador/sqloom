@@ -21,13 +21,13 @@ dotnet tool update --global sqloom
 
 Use `tune` for the full `replay -> observe -> correlate -> advise` flow. Use `replay`, `observe`, `correlate`, or `advise` when you need a focused stage, and `init` when you want to scaffold the bundled `sqloom` agent skill into a repository.
 
-The canonical command reference is generated from the Sqloom command catalog into `.agents/skills/sqloom/references/commands.md` in the repository. Use that generated file, or `sqloom help <command>` from an installed tool, for exact syntax, required options, allowed values, defaults, and command-specific notes.
+Use the Sqloom command reference bundled with the agent skill, or `sqloom help <command>` from an installed tool, for exact syntax, required options, allowed values, defaults, and command-specific notes.
 
 SQL Server-backed replay harnesses can provide replay profile, Query Store profile, and app startup behavior. The Microsoft Agent Framework replay data agent fills HTTP replay path, query, header, and body values only; it does not generate DACPACs or seed SQL.
 
 ## Next steps
 
-For a runnable end-to-end sample, use the repository README. For exact command syntax, use the generated command reference or `sqloom help <command>` from the installed tool.
+For a runnable end-to-end sample, use the repository README. For exact command syntax, use the command reference or `sqloom help <command>` from the installed tool.
 
 Harness projects expose exactly one public non-abstract `ISqloomApplication` implementation for the app under test. The CLI accepts a harness project, harness assembly, solution, solution filter, or directory containing harness projects.
 

@@ -85,7 +85,7 @@ internal static class CommandCatalog
         new(
             HostCommandKind.Init,
             "init",
-            "Scaffolds the embedded sqloom agent skill from a Git repository root.",
+            "Scaffolds the sqloom agent skill in a Git repository.",
             CommandTargetKind.None,
             SupportsDebug: false,
             SupportsHarnessOptions: false,

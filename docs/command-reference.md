@@ -1,18 +1,12 @@
 # Sqloom Command Documentation
 
-The canonical Sqloom command reference is generated from `src/Sqloom.Host/CommandCatalog.cs` into [.agents/skills/sqloom/references/commands.md](../.agents/skills/sqloom/references/commands.md).
+Use the Sqloom command reference at [.agents/skills/sqloom/references/commands.md](../.agents/skills/sqloom/references/commands.md), or run `sqloom help <command>` from an installed tool, for exact command syntax, required options, option names, allowed values, defaults, and command-specific notes.
 
-Use the generated reference for exact command syntax, required options, option names, allowed values, defaults, and command-specific notes. Do not maintain separate hand-written command tables in this file.
-
-## Related Docs
-
-- [README.md](../README.md) is the user-facing quick start and workflow overview.
-- [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md) is the NuGet package summary.
-- [docs/dotnet-tool-release.md](dotnet-tool-release.md) covers maintainer packaging and release validation.
+Keep this page focused on operational context that does not belong in the command table.
 
 ## SQL Server Permissions
 
-When running Sqloom against SQL Server or Azure SQL, use a dedicated read-only database principal with enough access to read Query Store, metadata, and showplans. Use the generated command reference for the current commands that consume the connection string.
+When running Sqloom against SQL Server or Azure SQL, use a dedicated read-only database principal with enough access to read Query Store, metadata, and showplans. Use the command reference for the current commands that consume the connection string.
 
 ```sql
 IF NOT EXISTS (SELECT 1 FROM sys.database_principals WHERE name = N'sqloom_ro')
