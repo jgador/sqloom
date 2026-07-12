@@ -66,6 +66,14 @@ Use `-SkipSmoke` only when the sample replay cannot run in the current environme
 pwsh .\scripts\prepare-sqloom-packages.ps1 -SkipSmoke
 ```
 
+To dogfood the package before upload, install or update the locally packed `sqloom` from the folder feed into the current user's global .NET tool location:
+
+```powershell
+$version = (Select-Xml -Path .\Directory.Build.props -XPath '/Project/PropertyGroup/Version').Node.InnerText; if (dotnet tool list --global | Select-String -Pattern '^sqloom\s') { dotnet tool update --global sqloom --version $version --source .\artifacts\packages\sqloom --allow-downgrade } else { dotnet tool install --global sqloom --version $version --source .\artifacts\packages\sqloom }; sqloom --version; Get-Command sqloom | Select-Object -ExpandProperty Source
+```
+
+On Windows this installs to `$HOME\.dotnet\tools`. This uses the freshly packed local feed, not NuGet.org, and is intended for final dogfooding before upload.
+
 ## 4. Inspect the release output
 
 After the script succeeds, confirm the public package exists under `.\artifacts\packages\sqloom`:
@@ -86,6 +94,12 @@ If you want one more explicit local check before upload, run:
 .\artifacts\tools\sqloom-verify\sqloom.exe --help
 ```
 
+If you installed from the local feed globally, verify the global tool shim directly:
+
+```powershell
+& (Join-Path $HOME ".dotnet\tools\sqloom.exe") --version; Get-Command sqloom | Select-Object -ExpandProperty Source
+```
+
 ## 5. Upload the package manually to NuGet.org
 
 The packaging script already prints the `dotnet nuget push` command for the public package. For a manual browser upload flow, use that printed path as the package manifest and upload the `.nupkg` file yourself instead of running the push command.
@@ -96,20 +110,10 @@ Upload:
 
 ## 6. Verify install from the public feed
 
-After NuGet.org finishes validating and indexing the upload, verify that a fresh install works from the public feed:
+After NuGet.org finishes validating and indexing the upload, verify that a fresh global install works from the public feed:
 
 ```powershell
-$version = "<version>"
-$toolPath = Join-Path $PWD "artifacts\tools\sqloom-public"
-
-if (Test-Path -LiteralPath $toolPath)
-{
-    Remove-Item -LiteralPath $toolPath -Recurse -Force
-}
-
-dotnet tool install --tool-path $toolPath sqloom --version $version
-& (Join-Path $toolPath "sqloom.exe") --version
-& (Join-Path $toolPath "sqloom.exe") --help
+$version = (Select-Xml -Path .\Directory.Build.props -XPath '/Project/PropertyGroup/Version').Node.InnerText; if (dotnet tool list --global | Select-String -Pattern '^sqloom\s') { dotnet tool update --global sqloom --version $version } else { dotnet tool install --global sqloom --version $version }; sqloom --version; Get-Command sqloom | Select-Object -ExpandProperty Source
 ```
 
 If this fails immediately after upload, wait for NuGet indexing to finish and try again.
