@@ -1,9 +1,9 @@
 using System;
 using System.IO;
-using Sqloom.Core.Artifacts;
+using Sqloom.Pipeline.Artifacts;
 using Xunit;
 
-namespace Sqloom.Core.Tests.Artifacts;
+namespace Sqloom.Pipeline.Tests.Artifacts;
 
 /// <summary>
 /// Exercises Sqloom artifact layout.

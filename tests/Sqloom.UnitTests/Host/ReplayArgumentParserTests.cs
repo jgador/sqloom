@@ -1,6 +1,6 @@
 using System;
 using System.IO;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Host.Replay;
 using Sqloom.Testing;
 using Sqloom.Tests;

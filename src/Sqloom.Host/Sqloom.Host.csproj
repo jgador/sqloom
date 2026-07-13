@@ -22,11 +22,11 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     <PackageReference Include="Microsoft.Agents.AI" />
     <PackageReference Include="Microsoft.Agents.AI.OpenAI" />
+    <PackageReference Include="Microsoft.Identity.Client" />
     <PackageReference Include="Microsoft.SqlServer.DacFx" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
     <ProjectReference Include="..\Sqloom.Testing\Sqloom.Testing.csproj" />
   </ItemGroup>
 

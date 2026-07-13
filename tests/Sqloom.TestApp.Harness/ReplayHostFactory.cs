@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 
 namespace Sqloom.TestApp.Harness;
 

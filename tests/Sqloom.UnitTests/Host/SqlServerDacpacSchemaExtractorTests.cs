@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.SqlServer.Dac;
 using Microsoft.SqlServer.Dac.Model;
-using Sqloom.Core.Artifacts;
+using Sqloom.Pipeline.Artifacts;
 using Xunit;
 
 namespace Sqloom.Host.Tests;

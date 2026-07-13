@@ -1,4 +1,4 @@
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host;
 

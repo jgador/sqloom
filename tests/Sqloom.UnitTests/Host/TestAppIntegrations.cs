@@ -2,7 +2,7 @@ using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Tests;
 using Sqloom.Testing;
 

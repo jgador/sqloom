@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Sqloom.Core.Artifacts;
+using Sqloom.Pipeline.Artifacts;
 
 namespace Sqloom.Host;
 

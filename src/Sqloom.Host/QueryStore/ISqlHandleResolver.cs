@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host.QueryStore;
 

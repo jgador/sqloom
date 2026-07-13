@@ -35,7 +35,7 @@ When creating or updating an app-owned harness outside the Sqloom repository, ad
 dotnet add <harness-project.csproj> package Sqloom.Testing
 ```
 
-Use `using Sqloom.Testing;` for `ISqloomApplication`, manifest, and session contracts. Use `using Sqloom.Testing.AspNetCore;` only when the harness needs the ASP.NET Core replay SQL capture helpers. Do not ask the user to reference `Sqloom.Core` directly for normal harness work; `Sqloom.Testing` brings in the shared Sqloom contracts transitively.
+Use `using Sqloom.Testing;` for `ISqloomApplication`, manifest, and session contracts. Use `using Sqloom.Testing.AspNetCore;` only when the harness needs the ASP.NET Core replay SQL capture helpers. Do not ask the user to reference `Sqloom.Pipeline` directly for normal harness work; `Sqloom.Testing` contains the shared `Sqloom.Pipeline.*` pipeline surface.
 
 ## Start With Evidence
 

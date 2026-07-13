@@ -53,7 +53,6 @@ function Get-SqloomPackProjects
     )
 
     return @(
-        Join-Path $RepoRoot "src\Sqloom.Core\Sqloom.Core.csproj"
         Join-Path $RepoRoot "src\Sqloom.Testing\Sqloom.Testing.csproj"
         Join-Path $RepoRoot "src\Sqloom.Host\Sqloom.Host.csproj"
     )
@@ -67,7 +66,6 @@ function Get-SqloomPackagePaths
     )
 
     return @(
-        Join-Path $Context.PackageFeedPath "Sqloom.Core.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.Testing.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
     )
@@ -81,7 +79,6 @@ function Get-SqloomPublicPackagePaths
     )
 
     return @(
-        Join-Path $Context.PackageFeedPath "Sqloom.Core.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "Sqloom.Testing.$($Context.PackageVersion).nupkg"
         Join-Path $Context.PackageFeedPath "sqloom.$($Context.PackageVersion).nupkg"
     )
@@ -397,7 +394,7 @@ function Test-SqloomTestingPackageRestore
     Set-Content -LiteralPath $sourcePath -Encoding UTF8 -Value @"
 using System;
 using System.IO;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Testing;
 
 internal static class Program
@@ -453,7 +450,7 @@ function Show-SqloomPublishCommands
     )
 
     Write-Host ""
-    Write-Host "Manual NuGet.org publish commands for the public packages, in dependency order:"
+    Write-Host "Manual NuGet.org publish commands for the public packages:"
     foreach ($packagePath in (Get-SqloomPublicPackagePaths -Context $Context))
     {
         Write-Host "dotnet nuget push `"$packagePath`" --source https://api.nuget.org/v3/index.json --api-key <nuget-api-key>"

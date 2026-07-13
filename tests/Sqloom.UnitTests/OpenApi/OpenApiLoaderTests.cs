@@ -1,6 +1,6 @@
 using System.IO;
 using System.Threading.Tasks;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Host.Replay;
 using Xunit;
 

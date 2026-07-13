@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Sqloom.Host.Replay;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Xunit;
 
 namespace Sqloom.Host.Tests.Replay;

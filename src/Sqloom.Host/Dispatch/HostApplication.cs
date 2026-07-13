@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Testing;
 
 namespace Sqloom.Host;
@@ -131,19 +131,27 @@ internal sealed class HostApplication
 
     internal static IReadOnlyList<string> GetProjectNames(ISqloomApplication? application)
     {
-        List<string> projectNames =
-        [
-            typeof(RunOptions).Assembly.GetName().Name ?? "Sqloom.Core",
-            typeof(ISqloomApplication).Assembly.GetName().Name ?? "Sqloom.Testing",
-            typeof(HostApplication).Assembly.GetName().Name ?? "Sqloom.Host",
-        ];
+        List<string> projectNames = [];
+        HashSet<string> seenProjectNames = new(StringComparer.OrdinalIgnoreCase);
+
+        AddProjectName(typeof(RunOptions).Assembly.GetName().Name ?? "Sqloom.Pipeline");
+        AddProjectName(typeof(ISqloomApplication).Assembly.GetName().Name ?? "Sqloom.Testing");
+        AddProjectName(typeof(HostApplication).Assembly.GetName().Name ?? "Sqloom.Host");
 
         if (application is not null)
         {
-            projectNames.Add(application.GetType().Assembly.GetName().Name ?? "Sqloom.Application");
+            AddProjectName(application.GetType().Assembly.GetName().Name ?? "Sqloom.Application");
         }
 
         return projectNames;
+
+        void AddProjectName(string projectName)
+        {
+            if (seenProjectNames.Add(projectName))
+            {
+                projectNames.Add(projectName);
+            }
+        }
     }
 
     private async Task<int> RunHandlerAsync(

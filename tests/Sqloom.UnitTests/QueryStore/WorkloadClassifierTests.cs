@@ -1,8 +1,8 @@
 using System;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.QueryStore;
 using Xunit;
 
-namespace Sqloom.Core.Tests.QueryStore;
+namespace Sqloom.Pipeline.Tests.QueryStore;
 
 /// <summary>
 /// Exercises Query Store workload classifier.

@@ -9,10 +9,10 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Core.QueryStore;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.Execution;
-using Sqloom.OpenAI.Advice;
+using Sqloom.Pipeline.QueryStore;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.OpenAI.Advice;
 
 namespace Sqloom.Host;
 

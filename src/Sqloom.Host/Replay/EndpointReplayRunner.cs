@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Sqloom.Testing.AspNetCore;
-using Sqloom.Core.Execution;
-using Sqloom.Core.Artifacts;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.Artifacts;
 
 namespace Sqloom.Host.Replay;
 

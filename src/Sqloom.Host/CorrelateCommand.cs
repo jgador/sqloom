@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Host.Replay;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.QueryStore;
 using Sqloom.Host.QueryStore;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
 
 namespace Sqloom.Host;
 
