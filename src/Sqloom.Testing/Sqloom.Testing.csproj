@@ -3,11 +3,11 @@
     <TargetFramework>net10.0</TargetFramework>
     <IsPackable>true</IsPackable>
     <Authors>Sqloom contributors</Authors>
-    <Description>Application harness contracts for loading apps under test with Sqloom.</Description>
+    <Description>Application harness APIs and shared pipeline types for loading apps under test with Sqloom.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/jgador/sqloom</PackageProjectUrl>
     <PackageReadmeFile>PackageReadme.md</PackageReadmeFile>
-    <PackageTags>sqloom;performance;tuning;testing;harness</PackageTags>
+    <PackageTags>sqloom;performance;tuning;testing;harness;pipeline;contracts</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryUrl>https://github.com/jgador/sqloom</RepositoryUrl>
   </PropertyGroup>
@@ -15,10 +15,6 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Sqloom.Core\Sqloom.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -2,8 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Sqloom.Host.Replay;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Testing;
 
 namespace Sqloom.Host;

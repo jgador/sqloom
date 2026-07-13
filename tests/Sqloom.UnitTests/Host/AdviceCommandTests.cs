@@ -2,9 +2,9 @@ using System;
 using System.IO;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.Execution;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 using Xunit;
 
 namespace Sqloom.Host.Tests;

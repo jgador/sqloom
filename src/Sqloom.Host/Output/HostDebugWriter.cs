@@ -9,7 +9,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host;
 

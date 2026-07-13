@@ -6,14 +6,14 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Sqloom.Host.Replay;
-using Sqloom.Core.Execution;
-using Sqloom.Core.QueryStore;
-using Sqloom.OpenAI.Advice;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
+using Sqloom.Pipeline.OpenAI.Advice;
 using Sqloom.TestApp;
 using Sqloom.Host;
 using Xunit;
 
-namespace Sqloom.Core.Tests.Artifacts;
+namespace Sqloom.Pipeline.Tests.Artifacts;
 
 /// <summary>
 /// Verifies persisted JSON contracts use explicit camel-case property names.

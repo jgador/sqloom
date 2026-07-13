@@ -5,8 +5,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Sqloom.Host.QueryStore;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host;
 

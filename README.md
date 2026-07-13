@@ -33,7 +33,7 @@ App harness projects that compile against Sqloom should reference `Sqloom.Testin
 dotnet add package Sqloom.Testing
 ```
 
-`Sqloom.Testing` depends on `Sqloom.Core`, so normal package restore brings in the shared Sqloom contracts transitively.
+`Sqloom.Testing` contains the harness APIs plus the shared `Sqloom.Pipeline.*` pipeline surface used by replay, Query Store, artifact, and advice flows.
 
 ## Quick Start
 
@@ -85,12 +85,11 @@ See [Sqloom command documentation](docs/command-reference.md) for exact command 
 
 Sqloom stays generic. Your app supplies a small harness project that exposes exactly one public non-abstract `ISqloomApplication`. The harness tells Sqloom where the app-owned OpenAPI document lives, how to start the app for replay, and which replay defaults are safe for that app.
 
-For app-owned harnesses outside this repository, install the `sqloom` tool for the CLI and reference `Sqloom.Testing` from the harness project. `Sqloom.Core` is the shared contract dependency of `Sqloom.Testing`.
+For app-owned harnesses outside this repository, install the `sqloom` tool for the CLI and reference `Sqloom.Testing` from the harness project. That one library package contains the harness APIs and shared `Sqloom.Pipeline.*` pipeline surface.
 
 In this repo:
 
-- [src/Sqloom.Core](src/Sqloom.Core) owns shared contracts and persisted artifact models.
-- [src/Sqloom.Testing](src/Sqloom.Testing) owns harness contracts and ASP.NET Core capture helpers.
+- [src/Sqloom.Testing](src/Sqloom.Testing) owns harness contracts, ASP.NET Core capture helpers, shared pipeline models, and persisted artifact models.
 - [src/Sqloom.Host](src/Sqloom.Host) owns the CLI, harness loading, replay, Query Store collection, correlation, schema extraction, and advice generation.
 - [tests/Sqloom.TestApp.Harness](tests/Sqloom.TestApp.Harness) is the sample app-specific harness used by the quick start.
 

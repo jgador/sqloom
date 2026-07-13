@@ -1,9 +1,9 @@
 using System;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Tests;
 using Xunit;
 
-namespace Sqloom.Core.Tests.Execution;
+namespace Sqloom.Pipeline.Tests.Execution;
 
 /// <summary>
 /// Exercises Sqloom run options.

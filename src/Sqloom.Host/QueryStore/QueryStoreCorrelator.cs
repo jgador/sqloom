@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.Execution;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host.QueryStore;
 

@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.SqlServer.Dac;
-using Sqloom.Core.Artifacts;
+using Sqloom.Pipeline.Artifacts;
 
 namespace Sqloom.Host;
 

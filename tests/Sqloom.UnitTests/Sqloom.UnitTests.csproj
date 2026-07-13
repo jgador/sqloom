@@ -12,7 +12,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Sqloom.Core\Sqloom.Core.csproj" />
     <ProjectReference Include="..\..\src\Sqloom.Testing\Sqloom.Testing.csproj" />
     <ProjectReference Include="..\..\src\Sqloom.Host\Sqloom.Host.csproj" />
     <ProjectReference Include="..\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj" />

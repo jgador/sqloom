@@ -1,6 +1,6 @@
 using System.IO;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
 
 namespace Sqloom.Host;
 

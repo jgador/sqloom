@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sqloom.Testing.AspNetCore;
-using Sqloom.Core.Execution;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 using Sqloom.Testing;
 using SqloomTestApp = global::Sqloom.TestApp;
 

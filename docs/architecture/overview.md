@@ -19,7 +19,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 ## Host and Harness Model
 
 - `Sqloom.Host`: generic runner for harness project, harness assembly, solution, solution-filter, or directory targets
-- `Sqloom.Testing`: harness contract library containing `ISqloomApplication`, `ISqloomApplicationSession`, and manifest types that app harnesses implement
+- `Sqloom.Testing`: harness contract library containing `ISqloomApplication`, `ISqloomApplicationSession`, manifest types, the shared `Sqloom.Pipeline.*` pipeline surface, and persisted artifact models
 - `Sqloom.TestApp`: sample target app in this repo
 - `Sqloom.TestApp.Harness`: sample harness loaded by the host for generic replay coverage, replay profile, and local SQL Server-backed sample runs
 - Additional app-owned harnesses can follow the same pattern without changing the host
@@ -28,15 +28,14 @@ This is the canonical repo-layout and project-ownership document for the standal
 
 ## Current Project Roles
 
-- `Sqloom.Core`: shared contracts, artifact layout, pipeline models, replay evidence models, OpenAPI/replay artifact schemas, Query Store evidence models, correlation report models, workload classification helpers, and merged Showplan/OpenAI advice contracts
-- `Sqloom.Testing`: app-harness runner contracts, manifest types, and harness-facing ASP.NET Core SQL capture helpers used by harness projects and the sample harness
+- `Sqloom.Testing`: app-harness runner contracts, manifest types, harness-facing ASP.NET Core SQL capture helpers, shared pipeline surface, artifact layout, pipeline models, replay evidence models, OpenAPI/replay artifact schemas, Query Store evidence models, correlation report models, workload classification helpers, and merged Showplan/OpenAI advice contracts
 - `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, library-harness loading, ASP.NET Core replay implementation, live SQL Server Query Store collection, statement-handle resolution, replay-to-Query Store correlation, DACPAC schema extraction, advice generation, and the composition root
 - `Sqloom.TestApp`: sample target app for generic host coverage
 - `Sqloom.TestApp.Harness`: sample replay harness, replay profile, and local SQL Server-backed sample startup
-- `Sqloom.UnitTests`: unit-test lane for core libraries and host-adjacent logic
+- `Sqloom.UnitTests`: unit-test lane for shared pipeline code and host-adjacent logic
 - `Sqloom.IntegrationTests`: process and host integration lane for the standalone repository
 
-Retired runtime boundaries stay merged into adjacent survivors: `Sqloom.Showplan -> Sqloom.Core`, `Sqloom.OpenAI -> Sqloom.Core`, `Sqloom.QueryStore -> Sqloom.Core`, `Sqloom.SqlServer -> Sqloom.Host`, `Sqloom.AspNetCore -> Sqloom.Host` / `Sqloom.Testing`, and `Sqloom.Correlation -> Sqloom.Host` / `Sqloom.Core`.
+Retired runtime boundaries stay merged into adjacent survivors: Showplan, OpenAI advice, and Query Store pipeline models live under `Sqloom.Testing` / `Sqloom.Pipeline.*`; SQL Server host work lives under `Sqloom.Host`; ASP.NET Core capture lives under `Sqloom.Host` / `Sqloom.Testing`; and correlation orchestration lives under `Sqloom.Host` / `Sqloom.Testing`.
 
 ## Current Repo Direction
 

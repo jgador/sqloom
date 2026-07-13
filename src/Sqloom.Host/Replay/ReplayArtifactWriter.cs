@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Core.Execution;
-using Sqloom.Core.Artifacts;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.Artifacts;
 
 namespace Sqloom.Host.Replay;
 

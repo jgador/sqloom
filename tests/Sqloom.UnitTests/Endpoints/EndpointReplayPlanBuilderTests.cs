@@ -2,7 +2,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Host.Replay;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Xunit;
 
 namespace Sqloom.Host.Tests.Replay;

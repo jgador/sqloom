@@ -7,9 +7,9 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Host.Replay;
-using Sqloom.Core.Execution;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host;
 

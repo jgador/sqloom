@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Core.Execution;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 using Sqloom.Host.QueryStore;
 using Xunit;
 

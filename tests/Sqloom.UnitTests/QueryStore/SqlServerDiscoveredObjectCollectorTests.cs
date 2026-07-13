@@ -1,7 +1,7 @@
 using System;
 using System.Data;
 using Sqloom.Host.QueryStore;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.QueryStore;
 using Xunit;
 
 namespace Sqloom.Host.Tests.QueryStore;

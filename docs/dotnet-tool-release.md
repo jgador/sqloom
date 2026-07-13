@@ -8,18 +8,17 @@ Run every command from the repo root.
 
 The public release uploads these NuGet packages:
 
-- `Sqloom.Core`
 - `Sqloom.Testing`
 - `sqloom`
 
-Upload `Sqloom.Core` before `Sqloom.Testing` because `Sqloom.Testing` declares a NuGet dependency on the same-version `Sqloom.Core` package. The `sqloom` dotnet tool is self-contained for normal tool installs, but app-owned harness projects need `Sqloom.Testing` as a compile-time package.
+The `sqloom` dotnet tool is self-contained for normal tool installs, but app-owned harness projects need `Sqloom.Testing` as a compile-time package. `Sqloom.Testing` also contains the shared `Sqloom.Pipeline.*` pipeline surface.
 
-The release version comes from [Directory.Build.props](../Directory.Build.props). Library package metadata lives in [src/Sqloom.Core/Sqloom.Core.csproj](../src/Sqloom.Core/Sqloom.Core.csproj) and [src/Sqloom.Testing/Sqloom.Testing.csproj](../src/Sqloom.Testing/Sqloom.Testing.csproj). The tool package metadata lives in [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj), and the tool package readme comes from [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md).
+The release version comes from [Directory.Build.props](../Directory.Build.props). Library package metadata lives in [src/Sqloom.Testing/Sqloom.Testing.csproj](../src/Sqloom.Testing/Sqloom.Testing.csproj). The tool package metadata lives in [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj), and the tool package readme comes from [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md).
 
 ## 1. Update release metadata
 
 1. Set the new `<Version>` in [Directory.Build.props](../Directory.Build.props) using a bare NuGet package version. Use the leading `v` only for Git tags or release titles.
-2. Confirm [src/Sqloom.Core/Sqloom.Core.csproj](../src/Sqloom.Core/Sqloom.Core.csproj) and [src/Sqloom.Testing/Sqloom.Testing.csproj](../src/Sqloom.Testing/Sqloom.Testing.csproj) still have correct public package metadata: descriptions, project URL, repository URL, license expression, and package tags.
+2. Confirm [src/Sqloom.Testing/Sqloom.Testing.csproj](../src/Sqloom.Testing/Sqloom.Testing.csproj) still has correct public package metadata: description, project URL, repository URL, license expression, and package tags.
 3. Confirm [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj) still has the correct public tool package metadata: `PackageId` is `sqloom`, `ToolCommandName` is `sqloom`, and `PackageProjectUrl`, `RepositoryUrl`, `PackageLicenseExpression`, and `PackageTags` are correct.
 4. Confirm [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md) still matches the current install story and points exact command syntax back to the generated command reference instead of duplicating option tables.
 5. If command metadata changed, update [src/Sqloom.Host/CommandCatalog.cs](../src/Sqloom.Host/CommandCatalog.cs), regenerate [.agents/skills/sqloom/references/commands.md](../.agents/skills/sqloom/references/commands.md), and verify it with the generator check command.
@@ -56,13 +55,13 @@ That script is the main release gate for packaging. It:
 1. Restores `.\Sqloom.slnx`.
 2. Builds `.\Sqloom.slnx` in `Release`.
 3. Recreates the local package feed at `.\artifacts\packages\sqloom`.
-4. Packs `Sqloom.Core`, `Sqloom.Testing`, and the tool project into that folder feed for local verification.
+4. Packs `Sqloom.Testing` and the tool project into that folder feed for local verification.
 5. Verifies that every expected `.nupkg` exists for the local pack step.
-6. Builds a temporary consumer project that references `Sqloom.Testing` from the folder feed, proving that the `Sqloom.Core` transitive dependency resolves.
+6. Builds a temporary consumer project that references `Sqloom.Testing` from the folder feed and uses both harness APIs and `Sqloom.Pipeline.*` pipeline types.
 7. Installs `sqloom` from that local feed into `.\artifacts\tools\sqloom-verify`.
 8. Runs `sqloom.exe --help`.
 9. Runs a sample `replay` smoke test unless `-SkipSmoke` is passed.
-10. Prints the exact `dotnet nuget push` commands for the public packages in dependency order.
+10. Prints the exact `dotnet nuget push` commands for the public packages.
 
 Use `-SkipSmoke` only when the sample replay cannot run in the current environment and you are intentionally accepting a weaker release gate:
 
@@ -82,7 +81,6 @@ On Windows this installs to `$HOME\.dotnet\tools`. This uses the freshly packed 
 
 After the script succeeds, confirm the public packages exist under `.\artifacts\packages\sqloom`:
 
-- `Sqloom.Core.<version>.nupkg`
 - `Sqloom.Testing.<version>.nupkg`
 - `sqloom.<version>.nupkg`
 
@@ -105,11 +103,10 @@ If you installed from the local feed globally, verify the global tool shim direc
 
 The packaging script already prints the `dotnet nuget push` commands for the public packages. For a manual browser upload flow, use those printed paths as the package manifests and upload the `.nupkg` files yourself instead of running the push commands.
 
-Upload in this order:
+Upload these packages:
 
-1. `Sqloom.Core.<version>.nupkg`
-2. `Sqloom.Testing.<version>.nupkg`
-3. `sqloom.<version>.nupkg`
+1. `Sqloom.Testing.<version>.nupkg`
+2. `sqloom.<version>.nupkg`
 
 ## 6. Verify install from the public feed
 
@@ -138,7 +135,7 @@ Set-Content -Path (Join-Path $verifyRoot "SqloomTestingPublicVerify.csproj") -Va
 "@
 Set-Content -Path (Join-Path $verifyRoot "Program.cs") -Value @"
 using System;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Testing;
 
 internal static class Program

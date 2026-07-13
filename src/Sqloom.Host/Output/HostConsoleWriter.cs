@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using Sqloom.Host.Replay;
-using Sqloom.Core.Execution;
-using Sqloom.Core.QueryStore;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host;
 

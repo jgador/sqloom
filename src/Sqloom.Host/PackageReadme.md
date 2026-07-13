@@ -37,7 +37,7 @@ For app-owned harness projects outside the Sqloom repository, add a package refe
 dotnet add package Sqloom.Testing
 ```
 
-`Sqloom.Testing` brings in `Sqloom.Core` transitively for the shared replay, Query Store, and artifact contracts.
+`Sqloom.Testing` contains the shared `Sqloom.Pipeline.*` namespaces for replay, Query Store, artifact, and advice pipeline types.
 
 ## Install from a local feed
 
@@ -47,7 +47,7 @@ Install the tool from a local folder feed:
 dotnet tool install --tool-path <tool-path> sqloom --add-source <local-feed-path> --ignore-failed-sources
 ```
 
-The published `sqloom` tool package is sufficient for CLI installs. Harness projects still need `Sqloom.Testing` at compile time.
+The published `sqloom` tool package is sufficient for CLI installs. Harness projects still need the `Sqloom.Testing` library package at compile time.
 
 See the repository README for the full end-to-end sample and maintainer workflow:
 

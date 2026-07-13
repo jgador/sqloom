@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Execution;
 
 namespace Sqloom.Testing.AspNetCore;
 

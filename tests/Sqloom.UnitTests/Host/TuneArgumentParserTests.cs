@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using Sqloom.Core.Artifacts;
-using Sqloom.Core.Execution;
+using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Host.Replay;
 using Sqloom.Testing;
 using Xunit;

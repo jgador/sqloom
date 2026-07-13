@@ -226,7 +226,7 @@ public sealed class AppResolverTests
             using System;
             using System.Threading;
             using System.Threading.Tasks;
-            using Sqloom.Core.Execution;
+            using Sqloom.Pipeline.Execution;
             using Sqloom.Testing;
 
             namespace TempHarness;

@@ -4,7 +4,6 @@
     <Platform Name="x64" />
     <Platform Name="x86" />
   </Configurations>
-  <Project Path="src/Sqloom.Core/Sqloom.Core.csproj" />
   <Project Path="src/Sqloom.Host/Sqloom.Host.csproj" />
   <Project Path="src/Sqloom.Testing/Sqloom.Testing.csproj" />
   <Project Path="tests/Sqloom.IntegrationTests/Sqloom.IntegrationTests.csproj" />
