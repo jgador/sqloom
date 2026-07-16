@@ -6,18 +6,18 @@ using Xunit;
 namespace Sqloom.Host.Tests;
 
 /// <summary>
-/// Exercises the Sqloom host when it resolves app harnesses through project builds.
+/// Exercises the Sqloom host when it resolves a consumer-style C# file harness.
 /// </summary>
 [Collection("ConsoleHostRuntime")]
 public sealed class HostProcessTests
 {
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task WithHostAndTestAppProject_ReportsMissingQueryData()
+    public async Task WithHostAndConsumerHarness_ReportsMissingQueryData()
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
-        const string targetProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
+        const string targetFilePath = @".\tests\Sqloom\Sqloom.TestApp\default\Harness.cs";
 
         var result = await RunDotNetAsync(
             repositoryRoot,
@@ -27,7 +27,7 @@ public sealed class HostProcessTests
                 hostProjectPath,
                 "--",
                 "replay",
-                targetProjectPath,
+                targetFilePath,
                 "--dotnet-command",
                 "dotnet",
                 "--target",
@@ -54,7 +54,7 @@ public sealed class HostProcessTests
     {
         var repositoryRoot = SqloomTestAppPaths.GetRepositoryRoot();
         const string hostProjectPath = @".\src\Sqloom.Host\Sqloom.Host.csproj";
-        const string targetProjectPath = @".\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj";
+        const string targetFilePath = @".\tests\Sqloom\Sqloom.TestApp\default\Harness.cs";
 
         var result = await RunDotNetAsync(
             repositoryRoot,
@@ -63,7 +63,7 @@ public sealed class HostProcessTests
                 "--project",
                 hostProjectPath,
                 "--",
-                targetProjectPath,
+                targetFilePath,
                 "--target",
                 SampleCatalogReplayScenario.OperationKey,
             ]);

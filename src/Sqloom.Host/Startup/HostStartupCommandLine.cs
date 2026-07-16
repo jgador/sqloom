@@ -173,6 +173,7 @@ internal sealed class HostStartupCommandLine
 
         return Path.GetExtension(value).ToLowerInvariant() switch
         {
+            ".cs" => true,
             ".csproj" => true,
             ".fsproj" => true,
             ".vbproj" => true,
@@ -216,7 +217,7 @@ internal sealed class HostStartupCommandLine
     private static void ThrowUnsupportedStartupSwitch(string switchName)
     {
         throw new ArgumentException(
-            $"Unsupported switch '{switchName}'. Sqloom now requires an explicit stage verb followed by a harness project, harness assembly, solution, solution filter, or directory path when runtime app selection is needed.");
+            $"Unsupported switch '{switchName}'. Sqloom now requires an explicit stage verb followed by a C# file-based harness, harness project, harness assembly, solution, solution filter, or directory path when runtime app selection is needed.");
     }
 
     private static string SetPathOnce(

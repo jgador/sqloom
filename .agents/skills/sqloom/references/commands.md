@@ -64,15 +64,15 @@ sqloom observe [<path>] --read-only-connection-string <connection-string> [optio
 
 | Argument | Description |
 | --- | --- |
-| `[<path>]` | Optional harness project, harness assembly, solution, solution filter, or directory. |
+| `[<path>]` | Optional C# file-based harness, harness project, harness assembly, solution, solution filter, or directory. |
 
 #### Startup options
 
 | Option | Description |
 | --- | --- |
 | `--debug` | Prints per-stage diagnostics to stderr. |
-| `--dotnet-command <command>` | Uses a specific dotnet executable for project resolution and builds. Default: `dotnet`. |
-| `--no-build` | Skips building harness projects before scanning their outputs. |
+| `--dotnet-command <command>` | Uses a specific dotnet executable for project resolution and C# file-based harness builds. Default: `dotnet`. |
+| `--no-build` | Skips building harness projects before scanning their outputs. Sqloom always builds .cs harness targets and rejects --no-build for them. |
 
 #### Required options
 
@@ -95,7 +95,7 @@ sqloom observe [<path>] --read-only-connection-string <connection-string> [optio
 #### Agent notes
 
 - --app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.
-- When a target path is supplied, Sqloom resolves it, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.
+- When a target path is supplied, Sqloom resolves it, builds harness projects unless --no-build is supplied, always builds C# file-based harnesses, and requires exactly one public non-abstract ISqloomApplication implementation.
 
 ### `tune`
 
@@ -107,15 +107,15 @@ sqloom tune <path> --model-provider <openai> --openai-api-key <key> [options]
 
 | Argument | Description |
 | --- | --- |
-| `<path>` | Harness project, harness assembly, solution, solution filter, or directory. |
+| `<path>` | C# file-based harness, harness project, harness assembly, solution, solution filter, or directory. |
 
 #### Startup options
 
 | Option | Description |
 | --- | --- |
 | `--debug` | Prints per-stage diagnostics to stderr. |
-| `--dotnet-command <command>` | Uses a specific dotnet executable for project resolution and builds. Default: `dotnet`. |
-| `--no-build` | Skips building harness projects before scanning their outputs. |
+| `--dotnet-command <command>` | Uses a specific dotnet executable for project resolution and C# file-based harness builds. Default: `dotnet`. |
+| `--no-build` | Skips building harness projects before scanning their outputs. Sqloom always builds .cs harness targets and rejects --no-build for them. |
 
 #### Required options
 
@@ -167,15 +167,15 @@ sqloom replay <path> [options]
 
 | Argument | Description |
 | --- | --- |
-| `<path>` | Harness project, harness assembly, solution, solution filter, or directory. |
+| `<path>` | C# file-based harness, harness project, harness assembly, solution, solution filter, or directory. |
 
 #### Startup options
 
 | Option | Description |
 | --- | --- |
 | `--debug` | Prints per-stage diagnostics to stderr. |
-| `--dotnet-command <command>` | Uses a specific dotnet executable for project resolution and builds. Default: `dotnet`. |
-| `--no-build` | Skips building harness projects before scanning their outputs. |
+| `--dotnet-command <command>` | Uses a specific dotnet executable for project resolution and C# file-based harness builds. Default: `dotnet`. |
+| `--no-build` | Skips building harness projects before scanning their outputs. Sqloom always builds .cs harness targets and rejects --no-build for them. |
 
 #### Options
 
@@ -194,9 +194,10 @@ sqloom replay <path> [options]
 
 #### Agent notes
 
-- Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.
-- Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.
-- Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.
+- Standalone replay requires an explicit target path after the replay verb. Supported target paths are C# file-based harnesses, harness project files, harness assemblies, solution files, solution filters, and directories.
+- Sqloom resolves that target, builds harness projects unless --no-build is supplied, always builds C# file-based harnesses, and requires exactly one public non-abstract ISqloomApplication implementation.
+- Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and C# file-based harness builds.
+- C# file-based harness targets require .NET SDK 10 or later and reject --no-build.
 - If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.
 - SQL Server-backed replay harnesses can consume app-owned DACPAC and seed launch options when they implement that setup.
 - The replay data agent fills HTTP replay inputs only; it does not generate DACPACs or seed SQL.

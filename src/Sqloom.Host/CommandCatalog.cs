@@ -92,8 +92,8 @@ internal static class CommandCatalog
     public static IReadOnlyList<CommandOptionSpec> StartupOptions { get; } =
     [
         new("--debug", "Prints per-stage diagnostics to stderr."),
-        new("--dotnet-command", "Uses a specific dotnet executable for project resolution and builds.", "command", DefaultValue: "dotnet"),
-        new("--no-build", "Skips building harness projects before scanning their outputs."),
+        new("--dotnet-command", "Uses a specific dotnet executable for project resolution and C# file-based harness builds.", "command", DefaultValue: "dotnet"),
+        new("--no-build", "Skips building harness projects before scanning their outputs. Sqloom always builds .cs harness targets and rejects --no-build for them."),
     ];
 
     public static IReadOnlyList<CommandSpec> Commands { get; } =
@@ -132,7 +132,7 @@ internal static class CommandCatalog
             ],
             [
                 "--app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.",
-                "When a target path is supplied, Sqloom resolves it, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.",
+                "When a target path is supplied, Sqloom resolves it, builds harness projects unless --no-build is supplied, always builds C# file-based harnesses, and requires exactly one public non-abstract ISqloomApplication implementation.",
             ]),
         new(
             HostCommandKind.Tune,
@@ -192,9 +192,10 @@ internal static class CommandCatalog
                 new("--openai-api-key", "Supplies the OpenAI API key used by the replay data agent.", "key"),
             ],
             [
-                "Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.",
-                "Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.",
-                "Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.",
+                "Standalone replay requires an explicit target path after the replay verb. Supported target paths are C# file-based harnesses, harness project files, harness assemblies, solution files, solution filters, and directories.",
+                "Sqloom resolves that target, builds harness projects unless --no-build is supplied, always builds C# file-based harnesses, and requires exactly one public non-abstract ISqloomApplication implementation.",
+                "Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and C# file-based harness builds.",
+                "C# file-based harness targets require .NET SDK 10 or later and reject --no-build.",
                 "If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.",
                 "SQL Server-backed replay harnesses can consume app-owned DACPAC and seed launch options when they implement that setup.",
                 "The replay data agent fills HTTP replay inputs only; it does not generate DACPACs or seed SQL.",

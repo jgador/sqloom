@@ -13,14 +13,15 @@ Sqloom.Host -> Sqloom.Testing
 
 ```text
 Sqloom.TestApp
-Sqloom.TestApp.Harness -> Sqloom.TestApp, Sqloom.Testing
-Sqloom.UnitTests -> Sqloom.Testing, Sqloom.Host, Sqloom.TestApp.Harness
-Sqloom.IntegrationTests -> Sqloom.Testing, Sqloom.Host, Sqloom.TestApp, Sqloom.TestApp.Harness
+tests/Sqloom/Sqloom.TestApp/default/Harness.cs -> Sqloom.TestApp, Sqloom.Testing package
+Sqloom.UnitTests -> Sqloom.Testing, Sqloom.Host, Sqloom.TestApp
+Sqloom.IntegrationTests -> Sqloom.Testing, Sqloom.Host, Sqloom.TestApp
 ```
 
 ## External Composition
 
 - `Sqloom.Host` stays generic and loads app-owned harness assemblies through explicit target paths.
+- C# file-based harnesses remain durable app-owned test-support source committed with the app; `Sqloom.Host` compiles explicit `.cs` targets and loads their complete system-temporary output directories.
 - Harness targets must contain exactly one public non-abstract `ISqloomApplication` implementation.
 - App-specific replay harnesses belong with the apps they support, not in the generic host composition root.
 
@@ -28,7 +29,7 @@ Sqloom.IntegrationTests -> Sqloom.Testing, Sqloom.Host, Sqloom.TestApp, Sqloom.T
 
 - This document describes project references first, then the public package surface.
 - Public releases include the `Sqloom.Testing` harness/pipeline package and the `sqloom` .NET tool produced from `Sqloom.Host`.
-- `Sqloom.Testing` contains the `Sqloom.Pipeline.*` pipeline namespaces, and package preparation verifies that a consumer project can restore and build against `Sqloom.Testing` alone.
+- `Sqloom.Testing` contains the `Sqloom.Pipeline.*` pipeline namespaces, and package preparation verifies that project-backed and file-based consumers can restore and build against `Sqloom.Testing` alone.
 - SQL Server observation, DACPAC schema extraction, ASP.NET Core replay, Query Store correlation, and advice stage implementations live in `Sqloom.Host`.
 
 ## Boundary Rules

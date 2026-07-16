@@ -27,7 +27,17 @@ Update an existing install with:
 dotnet tool update --global sqloom
 ```
 
-App harness projects that compile against Sqloom should reference `Sqloom.Testing`:
+New harnesses can reference `Sqloom.Testing` from a .NET 10 C# file-based app:
+
+```csharp
+#:sdk Microsoft.NET.Sdk.Web
+#:property TargetFramework=net10.0
+#:property ManagePackageVersionsCentrally=false
+#:package Sqloom.Testing@<sqloom-version>
+#:project <relative-app-project.csproj>
+```
+
+Use the version reported by `sqloom --version`. Existing harness projects remain supported and should use a normal package reference:
 
 ```powershell
 dotnet add package Sqloom.Testing
@@ -40,7 +50,7 @@ dotnet add package Sqloom.Testing
 Set `OPENAI_API_KEY`, make sure `AdventureWorksLT2025` is restored on your local SQL Server, then run the sample `tune` workflow from the repo root. The connection string is used for the sample app replay, Query Store reads, and DACPAC/schema extraction.
 
 ```powershell
-sqloom-local tune .\tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj `
+sqloom-local tune .\tests\Sqloom\Sqloom.TestApp\default\Harness.cs `
  --target "GET /api/products/by-category" `
  --read-only-connection-string "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True" `
  --model-provider openai `
@@ -83,15 +93,17 @@ See [Sqloom command documentation](docs/command-reference.md) for exact command 
 
 ## How It Fits Into An App
 
-Sqloom stays generic. Your app supplies a small harness project that exposes exactly one public non-abstract `ISqloomApplication`. The harness tells Sqloom where the app-owned OpenAPI document lives, how to start the app for replay, and which replay defaults are safe for that app.
+Sqloom stays generic. Your app supplies a checked-in C# file-based harness or a project-backed harness that exposes exactly one public non-abstract `ISqloomApplication`. The harness tells Sqloom where the app-owned OpenAPI document lives, how to start the app for replay, and which replay defaults are safe for that app.
 
-For app-owned harnesses outside this repository, install the `sqloom` tool for the CLI and reference `Sqloom.Testing` from the harness project. That one library package contains the harness APIs and shared `Sqloom.Pipeline.*` pipeline surface.
+The Sqloom skill generates each file-based harness once as durable app-owned test support, defaulting to `tests/Sqloom/<app>/<profile>/Harness.cs` when the repository has no stronger convention. Commit and maintain it like an integration-test fixture so app startup and setup survive across runs. Select the endpoint independently on each invocation with `--target "METHOD /path/template"`. Sqloom always builds `.cs` harness targets with .NET SDK 10 or later into isolated system-temporary output and rejects `--no-build` for them; project-backed targets retain their existing `--no-build` behavior. Run artifacts remain under `artifacts/sqloom/`.
+
+For app-owned harnesses outside this repository, install the `sqloom` tool for the CLI and reference the matching `Sqloom.Testing` version from the file or harness project. That one library package contains the harness APIs and shared `Sqloom.Pipeline.*` pipeline surface.
 
 In this repo:
 
 - [src/Sqloom.Testing](src/Sqloom.Testing) owns harness contracts, ASP.NET Core capture helpers, shared pipeline models, and persisted artifact models.
 - [src/Sqloom.Host](src/Sqloom.Host) owns the CLI, harness loading, replay, Query Store collection, correlation, schema extraction, and advice generation.
-- [tests/Sqloom.TestApp.Harness](tests/Sqloom.TestApp.Harness) is the sample app-specific harness used by the quick start.
+- [tests/Sqloom/Sqloom.TestApp/default/Harness.cs](tests/Sqloom/Sqloom.TestApp/default/Harness.cs) is the committed consumer-style harness used by the quick start. It references the public `Sqloom.Testing` package, the target app project, and keeps the sample app's startup and replay setup together in one file.
 
 For more detail about repo layout and boundaries, see [docs/architecture/overview.md](docs/architecture/overview.md) and [docs/architecture/dependencies.md](docs/architecture/dependencies.md).
 

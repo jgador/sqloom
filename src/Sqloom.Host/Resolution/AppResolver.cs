@@ -61,7 +61,7 @@ internal sealed class AppResolver
         List<SqloomApplicationTypeSelection> appTypes = [];
         foreach (var assemblySelection in assemblySelections)
         {
-            var assembly = LoadAppAssembly(assemblySelection.AssemblyPath);
+            var assembly = LoadAppAssembly(assemblySelection);
             appTypes.AddRange(GetSqloomApplicationTypes(
                 assembly,
                 assemblySelection.AssemblyPath));
@@ -119,9 +119,15 @@ internal sealed class AppResolver
             "Sqloom now requires an explicit harness target path after the stage verb. Use tune <path>, replay <path>, or observe <path> so the standalone host can resolve an app harness.");
     }
 
-    private static Assembly LoadAppAssembly(string assemblyPath)
+    private static Assembly LoadAppAssembly(ResolvedAssemblySelection assemblySelection)
     {
-        var fullAssemblyPath = Path.GetFullPath(assemblyPath);
+        var fullAssemblyPath = Path.GetFullPath(assemblySelection.AssemblyPath);
+        if (assemblySelection.TargetSelection.Kind == ResolvedTargetKind.CSharpFile)
+        {
+            FileHarnessLoadContext loadContext = new(fullAssemblyPath);
+            return loadContext.LoadFromAssemblyPath(fullAssemblyPath);
+        }
+
         return LoadAssemblyWithRegisteredProbe(
             AssemblyLoadContext.Default,
             fullAssemblyPath);
@@ -270,6 +276,43 @@ internal sealed class AppResolver
     private sealed record SqloomApplicationTypeSelection(
         Type Type,
         string AssemblyPath);
+
+    private sealed class FileHarnessLoadContext : AssemblyLoadContext
+    {
+        private readonly Assembly _contractAssembly = typeof(ISqloomApplication).Assembly;
+        private readonly AssemblyDependencyResolver _dependencyResolver;
+
+        public FileHarnessLoadContext(string mainAssemblyPath)
+            : base(
+                $"Sqloom.FileHarness.{Guid.NewGuid():N}",
+                isCollectible: false)
+        {
+            _dependencyResolver = new AssemblyDependencyResolver(mainAssemblyPath);
+        }
+
+        protected override Assembly? Load(AssemblyName assemblyName)
+        {
+            if (AssemblyName.ReferenceMatchesDefinition(
+                    assemblyName,
+                    _contractAssembly.GetName()))
+            {
+                return _contractAssembly;
+            }
+
+            var assemblyPath = _dependencyResolver.ResolveAssemblyToPath(assemblyName);
+            return string.IsNullOrWhiteSpace(assemblyPath)
+                ? null
+                : LoadFromAssemblyPath(assemblyPath);
+        }
+
+        protected override nint LoadUnmanagedDll(string unmanagedDllName)
+        {
+            var unmanagedDllPath = _dependencyResolver.ResolveUnmanagedDllToPath(unmanagedDllName);
+            return string.IsNullOrWhiteSpace(unmanagedDllPath)
+                ? nint.Zero
+                : LoadUnmanagedDllFromPath(unmanagedDllPath);
+        }
+    }
 }
 
 /// <summary>

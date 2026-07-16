@@ -469,11 +469,11 @@ internal sealed class HostConsoleWriter
         {
             CommandTargetKind.Required =>
             [
-                ("<path>", "Harness project, harness assembly, solution, solution filter, or directory."),
+                ("<path>", "C# file-based harness, harness project, harness assembly, solution, solution filter, or directory."),
             ],
             CommandTargetKind.Optional =>
             [
-                ("[<path>]", "Optional harness project, harness assembly, solution, solution filter, or directory."),
+                ("[<path>]", "Optional C# file-based harness, harness project, harness assembly, solution, solution filter, or directory."),
             ],
             _ => Array.Empty<(string Syntax, string Description)>(),
         };

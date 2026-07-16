@@ -4,7 +4,6 @@ using Sqloom.Pipeline.Execution;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.TestApp.Harness;
 using Sqloom.Testing;
 using Xunit;
 
@@ -18,9 +17,9 @@ public sealed class HostRuntimeTests
 {
     [Fact]
     [Trait("Category", "Integration")]
-    public async Task WithReplayProjectWithoutBuild_ReportsMissingQueryData()
+    public async Task WithReplayHarness_ReportsMissingQueryData()
     {
-        var projectPath = SqloomTestAppPaths.GetProjectPath();
+        var harnessPath = SqloomTestAppPaths.GetHarnessPath();
         var currentDirectory = Directory.GetCurrentDirectory();
 
         var result = await CaptureConsoleAsync(static async state =>
@@ -29,10 +28,9 @@ public sealed class HostRuntimeTests
                 .RunAsync(
                     [
                         "replay",
-                        state.ProjectPath,
+                        state.HarnessPath,
                         "--dotnet-command",
                         "dotnet",
-                        "--no-build",
                         "--target",
                         SampleCatalogReplayScenario.OperationKey,
                         "--replay-data-agent",
@@ -40,7 +38,7 @@ public sealed class HostRuntimeTests
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
-        }, (ProjectPath: projectPath, CurrentDirectory: currentDirectory));
+        }, (HarnessPath: harnessPath, CurrentDirectory: currentDirectory));
 
         AssertReplayRequiresPreparedQueryData(result);
     }
@@ -49,7 +47,7 @@ public sealed class HostRuntimeTests
     [Trait("Category", "Integration")]
     public async Task WithReplayDebug_ReportsMissingQueryData()
     {
-        var projectPath = SqloomTestAppPaths.GetProjectPath();
+        var harnessPath = SqloomTestAppPaths.GetHarnessPath();
         var currentDirectory = Directory.GetCurrentDirectory();
 
         var result = await CaptureConsoleAsync(static async state =>
@@ -58,11 +56,10 @@ public sealed class HostRuntimeTests
                 .RunAsync(
                     [
                         "replay",
-                        state.ProjectPath,
+                        state.HarnessPath,
                         "--debug",
                         "--dotnet-command",
                         "dotnet",
-                        "--no-build",
                         "--target",
                         SampleCatalogReplayScenario.OperationKey,
                         "--replay-data-agent",
@@ -70,7 +67,7 @@ public sealed class HostRuntimeTests
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
-        }, (ProjectPath: projectPath, CurrentDirectory: currentDirectory));
+        }, (HarnessPath: harnessPath, CurrentDirectory: currentDirectory));
 
         AssertReplayRequiresPreparedQueryData(result);
         Assert.Contains("[sqloom debug] [replay] resolved inputs", result.StdErr, StringComparison.Ordinal);
@@ -85,18 +82,19 @@ public sealed class HostRuntimeTests
     public async Task ObserveWithoutConnectionString_RequiresExplicitSwitch()
     {
         var currentDirectory = Directory.GetCurrentDirectory();
+        var application = await SqloomTestAppPaths.ResolveApplicationAsync();
 
         var result = await CaptureConsoleAsync(static async state =>
         {
             return await HostRuntime
                 .RunAsync(
-                    new SampleApplication(),
+                    state.Application,
                     [
                         "observe",
                     ],
-                    state)
+                    state.CurrentDirectory)
                 .ConfigureAwait(false);
-        }, currentDirectory);
+        }, (Application: application, CurrentDirectory: currentDirectory));
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains(
@@ -340,6 +338,8 @@ public sealed class HostRuntimeTests
         Assert.Contains("Arguments:", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("startup-options:", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("options:", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("C# file-based harness", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("always builds .cs harness targets", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("Replay targets must use the exact form 'METHOD /path/template'", result.StdOut, StringComparison.Ordinal);
         Assert.Equal(string.Empty, result.StdErr);
     }
@@ -453,21 +453,22 @@ public sealed class HostRuntimeTests
     [Trait("Category", "Integration")]
     public async Task WithBoundAppIntegration_RejectsExplicitTargetPathSelection()
     {
-        var projectPath = SqloomTestAppPaths.GetProjectPath();
+        var harnessPath = SqloomTestAppPaths.GetHarnessPath();
         var currentDirectory = Directory.GetCurrentDirectory();
+        var application = await SqloomTestAppPaths.ResolveApplicationAsync();
 
         var result = await CaptureConsoleAsync(static async state =>
         {
             return await HostRuntime
                 .RunAsync(
-                    new SampleApplication(),
+                    state.Application,
                     [
                         "replay",
-                        state.ProjectPath,
+                        state.HarnessPath,
                     ],
                     state.CurrentDirectory)
                 .ConfigureAwait(false);
-        }, (ProjectPath: projectPath, CurrentDirectory: currentDirectory));
+        }, (Application: application, HarnessPath: harnessPath, CurrentDirectory: currentDirectory));
 
         Assert.Equal(1, result.ExitCode);
         Assert.Contains("already provides its harness", result.StdErr, StringComparison.OrdinalIgnoreCase);

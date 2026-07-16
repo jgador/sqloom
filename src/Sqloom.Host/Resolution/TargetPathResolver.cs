@@ -80,6 +80,11 @@ internal sealed class TargetPathResolver
 
     private static IReadOnlyList<ResolvedTargetSelection> ResolveTargetSelectionsFromFile(string filePath)
     {
+        if (IsCSharpFilePath(filePath))
+        {
+            return [ResolvedTargetSelection.CSharpFile(filePath, filePath)];
+        }
+
         if (IsSupportedProjectPath(filePath))
         {
             return [ResolvedTargetSelection.Project(filePath, filePath)];
@@ -109,7 +114,7 @@ internal sealed class TargetPathResolver
         }
 
         throw new AppResolutionException(
-            $"The specified Sqloom target '{filePath}' is not supported. Use a directory, harness assembly, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
+            $"The specified Sqloom target '{filePath}' is not supported. Use a directory, C# file-based harness, harness assembly, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
     }
 
     private static IReadOnlyList<string> ResolveProjectsFromSolutionContainer(string path)
@@ -232,14 +237,23 @@ internal sealed class TargetPathResolver
         }
 
         return new AppResolutionException(
-            $"The specified Sqloom target '{targetPath}' is not supported. Use a directory, harness assembly, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
+            $"The specified Sqloom target '{targetPath}' is not supported. Use a directory, C# file-based harness, harness assembly, .sln, .slnx, .slnf, .csproj, .fsproj, or .vbproj path.");
     }
 
     private static bool IsSupportedTargetFilePath(string path)
     {
         return IsSupportedProjectPath(path)
             || IsSupportedSolutionPath(path)
-            || IsSupportedAssemblyPath(path);
+            || IsSupportedAssemblyPath(path)
+            || IsCSharpFilePath(path);
+    }
+
+    private static bool IsCSharpFilePath(string path)
+    {
+        return string.Equals(
+            Path.GetExtension(path),
+            ".cs",
+            StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool IsSupportedSolutionPath(string path)
@@ -307,6 +321,7 @@ internal enum ResolvedTargetKind
 {
     Project,
     Assembly,
+    CSharpFile,
 }
 
 /// <summary>
@@ -335,5 +350,15 @@ internal sealed record ResolvedTargetSelection(
             requestedTargetPath,
             assemblyPath,
             ResolvedTargetKind.Assembly);
+    }
+
+    public static ResolvedTargetSelection CSharpFile(
+        string requestedTargetPath,
+        string sourceFilePath)
+    {
+        return new ResolvedTargetSelection(
+            requestedTargetPath,
+            sourceFilePath,
+            ResolvedTargetKind.CSharpFile);
     }
 }

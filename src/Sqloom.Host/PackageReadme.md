@@ -29,9 +29,19 @@ SQL Server-backed replay harnesses can provide replay profile, Query Store profi
 
 For a runnable end-to-end sample, use the repository README. For exact command syntax, use the command reference or `sqloom help <command>` from the installed tool.
 
-Harness projects expose exactly one public non-abstract `ISqloomApplication` implementation for the app under test. The CLI accepts a harness project, harness assembly, solution, solution filter, or directory containing harness projects.
+Harnesses expose exactly one public non-abstract `ISqloomApplication` implementation for the app under test. The CLI accepts an explicit .NET 10 C# file-based harness, harness project, harness assembly, solution, solution filter, or directory containing harness projects. Sqloom always builds `.cs` targets and rejects `--no-build` for them.
 
-For app-owned harness projects outside the Sqloom repository, add a package reference to `Sqloom.Testing`:
+For an app-owned file-based harness outside the Sqloom repository, generate it once as committed test-support source and pin `Sqloom.Testing` to the installed tool version:
+
+```csharp
+#:sdk Microsoft.NET.Sdk.Web
+#:property TargetFramework=net10.0
+#:property ManagePackageVersionsCentrally=false
+#:package Sqloom.Testing@<sqloom-version>
+#:project <relative-app-project.csproj>
+```
+
+Existing project-backed harnesses remain supported and use a normal package reference:
 
 ```powershell
 dotnet add package Sqloom.Testing
@@ -47,7 +57,7 @@ Install the tool from a local folder feed:
 dotnet tool install --tool-path <tool-path> sqloom --add-source <local-feed-path> --ignore-failed-sources
 ```
 
-The published `sqloom` tool package is sufficient for CLI installs. Harness projects still need the `Sqloom.Testing` library package at compile time.
+The published `sqloom` tool package is sufficient for CLI installs. File-based and project-backed harnesses still need the matching `Sqloom.Testing` library package at compile time.
 
 See the repository README for the full end-to-end sample and maintainer workflow:
 

@@ -440,6 +440,65 @@ internal static class Program
         "-clp:ErrorsOnly;NoSummary"
         "-p:RestorePackagesPath=$packageCachePath"
     )
+
+    $fileVerifyRoot = Join-Path $Context.RepoRoot "artifacts\tools\sqloom-testing-file-verify"
+    $filePackageCachePath = Join-Path $fileVerifyRoot "packages"
+    $fileArtifactsPath = Join-Path $fileVerifyRoot "build-artifacts"
+    $fileSourcePath = Join-Path $fileVerifyRoot "SqloomTestingVerify.cs"
+    $fileNugetConfigPath = Join-Path $fileVerifyRoot "NuGet.config"
+
+    Reset-Directory -Path $fileVerifyRoot -RootPath $Context.RepoRoot -Label "Sqloom.Testing file-based package verification"
+    New-Item -ItemType Directory -Path $filePackageCachePath -Force | Out-Null
+
+    Set-Content -LiteralPath $fileNugetConfigPath -Encoding UTF8 -Value @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="sqloom-local" value="$($Context.PackageFeedPath)" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+"@
+
+    $fileNugetConfigDirective = $fileNugetConfigPath.Replace("\", "/")
+    $filePackageCacheDirective = $filePackageCachePath.Replace("\", "/")
+    Set-Content -LiteralPath $fileSourcePath -Encoding UTF8 -Value @"
+#:property TargetFramework=net10.0
+#:property ManagePackageVersionsCentrally=false
+#:property RestoreConfigFile=$fileNugetConfigDirective
+#:property RestorePackagesPath=$filePackageCacheDirective
+#:package Sqloom.Testing@$($Context.PackageVersion)
+
+using System;
+using System.IO;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Testing;
+
+var context = new SqloomApplicationContext
+{
+    CurrentDirectory = Directory.GetCurrentDirectory(),
+    ReplayLaunchOptions = new ReplayLaunchOptions()
+};
+
+Console.WriteLine(context.CurrentDirectory);
+"@
+
+    Push-Location $fileVerifyRoot
+    try
+    {
+        Invoke-DotNet -Context $Context -Arguments @(
+            "build"
+            (Split-Path -Leaf $fileSourcePath)
+            "--artifacts-path"
+            $fileArtifactsPath
+            "--nologo"
+        )
+    }
+    finally
+    {
+        Pop-Location
+    }
 }
 
 function Show-SqloomPublishCommands

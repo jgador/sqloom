@@ -29,11 +29,19 @@ Use [references/commands.md](references/commands.md) for exact Sqloom commands, 
 
 ## Reference `Sqloom.Testing` From Consumer Harnesses
 
-When creating or updating an app-owned harness outside the Sqloom repository, add a NuGet `PackageReference` to the public `Sqloom.Testing` package instead of using a repo-local project reference:
+Default new harnesses to a .NET 10 C# file-based app that lives in the app repository as durable test-support source. Follow an established repository convention when one exists; otherwise generate `tests/Sqloom/<app>/<profile>/Harness.cs` in a dedicated non-project directory. Keep it outside `artifacts/` and outside an existing SDK project directory unless that project explicitly excludes the file from its compile globs. Pin the public `Sqloom.Testing` package to the installed Sqloom tool version and reference the target app project with file-app directives:
 
-```powershell
-dotnet add <harness-project.csproj> package Sqloom.Testing
+```csharp
+#:sdk Microsoft.NET.Sdk.Web
+#:property TargetFramework=net10.0
+#:property ManagePackageVersionsCentrally=false
+#:package Sqloom.Testing@<sqloom-version>
+#:project <relative-app-project.csproj>
 ```
+
+Determine `<sqloom-version>` from `sqloom --version`. Keep the path after `#:project` relative to `Harness.cs` when practical. The file needs a harmless valid entry point and exactly one public non-abstract `ISqloomApplication` implementation. Generate it once, commit it, and maintain its app startup, authentication, tenant, database, and replay setup like an integration-test fixture.
+
+Existing project-backed harnesses remain supported. When updating one, keep its normal NuGet `PackageReference` to `Sqloom.Testing`; do not convert a working harness unless the user requests file-based generation.
 
 Use `using Sqloom.Testing;` for `ISqloomApplication`, manifest, and session contracts. Use `using Sqloom.Testing.AspNetCore;` only when the harness needs the ASP.NET Core replay SQL capture helpers. Do not ask the user to reference `Sqloom.Pipeline` directly for normal harness work; `Sqloom.Testing` contains the shared `Sqloom.Pipeline.*` pipeline surface.
 
@@ -63,7 +71,7 @@ Ask at most three questions at a time. By default, Sqloom `replay` and `tune` us
 Collect only the missing non-agent inputs needed for the intended command:
 
 - endpoint method and route
-- target harness project, harness assembly, solution, solution filter, or directory
+- target C# file-based harness, harness project, harness assembly, solution, solution filter, or directory
 - OpenAPI source when the target repository does not expose one clearly
 - auth and tenant requirements
 - database bootstrap choice, such as existing test setup, DACPAC, seed SQL, or user-provided setup, when the app needs it
@@ -82,4 +90,6 @@ Before writing harness files, confirm the complete intake:
 - database bootstrap path
 - whether the default replay data agent stays enabled or the user is opting out with `--replay-data-agent off`
 
-Generate the smallest harness project that references the public `Sqloom.Testing` package, starts the app, exposes `ISqloomApplication`, locates the app-owned OpenAPI document, and runs the selected Sqloom command. Keep app-specific setup in the harness; do not add Sqloom runtime features for one app's setup. Keep `ReplayProfile` minimal: do not add personas or overlays solely to supply path, query, header, or body values when the default replay data agent can prepare them. Use overlays for app-owned deterministic values, non-GET opt-in, and skip rules.
+Generate the smallest C# file-based harness in durable test-support source, defaulting to `tests/Sqloom/<app>/<profile>/Harness.cs`. Use one committed harness per app/startup profile, not one per endpoint. The file references the public `Sqloom.Testing` package and target app project, starts the app, exposes exactly one `ISqloomApplication`, and locates the app-owned OpenAPI document. Keep endpoint selection in the Sqloom command through `--target "METHOD /path/template"`. Preserve the harness between runs and update it in place only when startup, hosting, auth, tenant, database bootstrap, OpenAPI source, or app-owned replay policy changes.
+
+Sqloom always builds `.cs` harness targets and requires .NET SDK 10 or later through the selected `--dotnet-command`. Do not pass `--no-build` for a file-based harness. Keep app-specific setup in the harness; do not add Sqloom runtime features for one app's setup. Keep `ReplayProfile` minimal: do not add personas or overlays solely to supply path, query, header, or body values when the default replay data agent can prepare them. Use overlays for app-owned deterministic values, non-GET opt-in, and skip rules.

@@ -16,6 +16,5 @@
     <ProjectReference Include="..\..\src\Sqloom.Testing\Sqloom.Testing.csproj" />
     <ProjectReference Include="..\..\src\Sqloom.Host\Sqloom.Host.csproj" />
     <ProjectReference Include="..\Sqloom.TestApp\Sqloom.TestApp.csproj" />
-    <ProjectReference Include="..\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj" />
   </ItemGroup>
 </Project>

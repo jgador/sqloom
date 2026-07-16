@@ -57,12 +57,18 @@ try
 
     if (-not $SkipSmoke)
     {
-        $sampleHarnessProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj"
+        $sampleHarnessFile = Join-Path $context.RepoRoot "tests\Sqloom\Sqloom.TestApp\default\Harness.cs"
         # Exercise harness resolution and OpenAPI discovery without requiring generated replay query values.
-        & $verifyExePath replay $sampleHarnessProject --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
+        & $verifyExePath replay $sampleHarnessFile --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
         if ($LASTEXITCODE -ne 0)
         {
-            throw "Prepared sqloom package smoke check failed."
+            throw "Prepared sqloom package file-harness smoke check failed."
+        }
+
+        & $verifyExePath replay $sampleHarnessFile --no-build --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
+        if ($LASTEXITCODE -eq 0)
+        {
+            throw "Prepared sqloom package file-harness --no-build rejection check failed."
         }
     }
 }
