@@ -44,7 +44,7 @@ internal sealed class ReplayArtifactWriter
 
     public Task WriteDiscoveredOpsAsync(
         string path,
-        IReadOnlyList<OpenApiOperation> discoveredOperations,
+        IReadOnlyList<ReplayOperation> discoveredOperations,
         CancellationToken cancellationToken)
     {
         return JsonFileWriter.WriteAsync(path, discoveredOperations, cancellationToken);

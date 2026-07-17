@@ -62,7 +62,7 @@ public sealed class HostCatalogAdviceTests
                         new ReplayRunnerOptions
                         {
                             AppName = manifest.Name,
-                            OpenApiPath = manifest.OpenApiPath,
+                            SourceProjectPath = SqloomTestAppPaths.GetProjectPath(),
                             ReplayArtifactDir = artifactDirectory,
                             ReplayProfile = replayProfile,
                             ReplayHostFactory = replayHostFactory,
@@ -215,6 +215,8 @@ public sealed class HostCatalogAdviceTests
                             "tune",
                             "--artifact-dir",
                             artifactDirectory,
+                            "--app-project",
+                            SqloomTestAppPaths.GetProjectPath(),
                             "--target",
                             SampleCatalogReplayScenario.OperationKey,
                             "--model-provider",
@@ -587,7 +589,6 @@ public sealed class HostCatalogAdviceTests
             return new SqloomApplicationManifest
             {
                 Name = manifest.Name,
-                OpenApiPath = manifest.OpenApiPath,
                 ReplayProfile = CreateCatalogReplayProfile(),
                 WorkloadProfile = manifest.WorkloadProfile,
                 SqlServerDacpacPath = manifest.SqlServerDacpacPath,

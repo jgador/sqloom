@@ -13,9 +13,9 @@ public sealed class ReplayRunnerOptions
     public required string AppName { get; init; }
 
     /// <summary>
-    /// Gets the OpenAPI document used to discover replay operations.
+    /// Gets the ASP.NET Core source project used to discover replay operations.
     /// </summary>
-    public required string OpenApiPath { get; init; }
+    public required string SourceProjectPath { get; init; }
 
     /// <summary>
     /// Gets the directory where replay artifacts are written.

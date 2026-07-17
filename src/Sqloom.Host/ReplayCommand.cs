@@ -16,6 +16,7 @@ internal sealed class ReplayCommand
 {
     private readonly ReplayArgumentParser _argumentParser = new();
     private readonly EndpointReplayRunner _runner = new();
+    private readonly EndpointSourceProjectResolver _sourceProjectResolver = new();
 
     public HostCommandKind CommandKind => HostCommandKind.Replay;
 
@@ -41,9 +42,9 @@ internal sealed class ReplayCommand
         var replayArtifactDirectory = _argumentParser.GetReplayArtifactDir(
             context.Arguments,
             context.CurrentDirectory);
-        var openApiPath = _argumentParser.GetOpenApiPath(
+        var sourceProjectPath = _sourceProjectResolver.Resolve(
             context.Arguments,
-            manifest,
+            context.StartupOptions,
             context.CurrentDirectory);
 
         await using var session = await application
@@ -55,7 +56,7 @@ internal sealed class ReplayCommand
             session.ReplayHost,
             context.CurrentDirectory,
             artifactDirectoryOverride: replayArtifactDirectory,
-            openApiPathOverride: openApiPath);
+            sourceProjectPathOverride: sourceProjectPath);
         arguments.DebugWriter = context.DebugWriter;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
         context.ConsoleWriter.PrintReplaySummary(

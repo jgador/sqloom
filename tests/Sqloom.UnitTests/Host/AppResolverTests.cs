@@ -76,7 +76,6 @@ public sealed class AppResolverTests
                         return new SqloomApplicationManifest
                         {
                             Name = "First",
-                            OpenApiPath = System.IO.Path.GetFullPath("openapi.json"),
                             ReplayProfile = new ReplayProfile(),
                         };
                     }
@@ -96,7 +95,6 @@ public sealed class AppResolverTests
                         return new SqloomApplicationManifest
                         {
                             Name = "Second",
-                            OpenApiPath = System.IO.Path.GetFullPath("openapi.json"),
                             ReplayProfile = new ReplayProfile(),
                         };
                     }
@@ -524,7 +522,6 @@ public sealed class AppResolverTests
                     return new SqloomApplicationManifest
                     {
                         Name = "Temporary Harness",
-                        OpenApiPath = System.IO.Path.GetFullPath("openapi.json"),
                         ReplayProfile = new ReplayProfile(),
                     };
                 }
@@ -582,7 +579,6 @@ public sealed class AppResolverTests
                     return new SqloomApplicationManifest
                     {
                         Name = "{{applicationName}}",
-                        OpenApiPath = "openapi.json",
                         ReplayProfile = new ReplayProfile(),
                         WorkloadProfile = new WorkloadProfile
                         {

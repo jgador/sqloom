@@ -77,7 +77,7 @@ internal sealed class HostDebugWriter
             "resolved inputs",
             [
                 $"app={options.AppName}",
-                $"openapi_document={options.OpenApiPath}",
+                $"source_project={options.SourceProjectPath}",
                 $"artifact_directory={options.ReplayArtifactDir}",
                 $"max_operations={options.MaxOperations.ToString(CultureInfo.InvariantCulture)}",
                 $"target_filter={options.TargetFilter ?? "default"}",

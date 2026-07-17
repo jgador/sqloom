@@ -12,7 +12,7 @@ internal sealed class ReplayPlanBuilder
 {
     public EndpointReplayPlan BuildInitialPlan(
         ReplayRunnerOptions options,
-        IReadOnlyList<OpenApiOperation> discoveredOperations)
+        IReadOnlyList<ReplayOperation> discoveredOperations)
     {
         var targetFilter = ReplayTargetSyntax.ValidateOperationKeyOrNull(options.TargetFilter);
         var overlays = options.ReplayProfile.OperationOverlays.ToDictionary(
@@ -102,7 +102,7 @@ internal sealed class ReplayPlanBuilder
         return new EndpointReplayPlan
         {
             AppName = options.AppName,
-            OpenApiPath = options.OpenApiPath,
+            SourceProjectPath = options.SourceProjectPath,
             PlannedAtUtc = DateTimeOffset.UtcNow,
             Operations = planItems,
         };
@@ -110,7 +110,7 @@ internal sealed class ReplayPlanBuilder
 
     private static bool IsFilteredOut(
         string? targetFilter,
-        OpenApiOperation operation)
+        ReplayOperation operation)
     {
         return !string.IsNullOrWhiteSpace(targetFilter)
             && !MatchesTarget(targetFilter, operation);
@@ -140,7 +140,7 @@ internal sealed class ReplayPlanBuilder
 
     private static bool MatchesTarget(
         string? targetFilter,
-        OpenApiOperation operation)
+        ReplayOperation operation)
     {
         if (string.IsNullOrWhiteSpace(targetFilter))
         {
@@ -175,7 +175,7 @@ internal sealed class ReplayPlanBuilder
         if (matchingOperationKeys.Length == 0)
         {
             var message =
-                $"No replay operation matched '{targetFilter}'. --target must match one discovered OpenAPI operation key exactly in the form 'METHOD /path/template'.";
+                $"No replay operation matched '{targetFilter}'. --target must match one discovered endpoint operation key exactly in the form 'METHOD /path/template'.";
             if (TryFindSuggestedOperationKey(targetFilter, candidates) is { } suggestedOperationKey)
             {
                 message += $" Did you mean '{suggestedOperationKey}'?";
@@ -275,7 +275,7 @@ internal sealed class ReplayPlanBuilder
     }
 
     private static bool IsReplaySafe(
-        OpenApiOperation operation,
+        ReplayOperation operation,
         ReplayOverlay? overlay,
         ReplayProfile replayProfile)
     {
@@ -291,7 +291,7 @@ internal sealed class ReplayPlanBuilder
     }
 
     private static string BuildUnsafeReason(
-        OpenApiOperation operation,
+        ReplayOperation operation,
         ReplayOverlay? overlay)
     {
         if (!operation.RequiresAuthentication)
@@ -312,7 +312,7 @@ internal sealed class ReplayPlanBuilder
     /// Holds the discovered operation plus overlay/resolved data while replay filters decide inclusion.
     /// </summary>
     private sealed record ReplayPlanCandidate(
-        OpenApiOperation DiscoveredOperation,
+        ReplayOperation DiscoveredOperation,
         ReplayOverlay? Overlay,
         ResolvedReplayOperation ResolvedOperation,
         bool ReplaySafe);

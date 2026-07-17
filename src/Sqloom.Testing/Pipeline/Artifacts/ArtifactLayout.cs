@@ -88,7 +88,7 @@ public static class ArtifactLayout
     }
 
     /// <summary>
-    /// Builds the discovered OpenAPI operations artifact path.
+    /// Builds the discovered replay operations artifact path.
     /// </summary>
     public static string GetDiscoveredOpsPath(string replayArtifactDirectory)
     {

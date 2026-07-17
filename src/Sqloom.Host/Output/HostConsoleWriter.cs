@@ -25,7 +25,7 @@ internal sealed class HostConsoleWriter
             Console.WriteLine($"- {projectName}");
         }
 
-        Console.WriteLine("Replay catalog: OpenAPI discovery with app-owned overlays.");
+        Console.WriteLine("Replay catalog: source-discovered endpoints with app-owned overlays.");
     }
 
     public void PrintUsage()
@@ -177,7 +177,7 @@ internal sealed class HostConsoleWriter
     {
         Console.WriteLine("Replay summary:");
         Console.WriteLine($"- App: {runReport.AppName}");
-        Console.WriteLine($"- OpenAPI document: {replayResult.OpenApiPath}");
+        Console.WriteLine($"- Source project: {replayResult.SourceProjectPath}");
         Console.WriteLine($"- Artifact directory: {replayResult.ReplayArtifactDir}");
         Console.WriteLine($"- Discovered operations: {runReport.DiscoveredOperationCount}");
         Console.WriteLine($"- Planned operations: {runReport.PlannedOperationCount}");
@@ -247,6 +247,37 @@ internal sealed class HostConsoleWriter
                 Console.WriteLine(
                     $"  sql[{command.SourceKind}] duration_ms={command.Duration.TotalMilliseconds:F2}, fingerprint={command.Fingerprint}, params={command.Parameters.Count}");
                 Console.WriteLine($"  text={SummarizeSqlText(command.CommandText)}");
+            }
+        }
+    }
+
+    public void PrintEndpointCatalog(
+        string sourceProjectPath,
+        IReadOnlyList<ReplayOperation> operations,
+        string? jsonOutputPath)
+    {
+        Console.WriteLine("Endpoint catalog:");
+        Console.WriteLine($"- Source project: {sourceProjectPath}");
+        Console.WriteLine($"- Discovered operations: {operations.Count}");
+        if (!string.IsNullOrWhiteSpace(jsonOutputPath))
+        {
+            Console.WriteLine($"- Output path: {jsonOutputPath}");
+        }
+
+        foreach (var operation in operations)
+        {
+            Console.WriteLine(
+                $"- [{operation.HttpMethod}] {operation.Route} | controller={operation.ControllerType ?? "n/a"} | method={operation.MethodName ?? "n/a"}");
+            foreach (var parameter in operation.Parameters)
+            {
+                Console.WriteLine(
+                    $"  {parameter.Location}:{parameter.Name} type={parameter.ClrType ?? "unknown"} required={(parameter.Required ? "yes" : "no")}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(operation.RequestBodyClrType))
+            {
+                Console.WriteLine(
+                    $"  body type={operation.RequestBodyClrType} required={(operation.RequestBodyRequired ? "yes" : "no")}");
             }
         }
     }

@@ -48,13 +48,6 @@ internal static class RepositoryPaths
             "Sqloom.TestApp");
     }
 
-    public static string GetTestAppOpenApiPath()
-    {
-        return Path.Combine(
-            GetTestAppProjectDirectory(),
-            "openapi.json");
-    }
-
     public static string GetSampleApplicationFilePath()
     {
         return Path.Combine(

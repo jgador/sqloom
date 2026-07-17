@@ -120,6 +120,8 @@ public sealed class HostRuntimeTests
                     new NoConnectionTestApplication(state.DacpacPath),
                     [
                         "tune",
+                        "--app-project",
+                        SqloomTestAppPaths.GetProjectPath(),
                         "--model-provider",
                         "openai",
                         "--openai-api-key",
@@ -253,6 +255,8 @@ public sealed class HostRuntimeTests
                     new NoSchemaTestApplication(),
                     [
                         "tune",
+                        "--app-project",
+                        SqloomTestAppPaths.GetProjectPath(),
                         "--model-provider",
                         "openai",
                         "--openai-api-key",
@@ -307,7 +311,8 @@ public sealed class HostRuntimeTests
         Assert.Contains("Usage:", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("tool-options:", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("commands:", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains("  replay     Starts the harness and replays selected OpenAPI operations.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("  endpoints  Discovers ASP.NET Core controller endpoints from source.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("  replay     Starts the harness and replays selected endpoint operations.", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("Run 'sqloom help <command>' for more information on a command.", result.StdOut, StringComparison.Ordinal);
         Assert.Equal(string.Empty, result.StdErr);
     }
@@ -332,7 +337,7 @@ public sealed class HostRuntimeTests
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Description:", result.StdOut, StringComparison.Ordinal);
-        Assert.Contains("Starts the harness and replays selected OpenAPI operations.", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("Starts the harness and replays selected endpoint operations.", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("Usage:", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("sqloom replay <path> [options]", result.StdOut, StringComparison.Ordinal);
         Assert.Contains("Arguments:", result.StdOut, StringComparison.Ordinal);
@@ -552,7 +557,6 @@ internal sealed class NoConnectionTestApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "No Connection Test App",
-            OpenApiPath = SqloomTestAppPaths.GetOpenApiPath(),
             ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
             SqlServerDacpacPath = _dacpacPath,
         };
@@ -576,7 +580,6 @@ internal sealed class NoSchemaTestApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "No Schema Test App",
-            OpenApiPath = SqloomTestAppPaths.GetOpenApiPath(),
             ReplayProfile = HostRuntimeTestHarnessProfiles.CreateReplayProfile(),
         };
     }

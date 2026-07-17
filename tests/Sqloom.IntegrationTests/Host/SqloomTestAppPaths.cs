@@ -30,18 +30,18 @@ internal static class SqloomTestAppPaths
             "Harness.cs");
     }
 
-    public static Task<ISqloomApplication> ResolveApplicationAsync()
-    {
-        return _application.Value;
-    }
-
-    public static string GetOpenApiPath()
+    public static string GetProjectPath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
             "Sqloom.TestApp",
-            "openapi.json");
+            "Sqloom.TestApp.csproj");
+    }
+
+    public static Task<ISqloomApplication> ResolveApplicationAsync()
+    {
+        return _application.Value;
     }
 
     private static Task<ISqloomApplication> ResolveApplicationCoreAsync()

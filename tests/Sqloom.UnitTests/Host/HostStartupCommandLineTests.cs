@@ -69,6 +69,35 @@ public sealed class HostStartupCommandLineTests
     }
 
     [Fact]
+    public void EndpointsProjectPath_SelectsTargetAndRemovesApplicationArg()
+    {
+        HostStartupCommandLine commandLine = new();
+        var currentDirectory = RepositoryPaths.GetRepositoryRoot();
+        const string relativeProjectPath = @".\tests\Sqloom.TestApp\Sqloom.TestApp.csproj";
+        const string relativeOutputPath = @".\artifacts\sqloom\endpoints.json";
+
+        var startupOptions = commandLine.Parse(
+            [
+                "endpoints",
+                relativeProjectPath,
+                "--json-output-file",
+                relativeOutputPath,
+            ],
+            currentDirectory);
+
+        Assert.Equal(
+            Path.GetFullPath(relativeProjectPath, currentDirectory),
+            startupOptions.AppTargetPath,
+            StringComparer.OrdinalIgnoreCase);
+        Assert.True(startupOptions.HasTargetSelection);
+        Assert.Collection(
+            startupOptions.ApplicationArguments,
+            item => Assert.Equal("endpoints", item),
+            item => Assert.Equal("--json-output-file", item),
+            item => Assert.Equal(relativeOutputPath, item));
+    }
+
+    [Fact]
     public void TuneProjectPath_SelectsProjectAndRemovesApplicationArg()
     {
         HostStartupCommandLine commandLine = new();

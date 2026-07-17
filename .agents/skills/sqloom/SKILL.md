@@ -47,11 +47,11 @@ Use `using Sqloom.Testing;` for `ISqloomApplication`, manifest, and session cont
 
 ## Start With Evidence
 
-Inspect the target app, OpenAPI document, and existing tests before asking questions. Look for:
+Inspect the target app project, controller source, and existing tests before asking questions. Look for:
 
 - the ASP.NET Core entry point and hosting model
 - an existing public non-abstract `ISqloomApplication` harness
-- available OpenAPI JSON and operation IDs
+- controller routes, action methods, and parameter binding metadata
 - existing integration or WebApplicationFactory tests
 - auth, tenant, and header requirements the harness must supply
 - database setup, seed data, DACPAC, and SQL Server connection patterns
@@ -72,7 +72,7 @@ Collect only the missing non-agent inputs needed for the intended command:
 
 - endpoint method and route
 - target C# file-based harness, harness project, harness assembly, solution, solution filter, or directory
-- OpenAPI source when the target repository does not expose one clearly
+- ASP.NET Core source project when the target or harness cannot infer it and `--app-project` is needed
 - auth and tenant requirements
 - database bootstrap choice, such as existing test setup, DACPAC, seed SQL, or user-provided setup, when the app needs it
 - OpenAI API key availability for the default replay data agent and advice workflows, without asking the user to paste secrets into source
@@ -84,12 +84,11 @@ When the target repository already answers one of these, state the observed valu
 Before writing harness files, confirm the complete intake:
 
 - target app project
-- OpenAPI source
 - endpoint selection
 - auth and tenant setup
 - database bootstrap path
 - whether the default replay data agent stays enabled or the user is opting out with `--replay-data-agent off`
 
-Generate the smallest C# file-based harness in durable test-support source, defaulting to `tests/Sqloom/<app>/<profile>/Harness.cs`. Use one committed harness per app/startup profile, not one per endpoint. The file references the public `Sqloom.Testing` package and target app project, starts the app, exposes exactly one `ISqloomApplication`, and locates the app-owned OpenAPI document. Keep endpoint selection in the Sqloom command through `--target "METHOD /path/template"`. Preserve the harness between runs and update it in place only when startup, hosting, auth, tenant, database bootstrap, OpenAPI source, or app-owned replay policy changes.
+Generate the smallest C# file-based harness in durable test-support source, defaulting to `tests/Sqloom/<app>/<profile>/Harness.cs`. Use one committed harness per app/startup profile, not one per endpoint. The file references the public `Sqloom.Testing` package and target app project, starts the app, and exposes exactly one `ISqloomApplication`. Sqloom discovers controller methods and parameters from the target app project referenced by the harness or supplied with `--app-project`. Keep endpoint selection in the Sqloom command through `--target "METHOD /path/template"`. Preserve the harness between runs and update it in place only when startup, hosting, auth, tenant, database bootstrap, source project selection, or app-owned replay policy changes.
 
 Sqloom always builds `.cs` harness targets and requires .NET SDK 10 or later through the selected `--dotnet-command`. Do not pass `--no-build` for a file-based harness. Keep app-specific setup in the harness; do not add Sqloom runtime features for one app's setup. Keep `ReplayProfile` minimal: do not add personas or overlays solely to supply path, query, header, or body values when the default replay data agent can prepare them. Use overlays for app-owned deterministic values, non-GET opt-in, and skip rules.

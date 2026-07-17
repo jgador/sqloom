@@ -10,7 +10,7 @@ namespace Sqloom.Host.Replay;
 public interface IReplayDataPreparer
 {
     /// <summary>
-    /// Prepares replay-only request data for a resolved OpenAPI operation.
+    /// Prepares replay-only request data for a resolved endpoint operation.
     /// </summary>
     Task<ReplayDataPreparationOperation> PrepareAsync(
         ReplayDataPreparationContext context,

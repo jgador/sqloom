@@ -21,10 +21,10 @@ public sealed class EndpointReplayRunResult
     public required string ReplayArtifactDir { get; init; }
 
     /// <summary>
-    /// Gets the open api path.
+    /// ASP.NET Core source project used to discover replay operations.
     /// </summary>
-    [JsonPropertyName("openApiPath")]
-    public required string OpenApiPath { get; init; }
+    [JsonPropertyName("sourceProjectPath")]
+    public required string SourceProjectPath { get; init; }
 
     /// <summary>
     /// Gets the discovered ops path.
@@ -60,7 +60,7 @@ public sealed class EndpointReplayRunResult
     /// Gets the discovered operations.
     /// </summary>
     [JsonPropertyName("discoveredOperations")]
-    public required IReadOnlyList<OpenApiOperation> DiscoveredOperations { get; init; }
+    public required IReadOnlyList<ReplayOperation> DiscoveredOperations { get; init; }
 
     /// <summary>
     /// Gets the replay plan.

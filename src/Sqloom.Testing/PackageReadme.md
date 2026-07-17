@@ -1,6 +1,6 @@
 # Sqloom.Testing
 
-`Sqloom.Testing` contains the public harness API and shared pipeline surface for running Sqloom against an ASP.NET Core application. App-owned file-based or project-backed harnesses implement `ISqloomApplication`, describe their OpenAPI source and replay profile, and start an `ISqloomApplicationSession` that Sqloom can replay through.
+`Sqloom.Testing` contains the public harness API and shared pipeline surface for running Sqloom against an ASP.NET Core application. App-owned file-based or project-backed harnesses implement `ISqloomApplication`, describe their replay profile, and start an `ISqloomApplicationSession` that Sqloom can replay through.
 
 Reference the package from a .NET 10 C# file-based harness:
 

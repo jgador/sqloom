@@ -19,7 +19,7 @@ internal sealed class ReplayArgumentParser
         IReplayHost replayHost,
         string currentDirectory,
         string? artifactDirectoryOverride = null,
-        string? openApiPathOverride = null,
+        string? sourceProjectPathOverride = null,
         ReplayLaunchOptions? replayLaunchOptionsOverride = null)
     {
         ArgumentNullException.ThrowIfNull(manifest);
@@ -28,11 +28,10 @@ internal sealed class ReplayArgumentParser
         CommandArgumentSupport.ValidateArguments(args, HostCommandKind.Replay);
 
         var replayProfile = manifest.ReplayProfile;
-        var openApiPath = openApiPathOverride
-            ?? GetOpenApiPath(
-                args,
-                manifest,
-                currentDirectory);
+        var sourceProjectPath = sourceProjectPathOverride
+            ?? GetAppProjectPath(args, currentDirectory)
+            ?? throw new ArgumentException(
+                "Replay requires an ASP.NET Core source project. Supply --app-project <path> or use a file-based harness with exactly one Web SDK #:project directive.");
         var targetFilter = ReplayTargetSyntax.ValidateOperationKeyOrNull(
             CommandArgumentSupport.GetArgumentValue(args, "--target"));
         var replayArtifactDirectory = artifactDirectoryOverride
@@ -46,7 +45,7 @@ internal sealed class ReplayArgumentParser
             RunnerOptions = new ReplayRunnerOptions
             {
                 AppName = manifest.Name,
-                OpenApiPath = openApiPath,
+                SourceProjectPath = sourceProjectPath,
                 ReplayArtifactDir = replayArtifactDirectory,
                 ReplayProfile = replayProfile,
                 ReplayHost = replayHost,
@@ -59,37 +58,21 @@ internal sealed class ReplayArgumentParser
         };
     }
 
-    public string GetOpenApiPath(
+    public string? GetAppProjectPath(
         string[] args,
-        SqloomApplicationManifest manifest,
         string currentDirectory)
     {
-        ArgumentNullException.ThrowIfNull(manifest);
         ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
 
-        var openApiPath = CommandArgumentSupport.GetArgumentValue(args, "--openapi-file");
-        if (!string.IsNullOrWhiteSpace(openApiPath))
+        var appProjectPath = CommandArgumentSupport.GetArgumentValue(args, "--app-project");
+        if (string.IsNullOrWhiteSpace(appProjectPath))
         {
-            return RequireOpenApiPath(
-                Path.GetFullPath(openApiPath, currentDirectory),
-                "--openapi-file");
+            return null;
         }
 
-        if (string.IsNullOrWhiteSpace(manifest.OpenApiPath))
-        {
-            throw new ArgumentException(
-                "The Sqloom application manifest must set OpenApiPath to the absolute path of the app-owned OpenAPI document.");
-        }
-
-        if (!Path.IsPathFullyQualified(manifest.OpenApiPath))
-        {
-            throw new ArgumentException(
-                $"The Sqloom application manifest OpenApiPath must be absolute: '{manifest.OpenApiPath}'.");
-        }
-
-        return RequireOpenApiPath(
-            Path.GetFullPath(manifest.OpenApiPath),
-            "Sqloom application manifest OpenApiPath");
+        return RequireAppProjectPath(
+            Path.GetFullPath(appProjectPath, currentDirectory),
+            "--app-project");
     }
 
     public string GetReplayArtifactDir(string[] args, string currentDirectory)
@@ -108,17 +91,23 @@ internal sealed class ReplayArgumentParser
             DateTimeOffset.UtcNow);
     }
 
-    private static string RequireOpenApiPath(
-        string openApiPath,
+    private static string RequireAppProjectPath(
+        string appProjectPath,
         string source)
     {
-        if (!File.Exists(openApiPath))
+        if (!File.Exists(appProjectPath))
         {
             throw new ArgumentException(
-                $"The OpenAPI document from {source} does not exist: '{openApiPath}'.");
+                $"The ASP.NET Core source project from {source} does not exist: '{appProjectPath}'.");
         }
 
-        return openApiPath;
+        if (!string.Equals(Path.GetExtension(appProjectPath), ".csproj", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                $"The ASP.NET Core source project from {source} must be a .csproj file: '{appProjectPath}'.");
+        }
+
+        return appProjectPath;
     }
 
     internal ReplayLaunchOptions CreateReplayLaunchOptions(

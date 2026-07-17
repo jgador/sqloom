@@ -192,7 +192,7 @@ public sealed class ReplayPlanBuilderTests
         return new ReplayRunnerOptions
         {
             AppName = "TestApp",
-            OpenApiPath = "openapi.json",
+            SourceProjectPath = "app.csproj",
             ReplayArtifactDir = "artifacts",
             ReplayProfile = replayProfile,
             ReplayHostFactory = new UnusedReplayHostFactory(),
@@ -200,14 +200,14 @@ public sealed class ReplayPlanBuilderTests
         };
     }
 
-    private static OpenApiOperation CreateOperation(
+    private static ReplayOperation CreateOperation(
         string httpMethod,
         string route,
         bool requiresAuthentication,
         bool requestBodyRequired = false,
         string? operationId = null)
     {
-        return new OpenApiOperation
+        return new ReplayOperation
         {
             StableOperationKey = $"{httpMethod} {route}",
             OperationId = operationId,

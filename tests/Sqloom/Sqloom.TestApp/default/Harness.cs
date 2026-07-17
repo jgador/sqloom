@@ -3,7 +3,7 @@
 #:property ManagePackageVersionsCentrally=false
 #:property EnableTrimAnalyzer=false
 #:package Microsoft.AspNetCore.TestHost@10.0.1
-#:package Sqloom.Testing@0.4.0
+#:project ../../../../src/Sqloom.Testing/Sqloom.Testing.csproj
 #:project ../../../Sqloom.TestApp/Sqloom.TestApp.csproj
 
 using System;
@@ -49,25 +49,12 @@ public sealed class SqloomTestApplication : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "Sqloom Test App",
-            OpenApiPath = Path.GetFullPath(
-                Path.Combine(
-                    ResolveRepositoryRoot(context),
-                    "tests",
-                    "Sqloom.TestApp",
-                    "openapi.json")),
             ReplayProfile = new ReplayProfile(),
             WorkloadProfile = new WorkloadProfile
             {
                 Name = "SqloomTestApp",
             },
         };
-    }
-
-    private static string ResolveRepositoryRoot(SqloomApplicationContext context)
-    {
-        return RepositoryRootLocator.TryFind(context.CurrentDirectory)
-            ?? RepositoryRootLocator.TryFind(Directory.GetCurrentDirectory())
-            ?? throw new InvalidOperationException("Could not locate the repository root for the Sqloom Test App harness.");
     }
 
     /// <inheritdoc />

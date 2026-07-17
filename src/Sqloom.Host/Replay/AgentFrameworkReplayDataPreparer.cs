@@ -24,7 +24,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
 {
     private const string Instructions =
         "You prepare ASP.NET Core endpoint replay data for Sqloom. " +
-        "Use the supplied OpenAPI operation and missing input list to choose replay values. " +
+        "Use the supplied endpoint operation and missing input list to choose replay values. " +
         "Return only type-valid values for missing path, query, header, and JSON body inputs. " +
         "Return pathValues, queryValues, and headerValues as arrays of name=value strings. " +
         "Use an empty array when no values are needed. " +
@@ -64,7 +64,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
                 Confidence = 1,
                 SourcesUsed =
                 [
-                    "openapi-operation",
+                    "endpoint-operation",
                 ],
                 Notes = "Resolved replay operation already had the required values.",
             };
@@ -95,7 +95,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
             PreparedData = validation.PreparedData,
             SourcesUsed =
             [
-                "openapi-operation",
+                "endpoint-operation",
                 "microsoft-agent-framework",
             ],
             Warnings = validation.Warnings,
@@ -186,7 +186,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
 
     private static IReadOnlyDictionary<string, string> ValidateParameterValues(
         string location,
-        IReadOnlyList<OpenApiParameter> missingParameters,
+        IReadOnlyList<ReplayParameter> missingParameters,
         IReadOnlyDictionary<string, string> candidateValues,
         ICollection<string> warnings)
     {
@@ -255,7 +255,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
     }
 
     private static void ValidatePrimitiveValue(
-        OpenApiParameter parameter,
+        ReplayParameter parameter,
         string value)
     {
         var schemaType = parameter.SchemaType?.Trim();
@@ -422,14 +422,14 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
 
     private sealed class MissingReplayInputs
     {
-        public IReadOnlyList<OpenApiParameter> PathParameters { get; init; } =
-            Array.Empty<OpenApiParameter>();
+        public IReadOnlyList<ReplayParameter> PathParameters { get; init; } =
+            Array.Empty<ReplayParameter>();
 
-        public IReadOnlyList<OpenApiParameter> QueryParameters { get; init; } =
-            Array.Empty<OpenApiParameter>();
+        public IReadOnlyList<ReplayParameter> QueryParameters { get; init; } =
+            Array.Empty<ReplayParameter>();
 
-        public IReadOnlyList<OpenApiParameter> HeaderParameters { get; init; } =
-            Array.Empty<OpenApiParameter>();
+        public IReadOnlyList<ReplayParameter> HeaderParameters { get; init; } =
+            Array.Empty<ReplayParameter>();
 
         public bool RequestBodyRequired { get; init; }
 
@@ -441,9 +441,9 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
 
         public static MissingReplayInputs Create(ReplayDataPreparationContext context)
         {
-            List<OpenApiParameter> pathParameters = [];
-            List<OpenApiParameter> queryParameters = [];
-            List<OpenApiParameter> headerParameters = [];
+            List<ReplayParameter> pathParameters = [];
+            List<ReplayParameter> queryParameters = [];
+            List<ReplayParameter> headerParameters = [];
 
             foreach (var parameter in context.Operation.Parameters.Where(static parameter => parameter.Required))
             {
@@ -453,7 +453,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
                     "query" => context.ResolvedOperation.QueryValues,
                     "header" => context.ResolvedOperation.HeaderValues,
                     _ => throw new InvalidOperationException(
-                        $"Unsupported required OpenAPI parameter location '{parameter.Location}' for '{parameter.Name}'."),
+                        $"Unsupported required endpoint parameter location '{parameter.Location}' for '{parameter.Name}'."),
                 };
 
                 if (existingValues.ContainsKey(parameter.Name))

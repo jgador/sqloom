@@ -210,7 +210,7 @@ internal sealed class HostStartupCommandLine
         if (!IsSwitch(argument) && !IsSupportedCommand(argument))
         {
             throw new ArgumentException(
-                $"Unknown Sqloom command '{argument}'. Use init, tune, observe, replay, correlate, advise, --help, or --version.");
+                $"Unknown Sqloom command '{argument}'. Use init, endpoints, tune, observe, replay, correlate, advise, --help, or --version.");
         }
     }
 

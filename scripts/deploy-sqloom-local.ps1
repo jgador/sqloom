@@ -43,7 +43,7 @@ try
     if (-not $SkipSmoke)
     {
         $sampleHarnessFile = Join-Path $context.RepoRoot "tests\Sqloom\Sqloom.TestApp\default\Harness.cs"
-        # Exercise harness resolution and OpenAPI discovery without requiring generated replay query values.
+        # Exercise harness resolution and source-discovered endpoints without requiring generated replay query values.
         & $localCommand replay $sampleHarnessFile --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
         if ($LASTEXITCODE -ne 0)
         {

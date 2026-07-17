@@ -9,7 +9,7 @@ namespace Sqloom.Host.Replay;
 internal static class ReplayOperationResolver
 {
     public static ResolvedReplayOperation Resolve(
-        OpenApiOperation discoveredOperation,
+        ReplayOperation discoveredOperation,
         ReplayOverlay? overlay)
     {
         return new ResolvedReplayOperation

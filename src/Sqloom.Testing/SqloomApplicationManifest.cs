@@ -14,11 +14,6 @@ public sealed class SqloomApplicationManifest
     public required string Name { get; init; }
 
     /// <summary>
-    /// Gets the OpenAPI document used to discover replay operations.
-    /// </summary>
-    public required string OpenApiPath { get; init; }
-
-    /// <summary>
     /// Gets the application-owned defaults for replay planning.
     /// </summary>
     public required ReplayProfile ReplayProfile { get; init; }

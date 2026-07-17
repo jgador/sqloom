@@ -106,7 +106,9 @@ See [Sqloom command documentation](docs/command-reference.md) for exact command 
 
 ## How It Fits Into An App
 
-Sqloom stays generic. Your app supplies a checked-in C# file-based harness or a project-backed harness that exposes exactly one public non-abstract `ISqloomApplication`. The harness tells Sqloom where the app-owned OpenAPI document lives, how to start the app for replay, and which replay defaults are safe for that app.
+Sqloom stays generic. Your app supplies a checked-in C# file-based harness or a project-backed harness that exposes exactly one public non-abstract `ISqloomApplication`. The harness tells Sqloom how to start the app for replay and which replay defaults are safe for that app. Sqloom discovers controller methods and parameter metadata from the ASP.NET Core source project inferred from the harness or supplied with `--app-project`.
+
+Use `sqloom endpoints <path>` to list the source-discovered controller operations without starting the harness. This is the command surface extension UIs can use to populate endpoint selectors.
 
 The Sqloom skill generates each file-based harness once as durable app-owned test support, defaulting to `tests/Sqloom/<app>/<profile>/Harness.cs` when the repository has no stronger convention. Commit and maintain it like an integration-test fixture so app startup and setup survive across runs. Select the endpoint independently on each invocation with `--target "METHOD /path/template"`. Sqloom always builds `.cs` harness targets with .NET SDK 10 or later into isolated system-temporary output and rejects `--no-build` for them; project-backed targets retain their existing `--no-build` behavior. Run artifacts remain under `artifacts/sqloom/`.
 

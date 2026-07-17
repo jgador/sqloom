@@ -55,9 +55,9 @@ public sealed class RunOptions
     public int MaxOperations { get; init; } = 25;
 
     /// <summary>
-    /// Gets the open api path.
+    /// ASP.NET Core source project used to discover replay operations when supplied by an integration.
     /// </summary>
-    public string? OpenApiPath { get; init; }
+    public string? SourceProjectPath { get; init; }
 
     /// <summary>
     /// Gets the target filter.

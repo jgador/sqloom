@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using Sqloom.Host.Replay;
 using Sqloom.Pipeline.Artifacts;
 using Sqloom.Pipeline.Execution;
 using Sqloom.Testing;
@@ -17,6 +18,7 @@ internal sealed class TuneCommand
     private readonly TuneArgumentParser _argumentParser;
     private readonly TuneWorkflowRunner _workflowRunner;
     private readonly ISqlServerDacpacExporter _dacpacExporter;
+    private readonly EndpointSourceProjectResolver _sourceProjectResolver = new();
 
     public TuneCommand()
         : this(
@@ -61,9 +63,9 @@ internal sealed class TuneCommand
             manifest,
             context.CurrentDirectory);
 
-        var openApiPath = _argumentParser.GetOpenApiPath(
+        var sourceProjectPath = _sourceProjectResolver.Resolve(
             context.Arguments,
-            manifest,
+            context.StartupOptions,
             context.CurrentDirectory);
         var workflowArtifactDir = _argumentParser.GetWorkflowArtifactDir(
             context.Arguments,
@@ -103,7 +105,7 @@ internal sealed class TuneCommand
             session.ReplayHost,
             readOnlyConnectionString,
             context.CurrentDirectory,
-            openApiPath,
+            sourceProjectPath,
             workflowArtifactDir,
             launchOptions,
             launchOptions.DacpacPath);

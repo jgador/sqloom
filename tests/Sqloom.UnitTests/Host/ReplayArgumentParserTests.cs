@@ -20,10 +20,9 @@ public sealed class ReplayArgumentParserTests
         var currentDirectory = CreateTempDir();
         var dacpacPath = Path.Combine(currentDirectory, "SqloomTestApp.dacpac");
         var seedSqlPath = Path.Combine(currentDirectory, "SqloomTestApp.seed.sql");
-        var openApiPath = Path.Combine(currentDirectory, "openapi.json");
+        var sourceProjectPath = RepositoryPaths.GetTestAppProjectPath();
         File.WriteAllText(dacpacPath, "sqloom");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
-        File.WriteAllText(openApiPath, "{}");
 
         var arguments = parser.Parse(
             [
@@ -31,8 +30,8 @@ public sealed class ReplayArgumentParserTests
                 dacpacPath,
                 "--sqlserver-seed-sql-file",
                 seedSqlPath,
-                "--openapi-file",
-                openApiPath,
+                "--app-project",
+                sourceProjectPath,
                 "--target",
                 SampleCatalogReplayScenario.OperationKey,
                 "--openai-api-key",
@@ -43,8 +42,8 @@ public sealed class ReplayArgumentParserTests
             currentDirectory);
 
         Assert.Equal(
-            Path.GetFullPath(openApiPath),
-            arguments.RunnerOptions.OpenApiPath);
+            Path.GetFullPath(sourceProjectPath),
+            arguments.RunnerOptions.SourceProjectPath);
         Assert.Equal(SampleCatalogReplayScenario.OperationKey, arguments.RunnerOptions.TargetFilter);
         Assert.Equal(
             Path.GetFullPath(dacpacPath),
@@ -55,13 +54,16 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void UsesManifestOpenApiPathByDefault()
+    public void UsesAppProjectPathByDefault()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
+        var sourceProjectPath = RepositoryPaths.GetTestAppProjectPath();
 
         var arguments = parser.Parse(
             [
+                "--app-project",
+                sourceProjectPath,
                 "--openai-api-key",
                 "openai-key",
             ],
@@ -70,8 +72,8 @@ public sealed class ReplayArgumentParserTests
             currentDirectory);
 
         Assert.Equal(
-            RepositoryPaths.GetTestAppOpenApiPath(),
-            arguments.RunnerOptions.OpenApiPath,
+            sourceProjectPath,
+            arguments.RunnerOptions.SourceProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(ReplayDataAgentMode.Required, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
@@ -90,7 +92,8 @@ public sealed class ReplayArgumentParserTests
             ],
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
-            currentDirectory);
+            currentDirectory,
+            sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath());
 
         Assert.Equal(ReplayDataAgentMode.Off, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.Null(arguments.RunnerOptions.ReplayDataPreparer);
@@ -113,7 +116,8 @@ public sealed class ReplayArgumentParserTests
             ],
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
-            currentDirectory);
+            currentDirectory,
+            sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath());
 
         Assert.Equal(ReplayDataAgentMode.Auto, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.Equal("gpt-test", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
@@ -133,8 +137,9 @@ public sealed class ReplayArgumentParserTests
                     "auto",
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -156,7 +161,8 @@ public sealed class ReplayArgumentParserTests
             ],
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
-            currentDirectory);
+            currentDirectory,
+            sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath());
 
         Assert.Equal(ReplayDataAgentMode.Required, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.Equal("gpt-5.4-mini", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
@@ -176,8 +182,9 @@ public sealed class ReplayArgumentParserTests
                     "required",
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -195,33 +202,28 @@ public sealed class ReplayArgumentParserTests
                     "always",
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("--replay-data-agent", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
-    public void ThrowsWhenManifestOpenApiPathIsRelative()
+    public void ThrowsWhenSourceProjectPathIsMissing()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
-        SqloomApplicationManifest manifest = new()
-        {
-            Name = "Relative OpenAPI Test App",
-            OpenApiPath = "openapi.json",
-            ReplayProfile = new ReplayProfile(),
-        };
 
         var exception = Assert.Throws<ArgumentException>(
             () => parser.Parse(
                 [],
-                manifest,
+                ManifestFactory.CreateManifest(),
                 new ReplayHostFake(),
                 currentDirectory));
 
-        Assert.Contains("OpenApiPath", exception.Message, StringComparison.Ordinal);
-        Assert.Contains("absolute", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("source project", exception.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("--app-project", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -238,8 +240,9 @@ public sealed class ReplayArgumentParserTests
                     missingDacpacPath,
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("SQL Server DACPAC", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -262,8 +265,9 @@ public sealed class ReplayArgumentParserTests
                     missingSeedSqlPath,
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("SQL seed script", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -283,8 +287,9 @@ public sealed class ReplayArgumentParserTests
                     seedSqlPath,
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("--sqlserver-dacpac-file", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -304,14 +309,15 @@ public sealed class ReplayArgumentParserTests
                     value,
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(legacySwitch, exception.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]
+    [InlineData("--openapi-file", "openapi.json")]
     [InlineData("--openapi-path", "openapi.json")]
     [InlineData("--sqlserver-dacpac", "SqloomTestApp.dacpac")]
     public void RejectsLegacyPathSwitches(string legacySwitch, string fileName)
@@ -326,8 +332,9 @@ public sealed class ReplayArgumentParserTests
                     Path.Combine(currentDirectory, fileName),
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(legacySwitch, exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -353,8 +360,9 @@ public sealed class ReplayArgumentParserTests
                     targetFilter,
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("METHOD /path/template", exception.Message, StringComparison.Ordinal);
         Assert.Contains(expectedReason, exception.Message, StringComparison.Ordinal);
@@ -376,8 +384,9 @@ public sealed class ReplayArgumentParserTests
                     targetFilter,
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("METHOD /path/template", exception.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Did you mean", exception.Message, StringComparison.Ordinal);
@@ -400,8 +409,9 @@ public sealed class ReplayArgumentParserTests
                     legacySwitch,
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            currentDirectory));
+                new ReplayHostFake(),
+                currentDirectory,
+                sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(legacySwitch, exception.Message, StringComparison.OrdinalIgnoreCase);
