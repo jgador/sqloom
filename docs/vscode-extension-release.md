@@ -79,8 +79,8 @@ For a manual upload flow, use the `.vsix` produced by `npm run package -- --targ
 
 Install the Marketplace preview in a clean VS Code profile and verify:
 
-- The Sqloom Activity Bar appears.
+- The Sqloom Activity Bar logo appears and opens only the compact Sqloom dashboard launcher, without Workflows, Runs, or Advice tree sections.
+- `Sqloom: Open Tune Dashboard` opens the Sqloom Tune webview tab.
 - `Sqloom: Select Sqloom CLI Path` can point at either `sqloom` on `PATH` or an absolute local build.
 - `Sqloom: Initialize Sqloom Agent Skill` runs `sqloom init`.
 - `Sqloom: Run Tune Workflow` launches the CLI and writes output to the Sqloom output channel.
-- The Runs and Advice views refresh from `artifacts/sqloom`.

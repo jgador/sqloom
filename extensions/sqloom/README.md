@@ -1,6 +1,6 @@
 # Sqloom Preview
 
-Sqloom for Visual Studio Code runs the existing `sqloom` CLI from a workspace UI and shows generated tuning artifacts inside the editor.
+Sqloom for Visual Studio Code runs the existing `sqloom` CLI from a workspace UI. The Activity Bar logo opens a compact Sqloom webview launcher, and the launcher opens the Sqloom Tune dashboard preview inside the editor.
 
 ## Requirements
 
@@ -10,15 +10,13 @@ Sqloom for Visual Studio Code runs the existing `sqloom` CLI from a workspace UI
 
 ## Features
 
+- Open the Sqloom Tune dashboard preview from the Activity Bar logo or Command Palette.
 - Run `sqloom init` for Codex, Claude, Copilot, or all supported agent skill locations.
-- Run `sqloom tune` from the Command Palette or the Sqloom Activity Bar.
-- Refresh and inspect run artifacts under `artifacts/sqloom`.
-- Open generated SQL proposal files from the Sqloom Advice view.
+- Run `sqloom tune` from the Command Palette.
 
 ## Settings
 
 - `sqloom.cli.path`: Sqloom CLI executable or absolute path. Defaults to `sqloom`.
-- `sqloom.artifactsRoot`: Workspace-relative or absolute artifact root. Defaults to `artifacts/sqloom`.
 - `sqloom.openai.model`: OpenAI model passed to `sqloom tune`. Defaults to `gpt-5.4-mini`.
 - `sqloom.replayDataAgent`: Replay data agent mode passed to `sqloom tune`. Defaults to `required`.
 

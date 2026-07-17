@@ -3,7 +3,7 @@
   "displayName": "Sqloom",
   "version": "0.4.0",
   "preview": true,
-  "description": "Run Sqloom tuning workflows and inspect SQL Server performance advice from Visual Studio Code.",
+  "description": "Open the Sqloom Tune dashboard and run Sqloom CLI workflows from Visual Studio Code.",
   "publisher": "jessegador",
   "license": "MIT",
   "icon": "images/extensionIcon.png",
@@ -35,14 +35,10 @@
     "tuning"
   ],
   "activationEvents": [
-    "onView:sqloom.workflows",
-    "onView:sqloom.runs",
-    "onView:sqloom.advice",
+    "onView:sqloom.dashboardLauncher",
+    "onCommand:sqloom.openDashboard",
     "onCommand:sqloom.init",
     "onCommand:sqloom.tune",
-    "onCommand:sqloom.refreshRuns",
-    "onCommand:sqloom.openArtifactRoot",
-    "onCommand:sqloom.openSqlProposal",
     "onCommand:sqloom.selectCliPath"
   ],
   "main": "./dist/extension.js",
@@ -73,11 +69,6 @@
           "default": "sqloom",
           "description": "Sqloom CLI executable or absolute path."
         },
-        "sqloom.artifactsRoot": {
-          "type": "string",
-          "default": "artifacts/sqloom",
-          "description": "Workspace-relative or absolute Sqloom artifact root."
-        },
         "sqloom.openai.model": {
           "type": "string",
           "default": "gpt-5.4-mini",
@@ -97,6 +88,12 @@
     },
     "commands": [
       {
+        "command": "sqloom.openDashboard",
+        "title": "Open Tune Dashboard",
+        "category": "Sqloom",
+        "icon": "$(dashboard)"
+      },
+      {
         "command": "sqloom.init",
         "title": "Initialize Sqloom Agent Skill",
         "category": "Sqloom",
@@ -109,56 +106,12 @@
         "icon": "$(play)"
       },
       {
-        "command": "sqloom.refreshRuns",
-        "title": "Refresh Sqloom Runs",
-        "category": "Sqloom",
-        "icon": "$(refresh)"
-      },
-      {
-        "command": "sqloom.openArtifactRoot",
-        "title": "Open Artifact Root",
-        "category": "Sqloom",
-        "icon": "$(folder-opened)"
-      },
-      {
-        "command": "sqloom.openSqlProposal",
-        "title": "Open SQL Proposal",
-        "category": "Sqloom",
-        "icon": "$(file-code)"
-      },
-      {
         "command": "sqloom.selectCliPath",
         "title": "Select Sqloom CLI Path",
         "category": "Sqloom",
         "icon": "$(terminal)"
       }
     ],
-    "menus": {
-      "view/title": [
-        {
-          "command": "sqloom.tune",
-          "when": "view == sqloom.workflows",
-          "group": "navigation"
-        },
-        {
-          "command": "sqloom.refreshRuns",
-          "when": "view == sqloom.runs || view == sqloom.advice",
-          "group": "navigation"
-        },
-        {
-          "command": "sqloom.openArtifactRoot",
-          "when": "view == sqloom.runs || view == sqloom.advice",
-          "group": "navigation"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "sqloom.openSqlProposal",
-          "when": "viewItem == sqloomProposal",
-          "group": "navigation"
-        }
-      ]
-    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -171,38 +124,13 @@
     "views": {
       "sqloom": [
         {
-          "id": "sqloom.workflows",
-          "name": "Workflows",
-          "contextualTitle": "Sqloom"
-        },
-        {
-          "id": "sqloom.runs",
-          "name": "Runs",
-          "contextualTitle": "Sqloom"
-        },
-        {
-          "id": "sqloom.advice",
-          "name": "Advice",
+          "id": "sqloom.dashboardLauncher",
+          "name": "Sqloom",
+          "type": "webview",
           "contextualTitle": "Sqloom"
         }
       ]
-    },
-    "viewsWelcome": [
-      {
-        "view": "sqloom.workflows",
-        "contents": "[Run Tune Workflow](command:sqloom.tune)\n\n[Initialize Sqloom Agent Skill](command:sqloom.init)"
-      },
-      {
-        "view": "sqloom.runs",
-        "contents": "Run `Sqloom: Run Tune Workflow` or refresh after a CLI run writes artifacts.",
-        "when": "sqloomRunsEmpty"
-      },
-      {
-        "view": "sqloom.advice",
-        "contents": "SQL proposals appear here after tune or advise writes `sql-tuning-proposal.sql`.",
-        "when": "sqloomAdviceEmpty"
-      }
-    ]
+    }
   },
   "devDependencies": {
     "@types/node": "^22.13.14",

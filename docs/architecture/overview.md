@@ -11,7 +11,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 ## Top-Level Structure
 
 - [src/](../../src/): production libraries and the CLI host
-- [extensions/sqloom/](../../extensions/sqloom/): VS Code extension preview that shells out to the `sqloom` CLI and reads generated artifacts
+- [extensions/sqloom/](../../extensions/sqloom/): VS Code extension preview that shells out to the `sqloom` CLI, anchors the Activity Bar logo with a compact webview launcher, and renders the Sqloom Tune dashboard webview
 - [tests/](../../tests/): unit tests, integration tests, the sample app, and its app-owned harness
 - [scripts/](../../scripts/): local tooling and packaging automation
 - `artifacts/`: generated build, package, replay, and tune output
@@ -33,7 +33,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 
 - `Sqloom.Testing`: app-harness runner contracts, manifest types, harness-facing ASP.NET Core SQL capture helpers, shared pipeline surface, artifact layout, pipeline models, replay evidence models, endpoint/replay artifact schemas, Query Store evidence models, correlation report models, workload classification helpers, and merged Showplan/OpenAI advice contracts
 - `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, library-harness loading, ASP.NET Core replay implementation, live SQL Server Query Store collection, statement-handle resolution, replay-to-Query Store correlation, DACPAC schema extraction, advice generation, and the composition root
-- `extensions/sqloom`: VS Code Activity Bar, Command Palette, and artifact-browsing surface over the public `sqloom` CLI
+- `extensions/sqloom`: VS Code Activity Bar logo, compact webview launcher, Command Palette commands, and webview dashboard surface over the public `sqloom` CLI
 - `Sqloom.TestApp`: sample target app for generic host coverage
 - `tests/Sqloom/Sqloom.TestApp/default/Harness.cs`: standalone app-owned replay harness, public-package consumer, and file-app resolution fixture
 - `Sqloom.UnitTests`: unit-test lane for shared pipeline code and host-adjacent logic

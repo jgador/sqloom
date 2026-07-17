@@ -47,7 +47,7 @@ dotnet add package Sqloom.Testing
 
 ## VS Code Extension Preview
 
-Sqloom also has an initial VS Code extension workspace under [extensions/sqloom](extensions/sqloom). The extension is a preview UI over the `sqloom` CLI: it can initialize agent skill files, run `sqloom tune`, and inspect generated run and advice artifacts under `artifacts/sqloom`.
+Sqloom also has an initial VS Code extension workspace under [extensions/sqloom](extensions/sqloom). The extension is a preview UI over the `sqloom` CLI: it can open the Sqloom Tune dashboard webview, initialize agent skill files, and run `sqloom tune`.
 
 Build and package the extension from the repo root:
 

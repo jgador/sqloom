@@ -7,7 +7,7 @@ Resident architecture context for first-pass navigation. Atlas stores durable ro
 - Solution: [Sqloom.slnx](../../Sqloom.slnx)
 - Focused solution filters: [Sqloom.UnitTests.slnf](../../Sqloom.UnitTests.slnf), [Sqloom.IntegrationTests.slnf](../../Sqloom.IntegrationTests.slnf)
 - Production: [src/Sqloom.Testing/](../../src/Sqloom.Testing/) for harness contracts and the shared `Sqloom.Pipeline.*` pipeline surface, [src/Sqloom.Host/](../../src/Sqloom.Host/) for the CLI/tool host
-- VS Code extension preview: [extensions/sqloom/](../../extensions/sqloom/) for the Marketplace package that shells out to the public `sqloom` CLI and reads `artifacts/sqloom/`
+- VS Code extension preview: [extensions/sqloom/](../../extensions/sqloom/) for the Marketplace package that shells out to the public `sqloom` CLI, anchors the Activity Bar logo with a compact webview launcher, and renders the Sqloom Tune dashboard webview
 - Tests and sample harness: [tests/Sqloom.UnitTests/](../../tests/Sqloom.UnitTests/), [tests/Sqloom.IntegrationTests/](../../tests/Sqloom.IntegrationTests/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), [tests/Sqloom/Sqloom.TestApp/default/Harness.cs](../../tests/Sqloom/Sqloom.TestApp/default/Harness.cs)
 - Docs and tooling: [README.md](../../README.md), [docs/](../../docs/), [scripts/](../../scripts/)
 - Generated artifacts: `artifacts/sqloom/`
@@ -221,7 +221,7 @@ flowchart TB
 - [src/Sqloom.Host/CommandCatalog.cs](../../src/Sqloom.Host/CommandCatalog.cs) is the ordered source of truth for command verbs, target requirements, options, runtime structural validation, help syntax, and generated command reference metadata. [tools/Sqloom.CommandDocs.cs](../../tools/Sqloom.CommandDocs.cs) writes or checks the canonical command reference at [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md); hand-written docs should link to that generated file instead of duplicating command tables.
 - [src/Sqloom.Host/Dispatch/HostApplication.cs](../../src/Sqloom.Host/Dispatch/HostApplication.cs) resolves the selected harness or bound `ISqloomApplication`, chooses a `HostCommandKind`, creates command context, and dispatches through `CommandRegistry`.
 - Commands own their behavior: [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/EndpointsCommand.cs](../../src/Sqloom.Host/EndpointsCommand.cs), [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/AdviceCommand.cs](../../src/Sqloom.Host/AdviceCommand.cs), and [src/Sqloom.Host/TuneCommand.cs](../../src/Sqloom.Host/TuneCommand.cs).
-- The VS Code extension in [extensions/sqloom/](../../extensions/sqloom/) is a UI shell over the CLI. It must launch public CLI commands and inspect generated artifacts instead of duplicating pipeline implementations.
+- The VS Code extension in [extensions/sqloom/](../../extensions/sqloom/) is a UI shell over the CLI. It must launch public CLI commands and render extension UI in webviews instead of duplicating pipeline implementations.
 
 ## Domains
 
@@ -271,4 +271,4 @@ flowchart TB
 - Do not use Atlas as a file inventory, test inventory, symbol graph, reference graph, artifact cache, or source cache.
 - Ignore first: `artifacts/`, `TestResults/`, `.vs/`, `.tools/`, `bin/`, `obj/`, and package output unless the task is explicitly about generated artifacts, local tooling, or packaging.
 
-Last verified: `2026-07-17`
+Last verified: `2026-07-18`
