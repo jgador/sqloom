@@ -9,4 +9,5 @@ tsconfig.json
 tsconfig.*.json
 **/*.map
 **/*.ts
+images/logo.png
 vsc-extension-quickstart.md
