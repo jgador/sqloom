@@ -1,0 +1,24 @@
+{
+  "name": "sqloom-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "packageManager": "npm@11.12.0",
+  "description": "Workspace for Sqloom and its VS Code extension",
+  "workspaces": [
+    "extensions/*"
+  ],
+  "scripts": {
+    "build": "node scripts/workspaces.mjs build",
+    "watch": "node scripts/workspaces.mjs watch",
+    "test": "node scripts/workspaces.mjs test",
+    "lint": "node scripts/workspaces.mjs lint",
+    "package": "node scripts/workspaces.mjs package",
+    "publish:preview": "node scripts/workspaces.mjs publish:preview --require-target --target sqloom",
+    "list:targets": "node scripts/workspaces.mjs list",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.3.3"
+  }
+}

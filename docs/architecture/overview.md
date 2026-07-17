@@ -11,6 +11,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 ## Top-Level Structure
 
 - [src/](../../src/): production libraries and the CLI host
+- [extensions/sqloom/](../../extensions/sqloom/): VS Code extension preview that shells out to the `sqloom` CLI and reads generated artifacts
 - [tests/](../../tests/): unit tests, integration tests, the sample app, and its app-owned harness
 - [scripts/](../../scripts/): local tooling and packaging automation
 - `artifacts/`: generated build, package, replay, and tune output
@@ -32,6 +33,7 @@ This is the canonical repo-layout and project-ownership document for the standal
 
 - `Sqloom.Testing`: app-harness runner contracts, manifest types, harness-facing ASP.NET Core SQL capture helpers, shared pipeline surface, artifact layout, pipeline models, replay evidence models, OpenAPI/replay artifact schemas, Query Store evidence models, correlation report models, workload classification helpers, and merged Showplan/OpenAI advice contracts
 - `Sqloom.Host`: CLI verbs, argument parsing, target resolution, diagnostics wiring, library-harness loading, ASP.NET Core replay implementation, live SQL Server Query Store collection, statement-handle resolution, replay-to-Query Store correlation, DACPAC schema extraction, advice generation, and the composition root
+- `extensions/sqloom`: VS Code Activity Bar, Command Palette, and artifact-browsing surface over the public `sqloom` CLI
 - `Sqloom.TestApp`: sample target app for generic host coverage
 - `tests/Sqloom/Sqloom.TestApp/default/Harness.cs`: standalone app-owned replay harness, public-package consumer, and file-app resolution fixture
 - `Sqloom.UnitTests`: unit-test lane for shared pipeline code and host-adjacent logic
@@ -42,6 +44,7 @@ Retired runtime boundaries stay merged into adjacent survivors: Showplan, OpenAI
 ## Current Repo Direction
 
 - Keep the current surviving `Sqloom.*` names. Do not rename into generic `Domain`, `Application`, or `Infrastructure` buckets unless there is a concrete repo need.
+- Keep VS Code extension code under `extensions/sqloom` and route shared TypeScript helpers through `packages/` only when more than one extension target needs them.
 - Keep repo automation in [scripts/](../../scripts/) for now.
 - Keep `Sqloom.Host` as the only CLI composition root.
 - Keep new shared code narrowly owned and task-driven.

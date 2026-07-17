@@ -7,6 +7,7 @@ Resident architecture context for first-pass navigation. Atlas stores durable ro
 - Solution: [Sqloom.slnx](../../Sqloom.slnx)
 - Focused solution filters: [Sqloom.UnitTests.slnf](../../Sqloom.UnitTests.slnf), [Sqloom.IntegrationTests.slnf](../../Sqloom.IntegrationTests.slnf)
 - Production: [src/Sqloom.Testing/](../../src/Sqloom.Testing/) for harness contracts and the shared `Sqloom.Pipeline.*` pipeline surface, [src/Sqloom.Host/](../../src/Sqloom.Host/) for the CLI/tool host
+- VS Code extension preview: [extensions/sqloom/](../../extensions/sqloom/) for the Marketplace package that shells out to the public `sqloom` CLI and reads `artifacts/sqloom/`
 - Tests and sample harness: [tests/Sqloom.UnitTests/](../../tests/Sqloom.UnitTests/), [tests/Sqloom.IntegrationTests/](../../tests/Sqloom.IntegrationTests/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), [tests/Sqloom/Sqloom.TestApp/default/Harness.cs](../../tests/Sqloom/Sqloom.TestApp/default/Harness.cs)
 - Docs and tooling: [README.md](../../README.md), [docs/](../../docs/), [scripts/](../../scripts/)
 - Generated artifacts: `artifacts/sqloom/`
@@ -212,6 +213,7 @@ flowchart TB
 - [src/Sqloom.Host/CommandCatalog.cs](../../src/Sqloom.Host/CommandCatalog.cs) is the ordered source of truth for command verbs, target requirements, options, runtime structural validation, help syntax, and generated command reference metadata. [tools/Sqloom.CommandDocs.cs](../../tools/Sqloom.CommandDocs.cs) writes or checks the canonical command reference at [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md); hand-written docs should link to that generated file instead of duplicating command tables.
 - [src/Sqloom.Host/Dispatch/HostApplication.cs](../../src/Sqloom.Host/Dispatch/HostApplication.cs) resolves the selected harness or bound `ISqloomApplication`, chooses a `HostCommandKind`, creates command context, and dispatches through `CommandRegistry`.
 - Commands own their behavior: [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/AdviceCommand.cs](../../src/Sqloom.Host/AdviceCommand.cs), and [src/Sqloom.Host/TuneCommand.cs](../../src/Sqloom.Host/TuneCommand.cs).
+- The VS Code extension in [extensions/sqloom/](../../extensions/sqloom/) is a UI shell over the CLI. It must launch public CLI commands and inspect generated artifacts instead of duplicating pipeline implementations.
 
 ## Domains
 
@@ -224,6 +226,7 @@ flowchart TB
 - Artifact and JSON contracts: [src/Sqloom.Testing/Pipeline/Artifacts/](../../src/Sqloom.Testing/Pipeline/Artifacts/), persisted models under [src/Sqloom.Testing/Pipeline/Execution/](../../src/Sqloom.Testing/Pipeline/Execution/) and [src/Sqloom.Testing/Pipeline/QueryStore/](../../src/Sqloom.Testing/Pipeline/QueryStore/), and [src/Sqloom.Host/TuneWorkflowReport.cs](../../src/Sqloom.Host/TuneWorkflowReport.cs); tests usually start in [tests/Sqloom.UnitTests/Artifacts/ArtifactLayoutTests.cs](../../tests/Sqloom.UnitTests/Artifacts/ArtifactLayoutTests.cs) and [tests/Sqloom.UnitTests/Artifacts/JsonContractTests.cs](../../tests/Sqloom.UnitTests/Artifacts/JsonContractTests.cs).
 - Harness model: [src/Sqloom.Testing/](../../src/Sqloom.Testing/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), the consumer-style [tests/Sqloom/Sqloom.TestApp/default/Harness.cs](../../tests/Sqloom/Sqloom.TestApp/default/Harness.cs), and host resolution under [src/Sqloom.Host/Resolution/](../../src/Sqloom.Host/Resolution/); tests usually start in [tests/Sqloom.UnitTests/Host/AppResolverTests.cs](../../tests/Sqloom.UnitTests/Host/AppResolverTests.cs), [tests/Sqloom.UnitTests/Host/TestAppIntegrations.cs](../../tests/Sqloom.UnitTests/Host/TestAppIntegrations.cs), [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs).
 - Packaging and local tooling: [src/Sqloom.Host/Sqloom.Host.csproj](../../src/Sqloom.Host/Sqloom.Host.csproj), [src/Sqloom.Host/PackageReadme.md](../../src/Sqloom.Host/PackageReadme.md), [scripts/Sqloom.Tooling.ps1](../../scripts/Sqloom.Tooling.ps1), [scripts/deploy-sqloom-local.ps1](../../scripts/deploy-sqloom-local.ps1), [scripts/prepare-sqloom-packages.ps1](../../scripts/prepare-sqloom-packages.ps1), [docs/dotnet-tool-release.md](../../docs/dotnet-tool-release.md), [docs/command-reference.md](../../docs/command-reference.md), and the generated [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md).
+- VS Code extension packaging: [package.json](../../package.json), [scripts/workspaces.mjs](../../scripts/workspaces.mjs), [scripts/workspace-targets.mjs](../../scripts/workspace-targets.mjs), [extensions/sqloom/package.json](../../extensions/sqloom/package.json), [extensions/sqloom/src/extension.ts](../../extensions/sqloom/src/extension.ts), and [docs/vscode-extension-release.md](../../docs/vscode-extension-release.md).
 - Agent/navigation policy: [AGENTS.md](../../AGENTS.md), [docs/agents/README.md](../../docs/agents/README.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md), and [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/). Use `advisor` for request classification and sub-agent routing recommendations, Atlas mappers for specialist read-only mapping, and `scout` only for bounded literal discovery.
 
 ## Test Routing
@@ -236,6 +239,7 @@ flowchart TB
 - Advice, OpenAI evidence, DACPAC schema extraction, and SQL proposals -> [tests/Sqloom.UnitTests/Host/AdviceCommandTests.cs](../../tests/Sqloom.UnitTests/Host/AdviceCommandTests.cs), [tests/Sqloom.UnitTests/Host/OpenAIAdviceGeneratorTests.cs](../../tests/Sqloom.UnitTests/Host/OpenAIAdviceGeneratorTests.cs), [tests/Sqloom.UnitTests/Host/SqlServerDacpacSchemaExtractorTests.cs](../../tests/Sqloom.UnitTests/Host/SqlServerDacpacSchemaExtractorTests.cs), [tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs)
 - Artifacts and public JSON contracts -> [tests/Sqloom.UnitTests/Artifacts/](../../tests/Sqloom.UnitTests/Artifacts/)
 - Packaging and local tool behavior -> [scripts/](../../scripts/), [docs/dotnet-tool-release.md](../../docs/dotnet-tool-release.md), [README.md](../../README.md), plus build/pack/local-wrapper smoke commands
+- VS Code extension behavior -> [extensions/sqloom/](../../extensions/sqloom/), [docs/vscode-extension-release.md](../../docs/vscode-extension-release.md), plus `npm run lint -- --target sqloom`, `npm run build -- --target sqloom`, and `npm run package -- --target sqloom`
 
 ## Commands
 
@@ -246,6 +250,7 @@ flowchart TB
 - Local tool deploy: `pwsh .\scripts\deploy-sqloom-local.ps1`
 - Local tool smoke: `sqloom-local --version`
 - Command reference write/check: `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --write` / `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --check`
+- Extension install/build: `npm install`, `npm run lint -- --target sqloom`, `npm run build -- --target sqloom`, `npm run package -- --target sqloom`
 
 ## Navigation Rules
 
@@ -258,4 +263,4 @@ flowchart TB
 - Do not use Atlas as a file inventory, test inventory, symbol graph, reference graph, artifact cache, or source cache.
 - Ignore first: `artifacts/`, `TestResults/`, `.vs/`, `.tools/`, `bin/`, `obj/`, and package output unless the task is explicitly about generated artifacts, local tooling, or packaging.
 
-Last verified: `2026-07-16`
+Last verified: `2026-07-17`

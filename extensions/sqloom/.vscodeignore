@@ -1,0 +1,12 @@
+.vscode/**
+.vscode-test/**
+src/**
+node_modules/**
+coverage/**
+test/**
+*.vsix
+tsconfig.json
+tsconfig.*.json
+**/*.map
+**/*.ts
+vsc-extension-quickstart.md

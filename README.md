@@ -45,6 +45,19 @@ dotnet add package Sqloom.Testing
 
 `Sqloom.Testing` contains the harness APIs plus the shared `Sqloom.Pipeline.*` pipeline surface used by replay, Query Store, artifact, and advice flows.
 
+## VS Code Extension Preview
+
+Sqloom also has an initial VS Code extension workspace under [extensions/sqloom](extensions/sqloom). The extension is a preview UI over the `sqloom` CLI: it can initialize agent skill files, run `sqloom tune`, and inspect generated run and advice artifacts under `artifacts/sqloom`.
+
+Build and package the extension from the repo root:
+
+```powershell
+npm install
+npm run package -- --target sqloom
+```
+
+The Marketplace preview is published under publisher ID `jessegador`. See [docs/vscode-extension-release.md](docs/vscode-extension-release.md) for the preview release checklist.
+
 ## Quick Start
 
 Set `OPENAI_API_KEY`, make sure `AdventureWorksLT2025` is restored on your local SQL Server, then run the sample `tune` workflow from the repo root. The connection string is used for the sample app replay, Query Store reads, and DACPAC/schema extraction.

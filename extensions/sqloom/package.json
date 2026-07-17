@@ -1,0 +1,211 @@
+{
+  "name": "sqloom",
+  "displayName": "Sqloom",
+  "version": "0.0.1",
+  "preview": true,
+  "description": "Run Sqloom tuning workflows and inspect SQL Server performance advice from Visual Studio Code.",
+  "publisher": "jessegador",
+  "license": "MIT",
+  "icon": "images/extensionIcon.png",
+  "galleryBanner": {
+    "color": "#1F2937",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jgador/sqloom.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jgador/sqloom/issues"
+  },
+  "homepage": "https://github.com/jgador/sqloom/tree/main/extensions/sqloom",
+  "engines": {
+    "vscode": "^1.105.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "keywords": [
+    "Sqloom",
+    "SQL Server",
+    "Azure SQL",
+    "Query Store",
+    ".NET",
+    "performance",
+    "tuning"
+  ],
+  "activationEvents": [
+    "onView:sqloom.workflows",
+    "onView:sqloom.runs",
+    "onView:sqloom.advice",
+    "onCommand:sqloom.init",
+    "onCommand:sqloom.tune",
+    "onCommand:sqloom.refreshRuns",
+    "onCommand:sqloom.openArtifactRoot",
+    "onCommand:sqloom.openSqlProposal",
+    "onCommand:sqloom.selectCliPath"
+  ],
+  "main": "./dist/extension.js",
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsc -p tsconfig.extension.json",
+    "watch": "tsc -watch -p tsconfig.extension.json --preserveWatchOutput",
+    "lint": "tsc -p tsconfig.extension.json --noEmit",
+    "test": "npm run build",
+    "package": "npm run build && vsce package --no-dependencies",
+    "publish:preview": "npm run build && vsce publish --pre-release --no-dependencies"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": false,
+      "description": "Sqloom runs workspace-owned harness code through the Sqloom CLI."
+    },
+    "virtualWorkspaces": false
+  },
+  "contributes": {
+    "configuration": {
+      "title": "Sqloom",
+      "properties": {
+        "sqloom.cli.path": {
+          "type": "string",
+          "default": "sqloom",
+          "description": "Sqloom CLI executable or absolute path."
+        },
+        "sqloom.artifactsRoot": {
+          "type": "string",
+          "default": "artifacts/sqloom",
+          "description": "Workspace-relative or absolute Sqloom artifact root."
+        },
+        "sqloom.openai.model": {
+          "type": "string",
+          "default": "gpt-5.4-mini",
+          "description": "Default OpenAI model passed to sqloom tune."
+        },
+        "sqloom.replayDataAgent": {
+          "type": "string",
+          "enum": [
+            "required",
+            "auto",
+            "off"
+          ],
+          "default": "required",
+          "description": "Default replay data agent mode passed to sqloom tune."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "sqloom.init",
+        "title": "Initialize Sqloom Agent Skill",
+        "category": "Sqloom",
+        "icon": "$(repo-create)"
+      },
+      {
+        "command": "sqloom.tune",
+        "title": "Run Tune Workflow",
+        "category": "Sqloom",
+        "icon": "$(play)"
+      },
+      {
+        "command": "sqloom.refreshRuns",
+        "title": "Refresh Sqloom Runs",
+        "category": "Sqloom",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "sqloom.openArtifactRoot",
+        "title": "Open Artifact Root",
+        "category": "Sqloom",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "sqloom.openSqlProposal",
+        "title": "Open SQL Proposal",
+        "category": "Sqloom",
+        "icon": "$(file-code)"
+      },
+      {
+        "command": "sqloom.selectCliPath",
+        "title": "Select Sqloom CLI Path",
+        "category": "Sqloom",
+        "icon": "$(terminal)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "sqloom.tune",
+          "when": "view == sqloom.workflows",
+          "group": "navigation"
+        },
+        {
+          "command": "sqloom.refreshRuns",
+          "when": "view == sqloom.runs || view == sqloom.advice",
+          "group": "navigation"
+        },
+        {
+          "command": "sqloom.openArtifactRoot",
+          "when": "view == sqloom.runs || view == sqloom.advice",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "sqloom.openSqlProposal",
+          "when": "viewItem == sqloomProposal",
+          "group": "navigation"
+        }
+      ]
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sqloom",
+          "title": "Sqloom",
+          "icon": "images/sqloom-activity.svg"
+        }
+      ]
+    },
+    "views": {
+      "sqloom": [
+        {
+          "id": "sqloom.workflows",
+          "name": "Workflows",
+          "contextualTitle": "Sqloom"
+        },
+        {
+          "id": "sqloom.runs",
+          "name": "Runs",
+          "contextualTitle": "Sqloom"
+        },
+        {
+          "id": "sqloom.advice",
+          "name": "Advice",
+          "contextualTitle": "Sqloom"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "sqloom.workflows",
+        "contents": "[Run Tune Workflow](command:sqloom.tune)\n\n[Initialize Sqloom Agent Skill](command:sqloom.init)"
+      },
+      {
+        "view": "sqloom.runs",
+        "contents": "Run `Sqloom: Run Tune Workflow` or refresh after a CLI run writes artifacts.",
+        "when": "sqloomRunsEmpty"
+      },
+      {
+        "view": "sqloom.advice",
+        "contents": "SQL proposals appear here after tune or advise writes `sql-tuning-proposal.sql`.",
+        "when": "sqloomAdviceEmpty"
+      }
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^22.13.14",
+    "@types/vscode": "1.105.0",
+    "@vscode/vsce": "^3.9.2",
+    "typescript": "^5.8.3"
+  }
+}
