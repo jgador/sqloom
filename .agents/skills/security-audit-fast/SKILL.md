@@ -20,31 +20,31 @@ Choose the smallest scope that answers the request and state it in the report.
 
 Start with `git status --short --branch`. If the worktree is dirty and the user did not ask for committed changes only, include staged changes, unstaged changes, and non-ignored untracked files in addition to the branch diff.
 
-For Sqloom branch checks, default the base ref to `origin/master` when it exists, otherwise `master`. Prefer triple-dot comparison for branch work so the scan covers changes since the merge base:
+For Sqloom branch checks, default the base ref to `origin/master` when it exists, otherwise `master`. Prefer triple-dot comparison for branch work so the scan covers changes since the merge base. Use `git --no-pager diff` for diff commands so pager configuration cannot block non-interactive runs:
 
 ```powershell
 git status --short --branch
 $baseRef = if (git rev-parse --verify origin/master 2>$null) { 'origin/master' } elseif (git rev-parse --verify master 2>$null) { 'master' } else { $null }
 if (-not $baseRef) { throw 'No base ref found. Provide a base ref such as origin/master.' }
 git merge-base HEAD $baseRef
-git diff --name-status "${baseRef}...HEAD"
-git diff --no-color --diff-filter=ACMRT "${baseRef}...HEAD"
+git --no-pager diff --name-status "${baseRef}...HEAD"
+git --no-pager diff --no-color --diff-filter=ACMRT "${baseRef}...HEAD"
 ```
 
 Use pathspecs when the user asks for a narrower path:
 
 ```powershell
-git diff --name-status "${baseRef}...HEAD" -- <pathspec>
-git diff --no-color --diff-filter=ACMRT "${baseRef}...HEAD" -- <pathspec>
+git --no-pager diff --name-status "${baseRef}...HEAD" -- <pathspec>
+git --no-pager diff --no-color --diff-filter=ACMRT "${baseRef}...HEAD" -- <pathspec>
 ```
 
 Use staged or working-tree commands when those scopes are requested:
 
 ```powershell
-git diff --cached --name-status
-git diff --cached --no-color --diff-filter=ACMRT
-git diff --name-status
-git diff --no-color --diff-filter=ACMRT
+git --no-pager diff --cached --name-status
+git --no-pager diff --cached --no-color --diff-filter=ACMRT
+git --no-pager diff --name-status
+git --no-pager diff --no-color --diff-filter=ACMRT
 git ls-files -o --exclude-standard
 ```
 
@@ -59,14 +59,14 @@ $tokenPatterns = 'AKIA[0-9A-Z]{16}|ASIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|gho_[A-Z
 Scan the selected diff for high-confidence patterns, loose credentials on added lines, and sensitive filenames:
 
 ```powershell
-$diff = git diff --no-color --diff-filter=ACMRT "${baseRef}...HEAD"
+$diff = git --no-pager diff --no-color --diff-filter=ACMRT "${baseRef}...HEAD"
 $diff | Select-String -Pattern $tokenPatterns
 $diff | Select-String -Pattern '^\+[^+].*((api[_-]?key|apikey|secret|passw(or)?d|token|credential|connectionstring|pwd|bearer |authorization:)[^a-z0-9]{0,3}[A-Za-z0-9+/_=@:;.,-]{8,}|Server=.*;.*Password=|Data Source=.*Password=|mongodb(\+srv)?://[^ ]*:[^ ]*@|postgres(ql)?://[^ ]*:[^ ]*@|mysql://[^ ]*:[^ ]*@|redis://[^ ]*:[^ ]*@|amqps?://[^ ]*:[^ ]*@|https?://[^/ ]*:[^/@ ]*@)'
-git diff --name-only --diff-filter=ACMRT "${baseRef}...HEAD" |
+git --no-pager diff --name-only --diff-filter=ACMRT "${baseRef}...HEAD" |
   Select-String -Pattern '\.(env|pem|key|pfx|p12|jks|keystore|ppk)$|id_rsa|id_ed25519|credentials|secrets?\.|\.npmrc|nuget\.config|appsettings|\.netrc|\.pypirc|authinfo'
 ```
 
-For staged or working-tree scopes, replace the `git diff` source with the matching command from the scope section. If a tool requires a file input, write the diff to a system temporary file with `New-TemporaryFile`, scan it, and remove it before finishing.
+For staged or working-tree scopes, replace the `git --no-pager diff` source with the matching command from the scope section. If a tool requires a file input, write the diff to a system temporary file with `New-TemporaryFile`, scan it, and remove it before finishing.
 
 Expect binary assets in some diffs. Keep filename checks for them, but avoid treating binary body noise as secret evidence unless a text extraction or direct file review shows readable secret material.
 
@@ -80,7 +80,7 @@ if ($untracked) { rg -n -I -i -e '(password|passwd|secret|api[_-]?key|apikey|tok
 
 ## Triage
 
-Review each candidate in context before reporting it. Use `git diff --no-color -U5 ... -- <file>` or read the changed file directly when a hit is ambiguous.
+Review each candidate in context before reporting it. Use `git --no-pager diff --no-color -U5 ... -- <file>` or read the changed file directly when a hit is ambiguous.
 
 Treat [AGENTS.md](../../../AGENTS.md#checked-in-password-exceptions) as the sole allowlist for concrete password, password-equivalent, password-hash, and password-salt values introduced by the selected change set. Do not dismiss a changed value because it is local, test-only, inert, sample, generated, hashed, or salted unless the allowlist explicitly permits it.
 
