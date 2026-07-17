@@ -1,7 +1,7 @@
 {
   "name": "sqloom",
   "displayName": "Sqloom",
-  "version": "0.0.1",
+  "version": "0.4.0",
   "preview": true,
   "description": "Run Sqloom tuning workflows and inspect SQL Server performance advice from Visual Studio Code.",
   "publisher": "jessegador",
@@ -47,13 +47,15 @@
   ],
   "main": "./dist/extension.js",
   "scripts": {
-    "vscode:prepublish": "npm run build",
+    "sync:version": "node ../../scripts/sync-vscode-extension-version.mjs",
+    "sync:version:check": "node ../../scripts/sync-vscode-extension-version.mjs --check",
+    "vscode:prepublish": "npm run sync:version && npm run build",
     "build": "tsc -p tsconfig.extension.json",
     "watch": "tsc -watch -p tsconfig.extension.json --preserveWatchOutput",
-    "lint": "tsc -p tsconfig.extension.json --noEmit",
+    "lint": "npm run sync:version:check && tsc -p tsconfig.extension.json --noEmit",
     "test": "npm run build",
-    "package": "npm run build && vsce package --no-dependencies",
-    "publish:preview": "npm run build && vsce publish --pre-release --no-dependencies"
+    "package": "npm run sync:version && vsce package --no-dependencies",
+    "publish:preview": "npm run sync:version && vsce publish --pre-release --no-dependencies"
   },
   "capabilities": {
     "untrustedWorkspaces": {

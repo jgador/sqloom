@@ -14,6 +14,8 @@
     "lint": "node scripts/workspaces.mjs lint",
     "package": "node scripts/workspaces.mjs package",
     "publish:preview": "node scripts/workspaces.mjs publish:preview --require-target --target sqloom",
+    "sync:extension-version": "node scripts/sync-vscode-extension-version.mjs",
+    "sync:extension-version:check": "node scripts/sync-vscode-extension-version.mjs --check",
     "list:targets": "node scripts/workspaces.mjs list",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

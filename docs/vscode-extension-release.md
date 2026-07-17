@@ -10,6 +10,7 @@ The extension is a UI shell over the `sqloom` CLI. Keep the CLI as the source of
 - Extension identifier: `jessegador.sqloom`
 - Extension package root: [extensions/sqloom](../extensions/sqloom)
 - Preview flag: `preview: true` in the extension manifest
+- Extension version: synchronized from the CLI package version in [Directory.Build.props](../Directory.Build.props)
 
 ## 1. Validate the CLI surface
 
@@ -39,6 +40,8 @@ npm install
 Build, type-check, and package the extension:
 
 ```powershell
+npm run sync:extension-version
+npm run sync:extension-version:check
 npm run lint -- --target sqloom
 npm run build -- --target sqloom
 npm run package -- --target sqloom
@@ -47,7 +50,8 @@ npm run package -- --target sqloom
 The package command writes a `.vsix` under [extensions/sqloom](../extensions/sqloom). Install it locally with VS Code before publishing:
 
 ```powershell
-code --install-extension .\extensions\sqloom\sqloom-0.0.1.vsix
+$version = (Select-Xml -Path .\Directory.Build.props -XPath '/Project/PropertyGroup/Version').Node.InnerText
+code --install-extension ".\extensions\sqloom\sqloom-$version.vsix"
 ```
 
 ## 3. Marketplace publisher setup
@@ -62,12 +66,11 @@ Do not store Marketplace tokens, OpenAI keys, or SQL connection strings in the r
 
 ## 4. Publish the preview
 
-From the extension package root, publish the preview after local VSIX validation:
+Publish the preview after local VSIX validation:
 
 ```powershell
-Set-Location .\extensions\sqloom
-npx vsce login jessegador
-npx vsce publish --pre-release --no-dependencies
+npm exec --workspace sqloom -- vsce login jessegador
+npm run publish:preview
 ```
 
 For a manual upload flow, use the `.vsix` produced by `npm run package -- --target sqloom` and upload it through the Marketplace publisher portal.
