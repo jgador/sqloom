@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { checkCliAvailability } from "../cli/cliStatus";
 import {
   defaultOpenAiModel,
   isKnownOpenAiModel,
@@ -32,20 +33,29 @@ export async function createDashboardState(): Promise<DashboardState> {
   const replayDataAgentReady = isReplayDataAgent(replayDataAgent);
   const openAiApiKey = (process.env.OPENAI_API_KEY ?? "").trim();
   const openAiApiKeyEnvironmentReady = openAiApiKey.length > 0;
-  const harnessPath = workspaceFolder
-    ? await defaultHarnessPath(workspaceFolder)
-    : "";
+  const [cliStatus, harnessPath] = await Promise.all([
+    checkCliAvailability(effectiveCliPath),
+    workspaceFolder ? defaultHarnessPath(workspaceFolder) : Promise.resolve(""),
+  ]);
   const harnessReady = harnessPath.length > 0;
   const workspaceReady = workspaceFolder !== undefined;
-  const cliReady = effectiveCliPath.length > 0;
+  const cliReady = cliStatus.ready;
+  const cliStatusBadge = cliReady
+    ? "Verified"
+    : cliPath.length > 0
+      ? "Unavailable"
+      : "Default missing";
+  const cliStatusDetail = `${cliStatus.cliPath}: ${cliStatus.detail}`;
   const modelReady = openAiModel.length > 0;
+  const readOnlyConnectionStringReady = false;
   const setupReady =
     workspaceReady &&
     cliReady &&
     modelReady &&
     openAiApiKeyEnvironmentReady &&
     harnessReady &&
-    replayDataAgentReady;
+    replayDataAgentReady &&
+    readOnlyConnectionStringReady;
 
   const readinessChecks: DashboardCheck[] = [
     {
@@ -59,11 +69,8 @@ export async function createDashboardState(): Promise<DashboardState> {
     },
     {
       label: "Sqloom CLI path",
-      badge: cliPath.length > 0 ? "Configured" : "Default",
-      detail:
-        cliPath.length > 0
-          ? effectiveCliPath
-          : "Using sqloom until a path is configured.",
+      badge: cliStatusBadge,
+      detail: cliStatusDetail,
       status: cliReady ? "ready" : "warning",
     },
     {
@@ -96,6 +103,13 @@ export async function createDashboardState(): Promise<DashboardState> {
         : "Default harness path was not found in this workspace.",
       status: harnessReady ? "ready" : "neutral",
     },
+    {
+      label: "Read-only SQL connection",
+      badge: "Required",
+      detail:
+        "Enter a masked read-only SQL Server connection string before running tune.",
+      status: readOnlyConnectionStringReady ? "ready" : "warning",
+    },
   ];
   const readyCheckCount = readinessChecks.filter(
     (check) => check.status === "ready",
@@ -121,7 +135,7 @@ export async function createDashboardState(): Promise<DashboardState> {
       id: "cliPath",
       label: "CLI",
       value: effectiveCliPath,
-      detail: "Executable or alias in PATH.",
+      detail: cliStatus.detail,
       status: cliReady ? "ready" : "warning",
     },
     {
@@ -150,9 +164,9 @@ export async function createDashboardState(): Promise<DashboardState> {
     {
       id: "readOnlyConnectionString",
       label: "SQL connection",
-      value: "Optional",
-      detail: "Used only for live validation.",
-      status: "neutral",
+      value: "Required",
+      detail: "Enter before running tune.",
+      status: readOnlyConnectionStringReady ? "ready" : "warning",
     },
   ];
   const setupFields: DashboardSetupField[] = [
@@ -174,7 +188,7 @@ export async function createDashboardState(): Promise<DashboardState> {
       label: "CLI",
       value: effectiveCliPath,
       kind: "text",
-      note: "CLI executable or alias in PATH.",
+      note: cliStatus.detail,
       status: cliReady ? "ready" : "warning",
       required: true,
     },
@@ -217,12 +231,13 @@ export async function createDashboardState(): Promise<DashboardState> {
     },
     {
       id: "readOnlyConnectionString",
-      label: "SQL connection (optional)",
+      label: "SQL connection",
       value: "",
       kind: "password",
-      placeholder: "Optional read-only SQL Server connection string",
-      note: "Optional connection string for live validation.",
-      status: "neutral",
+      placeholder: "Read-only SQL Server connection string",
+      note: "Masked and passed only to the current dashboard run.",
+      status: readOnlyConnectionStringReady ? "ready" : "warning",
+      required: true,
     },
   ];
   const runStatusChecks: DashboardStatusCheck[] = [
@@ -253,7 +268,7 @@ export async function createDashboardState(): Promise<DashboardState> {
       label: setupReady ? "Required values present" : "Required values missing",
       detail: setupReady
         ? "All required fields are filled."
-        : "Workspace, CLI, model, harness, and API key are required.",
+        : "Workspace, CLI, model, harness, API key, and SQL connection are required.",
       status: setupReady ? "ready" : "warning",
     },
     {
@@ -284,9 +299,9 @@ export async function createDashboardState(): Promise<DashboardState> {
       label: "Sqloom CLI path",
       value: effectiveCliPath,
       kind: "text",
-      note: "CLI executable or alias in PATH.",
+      note: cliStatus.detail,
       status: cliReady ? "ready" : "warning",
-      statusLabel: cliReady ? "Configured" : "Required",
+      statusLabel: cliReady ? "Verified" : "Unavailable",
     },
     {
       id: "modelProvider",
@@ -330,10 +345,11 @@ export async function createDashboardState(): Promise<DashboardState> {
       value: "",
       kind: "password",
       editable: true,
-      placeholder: "Optional read-only SQL Server connection string",
-      note: "Optional. Masked and never saved.",
-      status: "neutral",
-      statusLabel: "Optional",
+      placeholder: "Read-only SQL Server connection string",
+      note: "Required for tune runs. Masked and never saved.",
+      status: readOnlyConnectionStringReady ? "ready" : "warning",
+      statusLabel: "Required",
+      required: true,
     },
   ];
 

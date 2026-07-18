@@ -133,6 +133,10 @@ export const dashboardStyles = `
         }
 
         .primary-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             min-height: 38px;
             border: 1px solid transparent;
             padding: 8px 18px;
@@ -165,8 +169,29 @@ export const dashboardStyles = `
         }
 
         .secondary-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             padding: 6px 14px;
             white-space: nowrap;
+        }
+
+        .button-icon {
+            display: block;
+            width: 16px;
+            height: 16px;
+            flex: 0 0 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .button-icon .filled-icon {
+            fill: currentColor;
+            stroke: none;
         }
 
         .secondary-action:hover,
@@ -488,6 +513,12 @@ export const dashboardStyles = `
             cursor: pointer;
         }
 
+        .mask-toggle .button-icon {
+            width: 15px;
+            height: 15px;
+            flex-basis: 15px;
+        }
+
         .mask-toggle:hover {
             color: var(--vscode-input-foreground);
             background: var(--vscode-toolbar-hoverBackground, transparent);
@@ -524,6 +555,12 @@ export const dashboardStyles = `
             height: 32px;
             padding: 0;
             color: var(--sqloom-muted);
+        }
+
+        .icon-button .button-icon {
+            width: 16px;
+            height: 16px;
+            flex-basis: 16px;
         }
 
         .artifact-table-wrap {
@@ -582,7 +619,17 @@ export const dashboardStyles = `
             width: 34px;
             height: 34px;
             border-radius: 5px;
-            font-weight: 700;
+        }
+
+        .artifact-type-icon {
+            display: block;
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
         }
 
         .tone-markdown {
@@ -714,6 +761,7 @@ export const dashboardStyles = `
         }
 
         .status-dot {
+            position: relative;
             display: grid;
             place-items: center;
             width: 18px;
@@ -721,9 +769,54 @@ export const dashboardStyles = `
             border: 1px solid currentColor;
             border-radius: 999px;
             flex: 0 0 auto;
-            font-size: 11px;
-            font-weight: 700;
-            line-height: 1;
+        }
+
+        .status-dot::before,
+        .status-dot::after {
+            content: "";
+            position: absolute;
+            display: block;
+        }
+
+        .status-ready.status-dot::before {
+            width: 45%;
+            height: 24%;
+            border-left: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            transform: rotate(-45deg) translate(1px, -1px);
+        }
+
+        .status-warning.status-dot::before {
+            top: 22%;
+            left: calc(50% - 1px);
+            width: 2px;
+            height: 44%;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        .status-warning.status-dot::after {
+            bottom: 16%;
+            left: calc(50% - 1px);
+            width: 2px;
+            height: 2px;
+            border-radius: 999px;
+            background: currentColor;
+        }
+
+        .status-neutral.status-dot::before {
+            width: 4px;
+            height: 4px;
+            border-radius: 999px;
+            background: currentColor;
+            opacity: 0.75;
+        }
+
+        .status-idle.status-dot::before {
+            width: 6px;
+            height: 6px;
+            border: 1px solid currentColor;
+            border-radius: 999px;
         }
 
         .status-ready {

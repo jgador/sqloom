@@ -20,6 +20,10 @@ export async function renderDashboardHtml(
   const logoUri = webview.asWebviewUri(
     vscode.Uri.joinPath(context.extensionUri, "images", "extensionIcon.png"),
   );
+  const cliField = state.setupFields.find((field) => field.id === "cliPath");
+  const verifiedCliPath = cliField?.value ?? "sqloom";
+  const verifiedCliReady = cliField?.status === "ready";
+  const verifiedCliDetail = cliField?.note ?? "";
   const detectedHarness =
     state.setupFields.find((field) => field.id === "harnessPath")?.value ?? "";
 
@@ -35,7 +39,7 @@ ${dashboardStyles}
     </style>
 </head>
 <body>
-    <main class="dashboard" data-mode="run" data-detected-harness="${escapeHtml(detectedHarness)}">
+    <main class="dashboard" data-mode="run" data-detected-harness="${escapeHtml(detectedHarness)}" data-verified-cli-path="${escapeHtml(verifiedCliPath)}" data-cli-ready="${verifiedCliReady ? "true" : "false"}" data-cli-detail="${escapeHtml(verifiedCliDetail)}" data-readiness-check-count="${state.readinessChecks.length}">
         <header class="topbar">
             <div class="brand">
                 <img src="${logoUri}" alt="">
@@ -45,7 +49,7 @@ ${dashboardStyles}
                 </div>
             </div>
             <div class="top-actions">
-                <button class="primary-action" type="button" data-command="runTune">&#9655;&nbsp;&nbsp;Run tune</button>
+                <button class="primary-action" type="button" data-command="runTune">${renderIcon("play")}<span>Run tune</span></button>
                 <div class="run-note">${escapeHtml(state.runNote)}</div>
             </div>
         </header>
@@ -62,7 +66,7 @@ ${dashboardStyles}
                             <h2>Run setup</h2>
                             <p>Review and adjust your configuration before running.</p>
                         </div>
-                        <button class="secondary-action" type="button" data-client-action="editSetup">&#9998;&nbsp;&nbsp;Edit setup</button>
+                        <button class="secondary-action" type="button" data-client-action="editSetup">${renderIcon("edit")}<span>Edit setup</span></button>
                     </div>
                     <div class="setup-summary-grid">
                         ${state.setupSummaryItems.map(renderSetupSummaryItem).join("")}
@@ -79,7 +83,7 @@ ${dashboardStyles}
                             <h2>Edit setup</h2>
                             <p>Update required values before running.</p>
                         </div>
-                        <button class="secondary-action" type="button" data-client-action="validateSetup">&#8635;&nbsp;&nbsp;Validate</button>
+                        <button class="secondary-action" type="button" data-client-action="validateSetup">${renderIcon("refresh")}<span>Validate</span></button>
                     </div>
                     <input type="hidden" value="openai" data-field-id="modelProvider">
                     <div class="edit-grid">
@@ -91,7 +95,7 @@ ${dashboardStyles}
                     </div>
                     <div class="edit-actions">
                         <button class="secondary-action" type="button" data-client-action="cancelSetup">Cancel</button>
-                        <button class="primary-action compact" type="button" data-client-action="applySetup">&#10003;&nbsp;&nbsp;Apply setup</button>
+                        <button class="primary-action compact" type="button" data-client-action="applySetup">${renderIcon("check")}<span>Apply setup</span></button>
                     </div>
                 </section>
 
@@ -103,7 +107,7 @@ ${dashboardStyles}
                         </div>
                         <div class="artifact-tools">
                             <span>${state.artifacts.length} artifacts</span>
-                            <button class="icon-button" type="button" aria-label="Artifact display options">&#9776;</button>
+                            <button class="icon-button" type="button" aria-label="Artifact display options">${renderIcon("menu")}</button>
                         </div>
                     </div>
                     ${renderArtifactsTable(state.artifacts)}
@@ -135,6 +139,10 @@ ${dashboardStyles}
         const vscode = acquireVsCodeApi();
         const root = document.querySelector(".dashboard");
         const detectedHarnessPath = root ? root.getAttribute("data-detected-harness") || "" : "";
+        const verifiedCliPath = root ? root.getAttribute("data-verified-cli-path") || "" : "";
+        const verifiedCliReady = root ? root.getAttribute("data-cli-ready") === "true" : false;
+        const verifiedCliDetail = root ? root.getAttribute("data-cli-detail") || "" : "";
+        const readinessCheckCount = root ? Number(root.getAttribute("data-readiness-check-count") || "0") : 0;
         let appliedSetup = captureForm();
 
         document.querySelectorAll("[data-command='runTune']").forEach((element) => {
@@ -249,20 +257,26 @@ ${dashboardStyles}
 
         function validateSetup() {
             const values = captureForm();
+            const cliStatus = currentCliStatus(values);
+            const cliPresent = values.cliPath.trim().length > 0;
+            const cliReady = cliPresent && cliStatus.ready;
+            const sqlConnectionReady = values.readOnlyConnectionString.trim().length > 0;
             const requiredPresent =
                 values.workspace.trim().length > 0 &&
-                values.cliPath.trim().length > 0 &&
+                cliPresent &&
                 values.openAiModel.trim().length > 0 &&
                 values.harnessPath.trim().length > 0 &&
-                values.openAiApiKey.trim().length > 0;
+                values.openAiApiKey.trim().length > 0 &&
+                sqlConnectionReady;
             const harnessPresent = values.harnessPath.trim().length > 0;
-            const ready = requiredPresent && harnessPresent;
+            const ready = requiredPresent && harnessPresent && cliReady;
+            const warningDetail = setupWarningDetail(values, cliStatus, cliReady);
 
             updateStatusCheck(
                 "required",
                 requiredPresent ? "ready" : "warning",
                 requiredPresent ? "Required values present" : "Required values missing",
-                requiredPresent ? "All required fields are filled." : "Workspace, CLI, model, harness, and API key are required.",
+                requiredPresent ? "All required fields are filled." : warningDetail,
             );
             updateStatusCheck(
                 "harness",
@@ -274,7 +288,7 @@ ${dashboardStyles}
                 "ready",
                 ready ? "ready" : "warning",
                 ready ? "Ready to apply" : "Review before applying",
-                ready ? "Setup is valid and ready to run." : "Apply after the required values are present.",
+                ready ? "Setup is valid and ready to run." : warningDetail,
             );
 
             const detectedLabel = document.querySelector("[data-detected-harness-label]");
@@ -299,36 +313,85 @@ ${dashboardStyles}
                 if (dot) {
                     dot.classList.remove("status-ready", "status-warning", "status-neutral", "status-idle");
                     dot.classList.add("status-" + status);
-                    dot.textContent = status === "ready" ? "\\u2713" : status === "warning" ? "!" : "\\u25cb";
                 }
             });
         }
 
         function updateRunSummary(values) {
             const workspaceReady = values.workspace.trim().length > 0;
-            const cliReady = values.cliPath.trim().length > 0;
+            const cliStatus = currentCliStatus(values);
+            const cliReady = values.cliPath.trim().length > 0 && cliStatus.ready;
             const modelReady = values.openAiModel.trim().length > 0;
             const harnessReady = values.harnessPath.trim().length > 0;
             const apiKeyReady = values.openAiApiKey.trim().length > 0;
-            const setupReady = workspaceReady && cliReady && modelReady && harnessReady && apiKeyReady;
+            const sqlConnectionReady = values.readOnlyConnectionString.trim().length > 0;
+            const setupReady = workspaceReady && cliReady && modelReady && harnessReady && apiKeyReady && sqlConnectionReady;
+            const warningDetail = setupWarningDetail(values, cliStatus, cliReady);
 
-            updateSummaryValue("cliPath", values.cliPath || "sqloom", "Executable or alias in PATH.", cliReady ? "ready" : "warning");
+            updateSummaryValue("cliPath", values.cliPath || "sqloom", cliStatus.detail, cliReady ? "ready" : "warning");
             updateSummaryValue("openAiModel", values.openAiModel || "Not selected", "Model used for tuning.", modelReady ? "ready" : "warning");
             updateSummaryValue("harnessPath", values.harnessPath ? "Default harness" : "Not detected", values.harnessPath || "Default harness path was not found.", harnessReady ? "ready" : "warning");
             updateSummaryValue("openAiApiKey", values.openAiApiKey ? "Configured" : "Required", values.openAiApiKey ? "Provided for this session." : "Enter before running tune.", apiKeyReady ? "ready" : "warning");
-            updateSummaryValue("readOnlyConnectionString", values.readOnlyConnectionString ? "Configured" : "Optional", values.readOnlyConnectionString ? "Provided for this session." : "Used only for live validation.", "neutral");
+            updateSummaryValue("readOnlyConnectionString", sqlConnectionReady ? "Configured" : "Required", sqlConnectionReady ? "Provided for this session." : "Enter before running tune.", sqlConnectionReady ? "ready" : "warning");
             updateStatusCheck(
                 "setup",
                 setupReady ? "ready" : "warning",
                 setupReady ? "Run setup is valid" : "Run setup needs attention",
-                setupReady ? "All required settings are configured." : "Review required values before running.",
+                setupReady ? "All required settings are configured." : warningDetail,
             );
             updateStatusCheck(
                 "preflight",
                 setupReady ? "ready" : "warning",
                 setupReady ? "Preflight checks passed" : "Preflight checks need review",
-                setupReady ? "6 of 6 checks passed" : "Review required values before running.",
+                setupReady ? readinessCheckCount + " of " + readinessCheckCount + " checks passed" : warningDetail,
             );
+        }
+
+        function setupWarningDetail(values, cliStatus, cliReady) {
+            if (!cliReady) {
+                return cliStatus.detail;
+            }
+
+            if (values.workspace.trim().length === 0) {
+                return "Open a workspace before running tune.";
+            }
+
+            if (values.openAiModel.trim().length === 0) {
+                return "Select an OpenAI model before running tune.";
+            }
+
+            if (values.harnessPath.trim().length === 0) {
+                return "Enter or detect a harness path before running tune.";
+            }
+
+            if (values.openAiApiKey.trim().length === 0) {
+                return "Enter an OpenAI API key before running tune.";
+            }
+
+            if (values.readOnlyConnectionString.trim().length === 0) {
+                return "Enter a read-only SQL Server connection string before running tune.";
+            }
+
+            return "Review required values before running.";
+        }
+
+        function currentCliStatus(values) {
+            const cliPath = values.cliPath.trim();
+            if (cliPath.length === 0) {
+                return { ready: false, detail: "Enter the Sqloom CLI executable or path." };
+            }
+
+            if (cliPath === verifiedCliPath.trim()) {
+                return {
+                    ready: verifiedCliReady,
+                    detail: verifiedCliDetail || (verifiedCliReady ? "Sqloom CLI verified." : "Sqloom CLI unavailable."),
+                };
+            }
+
+            return {
+                ready: false,
+                detail: "Refresh the dashboard to verify this CLI path.",
+            };
         }
 
         function updateSummaryValue(id, value, detail, status) {
@@ -340,7 +403,6 @@ ${dashboardStyles}
                 if (dot) {
                     dot.classList.remove("status-ready", "status-warning", "status-neutral", "status-idle");
                     dot.classList.add("status-" + status);
-                    dot.textContent = status === "ready" ? "\\u2713" : status === "warning" ? "!" : "\\u24d8";
                 }
             }
             document.querySelectorAll('[data-summary-value="' + id + '"]').forEach((valueElement) => {
@@ -414,7 +476,7 @@ function renderSetupField(field: DashboardSetupField): string {
         <span class="field-label">${escapeHtml(field.label)} ${status}</span>
         <span class="password-control">
             <input class="control control-input" type="password" value="${escapeHtml(field.value)}" data-field-id="${fieldId}" autocomplete="off" spellcheck="false"${placeholder}${required}>
-            <button class="mask-toggle" type="button" data-password-toggle="${fieldId}" aria-label="Show value" title="Show value">&#128065;</button>
+            <button class="mask-toggle" type="button" data-password-toggle="${fieldId}" aria-label="Show value" title="Show value">${renderIcon("eye")}</button>
         </span>
         ${note}
     </label>`;
@@ -443,7 +505,7 @@ function renderStatusPanel(
   includeAction: boolean,
 ): string {
   const action = includeAction
-    ? `<button class="primary-action full-width" type="button" data-command="runTune">&#9655;&nbsp;&nbsp;Run tune</button>
+    ? `<button class="primary-action full-width" type="button" data-command="runTune">${renderIcon("play")}<span>Run tune</span></button>
         <p class="status-footer">This will use the detected default harness.</p>`
     : "";
 
@@ -504,8 +566,8 @@ function renderArtifactRow(artifact: DashboardArtifact): string {
         <td>${escapeHtml(artifact.summary)}</td>
         <td>
             <div class="row-actions">
-                <button class="icon-button" type="button" aria-label="Preview ${escapeHtml(artifact.name)}">&#128065;</button>
-                <button class="icon-button" type="button" aria-label="Actions for ${escapeHtml(artifact.name)}">&#8942;</button>
+                <button class="icon-button" type="button" aria-label="Preview ${escapeHtml(artifact.name)}">${renderIcon("eye")}</button>
+                <button class="icon-button" type="button" aria-label="Actions for ${escapeHtml(artifact.name)}">${renderIcon("moreVertical")}</button>
             </div>
         </td>
     </tr>`;
@@ -514,26 +576,64 @@ function renderArtifactRow(artifact: DashboardArtifact): string {
 function renderArtifactIcon(tone: DashboardArtifact["typeTone"]): string {
   switch (tone) {
     case "markdown":
-      return "&#9633;";
+      return renderIcon("fileText", "artifact-type-icon");
     case "json":
-      return "{}";
+      return renderIcon("code", "artifact-type-icon");
     case "sql":
-      return "&#9638;";
+      return renderIcon("database", "artifact-type-icon");
     case "html":
-      return "&#9635;";
+      return renderIcon("browser", "artifact-type-icon");
     default:
-      return "&#9633;";
+      return renderIcon("fileText", "artifact-type-icon");
   }
 }
 
 function renderStatusDot(status: DashboardStatus): string {
-  const symbol =
-    status === "ready"
-      ? "&#10003;"
-      : status === "warning"
-        ? "!"
-        : status === "idle"
-          ? "&#9711;"
-          : "&#9432;";
-  return `<span class="status-dot status-${status}" aria-hidden="true">${symbol}</span>`;
+  return `<span class="status-dot status-${status}" aria-hidden="true"></span>`;
+}
+
+type DashboardIcon =
+  | "browser"
+  | "check"
+  | "code"
+  | "database"
+  | "edit"
+  | "eye"
+  | "fileText"
+  | "menu"
+  | "moreVertical"
+  | "play"
+  | "refresh";
+
+function renderIcon(name: DashboardIcon, className = "button-icon"): string {
+  return `<svg class="${className}" viewBox="0 0 24 24" aria-hidden="true" focusable="false">${renderIconBody(name)}</svg>`;
+}
+
+function renderIconBody(name: DashboardIcon): string {
+  switch (name) {
+    case "browser":
+      return '<rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M3 9h18"></path><path d="M8 14l2 2 4-5"></path>';
+    case "check":
+      return '<path d="M20 6 9 17l-5-5"></path>';
+    case "code":
+      return '<path d="m8 18-6-6 6-6"></path><path d="m16 6 6 6-6 6"></path>';
+    case "database":
+      return '<ellipse cx="12" cy="5" rx="8" ry="3"></ellipse><path d="M4 5v6c0 1.7 3.6 3 8 3s8-1.3 8-3V5"></path><path d="M4 11v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"></path>';
+    case "edit":
+      return '<path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>';
+    case "eye":
+      return '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle>';
+    case "fileText":
+      return '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path>';
+    case "menu":
+      return '<path d="M4 7h16"></path><path d="M4 12h16"></path><path d="M4 17h16"></path>';
+    case "moreVertical":
+      return '<circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle>';
+    case "play":
+      return '<path class="filled-icon" d="M8 5v14l11-7Z"></path>';
+    case "refresh":
+      return '<path d="M20 11a8.1 8.1 0 0 0-15.5-2M4 5v4h4"></path><path d="M4 13a8.1 8.1 0 0 0 15.5 2m.5 4v-4h-4"></path>';
+    default:
+      return "";
+  }
 }

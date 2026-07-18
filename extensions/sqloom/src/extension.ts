@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import * as vscode from "vscode";
 import {
   defaultOpenAiModel,
@@ -48,6 +48,7 @@ class CliService {
     outputChannel.appendLine(`cwd: ${workspaceFolder.uri.fsPath}`);
     outputChannel.appendLine("");
 
+    let launchFailureMessage: string | undefined;
     const exitCode = await vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
@@ -55,11 +56,20 @@ class CliService {
       },
       () =>
         new Promise<number>((resolve) => {
-          const child = spawn(cliPath, args, {
-            cwd: workspaceFolder.uri.fsPath,
-            env: process.env,
-            shell: false,
-          });
+          let failedToStart = false;
+          let child: ChildProcessWithoutNullStreams;
+          try {
+            child = spawn(cliPath, args, {
+              cwd: workspaceFolder.uri.fsPath,
+              env: process.env,
+              shell: false,
+            });
+          } catch (error) {
+            launchFailureMessage = formatLaunchFailureMessage(cliPath, error);
+            outputChannel.appendLine(launchFailureMessage);
+            resolve(-1);
+            return;
+          }
 
           child.stdout.on("data", (chunk: Buffer) => {
             outputChannel.append(chunk.toString());
@@ -70,14 +80,18 @@ class CliService {
           });
 
           child.on("error", (error) => {
+            failedToStart = true;
+            launchFailureMessage = formatLaunchFailureMessage(cliPath, error);
             outputChannel.appendLine("");
-            outputChannel.appendLine(
-              `Failed to start Sqloom: ${error.message}`,
-            );
+            outputChannel.appendLine(launchFailureMessage);
             resolve(-1);
           });
 
           child.on("close", (code) => {
+            if (failedToStart) {
+              return;
+            }
+
             outputChannel.appendLine("");
             outputChannel.appendLine(`Sqloom exited with code ${code ?? -1}.`);
             resolve(code ?? -1);
@@ -91,7 +105,8 @@ class CliService {
     }
 
     vscode.window.showErrorMessage(
-      "Sqloom command failed. See the Sqloom output channel.",
+      launchFailureMessage ??
+        "Sqloom command failed. See the Sqloom output channel.",
     );
     return false;
   }
@@ -149,6 +164,13 @@ async function runTuneFromDashboard(
   const readOnlyConnectionString = (
     request.readOnlyConnectionString ?? ""
   ).trim();
+  if (readOnlyConnectionString.length === 0) {
+    vscode.window.showWarningMessage(
+      "Enter a read-only SQL Server connection string before running Sqloom tune from the dashboard.",
+    );
+    return;
+  }
+
   const args = [
     "tune",
     harnessPath,
@@ -160,11 +182,9 @@ async function runTuneFromDashboard(
     openAiModel,
     "--replay-data-agent",
     replayDataAgent,
+    "--read-only-connection-string",
+    readOnlyConnectionString,
   ];
-
-  if (readOnlyConnectionString.length > 0) {
-    args.push("--read-only-connection-string", readOnlyConnectionString);
-  }
 
   await cliService.run(args, workspaceFolder, request.cliPath);
 }
@@ -232,11 +252,18 @@ async function runTune(cliService: CliService): Promise<void> {
   const readOnlyConnectionString = await vscode.window.showInputBox({
     title: "Read-only SQL Server Connection String",
     prompt:
-      "Optional. Used for Query Store reads and schema export when the harness does not provide one.",
+      "Required for Query Store reads and schema export. The extension does not store this value.",
     password: true,
     ignoreFocusOut: true,
   });
   if (readOnlyConnectionString === undefined) {
+    return;
+  }
+  const trimmedReadOnlyConnectionString = readOnlyConnectionString.trim();
+  if (trimmedReadOnlyConnectionString.length === 0) {
+    vscode.window.showWarningMessage(
+      "Sqloom tune requires a read-only SQL Server connection string.",
+    );
     return;
   }
 
@@ -275,14 +302,12 @@ async function runTune(cliService: CliService): Promise<void> {
     openAiModel,
     "--replay-data-agent",
     replayDataAgent,
+    "--read-only-connection-string",
+    trimmedReadOnlyConnectionString,
   ];
 
   if (target.trim().length > 0) {
     args.push("--target", target.trim());
-  }
-
-  if (readOnlyConnectionString.trim().length > 0) {
-    args.push("--read-only-connection-string", readOnlyConnectionString.trim());
   }
 
   await cliService.run(args, workspaceFolder);
@@ -386,6 +411,23 @@ function redactArgs(args: readonly string[]): string[] {
   }
 
   return redacted;
+}
+
+function formatLaunchFailureMessage(cliPath: string, error: unknown): string {
+  if (isNodeError(error) && error.code === "ENOENT") {
+    return `Sqloom CLI was not found at ${quoteArg(cliPath)}. Install the sqloom .NET tool or update sqloom.cli.path.`;
+  }
+
+  const message =
+    error instanceof Error && error.message.length > 0
+      ? error.message
+      : "Could not start the Sqloom CLI.";
+
+  return `Failed to start Sqloom: ${message}`;
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && "code" in error;
 }
 
 function quoteArg(arg: string): string {
