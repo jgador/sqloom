@@ -122,13 +122,13 @@ export async function openDashboard(
   panel.iconPath = {
     light: vscode.Uri.joinPath(
       context.extensionUri,
-      "images",
-      "extensionIcon.png",
+      "media",
+      "sqloom-activity_dark.svg",
     ),
     dark: vscode.Uri.joinPath(
       context.extensionUri,
-      "images",
-      "extensionIcon.png",
+      "media",
+      "sqloom-activity_dark.svg",
     ),
   };
   panel.webview.html = renderDashboardHtml(context, panel.webview);
@@ -194,10 +194,26 @@ function renderDashboardLauncherHtml(
         body {
             margin: 0;
             min-width: 180px;
-            color: var(--vscode-sideBar-foreground);
-            background: var(--vscode-sideBar-background);
+            color: var(--vscode-sideBar-foreground, var(--vscode-foreground, #000000));
+            background: var(--vscode-sideBar-background, var(--vscode-editor-background, transparent));
             font-family: var(--vscode-font-family);
             font-size: var(--vscode-font-size);
+        }
+
+        body.vscode-dark {
+            color: var(--vscode-sideBar-foreground, var(--vscode-foreground, #ffffff));
+        }
+
+        body.vscode-light {
+            color: var(--vscode-sideBar-foreground, var(--vscode-foreground, #000000));
+        }
+
+        body.vscode-high-contrast {
+            color: var(--vscode-foreground, #ffffff);
+        }
+
+        body.vscode-high-contrast-light {
+            color: var(--vscode-foreground, #000000);
         }
 
         button {
@@ -230,6 +246,7 @@ function renderDashboardLauncherHtml(
             font-size: 14px;
             line-height: 1.25;
             font-weight: 700;
+            color: inherit;
         }
 
         .caption {
@@ -411,6 +428,7 @@ function renderDashboardHtml(
         body {
             margin: 0;
             min-width: 320px;
+            min-height: 100vh;
             background: var(--vscode-editor-background);
             color: var(--vscode-editor-foreground);
             font-family: var(--vscode-font-family);
@@ -425,17 +443,17 @@ function renderDashboardHtml(
 
         .shell {
             min-height: 100vh;
-            padding: 28px 32px 24px;
+            padding: 0;
         }
 
         .surface {
-            max-width: 1420px;
-            margin: 0 auto;
-            border: 1px solid var(--vscode-panel-border);
-            border-radius: 8px;
+            width: 100%;
+            min-height: 100vh;
+            margin: 0;
+            border: 0;
+            border-radius: 0;
             background: var(--vscode-editor-background);
-            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-            overflow: hidden;
+            box-shadow: none;
         }
 
         .top {
@@ -879,7 +897,7 @@ function renderDashboardHtml(
 
         @media (max-width: 620px) {
             .shell {
-                padding: 16px;
+                padding: 0;
             }
 
             .surface {

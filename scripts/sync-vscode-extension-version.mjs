@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDirectory, "..");
 const cliVersionPath = path.join(repoRoot, "Directory.Build.props");
+const rootPackagePath = path.join(repoRoot, "package.json");
 const extensionPackagePath = path.join(repoRoot, "extensions", "sqloom", "package.json");
 const packageLockPath = path.join(repoRoot, "package-lock.json");
 
@@ -57,11 +58,15 @@ function updateVersion(container, version, label) {
 
 async function main() {
     const version = await readCliVersion();
+    const rootPackage = await readJson(rootPackagePath);
     const extensionPackage = await readJson(extensionPackagePath);
     const packageLock = await readJson(packageLockPath);
     let changed = false;
 
+    changed = updateVersion(rootPackage, version, "package.json") || changed;
     changed = updateVersion(extensionPackage, version, "extensions/sqloom/package.json") || changed;
+    changed = updateVersion(packageLock, version, "package-lock root") || changed;
+    changed = updateVersion(packageLock.packages?.[""], version, "package-lock packages root") || changed;
     changed =
         updateVersion(packageLock.packages?.["extensions/sqloom"], version, "package-lock extensions/sqloom") ||
         changed;
@@ -71,9 +76,10 @@ async function main() {
         return;
     }
 
+    await writeFile(rootPackagePath, formatJson(rootPackage), "utf8");
     await writeFile(extensionPackagePath, formatJson(extensionPackage), "utf8");
     await writeFile(packageLockPath, formatJson(packageLock), "utf8");
-    console.log(`Synced VS Code extension version to CLI version ${version}.`);
+    console.log(`Synced workspace and VS Code extension versions to CLI version ${version}.`);
 }
 
 main().catch((error) => {
