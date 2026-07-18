@@ -83,4 +83,7 @@ Install the Marketplace preview in a clean VS Code profile and verify:
 - `Sqloom: Open Tune Dashboard` opens the Sqloom Tune webview tab.
 - `Sqloom: Select Sqloom CLI Path` can point at either `sqloom` on `PATH` or an absolute local build.
 - `Sqloom: Initialize Sqloom Agent Skill` runs `sqloom init`.
+- The Tune dashboard masks the OpenAI API key and read-only connection string fields, exposes only OpenAI as the model provider, and offers the expected OpenAI model dropdown values.
+- With `OPENAI_API_KEY` set before launching VS Code, the Tune dashboard prefills the masked API key field and can run tune without manually retyping the key.
 - `Sqloom: Run Tune Workflow` launches the CLI and writes output to the Sqloom output channel.
+- Dashboard and Command Palette tune runs redact OpenAI API keys and read-only connection strings in the Sqloom output channel.

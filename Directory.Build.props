@@ -4,6 +4,7 @@
     <ArtifactsPath>$(MSBuildThisFileDirectory)artifacts</ArtifactsPath>
     <Version>0.4.0</Version>
     <AssemblyInformationalVersion>$(Version)</AssemblyInformationalVersion>
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
     <RepositoryType>git</RepositoryType>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>

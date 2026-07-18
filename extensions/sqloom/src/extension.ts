@@ -1,17 +1,25 @@
 import { spawn } from "node:child_process";
 import * as vscode from "vscode";
+import {
+  defaultOpenAiModel,
+  isKnownModelProvider,
+  isKnownOpenAiModel,
+} from "./constants/modelOptions";
 import { openDashboard, registerDashboardLauncher } from "./dashboard";
+import { DashboardTuneRequest } from "./sharedInterfaces/dashboard";
 
 const outputChannel = vscode.window.createOutputChannel("Sqloom");
 
 export function activate(context: vscode.ExtensionContext) {
   const cliService = new CliService();
+  const runDashboardTune = (request: DashboardTuneRequest) =>
+    runTuneFromDashboard(cliService, request);
 
   context.subscriptions.push(
     outputChannel,
-    registerDashboardLauncher(context),
+    registerDashboardLauncher(context, runDashboardTune),
     vscode.commands.registerCommand("sqloom.openDashboard", () =>
-      openDashboard(context),
+      openDashboard(context, runDashboardTune),
     ),
     vscode.commands.registerCommand("sqloom.init", () => runInit(cliService)),
     vscode.commands.registerCommand("sqloom.tune", () => runTune(cliService)),
@@ -84,6 +92,76 @@ class CliService {
     );
     return false;
   }
+}
+
+async function runTuneFromDashboard(
+  cliService: CliService,
+  request: DashboardTuneRequest,
+): Promise<void> {
+  const workspaceFolder = await pickWorkspaceFolder();
+  if (!workspaceFolder) {
+    return;
+  }
+
+  const harnessPath = await defaultHarnessPath(workspaceFolder);
+  if (harnessPath.length === 0) {
+    vscode.window.showWarningMessage(
+      "Sqloom dashboard tune requires the default harness path in this workspace.",
+    );
+    return;
+  }
+
+  const modelProvider = (request.modelProvider ?? "").trim();
+  if (!isKnownModelProvider(modelProvider)) {
+    vscode.window.showWarningMessage(
+      "Sqloom dashboard tune requires the OpenAI model provider.",
+    );
+    return;
+  }
+
+  const openAiModel = (request.openAiModel ?? "").trim();
+  if (!isKnownOpenAiModel(openAiModel)) {
+    vscode.window.showWarningMessage(
+      "Select an OpenAI model before running Sqloom tune.",
+    );
+    return;
+  }
+
+  const openAiApiKey =
+    (request.openAiApiKey ?? "").trim() ||
+    (process.env.OPENAI_API_KEY ?? "").trim();
+  if (openAiApiKey.length === 0) {
+    vscode.window.showWarningMessage(
+      "Enter an OpenAI API key or set OPENAI_API_KEY before running Sqloom tune from the dashboard.",
+    );
+    return;
+  }
+
+  const replayDataAgent = getConfiguration().get<string>(
+    "replayDataAgent",
+    "required",
+  );
+  const readOnlyConnectionString = (
+    request.readOnlyConnectionString ?? ""
+  ).trim();
+  const args = [
+    "tune",
+    harnessPath,
+    "--model-provider",
+    modelProvider,
+    "--openai-api-key",
+    openAiApiKey,
+    "--openai-model",
+    openAiModel,
+    "--replay-data-agent",
+    replayDataAgent,
+  ];
+
+  if (readOnlyConnectionString.length > 0) {
+    args.push("--read-only-connection-string", readOnlyConnectionString);
+  }
+
+  await cliService.run(args, workspaceFolder);
 }
 
 async function runInit(cliService: CliService): Promise<void> {
@@ -172,7 +250,10 @@ async function runTune(cliService: CliService): Promise<void> {
   }
 
   const configuration = getConfiguration();
-  const openAiModel = configuration.get<string>("openai.model", "gpt-5.4-mini");
+  const openAiModel = configuration.get<string>(
+    "openai.model",
+    defaultOpenAiModel,
+  );
   const replayDataAgent = configuration.get<string>(
     "replayDataAgent",
     "required",

@@ -49,6 +49,8 @@ try
     Install-SqloomToolPath -Context $context -ToolPath $context.VerifyToolPath
 
     $verifyExePath = Join-Path $context.VerifyToolPath "sqloom.exe"
+    Assert-SqloomToolVersion -Context $context -CommandPath $verifyExePath
+
     & $verifyExePath --help
     if ($LASTEXITCODE -ne 0)
     {

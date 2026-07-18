@@ -13,7 +13,7 @@ The public release uploads these NuGet packages:
 
 The `sqloom` dotnet tool is self-contained for normal tool installs, but app-owned file-based and project-backed harnesses need `Sqloom.Testing` as a compile-time package. `Sqloom.Testing` also contains the shared `Sqloom.Pipeline.*` pipeline surface.
 
-The release version comes from [Directory.Build.props](../Directory.Build.props). Library package metadata lives in [src/Sqloom.Testing/Sqloom.Testing.csproj](../src/Sqloom.Testing/Sqloom.Testing.csproj). The tool package metadata lives in [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj), and the tool package readme comes from [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md).
+The release package version comes from [Directory.Build.props](../Directory.Build.props). Published packages use the bare package version in `sqloom --version`; the local development wrapper can opt into Git commit metadata and print values such as `0.4.0+<commit>`. Library package metadata lives in [src/Sqloom.Testing/Sqloom.Testing.csproj](../src/Sqloom.Testing/Sqloom.Testing.csproj). The tool package metadata lives in [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj), and the tool package readme comes from [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md).
 
 ## 1. Update release metadata
 
@@ -59,9 +59,10 @@ That script is the main release gate for packaging. It:
 5. Verifies that every expected `.nupkg` exists for the local pack step.
 6. Builds temporary project-backed and file-based consumers that reference `Sqloom.Testing` from the folder feed and use both harness APIs and `Sqloom.Pipeline.*` pipeline types.
 7. Installs `sqloom` from that local feed into `.\artifacts\tools\sqloom-verify`.
-8. Runs `sqloom.exe --help`.
-9. Runs the consumer-style file-based sample `replay` smoke test plus `.cs` `--no-build` rejection, unless `-SkipSmoke` is passed.
-10. Prints the exact `dotnet nuget push` commands for the public packages.
+8. Verifies `sqloom.exe --version` prints the bare package version without local build metadata.
+9. Runs `sqloom.exe --help`.
+10. Runs the consumer-style file-based sample `replay` smoke test plus `.cs` `--no-build` rejection, unless `-SkipSmoke` is passed.
+11. Prints the exact `dotnet nuget push` commands for the public packages.
 
 Use `-SkipSmoke` only when the sample replay cannot run in the current environment and you are intentionally accepting a weaker release gate:
 

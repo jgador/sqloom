@@ -22,13 +22,23 @@ export type DashboardCheck = {
   action?: string;
 };
 
+export type DashboardConfigOption = {
+  label: string;
+  value: string;
+};
+
 export type DashboardConfigField = {
+  id?: string;
   label: string;
   value: string;
   kind: "select" | "password" | "toggle" | "text";
   note?: string;
   status?: DashboardStatus;
   statusLabel?: string;
+  editable?: boolean;
+  placeholder?: string;
+  options?: DashboardConfigOption[];
+  required?: boolean;
 };
 
 export type DashboardArtifact = {
@@ -38,6 +48,7 @@ export type DashboardArtifact = {
 export type DashboardState = {
   title: string;
   subtitle: string;
+  runNote: string;
   readinessLabel: string;
   stages: DashboardStage[];
   summaryItems: DashboardSummaryItem[];
@@ -46,6 +57,14 @@ export type DashboardState = {
   artifacts: DashboardArtifact[];
 };
 
+export type DashboardTuneRequest = {
+  modelProvider?: string;
+  openAiModel?: string;
+  openAiApiKey?: string;
+  readOnlyConnectionString?: string;
+};
+
 export type DashboardMessage = {
   command?: string;
+  payload?: DashboardTuneRequest;
 };

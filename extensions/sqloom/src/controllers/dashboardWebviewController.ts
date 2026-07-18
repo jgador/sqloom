@@ -4,16 +4,24 @@ import {
   tuneDashboardViewType,
 } from "../constants/dashboardConstants";
 import { renderDashboardHtml } from "../dashboard/dashboardRenderer";
-import { DashboardMessage } from "../sharedInterfaces/dashboard";
+import {
+  DashboardMessage,
+  DashboardTuneRequest,
+} from "../sharedInterfaces/dashboard";
 
 let dashboardController: DashboardWebviewController | undefined;
 
 export async function openDashboard(
   context: vscode.ExtensionContext,
+  runTune: (request: DashboardTuneRequest) => Promise<void>,
 ): Promise<void> {
-  dashboardController ??= new DashboardWebviewController(context, () => {
-    dashboardController = undefined;
-  });
+  dashboardController ??= new DashboardWebviewController(
+    context,
+    runTune,
+    () => {
+      dashboardController = undefined;
+    },
+  );
 
   await dashboardController.show();
 }
@@ -24,6 +32,7 @@ class DashboardWebviewController implements vscode.Disposable {
 
   constructor(
     private readonly context: vscode.ExtensionContext,
+    private readonly runTune: (request: DashboardTuneRequest) => Promise<void>,
     private readonly onDisposed: () => void,
   ) {}
 
@@ -90,9 +99,7 @@ class DashboardWebviewController implements vscode.Disposable {
   private async handleMessage(message: DashboardMessage): Promise<void> {
     switch (message.command) {
       case "runTune":
-        void vscode.window.showWarningMessage(
-          "Complete harness setup before running Sqloom tune from the dashboard preview.",
-        );
+        await this.runTune(message.payload ?? {});
         return;
       case "refreshChecks":
         await this.refresh();

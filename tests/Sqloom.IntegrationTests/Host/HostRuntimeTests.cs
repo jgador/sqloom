@@ -429,11 +429,6 @@ public sealed class HostRuntimeTests
             .InformationalVersion
             ?? typeof(HostRuntime).Assembly.GetName().Version?.ToString()
             ?? "unknown";
-        var buildMetadataIndex = expectedVersion.IndexOf('+', StringComparison.Ordinal);
-        if (buildMetadataIndex >= 0)
-        {
-            expectedVersion = expectedVersion[..buildMetadataIndex];
-        }
 
         var result = await CaptureConsoleAsync(static async state =>
         {

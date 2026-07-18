@@ -224,6 +224,10 @@ export const dashboardStyles = `
             margin-bottom: 14px;
         }
 
+        label.field {
+            display: block;
+        }
+
         .field-heading {
             display: flex;
             align-items: center;
@@ -303,6 +307,54 @@ export const dashboardStyles = `
             color: var(--vscode-descriptionForeground);
             margin-left: 8px;
             flex: 0 0 auto;
+        }
+
+        .control-input,
+        .control-select {
+            display: block;
+            min-height: 32px;
+            width: 100%;
+            border: 1px solid var(--vscode-input-border, var(--vscode-panel-border));
+            border-radius: 4px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            padding: 0 10px;
+            outline: none;
+        }
+
+        .control-input:focus,
+        .control-select:focus,
+        .mask-toggle:focus {
+            border-color: var(--vscode-focusBorder);
+        }
+
+        .password-control {
+            position: relative;
+        }
+
+        .password-control .control-input {
+            padding-right: 38px;
+        }
+
+        .mask-toggle {
+            position: absolute;
+            top: 1px;
+            right: 1px;
+            display: grid;
+            place-items: center;
+            width: 32px;
+            height: 30px;
+            border: 1px solid transparent;
+            border-left-color: var(--vscode-input-border, var(--vscode-panel-border));
+            border-radius: 0 4px 4px 0;
+            background: transparent;
+            color: var(--vscode-descriptionForeground);
+            cursor: pointer;
+        }
+
+        .mask-toggle:hover {
+            color: var(--vscode-input-foreground);
+            background: var(--vscode-toolbar-hoverBackground, transparent);
         }
 
         .toggle-row {

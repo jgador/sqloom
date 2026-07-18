@@ -37,7 +37,7 @@ New harnesses can reference `Sqloom.Testing` from a .NET 10 C# file-based app:
 #:project <relative-app-project.csproj>
 ```
 
-Use the version reported by `sqloom --version`. Existing harness projects remain supported and should use a normal package reference:
+Use the package version reported before any `+` build metadata in `sqloom --version`. Existing harness projects remain supported and should use a normal package reference:
 
 ```powershell
 dotnet add package Sqloom.Testing
@@ -47,7 +47,7 @@ dotnet add package Sqloom.Testing
 
 ## VS Code Extension Preview
 
-Sqloom also has an initial VS Code extension workspace under [extensions/sqloom](extensions/sqloom). The extension is a preview UI over the `sqloom` CLI: it can open the Sqloom Tune dashboard webview, initialize agent skill files, and run `sqloom tune`.
+Sqloom also has an initial VS Code extension workspace under [extensions/sqloom](extensions/sqloom). The extension is a preview UI over the `sqloom` CLI: it can open the Sqloom Tune dashboard webview with masked one-run tuning inputs, initialize agent skill files, and run `sqloom tune`.
 
 Build and package the extension from the repo root:
 
@@ -144,5 +144,7 @@ Use `sqloom-local` only when you are changing Sqloom itself and want a local too
 pwsh .\scripts\deploy-sqloom-local.ps1
 sqloom-local --version
 ```
+
+The local wrapper opts into Git build metadata, so `sqloom-local --version` can print `0.4.0+<commit>` while public packages use the bare release version.
 
 For package preparation and release workflow, see [docs/dotnet-tool-release.md](docs/dotnet-tool-release.md).

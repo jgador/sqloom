@@ -6,11 +6,15 @@ Sqloom for Visual Studio Code runs the existing `sqloom` CLI from a workspace UI
 
 - Install the `sqloom` .NET tool and make sure the `sqloom` command is on `PATH`.
 - Use a workspace that contains a Sqloom harness or can be initialized with `Sqloom: Initialize Sqloom Agent Skill`.
-- Set `OPENAI_API_KEY` before launching VS Code, or enter the key when `Sqloom: Run Tune Workflow` prompts for it.
+- Enter an OpenAI API key in the Tune dashboard, or set `OPENAI_API_KEY` before using dashboard or Command Palette tune runs.
 
 ## Features
 
 - Open the Sqloom Tune dashboard preview from the Activity Bar logo or Command Palette.
+- Use a dashboard-only masked OpenAI API key field that prefills from `OPENAI_API_KEY` when the VS Code extension host receives it.
+- Enter an optional dashboard-only masked read-only SQL Server connection string.
+- Choose the model provider and OpenAI advice model from dashboard dropdowns before running tune.
+- The dashboard OpenAI model choices are `gpt-5.4`, `gpt-5.4-mini`, `gpt-5.5`, `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna`.
 - Run `sqloom init` for Codex, Claude, Copilot, or all supported agent skill locations.
 - Run `sqloom tune` from the Command Palette.
 
@@ -22,4 +26,4 @@ Sqloom for Visual Studio Code runs the existing `sqloom` CLI from a workspace UI
 
 ## Preview Notes
 
-This preview keeps the CLI as the complete workflow engine. The extension does not store API keys or connection strings in VS Code settings; prompted values are passed only to the current CLI run.
+This preview keeps the CLI as the complete workflow engine. Dashboard-entered API keys and connection strings are masked, are not stored in VS Code settings, and are passed only to the current CLI run. When `OPENAI_API_KEY` is available to VS Code, the dashboard prefills the masked API key field from it, and dashboard and Command Palette tune runs use the key without storing it.

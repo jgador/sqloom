@@ -20,7 +20,7 @@ Write-Host "wrapper path: $($context.WrapperPath)"
 Push-Location $context.RepoRoot
 try
 {
-    Invoke-SqloomPackSet -Context $context
+    Invoke-SqloomPackSet -Context $context -IncludeSourceRevisionInVersion
     Assert-SqloomPackagesExist -Context $context
     Install-SqloomToolPath -Context $context -ToolPath $context.LocalToolPath
     Write-SqloomLocalWrapper -Context $context
@@ -28,11 +28,7 @@ try
 
     $localCommand = (Get-Command "sqloom-local" -ErrorAction Stop).Source
 
-    & $localCommand --version
-    if ($LASTEXITCODE -ne 0)
-    {
-        throw "sqloom-local version check failed."
-    }
+    Assert-SqloomToolVersion -Context $context -CommandPath $localCommand -ExpectSourceRevision
 
     & $localCommand --help
     if ($LASTEXITCODE -ne 0)

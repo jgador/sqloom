@@ -45,7 +45,7 @@ ${dashboardStyles}
                 </div>
                 <div>
                     <button class="primary-action" type="button" data-command="runTune">&#9655;&nbsp;&nbsp;Run tune</button>
-                    <div class="run-note">Complete harness setup to run</div>
+                    <div class="run-note">${escapeHtml(state.runNote)}</div>
                 </div>
             </header>
 
@@ -86,9 +86,45 @@ ${dashboardStyles}
         const vscode = acquireVsCodeApi();
         document.querySelectorAll("[data-command]").forEach((element) => {
             element.addEventListener("click", () => {
-                vscode.postMessage({ command: element.getAttribute("data-command") });
+                const command = element.getAttribute("data-command");
+                if (command === "runTune") {
+                    vscode.postMessage({ command, payload: readTuneRequest() });
+                    return;
+                }
+
+                vscode.postMessage({ command });
             });
         });
+        document.querySelectorAll("[data-password-toggle]").forEach((button) => {
+            button.addEventListener("click", () => {
+                const fieldId = button.getAttribute("data-password-toggle");
+                const input = document.querySelector('[data-field-id="' + fieldId + '"]');
+                if (!(input instanceof HTMLInputElement)) {
+                    return;
+                }
+
+                const showValue = input.type === "password";
+                input.type = showValue ? "text" : "password";
+                button.setAttribute("aria-label", showValue ? "Hide value" : "Show value");
+                button.setAttribute("title", showValue ? "Hide value" : "Show value");
+            });
+        });
+
+        function readTuneRequest() {
+            return {
+                modelProvider: readField("modelProvider"),
+                openAiModel: readField("openAiModel"),
+                openAiApiKey: readField("openAiApiKey"),
+                readOnlyConnectionString: readField("readOnlyConnectionString"),
+            };
+        }
+
+        function readField(fieldId) {
+            const field = document.querySelector('[data-field-id="' + fieldId + '"]');
+            return field instanceof HTMLInputElement || field instanceof HTMLSelectElement
+                ? field.value
+                : "";
+        }
     </script>
 </body>
 </html>`;
@@ -132,6 +168,44 @@ function renderConfigField(field: DashboardConfigField): string {
                 <span class="caption">${escapeHtml(field.value)}</span>
             </div>
         </div>`;
+  }
+
+  if (field.editable && field.kind === "select") {
+    const options = field.options ?? [];
+    const fieldId = escapeHtml(field.id ?? "");
+    const optionHtml = options.map((option) => {
+      const selected = option.value === field.value ? " selected" : "";
+      return `<option value="${escapeHtml(option.value)}"${selected}>${escapeHtml(option.label)}</option>`;
+    });
+    const note = field.note
+      ? `<div class="field-note">${escapeHtml(field.note)}</div>`
+      : "";
+    return `<label class="field">
+        ${heading}
+        <select class="control control-select" data-field-id="${fieldId}">
+            ${optionHtml.join("")}
+        </select>
+        ${note}
+    </label>`;
+  }
+
+  if (field.editable && field.kind === "password") {
+    const fieldId = escapeHtml(field.id ?? "");
+    const placeholder = field.placeholder
+      ? ` placeholder="${escapeHtml(field.placeholder)}"`
+      : "";
+    const required = field.required ? " required" : "";
+    const note = field.note
+      ? `<div class="field-note">${escapeHtml(field.note)}</div>`
+      : "";
+    return `<label class="field">
+        ${heading}
+        <div class="password-control">
+            <input class="control control-input" type="password" value="${escapeHtml(field.value)}" data-field-id="${fieldId}" autocomplete="off" spellcheck="false"${placeholder}${required}>
+            <button class="mask-toggle" type="button" data-password-toggle="${fieldId}" aria-label="Show value" title="Show value">&#128065;</button>
+        </div>
+        ${note}
+    </label>`;
   }
 
   const icon =

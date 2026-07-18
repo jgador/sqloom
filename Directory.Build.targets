@@ -1,0 +1,38 @@
+<Project>
+  <Target Name="ResolveSqloomSourceRevisionId" BeforeTargets="GenerateSqloomAssemblyInformationalVersion" Condition="'$(SqloomIncludeSourceRevisionInVersion)' == 'true'">
+    <Exec
+      Condition="'$(SourceRevisionId)' == '' and Exists('$(MSBuildThisFileDirectory).git')"
+      Command="git -C &quot;$(MSBuildThisFileDirectory)&quot; rev-parse HEAD"
+      ConsoleToMSBuild="true"
+      IgnoreExitCode="true"
+      StandardOutputImportance="Low"
+      StandardErrorImportance="Low">
+      <Output TaskParameter="ConsoleOutput" ItemName="_SqloomSourceRevisionIdOutput" />
+      <Output TaskParameter="ExitCode" PropertyName="_SqloomSourceRevisionIdExitCode" />
+    </Exec>
+
+    <PropertyGroup Condition="'$(SourceRevisionId)' == '' and '$(_SqloomSourceRevisionIdExitCode)' == '0' and '@(_SqloomSourceRevisionIdOutput)' != ''">
+      <SourceRevisionId>@(_SqloomSourceRevisionIdOutput->'%(Identity)')</SourceRevisionId>
+    </PropertyGroup>
+  </Target>
+
+  <Target Name="GenerateSqloomAssemblyInformationalVersion" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <_SqloomAssemblyInformationalVersion>$(Version)</_SqloomAssemblyInformationalVersion>
+      <_SqloomAssemblyInformationalVersion Condition="'$(SqloomIncludeSourceRevisionInVersion)' == 'true' and '$(SourceRevisionId)' != ''">$(Version)+$(SourceRevisionId)</_SqloomAssemblyInformationalVersion>
+      <_SqloomAssemblyInformationalVersionFile>$(IntermediateOutputPath)Sqloom.AssemblyInformationalVersion.g.cs</_SqloomAssemblyInformationalVersionFile>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(IntermediateOutputPath)" />
+
+    <ItemGroup>
+      <_SqloomAssemblyInformationalVersionLines Include="[assembly: System.Reflection.AssemblyInformationalVersion(&quot;$(_SqloomAssemblyInformationalVersion)&quot;)]" />
+      <Compile Include="$(_SqloomAssemblyInformationalVersionFile)" Visible="false" />
+    </ItemGroup>
+
+    <WriteLinesToFile
+      File="$(_SqloomAssemblyInformationalVersionFile)"
+      Lines="@(_SqloomAssemblyInformationalVersionLines)"
+      Overwrite="true" />
+  </Target>
+</Project>

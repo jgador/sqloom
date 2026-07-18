@@ -1,5 +1,11 @@
 import * as vscode from "vscode";
 import {
+  defaultOpenAiModel,
+  isKnownOpenAiModel,
+  modelProviderOptions,
+  openAiModelOptions,
+} from "../constants/modelOptions";
+import {
   DashboardCheck,
   DashboardState,
   DashboardStatus,
@@ -10,15 +16,18 @@ export async function createDashboardState(): Promise<DashboardState> {
   const workspaceFolder = getPrimaryWorkspaceFolder();
   const cliPath = configuration.get<string>("cli.path", "sqloom").trim();
   const effectiveCliPath = cliPath.length > 0 ? cliPath : "sqloom";
-  const openAiModel = configuration
-    .get<string>("openai.model", "gpt-5.4-mini")
+  const configuredOpenAiModel = configuration
+    .get<string>("openai.model", defaultOpenAiModel)
     .trim();
+  const openAiModel = isKnownOpenAiModel(configuredOpenAiModel)
+    ? configuredOpenAiModel
+    : defaultOpenAiModel;
   const replayDataAgent = configuration
     .get<string>("replayDataAgent", "required")
     .trim();
   const replayDataAgentReady = isReplayDataAgent(replayDataAgent);
-  const openAiApiKeyReady =
-    (process.env.OPENAI_API_KEY ?? "").trim().length > 0;
+  const openAiApiKey = (process.env.OPENAI_API_KEY ?? "").trim();
+  const openAiApiKeyEnvironmentReady = openAiApiKey.length > 0;
   const harnessPath = workspaceFolder
     ? await defaultHarnessPath(workspaceFolder)
     : "";
@@ -45,12 +54,9 @@ export async function createDashboardState(): Promise<DashboardState> {
     },
     {
       label: "OpenAI model",
-      badge: openAiModel.length > 0 ? "Configured" : "Missing",
-      detail:
-        openAiModel.length > 0
-          ? openAiModel
-          : "Set sqloom.openai.model before running tune.",
-      status: openAiModel.length > 0 ? "ready" : "warning",
+      badge: "Selectable",
+      detail: openAiModel,
+      status: "ready",
     },
     {
       label: "Replay data agent",
@@ -62,11 +68,11 @@ export async function createDashboardState(): Promise<DashboardState> {
     },
     {
       label: "OpenAI API key",
-      badge: openAiApiKeyReady ? "Environment" : "Prompt later",
-      detail: openAiApiKeyReady
-        ? "OPENAI_API_KEY is available to the extension host."
-        : "The run command can prompt for this value later.",
-      status: openAiApiKeyReady ? "ready" : "neutral",
+      badge: openAiApiKeyEnvironmentReady ? "Environment" : "Dashboard input",
+      detail: openAiApiKeyEnvironmentReady
+        ? "OPENAI_API_KEY is prefilled for dashboard tune runs."
+        : "Enter a masked value before running tune from the dashboard.",
+      status: openAiApiKeyEnvironmentReady ? "ready" : "neutral",
     },
     {
       label: "Default harness",
@@ -90,6 +96,9 @@ export async function createDashboardState(): Promise<DashboardState> {
   return {
     title: "Sqloom Tune",
     subtitle: "Tune SQL for performance with confidence.",
+    runNote: harnessReady
+      ? "Uses the detected default harness"
+      : "Default harness required to run",
     readinessLabel,
     stages: [
       { number: 1, label: "Observe", active: true },
@@ -144,12 +153,28 @@ export async function createDashboardState(): Promise<DashboardState> {
         statusLabel: cliPath.length > 0 ? "Configured" : "Default",
       },
       {
+        id: "modelProvider",
+        label: "Model provider",
+        value: "openai",
+        kind: "select",
+        editable: true,
+        options: [...modelProviderOptions],
+        note: "Only OpenAI is available in this preview.",
+        status: "ready",
+        statusLabel: "OpenAI",
+      },
+      {
+        id: "openAiModel",
         label: "OpenAI advice model",
-        value: openAiModel.length > 0 ? openAiModel : "Not configured",
-        kind: "text",
-        note: "Read from sqloom.openai.model.",
-        status: openAiModel.length > 0 ? "ready" : "warning",
-        statusLabel: openAiModel.length > 0 ? "Configured" : "Review",
+        value: openAiModel,
+        kind: "select",
+        editable: true,
+        options: [...openAiModelOptions],
+        note: isKnownOpenAiModel(configuredOpenAiModel)
+          ? "Choose the model for this dashboard run."
+          : "Unknown configured model ignored for the dashboard dropdown.",
+        status: "ready",
+        statusLabel: "Selectable",
       },
       {
         label: "Replay data agent",
@@ -160,14 +185,22 @@ export async function createDashboardState(): Promise<DashboardState> {
         statusLabel: replayDataAgentReady ? "Configured" : "Review",
       },
       {
+        id: "openAiApiKey",
         label: "OpenAI API key",
-        value: openAiApiKeyReady
-          ? "Available in environment"
-          : "Prompt when running",
-        kind: "text",
-        note: "Presence only; the extension never stores this value.",
-        status: openAiApiKeyReady ? "ready" : "neutral",
-        statusLabel: openAiApiKeyReady ? "Available" : "Prompt later",
+        value: openAiApiKey,
+        kind: "password",
+        editable: true,
+        placeholder: openAiApiKeyEnvironmentReady
+          ? "Prefilled from OPENAI_API_KEY"
+          : "Enter API key for this run",
+        note: openAiApiKeyEnvironmentReady
+          ? "Masked by default. Edit this value to override OPENAI_API_KEY for this run."
+          : "Masked and passed only to the current dashboard run.",
+        status: openAiApiKeyEnvironmentReady ? "ready" : "warning",
+        statusLabel: openAiApiKeyEnvironmentReady
+          ? "Environment"
+          : "Required",
+        required: !openAiApiKeyEnvironmentReady,
       },
       {
         label: "Default harness",
@@ -178,10 +211,13 @@ export async function createDashboardState(): Promise<DashboardState> {
         statusLabel: harnessReady ? "Detected" : "Not detected",
       },
       {
+        id: "readOnlyConnectionString",
         label: "Read-only connection string",
-        value: "Prompt when running",
-        kind: "text",
-        note: "Uses the harness session connection when omitted.",
+        value: "",
+        kind: "password",
+        editable: true,
+        placeholder: "Optional read-only SQL Server connection string",
+        note: "Optional. Masked and never saved.",
         status: "neutral",
         statusLabel: "Optional",
       },

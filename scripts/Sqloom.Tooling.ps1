@@ -169,6 +169,7 @@ function Invoke-SqloomPackSet
     param(
         [Parameter(Mandatory = $true)]
         [pscustomobject]$Context,
+        [switch]$IncludeSourceRevisionInVersion,
         [switch]$NoBuild,
         [switch]$NoRestore
     )
@@ -188,6 +189,11 @@ function Invoke-SqloomPackSet
             "-o"
             $Context.PackageFeedPath
         )
+
+        if ($IncludeSourceRevisionInVersion)
+        {
+            $arguments += "-p:SqloomIncludeSourceRevisionInVersion=true"
+        }
 
         if ($NoBuild)
         {
@@ -244,6 +250,43 @@ function Install-SqloomToolPath
         $Context.PackageFeedPath
         "--ignore-failed-sources"
     )
+}
+
+function Assert-SqloomToolVersion
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Context,
+        [Parameter(Mandatory = $true)]
+        [string]$CommandPath,
+        [switch]$ExpectSourceRevision
+    )
+
+    $versionOutput = (& $CommandPath --version) -join "`n"
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "$CommandPath version check failed."
+    }
+
+    $versionOutput = $versionOutput.Trim()
+    Write-Host $versionOutput
+
+    if ($ExpectSourceRevision)
+    {
+        $escapedVersion = [regex]::Escape($Context.PackageVersion)
+        if ($versionOutput -notmatch "^sqloom $escapedVersion\+[0-9a-fA-F]{40}$")
+        {
+            throw "Expected $CommandPath --version to include Git source revision metadata, but got '$versionOutput'."
+        }
+
+        return
+    }
+
+    $expectedOutput = "sqloom $($Context.PackageVersion)"
+    if (-not [string]::Equals($versionOutput, $expectedOutput, [System.StringComparison]::Ordinal))
+    {
+        throw "Expected $CommandPath --version to be '$expectedOutput', but got '$versionOutput'."
+    }
 }
 
 function Write-SqloomLocalWrapper
