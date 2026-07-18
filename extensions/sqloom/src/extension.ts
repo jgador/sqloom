@@ -35,9 +35,12 @@ class CliService {
   async run(
     args: string[],
     workspaceFolder: vscode.WorkspaceFolder,
+    cliPathOverride?: string,
   ): Promise<boolean> {
     const cliPath =
-      getConfiguration().get<string>("cli.path", "sqloom").trim() || "sqloom";
+      cliPathOverride?.trim() ||
+      getConfiguration().get<string>("cli.path", "sqloom").trim() ||
+      "sqloom";
     const redactedCommand = [cliPath, ...redactArgs(args)].join(" ");
 
     outputChannel.show(true);
@@ -103,7 +106,9 @@ async function runTuneFromDashboard(
     return;
   }
 
-  const harnessPath = await defaultHarnessPath(workspaceFolder);
+  const harnessPath =
+    (request.harnessPath ?? "").trim() ||
+    (await defaultHarnessPath(workspaceFolder));
   if (harnessPath.length === 0) {
     vscode.window.showWarningMessage(
       "Sqloom dashboard tune requires the default harness path in this workspace.",
@@ -161,7 +166,7 @@ async function runTuneFromDashboard(
     args.push("--read-only-connection-string", readOnlyConnectionString);
   }
 
-  await cliService.run(args, workspaceFolder);
+  await cliService.run(args, workspaceFolder, request.cliPath);
 }
 
 async function runInit(cliService: CliService): Promise<void> {
