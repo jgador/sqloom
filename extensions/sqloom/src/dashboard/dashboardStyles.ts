@@ -101,7 +101,7 @@ export const dashboardStyles = `
         .summary-detail,
         .artifact-tools,
         .artifact-footer,
-        .status-check span,
+        .status-check [data-check-detail],
         .empty-state p,
         .inline-meta,
         .status-footer,
@@ -696,11 +696,11 @@ export const dashboardStyles = `
             display: grid;
             grid-template-columns: 22px minmax(0, 1fr);
             gap: 12px;
-            align-items: start;
+            align-items: center;
         }
 
         .status-check strong,
-        .status-check span {
+        .status-check [data-check-detail] {
             display: block;
             overflow-wrap: anywhere;
         }
@@ -779,11 +779,13 @@ export const dashboardStyles = `
         }
 
         .status-ready.status-dot::before {
+            left: 50%;
+            top: 50%;
             width: 45%;
             height: 24%;
             border-left: 2px solid currentColor;
             border-bottom: 2px solid currentColor;
-            transform: rotate(-45deg) translate(1px, -1px);
+            transform: translate(-50%, -58%) rotate(-45deg);
         }
 
         .status-warning.status-dot::before {
