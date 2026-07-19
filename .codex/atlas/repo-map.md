@@ -257,6 +257,7 @@ Use these semantic categories as the first-pass routing index. Pick the category
 
 Use a live situation bundle for behavior, debugging, refactoring, and architecture work. Do not store these bundles in Atlas; build them from current repo facts during the task.
 
+- Task frame: the goal, symptoms or observations, constraints and exclusions, and behavior, artifact, command output, or test signal that would prove the answer.
 - Owner and category: the selected Atlas domain, command/stage, project, or extension surface.
 - Structural anchor: the command catalog entry, public contract, symbol definition, project reference, artifact contract, or runtime-flow hop that makes the category plausible.
 - Consumers and entry points: callers, dispatch routes, command handlers, extension commands, harness entry points, or artifact readers/writers.
@@ -264,7 +265,7 @@ Use a live situation bundle for behavior, debugging, refactoring, and architectu
 - Exclusions: generated output, caches, build products, package output, and unrelated test/config files ignored by the selected category.
 - Recency check: recently edited files, prior-task files, and recently read paths are supporting evidence only when they match the current category; otherwise treat them as likely distractors.
 
-Start with a fast lexical or semantic candidate pass inside the selected category, then switch to grounded inspection when candidates conflict, names look stale, behavior depends on config or artifacts, public contracts are affected, or tests/artifacts are needed to prove the answer. Treat the category as an anticipatory cue that narrows retrieval before deep reading; refine or replace it when the evidence does not match. For unclear behavior, sketch the expected data flow, artifact delta, or passing/failing test before searching deeper.
+Start with a fast lexical or semantic candidate pass inside the selected category, then switch to grounded inspection when candidates conflict, names look stale, behavior depends on config or artifacts, public contracts are affected, or tests/artifacts are needed to prove the answer. Treat the category as an anticipatory cue that narrows retrieval before deep reading. When the route is genuinely ambiguous, admit one primary category and normally no more than two alternatives; each must fit the task frame, name a plausible structural anchor, and predict distinct evidence. Before a deeper probe, state confirming and disconfirming evidence plus the switch trigger, inspect the cheapest bounded source that can distinguish them, and use the result to confirm, refine, or reclassify before widening.
 
 ## Test Routing
 
@@ -292,11 +293,13 @@ Start with a fast lexical or semantic candidate pass inside the selected categor
 ## Navigation Rules
 
 - Follow the runtime flow first for command behavior, then use RoslynKit or direct line reads for the narrow unclear hop.
-- Start non-trivial searches by selecting a semantic category from Category Scan Paths, then convert that category into a first read order before repo-wide `rg`.
+- Start non-trivial searches by framing the goal, symptoms or observations, constraints and exclusions, and proof signal; then select a semantic category from Category Scan Paths and convert it into a first read order before repo-wide `rg`.
+- When categories compete, keep one primary and normally no more than two alternatives. Admit only candidates with task fit, a plausible structural anchor, and distinct predicted evidence; do not manufacture alternatives for an obvious route.
 - Treat named files and directories as hints inside a category, not as the category itself. If a name is stale or missing, continue through symbols, project references, runtime flow, artifact contracts, or tests.
 - For behavior questions, return or use a situated bundle: owner, structural anchor, consumers or entry points, grounding evidence, and exclusions.
 - Use lexical search as candidate discovery and grounded inspection as verification. Switch to grounded inspection when uncertainty, behavior/config interaction, public surface impact, or failing tests/artifacts are present.
-- Before deepening an unclear search, state the expected behavior, data flow, artifact delta, or test signal that the code should satisfy.
+- Before deepening an unclear search, state the expected behavior, data flow, artifact delta, or test signal, the evidence that would weaken the active hypothesis, and the condition that should trigger reclassification. Run the cheapest bounded probe first.
+- Use probe results to confirm, refine, or reclassify; widen the search only after the bounded hypothesis set fails.
 - Compare the current category against recently active context and baseline unrelated domains; do not let recency alone route the search.
 - Read nearby tests before implementation when a matching test exists.
 - For public CLI, JSON artifact, package, configuration, or documented workflow changes, update [README.md](../../README.md) or the relevant docs in the same change.
@@ -304,7 +307,7 @@ Start with a fast lexical or semantic candidate pass inside the selected categor
 - Use [.agents/skills/roslynkit/SKILL.md](../../.agents/skills/roslynkit/SKILL.md) for C# semantic inspection when the current environment exposes RoslynKit and the task benefits from symbols, definitions, references, implementations, quick info, or line-range reads.
 - Use repo-defined sub-agents from [.codex/agents/](../agents/) only unless the user explicitly asks otherwise; `advisor` is the first routing handoff for non-trivial tasks when the correct specialist is not already obvious.
 - Do not use Atlas as a file inventory, test inventory, symbol graph, reference graph, artifact cache, or source cache.
-- Store successful search paths in Atlas only when they are durable category, ownership, artifact-routing, or source-to-test-routing facts.
+- Promote a successful or failed search path into Atlas only when repeated work or independent structural evidence establishes a durable category, ownership, boundary, artifact-routing, or source-to-test-routing fact. Do not store episodic task traces.
 - Ignore first: `artifacts/`, `TestResults/`, `.vs/`, `.tools/`, `bin/`, `obj/`, and package output unless the task is explicitly about generated artifacts, local tooling, or packaging.
 
 Last verified: `2026-07-20`

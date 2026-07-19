@@ -19,11 +19,21 @@ Use Atlas to classify the request by semantic intent first: command behavior, en
 
 The category acts as an anticipatory retrieval cue: select it before deep search, let it constrain the first read order, then refine it as evidence returns. Do not let recently edited files or prior-task context pull the search into a stale category unless the current request matches that category.
 
+The operational retrieval model is functional rather than neuroanatomical:
+
+1. Task frame: record the goal, symptoms or observations, constraints and exclusions, and proof signal.
+2. Live evidence substrate: combine durable Atlas routes with current project, symbol, runtime, artifact, configuration, and test relationships. Atlas is a routing index, not a stored repository graph.
+3. Bounded hypothesis competition: keep one primary category and normally no more than two alternatives when the route is genuinely ambiguous.
+4. Admission gate: retain only hypotheses that fit the task frame, identify a plausible structural anchor, and predict distinct observable evidence.
+5. Minimal predictive probe: state confirming and disconfirming evidence, then inspect the cheapest bounded slice that can distinguish them.
+6. Evidence update: confirm, refine, or reclassify using the probe result; widen only after the admitted hypotheses fail.
+7. Durable route promotion: record only stable ownership, boundary, artifact, or test-routing facts supported by repeated work or independent structural evidence.
+
 For behavior questions, return situated context rather than a detached file match. The useful bundle is the owner module, relevant symbols or contracts, callers or entry points, nearest tests, configuration or artifact dependencies, and the validation command or generated artifact that grounds the answer.
 
-Use dynamic switching: a fast lexical or semantic pass can find candidates inside the selected category, but uncertainty, stale names, public-surface impact, or behavior/config interaction should trigger grounded inspection with RoslynKit, project references, runtime flow, tests, command output, or generated artifacts. When the desired behavior is unclear, first sketch the expected data flow, artifact delta, or passing test, then search for structures that can produce or violate it.
+Use dynamic switching: a fast lexical or semantic pass can find candidates inside the selected category, but uncertainty, stale names, public-surface impact, or behavior/config interaction should trigger grounded inspection with RoslynKit, project references, runtime flow, tests, command output, or generated artifacts. When the desired behavior is unclear, first sketch the expected data flow, artifact delta, or passing test, then name the evidence that would confirm or weaken the active hypothesis and declare the switch trigger before probing.
 
-Successful search paths become repository memory only when they are durable ownership, artifact, or test-routing facts. Record those in [.codex/atlas/repo-map.md](../../.codex/atlas/repo-map.md) and refresh `Last verified`; do not add transient source inventories, generated outputs, or search-result caches.
+Successful or failed search paths become repository memory only when repeated work or independent structural evidence turns them into durable ownership, boundary, artifact, or test-routing facts. Record those in [.codex/atlas/repo-map.md](../../.codex/atlas/repo-map.md) and refresh `Last verified`; do not add transient source inventories, generated outputs, episodic task traces, or search-result caches.
 
 ## Maintenance Rules
 

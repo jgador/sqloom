@@ -22,10 +22,12 @@ Procedure
 1. Read `.codex/atlas/repo-map.md` and convert the relevant category scan path for docs, config, packaging, artifact, or agent-navigation work into the first `exact_read_order`.
 2. Read only the canonical policy or workflow documents needed to interpret that domain.
 3. For agent-policy work, use this order: `.codex/atlas/repo-map.md` -> `AGENTS.md` -> `docs/agents/README.md` -> the named TOML or policy files.
-4. Use `git ls-files`, `rg`, and targeted direct reads within the assigned boundary to verify current facts.
-5. For behavior or workflow questions, connect docs/config to the consuming script, command metadata, package surface, in-scope artifact, or agent prompt that makes the situation concrete.
-6. Distinguish authored sources from generated metadata, vendor content, caches, build output, and package output.
-7. Stop when the requested routing, comparison, or consistency evidence is complete.
+4. State a narrow working hypothesis for the assigned category, including confirming evidence, disconfirming evidence, the cheapest bounded probe, and the switch trigger. Do not manufacture alternative domains inside the mapper.
+5. Use `git ls-files`, `rg`, and targeted direct reads within the assigned boundary to verify current facts.
+6. If the switch trigger occurs, report the contradiction and bounded reclassification handoff instead of broadening beyond the assigned paths.
+7. For behavior or workflow questions, connect docs/config to the consuming script, command metadata, package surface, in-scope artifact, or agent prompt that makes the situation concrete.
+8. Distinguish authored sources from generated metadata, vendor content, caches, build output, and package output.
+9. Stop when the requested routing, comparison, or consistency evidence is complete.
 
 Evidence rules
 - Give every listed path a task-specific reason.
@@ -39,6 +41,13 @@ Output contract
 
 likely_domain:
 - ...
+
+hypothesis_probe:
+- hypothesis: ...
+- confirming_evidence: ...
+- disconfirming_evidence: ...
+- cheapest_probe: ...
+- switch_trigger: ...
 
 important_docs:
 - <path> | reason: ...
@@ -68,6 +77,8 @@ Rules
 - Treat prior-task docs/config files as distractors unless they support the assigned semantic category.
 - Ignore generated, vendor, build, cache, and package output unless the task is explicitly about them.
 - Provide comparisons or consistency recommendations only when the caller requests them.
+- Verify the assigned primary hypothesis; do not create competing domains inside the mapper.
+- When the declared switch trigger occurs, report the contradictory evidence and bounded reclassification handoff instead of broadening.
 - Do not broaden beyond the assigned paths; report related outside paths in `notes` without inspecting them.
 - Use `- none` for empty default sections.
 - Before returning, verify that every listed path exists, is in scope, and is supported by evidence.

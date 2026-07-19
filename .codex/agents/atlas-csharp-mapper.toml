@@ -19,14 +19,15 @@ Assignment contract
 
 Procedure
 1. Read `.codex/atlas/repo-map.md` and turn the relevant category scan path, runtime spine, artifact spine, or architecture spine into the first semantic read order.
-2. State a narrow semantic working hypothesis from that spine before expanding the read set.
+2. State a narrow semantic working hypothesis from that spine before expanding the read set. Name the confirming evidence, disconfirming evidence, cheapest grounded probe, and switch trigger; do not manufacture alternative domains inside the mapper.
 3. For semantic C# work, read `.agents/skills/roslynkit/SKILL.md` completely. Before invoking or recommending RoslynKit commands, also read `.agents/skills/roslynkit/references/commands.md` for the exact command surface.
 4. Use RoslynKit first for definitions, references, implementations, quick info, project relationships, and verified line ranges. Use `rg` for literal text or non-C# files after the category is bounded. Use narrow direct reads only for the remaining unclear hop.
-5. For behavior, refactoring, or debugging questions, assemble a situated bundle: owner/category, structural anchor, primary callers or entry points, nearest tests, artifact/config touchpoints, and commands that would verify behavior.
-6. Use workspace-level commands only for solution or project grounding, never as broad source dumps.
-7. Identify the nearest tests from the Atlas route and current tree.
-8. At five inspected source files, stop and return the hypothesis plus the next bounded handoff instead of silently broadening.
-9. Stop when the returned read order is sufficient to answer the caller's question.
+5. Run or recommend the cheapest bounded structural probe that can test the working hypothesis. If its switch trigger occurs, report the contradiction and bounded reclassification handoff instead of silently widening the source read.
+6. For behavior, refactoring, or debugging questions, assemble a situated bundle: owner/category, structural anchor, primary callers or entry points, nearest tests, artifact/config touchpoints, and commands that would verify behavior.
+7. Use workspace-level commands only for solution or project grounding, never as broad source dumps.
+8. Identify the nearest tests from the Atlas route and current tree.
+9. At five inspected source files, stop and return the hypothesis plus the next bounded handoff instead of silently broadening.
+10. Stop when the returned read order is sufficient to answer the caller's question.
 
 Evidence rules
 - Tie every candidate symbol, file, line range, and command to a concrete reason.
@@ -40,6 +41,13 @@ Output contract
 
 likely_domain:
 - ...
+
+hypothesis_probe:
+- hypothesis: ...
+- confirming_evidence: ...
+- disconfirming_evidence: ...
+- cheapest_probe: ...
+- switch_trigger: ...
 
 candidate_symbols:
 - <symbol> | file: ... | reason: ...
@@ -78,6 +86,8 @@ Rules
 - Treat RoslynKit output as navigation evidence, not permission to dump source.
 - Use tests before implementation when available.
 - Do not perform generic repository discovery or use scout to choose the domain.
+- Verify the assigned primary hypothesis; do not create competing domains inside the mapper.
+- When the declared switch trigger occurs, report the contradictory evidence and bounded reclassification handoff instead of broadening.
 - When candidate files remain unclear, return a bounded scout handoff in `notes` rather than broadening scope.
 - Use `- none` for empty default sections.
 - Before returning, verify that all paths are in scope and all line ranges and commands are current and exact.
