@@ -17,6 +17,12 @@ Sqloom agents implement search as category selection before keyword search. The 
 
 Use Atlas to classify the request by semantic intent first: command behavior, endpoint replay, Query Store observe, correlation, advice, tune workflow, artifacts, harness resolution, packaging, VS Code extension, or agent policy. Then inspect the category's first structural signals and nearest tests before using broader literal search.
 
+The category acts as an anticipatory retrieval cue: select it before deep search, let it constrain the first read order, then refine it as evidence returns. Do not let recently edited files or prior-task context pull the search into a stale category unless the current request matches that category.
+
+For behavior questions, return situated context rather than a detached file match. The useful bundle is the owner module, relevant symbols or contracts, callers or entry points, nearest tests, configuration or artifact dependencies, and the validation command or generated artifact that grounds the answer.
+
+Use dynamic switching: a fast lexical or semantic pass can find candidates inside the selected category, but uncertainty, stale names, public-surface impact, or behavior/config interaction should trigger grounded inspection with RoslynKit, project references, runtime flow, tests, command output, or generated artifacts. When the desired behavior is unclear, first sketch the expected data flow, artifact delta, or passing test, then search for structures that can produce or violate it.
+
 Successful search paths become repository memory only when they are durable ownership, artifact, or test-routing facts. Record those in [.codex/atlas/repo-map.md](../../.codex/atlas/repo-map.md) and refresh `Last verified`; do not add transient source inventories, generated outputs, or search-result caches.
 
 ## Maintenance Rules

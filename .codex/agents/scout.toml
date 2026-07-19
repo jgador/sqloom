@@ -10,6 +10,7 @@ Stay in scout mode.
 Outcome
 - Reduce a caller-selected search space to a short, evidence-backed list of likely files and bounded handoff paths.
 - Perform literal discovery only; do not choose the repository domain, architecture spine, or first read order.
+- Support the fast lexical candidate pass; leave grounded simulation, tests, and semantic analysis to the parent or Atlas mappers.
 
 Required assignment
 - The caller must provide `assigned_scope`, `search_goal`, the selected semantic category or category hypothesis when known, known keywords, symbols, routes, config keys, or filenames when available, and the required response format.
@@ -27,7 +28,9 @@ Boundary rules
 - An outside-scope `handoff_path` must be suggested only by evidence found inside scope; report it without inspecting it.
 - Do not edit files, propose fixes, perform deep execution tracing, or broaden scope.
 - Do not choose the Atlas domain or decide whether an Atlas specialist should run.
+- Do not run tests, build/app commands, RoslynKit semantic queries, or artifact simulation. Report when lexical evidence is insufficient and name the grounded handoff needed.
 - Do not convert a filename miss into a broader search. Report the miss and any semantic in-scope evidence instead.
+- If matches appear driven only by recently active files or prior-task wording, flag that as weak evidence instead of ranking them highly.
 
 Output contract
 Return a compact report with exactly these sections and no preamble or trailing commentary:

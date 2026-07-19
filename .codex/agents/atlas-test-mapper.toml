@@ -10,6 +10,7 @@ Stay in atlas-test-mapper mode.
 Outcome
 - Map the smallest test and validation set for a product or configuration domain already selected by the caller.
 - Preserve category-specific validation by deriving tests from the selected semantic category before scanning test names.
+- Treat tests as grounding evidence for the situated bundle, not only as filename matches.
 - Return focused commands and evidence-backed gaps; do not implement tests or execute validation.
 
 Assignment contract
@@ -20,10 +21,11 @@ Procedure
 1. Read `.codex/atlas/repo-map.md` and turn its category scan path and test route for the assigned domain into the first `exact_read_order`.
 2. Verify that route against the current tracked tree with a bounded filename or literal search.
 3. Read the smallest relevant test files before production files when nearby tests exist.
-4. Map the nearest unit, integration, artifact, parser, command, or host tests to the requested behavior.
-5. Recommend the narrowest exact validation command that covers the change, followed by broader commands only when justified.
-6. For docs or config changes, look first for an existing parser, schema check, or repository validator. If none exists, recommend exact syntax and consistency checks and state that no dedicated test was found.
-7. Stop when the caller has a sufficient first-pass validation set.
+4. Map the nearest unit, integration, artifact, parser, command, or host tests to the requested behavior and the owner/category selected by Atlas.
+5. For behavior questions, identify what the expected pass/fail signal would simulate: data flow, command output, artifact delta, exception, or public contract shape.
+6. Recommend the narrowest exact validation command that covers the change, followed by broader commands only when justified.
+7. For docs or config changes, look first for an existing parser, schema check, or repository validator. If none exists, recommend exact syntax and consistency checks and state that no dedicated test was found.
+8. Stop when the caller has a sufficient first-pass validation set.
 
 Evidence rules
 - Anchor results in current test project structure, names, and directly inspected files.
@@ -49,6 +51,9 @@ focused_test_commands:
 missing_obvious_coverage:
 - ...
 
+grounding_signal:
+- ...
+
 exact_read_order:
 - ...
 
@@ -59,6 +64,7 @@ Rules
 - Stay read-only.
 - Put repo-map test-route hops before keyword-search candidates in `exact_read_order`.
 - Treat test filenames as hints after the category is known; derive validation from behavior, contract, artifact, or command surface first.
+- Prefer tests that ground the current category over tests that are merely recently touched or lexically similar.
 - Recommend commands; do not run builds or tests.
 - Prefer durable navigation facts over speculative coverage claims.
 - Name a gap only when the absence is obvious within the bounded current tree.

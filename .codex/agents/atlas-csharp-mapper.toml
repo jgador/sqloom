@@ -10,6 +10,7 @@ Stay in atlas-csharp-mapper mode.
 Outcome
 - Map the smallest reliable C#/.NET semantic read set for the caller's bounded question.
 - Preserve category-specific search by using runtime category, project graph, and symbols before literal filename search.
+- Build situated code evidence for behavior questions by linking definitions to callers, contracts, tests, artifacts, or recommended validation commands when relevant.
 - Return verified symbols, files, line ranges, commands, and nearby tests; do not implement or summarize the whole subsystem.
 
 Assignment contract
@@ -21,10 +22,11 @@ Procedure
 2. State a narrow semantic working hypothesis from that spine before expanding the read set.
 3. For semantic C# work, read `.agents/skills/roslynkit/SKILL.md` completely. Before invoking or recommending RoslynKit commands, also read `.agents/skills/roslynkit/references/commands.md` for the exact command surface.
 4. Use RoslynKit first for definitions, references, implementations, quick info, project relationships, and verified line ranges. Use `rg` for literal text or non-C# files after the category is bounded. Use narrow direct reads only for the remaining unclear hop.
-5. Use workspace-level commands only for solution or project grounding, never as broad source dumps.
-6. Identify the nearest tests from the Atlas route and current tree.
-7. At five inspected source files, stop and return the hypothesis plus the next bounded handoff instead of silently broadening.
-8. Stop when the returned read order is sufficient to answer the caller's question.
+5. For behavior, refactoring, or debugging questions, assemble a situated bundle: owner/category, structural anchor, primary callers or entry points, nearest tests, artifact/config touchpoints, and commands that would verify behavior.
+6. Use workspace-level commands only for solution or project grounding, never as broad source dumps.
+7. Identify the nearest tests from the Atlas route and current tree.
+8. At five inspected source files, stop and return the hypothesis plus the next bounded handoff instead of silently broadening.
+9. Stop when the returned read order is sufficient to answer the caller's question.
 
 Evidence rules
 - Tie every candidate symbol, file, line range, and command to a concrete reason.
@@ -57,6 +59,9 @@ nearest_tests:
 exact_read_order:
 - ...
 
+situated_evidence:
+- ...
+
 max_read_budget:
 - <number> files
 
@@ -68,6 +73,7 @@ Rules
 - Avoid full-file reads over 150 lines unless clearly justified.
 - Put repo-map spine hops before keyword-search candidates in `exact_read_order`.
 - Treat filenames and paths as hints, not the model. If a named file is stale or missing, continue through symbols, project references, runtime flow, or contracts.
+- Prefer distributed evidence across symbols, callers, tests, project references, and artifacts over a single obvious filename match.
 - Keep `max_read_budget` at five source files or fewer for the first pass.
 - Treat RoslynKit output as navigation evidence, not permission to dump source.
 - Use tests before implementation when available.

@@ -253,6 +253,19 @@ Use these semantic categories as the first-pass routing index. Pick the category
 - VS Code command, Activity Bar, webview launcher, dashboard, or extension package -> VS Code extension packaging domain; first inspect extension package metadata, workspace scripts, extension entry point, then extension release docs.
 - Agent routing, search policy, Atlas memory, security audit paths, or skill prompts -> Agent/navigation policy domain; first inspect `AGENTS.md`, this map, `docs/agents/README.md`, then the specific agent TOML or skill file.
 
+## Situated Search Evidence
+
+Use a live situation bundle for behavior, debugging, refactoring, and architecture work. Do not store these bundles in Atlas; build them from current repo facts during the task.
+
+- Owner and category: the selected Atlas domain, command/stage, project, or extension surface.
+- Structural anchor: the command catalog entry, public contract, symbol definition, project reference, artifact contract, or runtime-flow hop that makes the category plausible.
+- Consumers and entry points: callers, dispatch routes, command handlers, extension commands, harness entry points, or artifact readers/writers.
+- Grounding evidence: nearest tests, focused command output, generated artifacts under `artifacts/sqloom/`, package metadata, or configuration that proves how the code behaves.
+- Exclusions: generated output, caches, build products, package output, and unrelated test/config files ignored by the selected category.
+- Recency check: recently edited files, prior-task files, and recently read paths are supporting evidence only when they match the current category; otherwise treat them as likely distractors.
+
+Start with a fast lexical or semantic candidate pass inside the selected category, then switch to grounded inspection when candidates conflict, names look stale, behavior depends on config or artifacts, public contracts are affected, or tests/artifacts are needed to prove the answer. Treat the category as an anticipatory cue that narrows retrieval before deep reading; refine or replace it when the evidence does not match. For unclear behavior, sketch the expected data flow, artifact delta, or passing/failing test before searching deeper.
+
 ## Test Routing
 
 - CLI startup, command dispatch, init scaffolding, endpoints, and help/version output -> [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), [tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs](../../tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs), [tests/Sqloom.UnitTests/Endpoints/RoslynEndpointCatalogLoaderTests.cs](../../tests/Sqloom.UnitTests/Endpoints/RoslynEndpointCatalogLoaderTests.cs), [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs)
@@ -281,6 +294,10 @@ Use these semantic categories as the first-pass routing index. Pick the category
 - Follow the runtime flow first for command behavior, then use RoslynKit or direct line reads for the narrow unclear hop.
 - Start non-trivial searches by selecting a semantic category from Category Scan Paths, then convert that category into a first read order before repo-wide `rg`.
 - Treat named files and directories as hints inside a category, not as the category itself. If a name is stale or missing, continue through symbols, project references, runtime flow, artifact contracts, or tests.
+- For behavior questions, return or use a situated bundle: owner, structural anchor, consumers or entry points, grounding evidence, and exclusions.
+- Use lexical search as candidate discovery and grounded inspection as verification. Switch to grounded inspection when uncertainty, behavior/config interaction, public surface impact, or failing tests/artifacts are present.
+- Before deepening an unclear search, state the expected behavior, data flow, artifact delta, or test signal that the code should satisfy.
+- Compare the current category against recently active context and baseline unrelated domains; do not let recency alone route the search.
 - Read nearby tests before implementation when a matching test exists.
 - For public CLI, JSON artifact, package, configuration, or documented workflow changes, update [README.md](../../README.md) or the relevant docs in the same change.
 - Inspect `artifacts/sqloom/` before guessing about replay, correlate, advise, or tune behavior from code alone.
