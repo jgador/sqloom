@@ -44,9 +44,23 @@ Skip sub-agents only when the environment does not expose repo-defined sub-agent
 
 Do not use Repository Synapse in this repository. Do not run `synapse ensure`, `synapse recall`, `synapse tests`, or any other command that creates `.synapse/` repo-local cache files. Use Atlas, scout agents, direct file/test inspection, and build/test output instead.
 
+### Category-Specific Scan Paths
+
+Implement repository search as category selection before literal search. The goal is to behave like an expert scan path, not a repo-wide text crawler.
+
+1. Classify the request by semantic intent before searching for names. Use behavior words, runtime stage, artifact type, public surface, configuration surface, or validation need as the primary signal. Treat explicit filenames, directories, and symbols as evidence, not as the whole category.
+2. Use [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) as the resident pre-scan. Select the most likely category from its domains and category scan paths, name the initial scope, name what to ignore first, and choose the first structural signals to inspect.
+3. Follow a two-stage scan path:
+   - Gaze control: the main agent, or `advisor` when sub-agents are enabled and useful, selects the semantic category, first read order, exclusions, and specialist handoffs.
+   - Deep processing: the main agent or selected Atlas mapper reads only the bounded files, symbols, line ranges, tests, or artifacts needed to answer the question.
+4. Prefer structural signals over broad text search: command catalogs, project references, runtime flow, RoslynKit definitions/references, public contracts, artifact writers/readers, and nearest tests. Use `rg` after the category is bounded, or when the request is truly literal.
+5. Avoid overfitting to current file names. If a path or filename cue fails, continue from the semantic feature and project graph instead of expanding immediately to a repo-wide search.
+6. Cache only durable learning. When repeated work proves a stable category route, ownership fact, artifact route, or test route, update [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) and refresh `Last verified`. Do not cache source snippets, generated outputs, exhaustive file inventories, or transient search results in Atlas.
+
 ### Repository Atlas Reading Policy
 
 - Load [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) into the active agent context before broad source reading. Treat it as required structural context for this repository, not optional reference material.
+- Before broad literal search, assign a semantic category from [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md), choose a bounded scan path, and state the category hypothesis when the task is non-trivial.
 - When [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) contains a runtime, architecture, artifact, or test spine for the task domain, convert that spine into the first read order before broad literal search or scout discovery.
 - The main agent owns Atlas routing. With [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) in context, identify the task domain, choose the first read order, and decide whether a specialist Atlas mapper should run. Use `advisor` when a non-trivial task needs request classification or sub-agent routing recommendations before that decision. Do not add or use a separate Atlas router role.
 - Do not use `scout` for Atlas domain routing. Use `scout` only after the main agent has bounded a domain, path prefix, diff scope, symbol area, artifact area, or mapper handoff.
@@ -86,6 +100,7 @@ When using `scout`:
 Every scout prompt must include:
 - `assigned_scope`
 - `search_goal`
+- the selected semantic category or category hypothesis when known
 - known keywords, symbols, routes, config keys, or filenames when available
 - the required response format
 

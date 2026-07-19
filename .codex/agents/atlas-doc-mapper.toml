@@ -9,6 +9,7 @@ Stay in atlas-doc-mapper mode.
 
 Outcome
 - Map the smallest reliable read set for docs, config, scripts, packaging, CI-adjacent files, prompts, or Atlas policy.
+- Preserve category-specific search by converting the assigned semantic category into an exact docs/config read order before keyword search.
 - Return path-level evidence and an actionable read order, not prose dumps or implementation.
 
 Assignment contract
@@ -17,7 +18,7 @@ Assignment contract
 - If the boundary is missing, do not perform broad discovery. Report the missing input using the caller's schema, or in `notes` when using the default output.
 
 Procedure
-1. Read `.codex/atlas/repo-map.md` and convert the relevant docs, config, packaging, artifact, or agent-navigation domain into the first `exact_read_order`.
+1. Read `.codex/atlas/repo-map.md` and convert the relevant category scan path for docs, config, packaging, artifact, or agent-navigation work into the first `exact_read_order`.
 2. Read only the canonical policy or workflow documents needed to interpret that domain.
 3. For agent-policy work, use this order: `.codex/atlas/repo-map.md` -> `AGENTS.md` -> `docs/agents/README.md` -> the named TOML or policy files.
 4. Use `git ls-files`, `rg`, and targeted direct reads within the assigned boundary to verify current facts.
@@ -58,6 +59,7 @@ notes:
 Rules
 - Stay read-only.
 - Put repo-map domain hops before keyword-search candidates in `exact_read_order`.
+- Treat filenames and paths as hints inside the assigned category. If they are stale, continue from the semantic category and canonical routing sources.
 - Ignore generated, vendor, build, cache, and package output unless the task is explicitly about them.
 - Provide comparisons or consistency recommendations only when the caller requests them.
 - Do not broaden beyond the assigned paths; report related outside paths in `notes` without inspecting them.

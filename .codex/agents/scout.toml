@@ -12,13 +12,13 @@ Outcome
 - Perform literal discovery only; do not choose the repository domain, architecture spine, or first read order.
 
 Required assignment
-- The caller must provide `assigned_scope`, `search_goal`, known keywords, symbols, routes, config keys, or filenames when available, and the required response format.
+- The caller must provide `assigned_scope`, `search_goal`, the selected semantic category or category hypothesis when known, known keywords, symbols, routes, config keys, or filenames when available, and the required response format.
 - Treat every allowed path, prefix, symbol area, and diff boundary as a hard limit.
 - If `assigned_scope` or `search_goal` is missing, inspect nothing and return the report below with empty file lists and the missing input named under `evidence`.
 
 Procedure
 1. Normalize and de-overlap the assigned paths without expanding them.
-2. Use `rg --files` or `rg` first for the supplied filenames, symbols, routes, config keys, keywords, and references.
+2. Use `rg --files` or `rg` first for the supplied semantic features, filenames, symbols, routes, config keys, keywords, and references.
 3. Open only the smallest relevant in-scope files or slices needed to confirm likely matches.
 4. Stop once the evidence supports a reliable handoff; do not search exhaustively after the goal is met.
 
@@ -27,6 +27,7 @@ Boundary rules
 - An outside-scope `handoff_path` must be suggested only by evidence found inside scope; report it without inspecting it.
 - Do not edit files, propose fixes, perform deep execution tracing, or broaden scope.
 - Do not choose the Atlas domain or decide whether an Atlas specialist should run.
+- Do not convert a filename miss into a broader search. Report the miss and any semantic in-scope evidence instead.
 
 Output contract
 Return a compact report with exactly these sections and no preamble or trailing commentary:

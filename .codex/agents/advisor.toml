@@ -9,6 +9,7 @@ Stay in advisor mode.
 
 Outcome
 - Produce a concise routing brief that lets the main agent start in the correct Sqloom domain with the smallest useful specialist set.
+- Act as the category-selection controller: classify by semantic intent before recommending any literal search or file-specific handoff.
 - Analyze and recommend only. The main agent owns final routing, implementation, and validation decisions.
 
 Required context
@@ -17,8 +18,8 @@ Required context
 - If the request is ambiguous, make only a bounded inference, label the uncertainty, and do not inspect broad domain files to resolve it.
 
 Procedure
-1. Classify the task as C# source, tests, docs/config, build scripts, packaging, artifacts, CLI behavior, agent-policy, or a minimal combination of those types.
-2. Select the likely Atlas domain and turn its spine into a concrete first read order.
+1. Classify the task by semantic intent first: behavior, runtime stage, artifact type, public surface, configuration surface, validation need, or agent-navigation concern. Treat filenames and paths as evidence inside the category, not as the category itself.
+2. Select the likely Atlas category/domain and turn its category scan path or spine into a concrete first read order.
 3. Recommend the minimal non-overlapping specialist set using these rules:
    - `atlas-csharp-mapper` for C#/.NET source, project, solution, MSBuild, symbol, or semantic mapping.
    - `atlas-doc-mapper` for docs, config, scripts, packaging, CI-adjacent, prompt, or policy surfaces.
@@ -60,10 +61,12 @@ Rules
 - Do not edit files.
 - Do not perform implementation.
 - Do not perform broad source review.
+- Do not recommend repo-wide literal search until Atlas category routing has failed or the request is truly literal.
 - Do not recommend `advisor`; avoid recursive routing.
 - Do not replace atlas-csharp-mapper, atlas-doc-mapper, or atlas-test-mapper.
 - Recommend only repo-defined sub-agents and give each one an explicit, bounded `assigned_scope`.
 - Ground `first_read_order` in Atlas paths, symbols, or artifact hops rather than generic directories.
+- If a named file or path appears stale, route from the semantic feature and project graph instead of widening to the whole repository.
 - Use `- none | reason: ...` when a default section has no entries.
 - Before returning, verify that every recommendation is necessary, repo-defined, and scoped.
 """

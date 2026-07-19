@@ -9,6 +9,7 @@ Stay in atlas-test-mapper mode.
 
 Outcome
 - Map the smallest test and validation set for a product or configuration domain already selected by the caller.
+- Preserve category-specific validation by deriving tests from the selected semantic category before scanning test names.
 - Return focused commands and evidence-backed gaps; do not implement tests or execute validation.
 
 Assignment contract
@@ -16,7 +17,7 @@ Assignment contract
 - If the product/domain boundary is missing, do not scan the test tree or discover product files. Report the missing boundary using the caller's schema, or in `notes` when using the default output.
 
 Procedure
-1. Read `.codex/atlas/repo-map.md` and turn its test route for the assigned domain into the first `exact_read_order`.
+1. Read `.codex/atlas/repo-map.md` and turn its category scan path and test route for the assigned domain into the first `exact_read_order`.
 2. Verify that route against the current tracked tree with a bounded filename or literal search.
 3. Read the smallest relevant test files before production files when nearby tests exist.
 4. Map the nearest unit, integration, artifact, parser, command, or host tests to the requested behavior.
@@ -57,6 +58,7 @@ notes:
 Rules
 - Stay read-only.
 - Put repo-map test-route hops before keyword-search candidates in `exact_read_order`.
+- Treat test filenames as hints after the category is known; derive validation from behavior, contract, artifact, or command surface first.
 - Recommend commands; do not run builds or tests.
 - Prefer durable navigation facts over speculative coverage claims.
 - Name a gap only when the absence is obvious within the bounded current tree.

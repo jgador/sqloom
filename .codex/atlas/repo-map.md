@@ -237,6 +237,22 @@ flowchart TB
 - VS Code extension packaging: [package.json](../../package.json), [scripts/workspaces.mjs](../../scripts/workspaces.mjs), [scripts/workspace-targets.mjs](../../scripts/workspace-targets.mjs), [extensions/sqloom/package.json](../../extensions/sqloom/package.json), [extensions/sqloom/src/extension.ts](../../extensions/sqloom/src/extension.ts), and [docs/vscode-extension-release.md](../../docs/vscode-extension-release.md).
 - Agent/navigation policy: [AGENTS.md](../../AGENTS.md), [docs/agents/README.md](../../docs/agents/README.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), and [.agents/skills/security-audit-fast/SKILL.md](../../.agents/skills/security-audit-fast/SKILL.md). Use `advisor` for request classification and sub-agent routing recommendations, Atlas mappers for specialist read-only mapping, and `scout` only for bounded literal discovery.
 
+## Category Scan Paths
+
+Use these semantic categories as the first-pass routing index. Pick the category by behavior, contract, artifact, or validation intent before running broad literal search.
+
+- Command UX, help, startup, init, or dispatch -> CLI dispatch and startup domain; first inspect `CommandCatalog`, startup parsing, dispatch, then the specific command/parser.
+- Endpoint discovery, ASP.NET Core route catalog, replay planning, or request execution -> Replay and endpoint discovery domain; first inspect source project resolution, Roslyn endpoint catalog loading, plan building, and endpoint execution contracts.
+- SQL Server Query Store collection, discovered objects, or workload classification -> Observe and Query Store domain; first inspect observe parsing, Query Store collectors, discovered-object collection, then Query Store contracts.
+- Statement matching, replay-to-Query Store linkage, or correlation artifacts -> Correlate domain; first inspect correlate parsing, `QueryStoreCorrelator`, statement handles, then correlation contracts.
+- OpenAI advice, evidence packs, DACPAC schema, SQL proposal validation, or advice JSON -> Advise and SQL proposals domain; first inspect advice parsing, schema extraction, evidence pack building, generator contracts, then proposal normalization.
+- End-to-end workflow, combined stage orchestration, or tune report -> Tune workflow domain; first inspect `TuneCommand`, tune parsing/context, then the stage-specific domain that owns the failing hop.
+- Persisted JSON, artifact layout, replay/observe/correlate/advice files, or public pipeline contracts -> Artifact and JSON contracts domain; first inspect artifact layout and persisted models, then the writer/reader in the owning runtime stage.
+- Harness target resolution, manifest, file-based harness, app-owned harness, or sample target app -> Harness model domain; first inspect `Sqloom.Testing` contracts, sample harness, and host resolution.
+- NuGet tool, local wrapper, release docs, command reference generation, or package metadata -> Packaging and local tooling domain; first inspect package project metadata, tooling scripts, release docs, then generated command-reference workflow only when command metadata changes.
+- VS Code command, Activity Bar, webview launcher, dashboard, or extension package -> VS Code extension packaging domain; first inspect extension package metadata, workspace scripts, extension entry point, then extension release docs.
+- Agent routing, search policy, Atlas memory, security audit paths, or skill prompts -> Agent/navigation policy domain; first inspect `AGENTS.md`, this map, `docs/agents/README.md`, then the specific agent TOML or skill file.
+
 ## Test Routing
 
 - CLI startup, command dispatch, init scaffolding, endpoints, and help/version output -> [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), [tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs](../../tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs), [tests/Sqloom.UnitTests/Endpoints/RoslynEndpointCatalogLoaderTests.cs](../../tests/Sqloom.UnitTests/Endpoints/RoslynEndpointCatalogLoaderTests.cs), [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs)
@@ -263,12 +279,15 @@ flowchart TB
 ## Navigation Rules
 
 - Follow the runtime flow first for command behavior, then use RoslynKit or direct line reads for the narrow unclear hop.
+- Start non-trivial searches by selecting a semantic category from Category Scan Paths, then convert that category into a first read order before repo-wide `rg`.
+- Treat named files and directories as hints inside a category, not as the category itself. If a name is stale or missing, continue through symbols, project references, runtime flow, artifact contracts, or tests.
 - Read nearby tests before implementation when a matching test exists.
 - For public CLI, JSON artifact, package, configuration, or documented workflow changes, update [README.md](../../README.md) or the relevant docs in the same change.
 - Inspect `artifacts/sqloom/` before guessing about replay, correlate, advise, or tune behavior from code alone.
 - Use [.agents/skills/roslynkit/SKILL.md](../../.agents/skills/roslynkit/SKILL.md) for C# semantic inspection when the current environment exposes RoslynKit and the task benefits from symbols, definitions, references, implementations, quick info, or line-range reads.
 - Use repo-defined sub-agents from [.codex/agents/](../agents/) only unless the user explicitly asks otherwise; `advisor` is the first routing handoff for non-trivial tasks when the correct specialist is not already obvious.
 - Do not use Atlas as a file inventory, test inventory, symbol graph, reference graph, artifact cache, or source cache.
+- Store successful search paths in Atlas only when they are durable category, ownership, artifact-routing, or source-to-test-routing facts.
 - Ignore first: `artifacts/`, `TestResults/`, `.vs/`, `.tools/`, `bin/`, `obj/`, and package output unless the task is explicitly about generated artifacts, local tooling, or packaging.
 
-Last verified: `2026-07-18`
+Last verified: `2026-07-20`
