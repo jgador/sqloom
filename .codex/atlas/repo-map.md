@@ -212,7 +212,7 @@ flowchart TB
 - Setup command: `init` scaffolds the embedded `sqloom` agent skill and skips harness resolution.
 - Source catalog command: `endpoints` lists ASP.NET Core controller operations and parameter metadata from source without starting a harness.
 - Convenience front door: `tune` runs the common workflow and writes stage-owned artifacts under `artifacts/sqloom/`.
-- Explicit .NET 10 C# file-based harness targets are always built into isolated system-temporary output and loaded through a per-build assembly load context before normal application discovery; `--no-build` remains project-only.
+- Explicit .NET 10 C# file-based harness targets are always built into isolated system-temporary output and loaded through a per-build assembly load context before normal application discovery; `--no-build` remains project-only. The load context keeps app and provider assemblies isolated while sharing `Sqloom.Testing` plus EF Core Abstractions, Core, and Relational so public replay interceptor types retain one runtime identity; incompatible shared assembly identities fail during harness loading.
 - File-based harness source is generated once and owned as checked-in test support per app/startup profile, defaulting to `tests/Sqloom/<app>/<profile>/Harness.cs`; endpoint selection remains a replay/tune `--target` input. Replay, tune, and endpoints infer the ASP.NET Core source project from a Web SDK target, a file-harness `#:project` directive, a project-backed harness reference, or explicit `--app-project`.
 - `tune` can export a DACPAC from an explicit command-line read-only connection before harness startup when no CLI DACPAC or harness manifest DACPAC exists; this exported package is replay launch input and the advice schema source.
 - DACPAC-backed advice keeps the raw DacFx unpack under `replay/sqlserver-dacpac-extract/` and writes the normalized schema copy to `replay/sqlserver-schema.sql`.
@@ -310,4 +310,4 @@ Start with a fast lexical or semantic candidate pass inside the selected categor
 - Promote a successful or failed search path into Atlas only when repeated work or independent structural evidence establishes a durable category, ownership, boundary, artifact-routing, or source-to-test-routing fact. Do not store episodic task traces.
 - Ignore first: `artifacts/`, `TestResults/`, `.vs/`, `.tools/`, `bin/`, `obj/`, and package output unless the task is explicitly about generated artifacts, local tooling, or packaging.
 
-Last verified: `2026-07-20`
+Last verified: `2026-07-21`

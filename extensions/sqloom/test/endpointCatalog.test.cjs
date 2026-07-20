@@ -1,7 +1,7 @@
 const assert = require("node:assert/strict");
-const { access, writeFile } = require("node:fs/promises");
+const { access, readFile, writeFile } = require("node:fs/promises");
 const Module = require("node:module");
-const { dirname } = require("node:path");
+const { dirname, resolve } = require("node:path");
 const test = require("node:test");
 const vm = require("node:vm");
 
@@ -13,6 +13,11 @@ const { buildDashboardTuneArguments } = require("../dist/cli/tuneArguments.js");
 const {
   EndpointCatalogSession,
 } = require("../dist/cli/endpointCatalogSession.js");
+const {
+  defaultReadOnlyConnectionStringForHarness,
+  sampleAppHarnessPath,
+  sampleAppReadOnlyConnectionString,
+} = require("../dist/constants/sampleAppDefaults.js");
 
 const endpoint = {
   stableOperationKey: "GET /api/products/{id}",
@@ -21,6 +26,95 @@ const endpoint = {
   controllerType: "Sample.ProductsController",
   methodName: "GetById",
 };
+
+test("prefills the localhost connection only for the sample app harness", () => {
+  assert.equal(
+    defaultReadOnlyConnectionStringForHarness(sampleAppHarnessPath),
+    sampleAppReadOnlyConnectionString,
+  );
+  assert.equal(
+    defaultReadOnlyConnectionStringForHarness(
+      ".\\tests\\Sqloom\\Sqloom.TestApp\\default\\Harness.cs",
+    ),
+    sampleAppReadOnlyConnectionString,
+  );
+  assert.equal(
+    defaultReadOnlyConnectionStringForHarness("tests/Sample/Harness.cs"),
+    "",
+  );
+});
+
+test("keeps the sample connection aligned with the test app", async () => {
+  const appSettingsPath = resolve(
+    __dirname,
+    "../../../tests/Sqloom.TestApp/appsettings.json",
+  );
+  const appSettings = JSON.parse(await readFile(appSettingsPath, "utf8"));
+
+  assert.equal(
+    appSettings.ConnectionStrings.DefaultConnection,
+    sampleAppReadOnlyConnectionString,
+  );
+});
+
+test("initializes the dashboard connection for the detected sample app", async () => {
+  const dashboardStatePath = require.resolve(
+    "../dist/dashboard/dashboardState.js",
+  );
+  const originalLoad = Module._load;
+
+  try {
+    Module._load = function (request, parent, isMain) {
+      if (request === "vscode") {
+        return {
+          Uri: {
+            joinPath: (base, ...segments) => ({
+              fsPath: [base.fsPath, ...segments].join("/"),
+            }),
+          },
+          workspace: {
+            workspaceFolders: [
+              {
+                name: "sqloom",
+                uri: { fsPath: "C:/repo/sqloom" },
+              },
+            ],
+            getConfiguration: () => ({
+              get: (_key, defaultValue) => defaultValue,
+            }),
+            fs: {
+              stat: async () => ({}),
+            },
+          },
+        };
+      }
+      if (request === "../cli/cliStatus") {
+        return {
+          checkCliAvailability: async (cliPath) => ({
+            cliPath,
+            ready: true,
+            detail: "Available",
+          }),
+        };
+      }
+
+      return originalLoad.call(this, request, parent, isMain);
+    };
+    delete require.cache[dashboardStatePath];
+    const { createDashboardState } = require(dashboardStatePath);
+    const state = await createDashboardState();
+    const connectionField = state.setupFields.find(
+      (field) => field.id === "readOnlyConnectionString",
+    );
+
+    assert.ok(connectionField);
+    assert.equal(connectionField.value, sampleAppReadOnlyConnectionString);
+    assert.equal(connectionField.status, "ready");
+  } finally {
+    Module._load = originalLoad;
+    delete require.cache[dashboardStatePath];
+  }
+});
 
 test("loads endpoints through a caller-owned JSON file and cleans up", async () => {
   let outputPath;

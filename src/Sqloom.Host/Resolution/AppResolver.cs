@@ -279,7 +279,13 @@ internal sealed class AppResolver
 
     private sealed class FileHarnessLoadContext : AssemblyLoadContext
     {
-        private readonly Assembly _contractAssembly = typeof(ISqloomApplication).Assembly;
+        private static readonly Assembly[] SharedAssemblies =
+        [
+            typeof(ISqloomApplication).Assembly,
+            typeof(Microsoft.EntityFrameworkCore.DeleteBehavior).Assembly,
+            typeof(Microsoft.EntityFrameworkCore.Diagnostics.IInterceptor).Assembly,
+            typeof(Microsoft.EntityFrameworkCore.Diagnostics.DbCommandInterceptor).Assembly,
+        ];
         private readonly AssemblyDependencyResolver _dependencyResolver;
 
         public FileHarnessLoadContext(string mainAssemblyPath)
@@ -292,11 +298,28 @@ internal sealed class AppResolver
 
         protected override Assembly? Load(AssemblyName assemblyName)
         {
-            if (AssemblyName.ReferenceMatchesDefinition(
-                    assemblyName,
-                    _contractAssembly.GetName()))
+            foreach (var sharedAssembly in SharedAssemblies)
             {
-                return _contractAssembly;
+                var sharedAssemblyName = sharedAssembly.GetName();
+                if (!string.Equals(
+                        assemblyName.Name,
+                        sharedAssemblyName.Name,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                if (!string.Equals(
+                        assemblyName.FullName,
+                        sharedAssemblyName.FullName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    throw new FileLoadException(
+                        $"File harness dependency '{assemblyName.FullName}' is incompatible with " +
+                        $"Sqloom's shared dependency '{sharedAssemblyName.FullName}'.");
+                }
+
+                return sharedAssembly;
             }
 
             var assemblyPath = _dependencyResolver.ResolveAssemblyToPath(assemblyName);

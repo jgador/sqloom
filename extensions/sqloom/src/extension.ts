@@ -7,6 +7,10 @@ import {
   isKnownModelProvider,
   isKnownOpenAiModel,
 } from "./constants/modelOptions";
+import {
+  defaultReadOnlyConnectionStringForHarness,
+  sampleAppHarnessPath,
+} from "./constants/sampleAppDefaults";
 import { openDashboard, registerDashboardLauncher } from "./dashboard";
 import {
   DashboardEndpointRequest,
@@ -315,6 +319,7 @@ async function runTune(cliService: CliService): Promise<void> {
     title: "Read-only SQL Server Connection String",
     prompt:
       "Required for Query Store reads and schema export. The extension does not store this value.",
+    value: defaultReadOnlyConnectionStringForHarness(harnessPath),
     password: true,
     ignoreFocusOut: true,
   });
@@ -437,15 +442,14 @@ function getDashboardWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
 async function defaultHarnessPath(
   workspaceFolder: vscode.WorkspaceFolder,
 ): Promise<string> {
-  const sampleHarness = "tests/Sqloom/Sqloom.TestApp/default/Harness.cs";
   const sampleHarnessUri = vscode.Uri.joinPath(
     workspaceFolder.uri,
-    ...splitPath(sampleHarness),
+    ...splitPath(sampleAppHarnessPath),
   );
 
   try {
     await vscode.workspace.fs.stat(sampleHarnessUri);
-    return sampleHarness;
+    return sampleAppHarnessPath;
   } catch {
     return "";
   }

@@ -1,0 +1,18 @@
+export const sampleAppHarnessPath =
+  "tests/Sqloom/Sqloom.TestApp/default/Harness.cs";
+
+export const sampleAppReadOnlyConnectionString =
+  "Server=localhost;Database=AdventureWorksLT2025;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=True";
+
+export function defaultReadOnlyConnectionStringForHarness(
+  harnessPath: string,
+): string {
+  const normalizedHarnessPath = harnessPath
+    .trim()
+    .replace(/^\.[\\/]/, "")
+    .replaceAll("\\", "/");
+
+  return normalizedHarnessPath === sampleAppHarnessPath
+    ? sampleAppReadOnlyConnectionString
+    : "";
+}

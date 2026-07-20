@@ -215,6 +215,45 @@ public sealed class AppResolverTests
     }
 
     [Fact]
+    public async Task Resolve_CSharpFileSharesEntityFrameworkCoreDependencies()
+    {
+        AppResolver resolver = new();
+        HostStartupOptions startupOptions = new()
+        {
+            AppTargetPath = RepositoryPaths.GetSampleApplicationFilePath(),
+        };
+        var application = await resolver.ResolveAsync(startupOptions);
+        await using var session = await application.StartAsync(new Sqloom.Testing.SqloomApplicationContext
+        {
+            CurrentDirectory = RepositoryPaths.GetRepositoryRoot(),
+        });
+        var captureCollector = session.ReplayHost.Services.GetService(
+            typeof(Sqloom.Testing.AspNetCore.ReplaySqlCaptureCollector)) as
+            Sqloom.Testing.AspNetCore.ReplaySqlCaptureCollector;
+        Assert.NotNull(captureCollector);
+        Sqloom.Host.Replay.ReplayRequestExecutor executor = new();
+        Sqloom.Pipeline.Execution.EndpointReplayRequest request = new()
+        {
+            OperationKey = "GET /api/products/by-category",
+            HttpMethod = "GET",
+            Route = "/api/products/by-category",
+            RelativePathAndQuery = "/api/products/by-category?categoryId=1&minPrice=9.99",
+        };
+
+        var result = await executor.ExecuteAsync(
+            session.ReplayHost.Client,
+            captureCollector,
+            request,
+            accessToken: "sqloom-test-app-token",
+            artifactPath: "operation.json",
+            TestContext.Current.CancellationToken);
+
+        Assert.Null(result.ErrorMessage);
+        Assert.Equal("replayed", result.Status);
+        Assert.Equal(200, result.HttpStatusCode);
+    }
+
+    [Fact]
     public async Task Resolve_CSharpFileWithNoBuild_Throws()
     {
         AppResolver resolver = new();

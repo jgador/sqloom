@@ -7,6 +7,10 @@ import {
   openAiModelOptions,
 } from "../constants/modelOptions";
 import {
+  defaultReadOnlyConnectionStringForHarness,
+  sampleAppHarnessPath,
+} from "../constants/sampleAppDefaults";
+import {
   DashboardCheck,
   DashboardConfigField,
   DashboardSetupField,
@@ -38,6 +42,8 @@ export async function createDashboardState(): Promise<DashboardState> {
     workspaceFolder ? defaultHarnessPath(workspaceFolder) : Promise.resolve(""),
   ]);
   const harnessReady = harnessPath.length > 0;
+  const readOnlyConnectionString =
+    defaultReadOnlyConnectionStringForHarness(harnessPath);
   const workspaceReady = workspaceFolder !== undefined;
   const cliReady = cliStatus.ready;
   const cliStatusBadge = cliReady
@@ -47,7 +53,8 @@ export async function createDashboardState(): Promise<DashboardState> {
       : "Default missing";
   const cliStatusDetail = `${cliStatus.cliPath}: ${cliStatus.detail}`;
   const modelReady = openAiModel.length > 0;
-  const readOnlyConnectionStringReady = false;
+  const readOnlyConnectionStringReady =
+    readOnlyConnectionString.length > 0;
   const setupReady =
     workspaceReady &&
     cliReady &&
@@ -105,9 +112,10 @@ export async function createDashboardState(): Promise<DashboardState> {
     },
     {
       label: "Read-only SQL connection",
-      badge: "Required",
-      detail:
-        "Enter a masked read-only SQL Server connection string before running tune.",
+      badge: readOnlyConnectionStringReady ? "Sample default" : "Required",
+      detail: readOnlyConnectionStringReady
+        ? "Prefilled for the detected Sqloom test app."
+        : "Enter a masked read-only SQL Server connection string before running tune.",
       status: readOnlyConnectionStringReady ? "ready" : "warning",
     },
   ];
@@ -164,8 +172,10 @@ export async function createDashboardState(): Promise<DashboardState> {
     {
       id: "readOnlyConnectionString",
       label: "SQL connection",
-      value: "Required",
-      detail: "Enter before running tune.",
+      value: readOnlyConnectionStringReady ? "Configured" : "Required",
+      detail: readOnlyConnectionStringReady
+        ? "Prefilled for the detected test app."
+        : "Enter before running tune.",
       status: readOnlyConnectionStringReady ? "ready" : "warning",
     },
   ];
@@ -232,10 +242,12 @@ export async function createDashboardState(): Promise<DashboardState> {
     {
       id: "readOnlyConnectionString",
       label: "SQL connection",
-      value: "",
+      value: readOnlyConnectionString,
       kind: "password",
       placeholder: "Read-only SQL Server connection string",
-      note: "Masked and passed only to the current dashboard run.",
+      note: readOnlyConnectionStringReady
+        ? "Prefilled for the test app, masked, and passed only to this dashboard run."
+        : "Masked and passed only to the current dashboard run.",
       status: readOnlyConnectionStringReady ? "ready" : "warning",
       required: true,
     },
@@ -342,13 +354,15 @@ export async function createDashboardState(): Promise<DashboardState> {
     {
       id: "readOnlyConnectionString",
       label: "Read-only connection string",
-      value: "",
+      value: readOnlyConnectionString,
       kind: "password",
       editable: true,
       placeholder: "Read-only SQL Server connection string",
-      note: "Required for tune runs. Masked and never saved.",
+      note: readOnlyConnectionStringReady
+        ? "Prefilled for the test app. Masked and never saved."
+        : "Required for tune runs. Masked and never saved.",
       status: readOnlyConnectionStringReady ? "ready" : "warning",
-      statusLabel: "Required",
+      statusLabel: readOnlyConnectionStringReady ? "Sample default" : "Required",
       required: true,
     },
   ];
@@ -482,13 +496,12 @@ function getPrimaryWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
 async function defaultHarnessPath(
   workspaceFolder: vscode.WorkspaceFolder,
 ): Promise<string> {
-  const sampleHarness = "tests/Sqloom/Sqloom.TestApp/default/Harness.cs";
   const sampleHarnessUri = vscode.Uri.joinPath(
     workspaceFolder.uri,
-    ...splitPath(sampleHarness),
+    ...splitPath(sampleAppHarnessPath),
   );
 
-  return (await pathExists(sampleHarnessUri)) ? sampleHarness : "";
+  return (await pathExists(sampleHarnessUri)) ? sampleAppHarnessPath : "";
 }
 
 async function pathExists(uri: vscode.Uri): Promise<boolean> {
