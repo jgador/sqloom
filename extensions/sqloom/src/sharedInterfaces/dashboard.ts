@@ -109,13 +109,58 @@ export type DashboardState = {
 export type DashboardTuneRequest = {
   cliPath?: string;
   harnessPath?: string;
+  target?: string;
   modelProvider?: string;
   openAiModel?: string;
   openAiApiKey?: string;
   readOnlyConnectionString?: string;
 };
 
-export type DashboardMessage = {
-  command?: string;
-  payload?: DashboardTuneRequest;
+export type ReplayEndpoint = {
+  stableOperationKey: string;
+  httpMethod: string;
+  route: string;
+  controllerType?: string;
+  methodName?: string;
 };
+
+export type DashboardEndpointRequest = {
+  cliPath?: string;
+  harnessPath?: string;
+};
+
+export type DashboardEndpointResult =
+  | {
+      status: "loaded";
+      endpoints: ReplayEndpoint[];
+    }
+  | {
+      status: "failed";
+      message: string;
+    };
+
+export type DashboardMessage =
+  | {
+      command: "runTune";
+      payload?: DashboardTuneRequest;
+    }
+  | {
+      command: "loadEndpoints";
+      requestId: string;
+      payload?: DashboardEndpointRequest;
+    }
+  | {
+      command: "refreshChecks" | "createHarness" | "openDashboard";
+    };
+
+export type DashboardHostMessage =
+  | {
+      command: "endpointsLoaded";
+      requestId: string;
+      endpoints: ReplayEndpoint[];
+    }
+  | {
+      command: "endpointsFailed";
+      requestId: string;
+      message: string;
+    };

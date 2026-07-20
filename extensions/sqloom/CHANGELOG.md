@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Added dashboard endpoint discovery through `sqloom endpoints` and required explicit endpoint selection before Tune runs.
+
 ## 0.0.1
 
 - Initial Marketplace preview.

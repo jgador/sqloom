@@ -1,25 +1,35 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import * as vscode from "vscode";
+import { loadEndpointCatalog } from "./cli/endpointCatalog";
+import { buildDashboardTuneArguments } from "./cli/tuneArguments";
 import {
   defaultOpenAiModel,
   isKnownModelProvider,
   isKnownOpenAiModel,
 } from "./constants/modelOptions";
 import { openDashboard, registerDashboardLauncher } from "./dashboard";
-import { DashboardTuneRequest } from "./sharedInterfaces/dashboard";
+import {
+  DashboardEndpointRequest,
+  DashboardEndpointResult,
+  DashboardTuneRequest,
+} from "./sharedInterfaces/dashboard";
 
 const outputChannel = vscode.window.createOutputChannel("Sqloom");
 
 export function activate(context: vscode.ExtensionContext) {
   const cliService = new CliService();
-  const runDashboardTune = (request: DashboardTuneRequest) =>
-    runTuneFromDashboard(cliService, request);
+  const dashboardCallbacks = {
+    runTune: (request: DashboardTuneRequest) =>
+      runTuneFromDashboard(cliService, request),
+    loadEndpoints: (request: DashboardEndpointRequest) =>
+      loadDashboardEndpoints(request),
+  };
 
   context.subscriptions.push(
     outputChannel,
-    registerDashboardLauncher(context, runDashboardTune),
+    registerDashboardLauncher(context, dashboardCallbacks),
     vscode.commands.registerCommand("sqloom.openDashboard", () =>
-      openDashboard(context, runDashboardTune),
+      openDashboard(context, dashboardCallbacks),
     ),
     vscode.commands.registerCommand("sqloom.init", () => runInit(cliService)),
     vscode.commands.registerCommand("sqloom.tune", () => runTune(cliService)),
@@ -116,8 +126,9 @@ async function runTuneFromDashboard(
   cliService: CliService,
   request: DashboardTuneRequest,
 ): Promise<void> {
-  const workspaceFolder = await pickWorkspaceFolder();
+  const workspaceFolder = getDashboardWorkspaceFolder();
   if (!workspaceFolder) {
+    vscode.window.showWarningMessage("Open a workspace before running Sqloom.");
     return;
   }
 
@@ -171,22 +182,73 @@ async function runTuneFromDashboard(
     return;
   }
 
-  const args = [
-    "tune",
+  const target = (request.target ?? "").trim();
+  if (target.length === 0) {
+    vscode.window.showWarningMessage(
+      "Select an endpoint before running Sqloom tune from the dashboard.",
+    );
+    return;
+  }
+
+  const args = buildDashboardTuneArguments({
     harnessPath,
-    "--model-provider",
+    target,
     modelProvider,
-    "--openai-api-key",
     openAiApiKey,
-    "--openai-model",
     openAiModel,
-    "--replay-data-agent",
     replayDataAgent,
-    "--read-only-connection-string",
     readOnlyConnectionString,
-  ];
+  });
 
   await cliService.run(args, workspaceFolder, request.cliPath);
+}
+
+async function loadDashboardEndpoints(
+  request: DashboardEndpointRequest,
+): Promise<DashboardEndpointResult> {
+  const workspaceFolder = getDashboardWorkspaceFolder();
+  if (!workspaceFolder) {
+    return {
+      status: "failed",
+      message: "Open a workspace before loading Sqloom endpoints.",
+    };
+  }
+
+  const harnessPath = (request.harnessPath ?? "").trim();
+  if (harnessPath.length === 0) {
+    return {
+      status: "failed",
+      message: "Enter or detect a harness path before loading endpoints.",
+    };
+  }
+
+  const cliPath =
+    (request.cliPath ?? "").trim() ||
+    getConfiguration().get<string>("cli.path", "sqloom").trim() ||
+    "sqloom";
+  const result = await loadEndpointCatalog({
+    cliPath,
+    harnessPath,
+    cwd: workspaceFolder.uri.fsPath,
+  });
+  outputChannel.appendLine(
+    `> ${[cliPath, ...result.command].map(quoteArg).join(" ")}`,
+  );
+  outputChannel.appendLine(`cwd: ${workspaceFolder.uri.fsPath}`);
+  if (result.stdout.length > 0) {
+    outputChannel.append(result.stdout);
+  }
+  if (result.stderr.length > 0) {
+    outputChannel.append(result.stderr);
+  }
+  outputChannel.appendLine("");
+
+  if (result.status === "failed") {
+    outputChannel.appendLine(result.message);
+    return { status: "failed", message: result.message };
+  }
+
+  return { status: "loaded", endpoints: result.endpoints };
 }
 
 async function runInit(cliService: CliService): Promise<void> {
@@ -366,6 +428,10 @@ async function pickWorkspaceFolder(): Promise<
 
 function getConfiguration(): vscode.WorkspaceConfiguration {
   return vscode.workspace.getConfiguration("sqloom");
+}
+
+function getDashboardWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
+  return vscode.workspace.workspaceFolders?.[0];
 }
 
 async function defaultHarnessPath(

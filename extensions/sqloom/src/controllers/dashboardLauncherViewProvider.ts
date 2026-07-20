@@ -1,19 +1,19 @@
 import * as vscode from "vscode";
 import { dashboardLauncherViewId } from "../constants/dashboardConstants";
 import { renderDashboardLauncherHtml } from "../dashboard/dashboardLauncherRenderer";
+import { DashboardMessage } from "../sharedInterfaces/dashboard";
 import {
-  DashboardMessage,
-  DashboardTuneRequest,
-} from "../sharedInterfaces/dashboard";
-import { openDashboard } from "./dashboardWebviewController";
+  DashboardCallbacks,
+  openDashboard,
+} from "./dashboardWebviewController";
 
 export function registerDashboardLauncher(
   context: vscode.ExtensionContext,
-  runTune: (request: DashboardTuneRequest) => Promise<void>,
+  callbacks: DashboardCallbacks,
 ): vscode.Disposable {
   return vscode.window.registerWebviewViewProvider(
     dashboardLauncherViewId,
-    new DashboardLauncherViewProvider(context, runTune),
+    new DashboardLauncherViewProvider(context, callbacks),
     {
       webviewOptions: {
         retainContextWhenHidden: true,
@@ -25,7 +25,7 @@ export function registerDashboardLauncher(
 class DashboardLauncherViewProvider implements vscode.WebviewViewProvider {
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly runTune: (request: DashboardTuneRequest) => Promise<void>,
+    private readonly callbacks: DashboardCallbacks,
   ) {}
 
   resolveWebviewView(webviewView: vscode.WebviewView): void {
@@ -50,7 +50,7 @@ class DashboardLauncherViewProvider implements vscode.WebviewViewProvider {
   private async handleMessage(message: DashboardMessage): Promise<void> {
     switch (message.command) {
       case "openDashboard":
-        await openDashboard(this.context, this.runTune);
+        await openDashboard(this.context, this.callbacks);
         return;
       default:
         return;

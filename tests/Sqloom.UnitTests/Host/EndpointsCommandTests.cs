@@ -49,6 +49,21 @@ public sealed class EndpointsCommandTests
                 ]);
 
             Assert.True(File.Exists(outputPath));
+            using var document = System.Text.Json.JsonDocument.Parse(
+                await File.ReadAllTextAsync(outputPath));
+            var root = document.RootElement;
+            Assert.Equal(System.Text.Json.JsonValueKind.Array, root.ValueKind);
+            Assert.Equal(1, root.GetArrayLength());
+            var operation = root[0];
+            Assert.Equal(
+                "GET /api/items",
+                operation.GetProperty("stableOperationKey").GetString());
+            Assert.Equal(
+                "GET",
+                operation.GetProperty("httpMethod").GetString());
+            Assert.Equal(
+                "/api/items",
+                operation.GetProperty("route").GetString());
             Assert.False(Directory.Exists(Path.Combine(currentDirectory, "artifacts")));
         }
         finally

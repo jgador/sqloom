@@ -149,6 +149,13 @@ export const dashboardStyles = `
             background: var(--sqloom-blue-hover);
         }
 
+        .primary-action:disabled,
+        .primary-action:disabled:hover {
+            cursor: not-allowed;
+            opacity: 0.55;
+            background: var(--sqloom-blue);
+        }
+
         .primary-action.compact {
             min-height: 32px;
             padding: 6px 14px;
@@ -400,6 +407,28 @@ export const dashboardStyles = `
             flex: 0 0 auto;
         }
 
+        .endpoint-summary {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-height: 34px;
+            margin-top: 8px;
+            border-top: 1px solid var(--sqloom-border);
+            padding-top: 8px;
+            overflow-wrap: anywhere;
+        }
+
+        .endpoint-summary .status-dot {
+            flex: 0 0 auto;
+        }
+
+        .endpoint-summary-detail {
+            margin-left: auto;
+            color: var(--sqloom-muted);
+            font-size: 12px;
+            text-align: right;
+        }
+
         .edit-grid {
             display: grid;
             grid-template-columns: repeat(3, minmax(190px, 1fr));
@@ -466,6 +495,15 @@ export const dashboardStyles = `
 
         .compound-control .control-input {
             border-radius: 5px 0 0 5px;
+        }
+
+        .compound-control .control-select {
+            border-radius: 5px 0 0 5px;
+        }
+
+        .control-select:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
         }
 
         .inline-meta {

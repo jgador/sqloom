@@ -1,23 +1,34 @@
 import * as vscode from "vscode";
+import { EndpointCatalogSession } from "../cli/endpointCatalogSession";
 import {
   tuneDashboardTitle,
   tuneDashboardViewType,
 } from "../constants/dashboardConstants";
 import { renderDashboardHtml } from "../dashboard/dashboardRenderer";
 import {
+  DashboardEndpointRequest,
+  DashboardEndpointResult,
+  DashboardHostMessage,
   DashboardMessage,
   DashboardTuneRequest,
 } from "../sharedInterfaces/dashboard";
 
 let dashboardController: DashboardWebviewController | undefined;
 
+export type DashboardCallbacks = {
+  runTune: (request: DashboardTuneRequest) => Promise<void>;
+  loadEndpoints: (
+    request: DashboardEndpointRequest,
+  ) => Promise<DashboardEndpointResult>;
+};
+
 export async function openDashboard(
   context: vscode.ExtensionContext,
-  runTune: (request: DashboardTuneRequest) => Promise<void>,
+  callbacks: DashboardCallbacks,
 ): Promise<void> {
   dashboardController ??= new DashboardWebviewController(
     context,
-    runTune,
+    callbacks,
     () => {
       dashboardController = undefined;
     },
@@ -29,17 +40,18 @@ export async function openDashboard(
 class DashboardWebviewController implements vscode.Disposable {
   private panel: vscode.WebviewPanel | undefined;
   private messageSubscription: vscode.Disposable | undefined;
+  private workspaceSubscription: vscode.Disposable | undefined;
+  private readonly endpointCatalogSession = new EndpointCatalogSession();
 
   constructor(
     private readonly context: vscode.ExtensionContext,
-    private readonly runTune: (request: DashboardTuneRequest) => Promise<void>,
+    private readonly callbacks: DashboardCallbacks,
     private readonly onDisposed: () => void,
   ) {}
 
   async show(): Promise<void> {
     if (this.panel) {
       this.panel.reveal(vscode.ViewColumn.One);
-      await this.refresh();
       return;
     }
 
@@ -75,12 +87,18 @@ class DashboardWebviewController implements vscode.Disposable {
     this.messageSubscription = panel.webview.onDidReceiveMessage(
       (message: DashboardMessage) => void this.handleMessage(message),
     );
+    this.workspaceSubscription = vscode.workspace.onDidChangeWorkspaceFolders(
+      () => void this.refresh(),
+    );
     panel.onDidDispose(() => this.dispose());
   }
 
   dispose(): void {
     this.messageSubscription?.dispose();
     this.messageSubscription = undefined;
+    this.workspaceSubscription?.dispose();
+    this.workspaceSubscription = undefined;
+    this.clearEndpointCatalog();
     this.panel = undefined;
     this.onDisposed();
   }
@@ -90,6 +108,7 @@ class DashboardWebviewController implements vscode.Disposable {
       return;
     }
 
+    this.clearEndpointCatalog();
     this.panel.webview.html = await renderDashboardHtml(
       this.context,
       this.panel.webview,
@@ -98,8 +117,22 @@ class DashboardWebviewController implements vscode.Disposable {
 
   private async handleMessage(message: DashboardMessage): Promise<void> {
     switch (message.command) {
-      case "runTune":
-        await this.runTune(message.payload ?? {});
+      case "runTune": {
+        const request = message.payload ?? {};
+        const target = (request.target ?? "").trim();
+        const context = endpointContext(request);
+        if (!this.endpointCatalogSession.canRun(context, target)) {
+          void vscode.window.showWarningMessage(
+            "Select an endpoint loaded from the current Sqloom CLI and harness before running tune.",
+          );
+          return;
+        }
+
+        await this.callbacks.runTune({ ...request, target });
+        return;
+      }
+      case "loadEndpoints":
+        await this.loadEndpoints(message.requestId, message.payload ?? {});
         return;
       case "refreshChecks":
         await this.refresh();
@@ -113,4 +146,50 @@ class DashboardWebviewController implements vscode.Disposable {
         return;
     }
   }
+
+  private async loadEndpoints(
+    requestId: string,
+    request: DashboardEndpointRequest,
+  ): Promise<void> {
+    const generation = this.endpointCatalogSession.beginLoad();
+    const context = endpointContext(request);
+    const result = await this.callbacks.loadEndpoints(request);
+    if (!this.endpointCatalogSession.isCurrent(generation)) {
+      return;
+    }
+
+    if (result.status === "loaded") {
+      this.endpointCatalogSession.completeLoad(
+        generation,
+        context,
+        result.endpoints,
+      );
+      await this.postMessage({
+        command: "endpointsLoaded",
+        requestId,
+        endpoints: result.endpoints,
+      });
+      return;
+    }
+
+    await this.postMessage({
+      command: "endpointsFailed",
+      requestId,
+      message: result.message,
+    });
+  }
+
+  private async postMessage(message: DashboardHostMessage): Promise<void> {
+    await this.panel?.webview.postMessage(message);
+  }
+
+  private clearEndpointCatalog(): void {
+    this.endpointCatalogSession.clear();
+  }
+}
+
+function endpointContext(
+  request: DashboardEndpointRequest | DashboardTuneRequest,
+): string {
+  return `${(request.cliPath ?? "").trim()}\n${(request.harnessPath ?? "").trim()}`;
 }

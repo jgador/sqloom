@@ -49,7 +49,7 @@ ${dashboardStyles}
                 </div>
             </div>
             <div class="top-actions">
-                <button class="primary-action" type="button" data-command="runTune">${renderIcon("play")}<span>Run tune</span></button>
+                <button class="primary-action" type="button" data-command="runTune" disabled>${renderIcon("play")}<span>Run tune</span></button>
                 <div class="run-note">${escapeHtml(state.runNote)}</div>
             </div>
         </header>
@@ -75,6 +75,11 @@ ${dashboardStyles}
                         ${renderStatusDot(state.runStatusChecks[1]?.status ?? "neutral")}
                         <span>Using detected harness: <span data-summary-detail="harnessPath">${escapeHtml(state.setupSummaryItems.find((item) => item.id === "harnessPath")?.detail ?? "Not detected")}</span></span>
                     </div>
+                    <div class="endpoint-summary status-warning" data-endpoint-summary>
+                        ${renderStatusDot("warning")}
+                        <span>Replay endpoint: <strong data-selected-endpoint>Not selected</strong></span>
+                        <span class="endpoint-summary-detail" data-endpoint-summary-detail>Loading endpoints…</span>
+                    </div>
                 </section>
 
                 <section class="panel setup-panel mode-edit" aria-label="Edit setup">
@@ -88,6 +93,19 @@ ${dashboardStyles}
                     <input type="hidden" value="openai" data-field-id="modelProvider">
                     <div class="edit-grid">
                         ${state.setupFields.map(renderSetupField).join("")}
+                        <div class="field endpoint-selector status-warning" data-endpoint-selector>
+                            <div class="field-label">
+                                <label for="sqloom-replay-endpoint">Replay endpoint <span aria-hidden="true">*</span></label>
+                                ${renderStatusDot("warning")}
+                            </div>
+                            <div class="compound-control">
+                                <select id="sqloom-replay-endpoint" class="control control-select" data-field-id="target" required disabled>
+                                    <option value="">Loading endpoints…</option>
+                                </select>
+                                <button class="field-action" type="button" data-client-action="refreshEndpoints">Refresh</button>
+                            </div>
+                            <div class="field-note" data-endpoint-note>Endpoints come from the selected Sqloom CLI and harness.</div>
+                        </div>
                     </div>
                     <div class="detected-line edit-detected">
                         ${renderStatusDot(state.editStatusChecks[1]?.status ?? "neutral")}
@@ -139,11 +157,53 @@ ${dashboardStyles}
         const vscode = acquireVsCodeApi();
         const root = document.querySelector(".dashboard");
         const detectedHarnessPath = root ? root.getAttribute("data-detected-harness") || "" : "";
-        const verifiedCliPath = root ? root.getAttribute("data-verified-cli-path") || "" : "";
-        const verifiedCliReady = root ? root.getAttribute("data-cli-ready") === "true" : false;
-        const verifiedCliDetail = root ? root.getAttribute("data-cli-detail") || "" : "";
+        let verifiedCliPath = root ? root.getAttribute("data-verified-cli-path") || "" : "";
+        let verifiedCliReady = root ? root.getAttribute("data-cli-ready") === "true" : false;
+        let verifiedCliDetail = root ? root.getAttribute("data-cli-detail") || "" : "";
         const readinessCheckCount = root ? Number(root.getAttribute("data-readiness-check-count") || "0") : 0;
         let appliedSetup = captureForm();
+        let endpointRequestSequence = 0;
+        let activeEndpointRequestId = "";
+        let activeEndpointRequestContext = "";
+        let loadedEndpointContext = "";
+        let endpointLoadState = "idle";
+
+        window.addEventListener("message", (event) => {
+            const message = event.data;
+            if (!message || message.requestId !== activeEndpointRequestId) {
+                return;
+            }
+
+            if (activeEndpointRequestContext !== endpointContext(captureForm())) {
+                return;
+            }
+
+            if (message.command === "endpointsLoaded") {
+                const endpoints = Array.isArray(message.endpoints) ? message.endpoints : [];
+                loadedEndpointContext = activeEndpointRequestContext;
+                verifiedCliPath = captureForm().cliPath.trim();
+                verifiedCliReady = true;
+                verifiedCliDetail = "Sqloom CLI verified by endpoint discovery.";
+                populateEndpointOptions(endpoints);
+                if (endpoints.length === 0) {
+                    setEndpointCatalogState("empty", "No replayable endpoints were discovered.");
+                } else {
+                    setEndpointCatalogState(
+                        "loaded",
+                        endpoints.length + " endpoint" + (endpoints.length === 1 ? "" : "s") + " loaded.",
+                    );
+                }
+                validateSetup();
+                return;
+            }
+
+            if (message.command === "endpointsFailed") {
+                loadedEndpointContext = "";
+                populateEndpointOptions([]);
+                setEndpointCatalogState("failed", message.message || "Unable to load Sqloom endpoints.");
+                validateSetup();
+            }
+        });
 
         document.querySelectorAll("[data-command='runTune']").forEach((element) => {
             element.addEventListener("click", () => {
@@ -167,10 +227,22 @@ ${dashboardStyles}
                 }
 
                 if (action === "applySetup") {
-                    appliedSetup = captureForm();
+                    const nextSetup = captureForm();
+                    const contextChanged = endpointContext(nextSetup) !== endpointContext(appliedSetup);
+                    const currentCatalogLoaded =
+                        endpointLoadState === "loaded" &&
+                        loadedEndpointContext === endpointContext(nextSetup);
+                    if (contextChanged && !currentCatalogLoaded) {
+                        nextSetup.target = "";
+                        writeField("target", "");
+                    }
+                    appliedSetup = nextSetup;
                     updateRunSummary(appliedSetup);
                     validateSetup();
                     setMode("run");
+                    if (contextChanged && !currentCatalogLoaded) {
+                        loadEndpoints();
+                    }
                     return;
                 }
 
@@ -182,6 +254,11 @@ ${dashboardStyles}
                 if (action === "detectHarness") {
                     writeField("harnessPath", detectedHarnessPath);
                     validateSetup();
+                    return;
+                }
+
+                if (action === "refreshEndpoints") {
+                    loadEndpoints();
                 }
             });
         });
@@ -207,6 +284,7 @@ ${dashboardStyles}
         });
 
         validateSetup();
+        loadEndpoints();
 
         function setMode(mode) {
             if (root) {
@@ -219,6 +297,7 @@ ${dashboardStyles}
             return {
                 cliPath: values.cliPath,
                 harnessPath: values.harnessPath,
+                target: values.target,
                 modelProvider: "openai",
                 openAiModel: values.openAiModel,
                 openAiApiKey: values.openAiApiKey,
@@ -231,6 +310,7 @@ ${dashboardStyles}
                 workspace: readField("workspace"),
                 cliPath: readField("cliPath"),
                 harnessPath: readField("harnessPath"),
+                target: readField("target"),
                 openAiModel: readField("openAiModel"),
                 openAiApiKey: readField("openAiApiKey"),
                 readOnlyConnectionString: readField("readOnlyConnectionString"),
@@ -261,11 +341,16 @@ ${dashboardStyles}
             const cliPresent = values.cliPath.trim().length > 0;
             const cliReady = cliPresent && cliStatus.ready;
             const sqlConnectionReady = values.readOnlyConnectionString.trim().length > 0;
+            const endpointReady =
+                endpointLoadState === "loaded" &&
+                loadedEndpointContext === endpointContext(values) &&
+                values.target.trim().length > 0;
             const requiredPresent =
                 values.workspace.trim().length > 0 &&
                 cliPresent &&
                 values.openAiModel.trim().length > 0 &&
                 values.harnessPath.trim().length > 0 &&
+                endpointReady &&
                 values.openAiApiKey.trim().length > 0 &&
                 sqlConnectionReady;
             const harnessPresent = values.harnessPath.trim().length > 0;
@@ -295,6 +380,12 @@ ${dashboardStyles}
             if (detectedLabel) {
                 detectedLabel.textContent = harnessPresent ? values.harnessPath : "Not detected";
             }
+            updateEndpointSummary(values, endpointReady);
+            document.querySelectorAll("[data-command='runTune']").forEach((button) => {
+                if (button instanceof HTMLButtonElement) {
+                    button.disabled = !ready;
+                }
+            });
         }
 
         function updateStatusCheck(id, status, label, detail) {
@@ -325,7 +416,11 @@ ${dashboardStyles}
             const harnessReady = values.harnessPath.trim().length > 0;
             const apiKeyReady = values.openAiApiKey.trim().length > 0;
             const sqlConnectionReady = values.readOnlyConnectionString.trim().length > 0;
-            const setupReady = workspaceReady && cliReady && modelReady && harnessReady && apiKeyReady && sqlConnectionReady;
+            const endpointReady =
+                endpointLoadState === "loaded" &&
+                loadedEndpointContext === endpointContext(values) &&
+                values.target.trim().length > 0;
+            const setupReady = workspaceReady && cliReady && modelReady && harnessReady && endpointReady && apiKeyReady && sqlConnectionReady;
             const warningDetail = setupWarningDetail(values, cliStatus, cliReady);
 
             updateSummaryValue("cliPath", values.cliPath || "sqloom", cliStatus.detail, cliReady ? "ready" : "warning");
@@ -364,6 +459,14 @@ ${dashboardStyles}
                 return "Enter or detect a harness path before running tune.";
             }
 
+            if (
+                endpointLoadState !== "loaded" ||
+                loadedEndpointContext !== endpointContext(values) ||
+                values.target.trim().length === 0
+            ) {
+                return endpointStatusDetail(values);
+            }
+
             if (values.openAiApiKey.trim().length === 0) {
                 return "Enter an OpenAI API key before running tune.";
             }
@@ -373,6 +476,130 @@ ${dashboardStyles}
             }
 
             return "Review required values before running.";
+        }
+
+        function loadEndpoints() {
+            const values = captureForm();
+            if (values.cliPath.trim().length === 0 || values.harnessPath.trim().length === 0) {
+                loadedEndpointContext = "";
+                populateEndpointOptions([]);
+                setEndpointCatalogState(
+                    "failed",
+                    values.cliPath.trim().length === 0
+                        ? "Enter the Sqloom CLI executable or path."
+                        : "Enter or detect a harness path before loading endpoints.",
+                );
+                validateSetup();
+                return;
+            }
+
+            endpointRequestSequence += 1;
+            activeEndpointRequestId = "endpoint-" + endpointRequestSequence;
+            activeEndpointRequestContext = endpointContext(values);
+            setEndpointCatalogState("loading", "Loading endpoints from Sqloom…");
+            validateSetup();
+            vscode.postMessage({
+                command: "loadEndpoints",
+                requestId: activeEndpointRequestId,
+                payload: {
+                    cliPath: values.cliPath,
+                    harnessPath: values.harnessPath,
+                },
+            });
+        }
+
+        function populateEndpointOptions(endpoints) {
+            const select = document.querySelector('[data-field-id="target"]');
+            if (!(select instanceof HTMLSelectElement)) {
+                return;
+            }
+
+            const previousSelection = select.value;
+            select.replaceChildren();
+            const placeholder = document.createElement("option");
+            placeholder.value = "";
+            placeholder.textContent = endpoints.length === 0
+                ? "No endpoints available"
+                : "Select an endpoint…";
+            select.appendChild(placeholder);
+            endpoints.forEach((endpoint) => {
+                const option = document.createElement("option");
+                option.value = endpoint.stableOperationKey;
+                option.textContent = endpoint.stableOperationKey;
+                select.appendChild(option);
+            });
+            if (endpoints.some((endpoint) => endpoint.stableOperationKey === previousSelection)) {
+                select.value = previousSelection;
+            }
+        }
+
+        function setEndpointCatalogState(state, detail) {
+            endpointLoadState = state;
+            const select = document.querySelector('[data-field-id="target"]');
+            if (select instanceof HTMLSelectElement) {
+                select.disabled = state !== "loaded";
+            }
+
+            const status = state === "loaded" ? "ready" : state === "loading" ? "idle" : "warning";
+            document.querySelectorAll("[data-endpoint-selector], [data-endpoint-summary]").forEach((element) => {
+                element.classList.remove("status-ready", "status-warning", "status-neutral", "status-idle");
+                element.classList.add("status-" + status);
+                const dot = element.querySelector(".status-dot");
+                if (dot) {
+                    dot.classList.remove("status-ready", "status-warning", "status-neutral", "status-idle");
+                    dot.classList.add("status-" + status);
+                }
+            });
+            document.querySelectorAll("[data-endpoint-note], [data-endpoint-summary-detail]").forEach((element) => {
+                element.textContent = detail;
+            });
+        }
+
+        function updateEndpointSummary(values, endpointReady) {
+            const selectedEndpoint = document.querySelector("[data-selected-endpoint]");
+            if (selectedEndpoint) {
+                selectedEndpoint.textContent = endpointReady ? values.target : "Not selected";
+            }
+            const status = endpointReady
+                ? "ready"
+                : endpointLoadState === "loading"
+                  ? "idle"
+                  : "warning";
+            document.querySelectorAll("[data-endpoint-selector], [data-endpoint-summary]").forEach((element) => {
+                element.classList.remove("status-ready", "status-warning", "status-neutral", "status-idle");
+                element.classList.add("status-" + status);
+                const dot = element.querySelector(".status-dot");
+                if (dot) {
+                    dot.classList.remove("status-ready", "status-warning", "status-neutral", "status-idle");
+                    dot.classList.add("status-" + status);
+                }
+            });
+        }
+
+        function endpointStatusDetail(values) {
+            const currentContext = endpointContext(values);
+            if (
+                (loadedEndpointContext.length > 0 && loadedEndpointContext !== currentContext) ||
+                (activeEndpointRequestContext.length > 0 && activeEndpointRequestContext !== currentContext)
+            ) {
+                return "Apply setup or refresh endpoints for the current CLI and harness.";
+            }
+
+            if (endpointLoadState === "loading") {
+                return "Wait for endpoint discovery to finish.";
+            }
+            if (endpointLoadState === "empty") {
+                return "No replayable endpoints were discovered.";
+            }
+            if (endpointLoadState === "failed") {
+                return "Refresh endpoints after resolving the discovery error.";
+            }
+
+            return "Select a replay endpoint before running tune.";
+        }
+
+        function endpointContext(values) {
+            return values.cliPath.trim() + "\\n" + values.harnessPath.trim();
         }
 
         function currentCliStatus(values) {
@@ -505,8 +732,8 @@ function renderStatusPanel(
   includeAction: boolean,
 ): string {
   const action = includeAction
-    ? `<button class="primary-action full-width" type="button" data-command="runTune">${renderIcon("play")}<span>Run tune</span></button>
-        <p class="status-footer">This will use the detected default harness.</p>`
+    ? `<button class="primary-action full-width" type="button" data-command="runTune" disabled>${renderIcon("play")}<span>Run tune</span></button>
+        <p class="status-footer">This will replay the selected endpoint with the detected harness.</p>`
     : "";
 
   return `<section class="panel status-panel mode-${mode}" aria-label="${escapeHtml(title)}">
