@@ -1,6 +1,6 @@
 name = "scout"
 description = "Focused read-only scout for narrow file discovery and path-scoped reconnaissance."
-model = "gpt-5.4-mini"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 

@@ -1,6 +1,6 @@
 name = "advisor"
 description = "Read-only task-routing advisor that analyzes the user request, identifies the Sqloom domain, and recommends which repo-defined sub-agents should run next."
-model = "gpt-5.4"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "high"
 sandbox_mode = "read-only"
 
