@@ -19,6 +19,16 @@ public static class ArtifactLayout
     }
 
     /// <summary>
+    /// Builds the canonical endpoint catalog path within a replay artifact directory.
+    /// </summary>
+    public static string GetEndpointCatalogPath(string replayArtifactDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
+
+        return Path.Combine(replayArtifactDirectory, "endpoints.json");
+    }
+
+    /// <summary>
     /// Builds the timestamped path for a standalone Query Store snapshot.
     /// </summary>
     public static string GetQueryStoreSnapshotPath(string artifactRoot, DateTimeOffset capturedAtUtc)
@@ -88,7 +98,7 @@ public static class ArtifactLayout
     }
 
     /// <summary>
-    /// Builds the discovered replay operations artifact path.
+    /// Builds the legacy discovered replay operations artifact path.
     /// </summary>
     public static string GetDiscoveredOpsPath(string replayArtifactDirectory)
     {

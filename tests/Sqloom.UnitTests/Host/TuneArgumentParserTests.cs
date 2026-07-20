@@ -72,6 +72,7 @@ public sealed class TuneArgumentParserTests
 
         var expectedWorkflowRoot = Path.GetFullPath(workflowRoot, currentDirectory);
         var expectedReplayDirectory = ArtifactLayout.GetTuneReplayArtifactDir(expectedWorkflowRoot);
+        var expectedEndpointCatalogPath = ArtifactLayout.GetEndpointCatalogPath(expectedReplayDirectory);
         var expectedSnapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(expectedWorkflowRoot);
         var expectedCorrelationPath = ArtifactLayout.GetCorrelationPath(expectedReplayDirectory);
         var expectedAdvicePath = ArtifactLayout.GetReplayTuningAdvicePath(expectedReplayDirectory);
@@ -79,6 +80,10 @@ public sealed class TuneArgumentParserTests
         Assert.Equal(expectedWorkflowRoot, arguments.WorkflowArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedSnapshotPath, arguments.ObserveArguments.JsonOutputPathOverride, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedReplayDirectory, arguments.ReplayArguments.RunnerOptions.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(
+            Path.Combine(expectedWorkflowRoot, "replay", "endpoints.json"),
+            expectedEndpointCatalogPath,
+            StringComparer.OrdinalIgnoreCase);
         Assert.Equal(TimeSpan.FromHours(6), arguments.ObserveArguments.ObservationOptions.LookbackWindow);
         Assert.Equal(100, arguments.ObserveArguments.ObservationOptions.MaxPlans);
         Assert.Equal(10, arguments.ObserveArguments.ObservationOptions.MaxWaits);

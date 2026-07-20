@@ -27,7 +27,7 @@ public sealed class EndpointReplayRunResult
     public required string SourceProjectPath { get; init; }
 
     /// <summary>
-    /// Gets the discovered ops path.
+    /// Path to the canonical endpoint catalog stored with the replay run.
     /// </summary>
     [JsonPropertyName("discoveredOpsPath")]
     public required string DiscoveredOpsPath { get; init; }

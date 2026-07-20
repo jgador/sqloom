@@ -47,10 +47,18 @@ public sealed class EndpointReplayRunner
             .LoadAsync(options.SourceProjectPath, cancellationToken)
             .ConfigureAwait(false);
 
-        var discoveredOperationsPath = _artifactWriter.GetDiscoveredOpsPath(options.ReplayArtifactDir);
+        var endpointCatalogPath = _artifactWriter.GetEndpointCatalogPath(options.ReplayArtifactDir);
         await _artifactWriter
             .WriteDiscoveredOpsAsync(
-                discoveredOperationsPath,
+                endpointCatalogPath,
+                discoveredOperations,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var legacyDiscoveredOperationsPath = _artifactWriter.GetDiscoveredOpsPath(options.ReplayArtifactDir);
+        await _artifactWriter
+            .WriteDiscoveredOpsAsync(
+                legacyDiscoveredOperationsPath,
                 discoveredOperations,
                 cancellationToken)
             .ConfigureAwait(false);
@@ -135,7 +143,7 @@ public sealed class EndpointReplayRunner
             AppName = options.AppName,
             ReplayArtifactDir = options.ReplayArtifactDir,
             SourceProjectPath = options.SourceProjectPath,
-            DiscoveredOpsPath = discoveredOperationsPath,
+            DiscoveredOpsPath = endpointCatalogPath,
             ReplayPlanArtifactPath = replayPlanPath,
             SummaryArtifactPath = summaryPath,
             ReplayDataPreparationPath = replayDataPreparationPath,

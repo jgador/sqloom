@@ -103,6 +103,14 @@ public sealed class EndpointReplayRunnerTests
         Assert.Equal("""{"name":"runtime"}""", handler.RequestBody);
         Assert.Equal("abc123", Assert.Single(handler.RequestHeaders["x-trace"]));
         Assert.Equal("TestApp", result.AppName);
+        var endpointCatalogPath = Path.Combine(tempDirectory, "endpoints.json");
+        var legacyCatalogPath = Path.Combine(tempDirectory, "discovered-operations.json");
+        Assert.Equal(endpointCatalogPath, result.DiscoveredOpsPath, StringComparer.OrdinalIgnoreCase);
+        Assert.True(File.Exists(endpointCatalogPath));
+        Assert.True(File.Exists(legacyCatalogPath));
+        Assert.Equal(
+            await File.ReadAllTextAsync(endpointCatalogPath),
+            await File.ReadAllTextAsync(legacyCatalogPath));
         Assert.Equal(replayLaunchOptions.DacpacPath, hostFactory.ReceivedLaunchOptions?.DacpacPath);
         Assert.Equal(replayLaunchOptions.SeedSqlPath, hostFactory.ReceivedLaunchOptions?.SeedSqlPath);
         Assert.Contains(

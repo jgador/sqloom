@@ -19,7 +19,7 @@ dotnet tool update --global sqloom
 
 ## Command reference
 
-Use `tune` for the full `replay -> observe -> correlate -> advise` flow. Use `endpoints` to list source-discovered controller operations without starting a harness. Use `replay`, `observe`, `correlate`, or `advise` when you need a focused stage, and `init` when you want to scaffold the bundled `sqloom` agent skill into a repository.
+Use `tune` for the full `replay -> observe -> correlate -> advise` flow. Use `endpoints` to inspect source-discovered controller operations without starting a harness; it prints by default and writes JSON only to an explicit `--json-output-file` path. Use `replay`, `observe`, `correlate`, or `advise` when you need a focused stage, and `init` when you want to scaffold the bundled `sqloom` agent skill into a repository.
 
 Use the Sqloom command reference bundled with the agent skill, or `sqloom help <command>` from an installed tool, for exact syntax, required options, allowed values, defaults, and command-specific notes.
 

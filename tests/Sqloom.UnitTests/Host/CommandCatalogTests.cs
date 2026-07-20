@@ -38,7 +38,9 @@ public sealed class CommandCatalogTests
         var endpoints = CommandCatalog.GetRequired(HostCommandKind.Endpoints);
         Assert.Equal(CommandTargetKind.Required, endpoints.TargetKind);
         Assert.True(endpoints.Options.Single(option => option.Name == "--app-project").TakesValue);
-        Assert.True(endpoints.Options.Single(option => option.Name == "--json-output-file").TakesValue);
+        var endpointsJsonOutput = endpoints.Options.Single(option => option.Name == "--json-output-file");
+        Assert.True(endpointsJsonOutput.TakesValue);
+        Assert.Null(endpointsJsonOutput.DefaultValue);
 
         var replay = CommandCatalog.GetRequired(HostCommandKind.Replay);
         Assert.Equal(CommandTargetKind.Required, replay.TargetKind);

@@ -11,6 +11,11 @@ namespace Sqloom.Host.Replay;
 /// </summary>
 internal sealed class ReplayArtifactWriter
 {
+    public string GetEndpointCatalogPath(string replayArtifactDirectory)
+    {
+        return ArtifactLayout.GetEndpointCatalogPath(replayArtifactDirectory);
+    }
+
     public string GetDiscoveredOpsPath(string replayArtifactDirectory)
     {
         return ArtifactLayout.GetDiscoveredOpsPath(replayArtifactDirectory);

@@ -147,6 +147,7 @@ internal static class CommandCatalog
             ],
             [
                 "Endpoints does not start the app harness or replay requests; it only loads source metadata with Roslyn.",
+                "Endpoints prints to the console by default and writes JSON only when --json-output-file is supplied.",
                 "File-based harness targets infer the source project from exactly one Web SDK #:project directive unless --app-project is supplied.",
                 "A direct ASP.NET Core project target can be used to list endpoints before a Sqloom harness exists.",
             ]),
@@ -187,6 +188,7 @@ internal static class CommandCatalog
                 "When no DACPAC override or harness manifest DACPAC is available, tune exports a DACPAC from the command-line read-only connection before replay and reuses it for advice schema extraction.",
                 "By default, Microsoft Agent Framework fills missing replay path, query, header, and body values; pass --replay-data-agent off to opt out.",
                 "--sqlserver-dacpac-file and --sqlserver-seed-sql-file are harness replay launch overrides; the replay data agent does not generate DACPACs or seed SQL.",
+                "Within tune, the replay stage writes endpoints.json under the workflow replay directory and keeps discovered-operations.json as a compatibility copy.",
                 "When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.",
             ]),
         new(
@@ -218,6 +220,7 @@ internal static class CommandCatalog
                 "SQL Server-backed replay harnesses can consume app-owned DACPAC and seed launch options when they implement that setup.",
                 "The replay data agent fills HTTP replay inputs only; it does not generate DACPACs or seed SQL.",
                 "The replay data agent is replay-only. It defaults to required, uses Microsoft Agent Framework, requires --openai-api-key unless --replay-data-agent off is supplied, and writes replay-data-prep.json.",
+                "Replay writes endpoints.json inside its replay artifact directory and keeps discovered-operations.json as a compatibility copy.",
                 "Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".",
                 "Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.",
             ]),
