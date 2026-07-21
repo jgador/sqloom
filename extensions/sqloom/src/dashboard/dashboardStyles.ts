@@ -226,7 +226,7 @@ export const dashboardStyles = `
 
         .stepper {
             display: grid;
-            grid-template-columns: repeat(5, minmax(92px, 1fr));
+            grid-template-columns: repeat(4, minmax(92px, 1fr));
             gap: 0;
             padding: 22px 180px 12px;
         }
@@ -254,7 +254,7 @@ export const dashboardStyles = `
             position: absolute;
             top: 16px;
             left: calc(50% + 34px);
-            width: 54px;
+            right: calc(-50% + 34px);
             height: 2px;
             background: var(--sqloom-focus);
             z-index: 1;
@@ -278,6 +278,29 @@ export const dashboardStyles = `
             border-color: var(--sqloom-focus);
             color: var(--sqloom-focus);
             box-shadow: 0 0 0 3px color-mix(in srgb, var(--sqloom-focus) 18%, transparent);
+        }
+
+        .step.completed .step-index {
+            border-color: var(--sqloom-ready);
+            background: color-mix(in srgb, var(--sqloom-ready) 12%, var(--vscode-editor-background));
+            color: var(--sqloom-ready);
+        }
+
+        .step.failed .step-index {
+            border-color: var(--sqloom-warning);
+            background: color-mix(in srgb, var(--sqloom-warning) 12%, var(--vscode-editor-background));
+            color: var(--sqloom-warning);
+        }
+
+        .step.completed:not(:last-child)::before {
+            content: "";
+            position: absolute;
+            top: 16px;
+            left: calc(50% + 34px);
+            right: calc(-50% + 34px);
+            height: 2px;
+            background: var(--sqloom-ready);
+            z-index: 1;
         }
 
         .step-label {
@@ -902,7 +925,7 @@ export const dashboardStyles = `
             }
 
             .stepper {
-                grid-template-columns: repeat(5, 116px);
+                grid-template-columns: repeat(4, 116px);
                 overflow-x: auto;
                 padding-left: 4px;
                 padding-right: 4px;

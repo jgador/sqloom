@@ -1,10 +1,19 @@
 export type DashboardStatus = "ready" | "warning" | "neutral" | "idle";
 
+export type DashboardStageId = "replay" | "observe" | "correlate" | "advise";
+
+export type DashboardStageStatus =
+  | "pending"
+  | "active"
+  | "completed"
+  | "failed";
+
 export type DashboardStage = {
+  id: DashboardStageId;
   number: number;
   label: string;
   detail?: string;
-  active?: boolean;
+  status: DashboardStageStatus;
 };
 
 export type DashboardSummaryItem = {
@@ -153,6 +162,17 @@ export type DashboardMessage =
       command: "refreshChecks" | "createHarness" | "openDashboard";
     };
 
+export type DashboardTuneProgressEvent = {
+  stage: DashboardStageId;
+  status: DashboardStageStatus;
+  detail?: string;
+};
+
+export type DashboardTuneRunResult = {
+  success: boolean;
+  artifactDir: string;
+};
+
 export type DashboardHostMessage =
   | {
       command: "endpointsLoaded";
@@ -163,4 +183,22 @@ export type DashboardHostMessage =
       command: "endpointsFailed";
       requestId: string;
       message: string;
+    }
+  | {
+      command: "tuneRunStarted";
+      runId: string;
+    }
+  | {
+      command: "tuneProgress";
+      runId: string;
+      stage: DashboardStageId;
+      status: DashboardStageStatus;
+      detail?: string;
+    }
+  | {
+      command: "tuneRunFinished";
+      runId: string;
+      success: boolean;
+      artifactDir?: string;
+      message?: string;
     };

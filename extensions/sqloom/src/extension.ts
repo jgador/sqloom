@@ -2,6 +2,8 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import * as vscode from "vscode";
 import { loadEndpointCatalog } from "./cli/endpointCatalog";
 import { buildDashboardTuneArguments } from "./cli/tuneArguments";
+import { getDashboardArtifactDir } from "./cli/tuneRunProgress";
+import { TuneRunProgressTracker } from "./cli/tuneRunProgressTracker";
 import {
   defaultOpenAiModel,
   isKnownModelProvider,
@@ -15,7 +17,9 @@ import { openDashboard, registerDashboardLauncher } from "./dashboard";
 import {
   DashboardEndpointRequest,
   DashboardEndpointResult,
+  DashboardTuneProgressEvent,
   DashboardTuneRequest,
+  DashboardTuneRunResult,
 } from "./sharedInterfaces/dashboard";
 
 const outputChannel = vscode.window.createOutputChannel("Sqloom");
@@ -23,8 +27,11 @@ const outputChannel = vscode.window.createOutputChannel("Sqloom");
 export function activate(context: vscode.ExtensionContext) {
   const cliService = new CliService();
   const dashboardCallbacks = {
-    runTune: (request: DashboardTuneRequest) =>
-      runTuneFromDashboard(cliService, request),
+    runTune: (
+      request: DashboardTuneRequest,
+      runId: string,
+      onProgress: (event: DashboardTuneProgressEvent) => void,
+    ) => runTuneFromDashboard(cliService, request, runId, onProgress),
     loadEndpoints: (request: DashboardEndpointRequest) =>
       loadDashboardEndpoints(request),
   };
@@ -51,8 +58,22 @@ class CliService {
     workspaceFolder: vscode.WorkspaceFolder,
     cliPathOverride?: string,
   ): Promise<boolean> {
+    const result = await this.runWithExitCode(args, workspaceFolder, {
+      cliPathOverride,
+    });
+    return result.exitCode === 0;
+  }
+
+  async runWithExitCode(
+    args: string[],
+    workspaceFolder: vscode.WorkspaceFolder,
+    options?: {
+      cliPathOverride?: string;
+      quietCompletionToasts?: boolean;
+    },
+  ): Promise<{ exitCode: number; launchFailureMessage?: string }> {
     const cliPath =
-      cliPathOverride?.trim() ||
+      options?.cliPathOverride?.trim() ||
       getConfiguration().get<string>("cli.path", "sqloom").trim() ||
       "sqloom";
     const redactedCommand = [cliPath, ...redactArgs(args)].join(" ");
@@ -113,27 +134,31 @@ class CliService {
         }),
     );
 
-    if (exitCode === 0) {
-      vscode.window.showInformationMessage("Sqloom command completed.");
-      return true;
+    if (!options?.quietCompletionToasts) {
+      if (exitCode === 0) {
+        vscode.window.showInformationMessage("Sqloom command completed.");
+      } else {
+        vscode.window.showErrorMessage(
+          launchFailureMessage ??
+            "Sqloom command failed. See the Sqloom output channel.",
+        );
+      }
     }
 
-    vscode.window.showErrorMessage(
-      launchFailureMessage ??
-        "Sqloom command failed. See the Sqloom output channel.",
-    );
-    return false;
+    return { exitCode, launchFailureMessage };
   }
 }
 
 async function runTuneFromDashboard(
   cliService: CliService,
   request: DashboardTuneRequest,
-): Promise<void> {
+  runId: string,
+  onProgress: (event: DashboardTuneProgressEvent) => void,
+): Promise<DashboardTuneRunResult> {
   const workspaceFolder = getDashboardWorkspaceFolder();
   if (!workspaceFolder) {
     vscode.window.showWarningMessage("Open a workspace before running Sqloom.");
-    return;
+    return { success: false, artifactDir: "" };
   }
 
   const harnessPath =
@@ -143,7 +168,7 @@ async function runTuneFromDashboard(
     vscode.window.showWarningMessage(
       "Sqloom dashboard tune requires the default harness path in this workspace.",
     );
-    return;
+    return { success: false, artifactDir: "" };
   }
 
   const modelProvider = (request.modelProvider ?? "").trim();
@@ -151,7 +176,7 @@ async function runTuneFromDashboard(
     vscode.window.showWarningMessage(
       "Sqloom dashboard tune requires the OpenAI model provider.",
     );
-    return;
+    return { success: false, artifactDir: "" };
   }
 
   const openAiModel = (request.openAiModel ?? "").trim();
@@ -159,7 +184,7 @@ async function runTuneFromDashboard(
     vscode.window.showWarningMessage(
       "Select an OpenAI model before running Sqloom tune.",
     );
-    return;
+    return { success: false, artifactDir: "" };
   }
 
   const openAiApiKey =
@@ -169,7 +194,7 @@ async function runTuneFromDashboard(
     vscode.window.showWarningMessage(
       "Enter an OpenAI API key or set OPENAI_API_KEY before running Sqloom tune from the dashboard.",
     );
-    return;
+    return { success: false, artifactDir: "" };
   }
 
   const replayDataAgent = getConfiguration().get<string>(
@@ -183,7 +208,7 @@ async function runTuneFromDashboard(
     vscode.window.showWarningMessage(
       "Enter a read-only SQL Server connection string before running Sqloom tune from the dashboard.",
     );
-    return;
+    return { success: false, artifactDir: "" };
   }
 
   const target = (request.target ?? "").trim();
@@ -191,9 +216,10 @@ async function runTuneFromDashboard(
     vscode.window.showWarningMessage(
       "Select an endpoint before running Sqloom tune from the dashboard.",
     );
-    return;
+    return { success: false, artifactDir: "" };
   }
 
+  const artifactDir = getDashboardArtifactDir(runId);
   const args = buildDashboardTuneArguments({
     harnessPath,
     target,
@@ -202,9 +228,35 @@ async function runTuneFromDashboard(
     openAiModel,
     replayDataAgent,
     readOnlyConnectionString,
+    artifactDir,
   });
 
-  await cliService.run(args, workspaceFolder, request.cliPath);
+  const tracker = new TuneRunProgressTracker(
+    workspaceFolder,
+    artifactDir,
+    onProgress,
+  );
+  await tracker.start();
+
+  try {
+    const result = await cliService.runWithExitCode(args, workspaceFolder, {
+      cliPathOverride: request.cliPath,
+      quietCompletionToasts: true,
+    });
+    await tracker.finish(result.exitCode);
+    if (result.exitCode === 0) {
+      vscode.window.showInformationMessage("Sqloom tune completed.");
+      return { success: true, artifactDir };
+    }
+
+    vscode.window.showErrorMessage(
+      result.launchFailureMessage ??
+        "Sqloom tune failed. See the Sqloom output channel.",
+    );
+    return { success: false, artifactDir };
+  } finally {
+    tracker.dispose();
+  }
 }
 
 async function loadDashboardEndpoints(

@@ -10,13 +10,19 @@ import {
   DashboardEndpointResult,
   DashboardHostMessage,
   DashboardMessage,
+  DashboardTuneProgressEvent,
   DashboardTuneRequest,
+  DashboardTuneRunResult,
 } from "../sharedInterfaces/dashboard";
 
 let dashboardController: DashboardWebviewController | undefined;
 
 export type DashboardCallbacks = {
-  runTune: (request: DashboardTuneRequest) => Promise<void>;
+  runTune: (
+    request: DashboardTuneRequest,
+    runId: string,
+    onProgress: (event: DashboardTuneProgressEvent) => void,
+  ) => Promise<DashboardTuneRunResult>;
   loadEndpoints: (
     request: DashboardEndpointRequest,
   ) => Promise<DashboardEndpointResult>;
@@ -42,6 +48,8 @@ class DashboardWebviewController implements vscode.Disposable {
   private messageSubscription: vscode.Disposable | undefined;
   private workspaceSubscription: vscode.Disposable | undefined;
   private readonly endpointCatalogSession = new EndpointCatalogSession();
+  private activeTuneRunId = "";
+  private tuneRunInFlight = false;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -118,6 +126,13 @@ class DashboardWebviewController implements vscode.Disposable {
   private async handleMessage(message: DashboardMessage): Promise<void> {
     switch (message.command) {
       case "runTune": {
+        if (this.tuneRunInFlight) {
+          void vscode.window.showWarningMessage(
+            "A Sqloom tune run is already in progress.",
+          );
+          return;
+        }
+
         const request = message.payload ?? {};
         const target = (request.target ?? "").trim();
         const context = endpointContext(request);
@@ -128,7 +143,46 @@ class DashboardWebviewController implements vscode.Disposable {
           return;
         }
 
-        await this.callbacks.runTune({ ...request, target });
+        const runId = createTuneRunId();
+        this.tuneRunInFlight = true;
+        this.activeTuneRunId = runId;
+        await this.postMessage({ command: "tuneRunStarted", runId });
+
+        try {
+          const result = await this.callbacks.runTune(
+            { ...request, target },
+            runId,
+            (event) => {
+              if (this.activeTuneRunId !== runId) {
+                return;
+              }
+
+              void this.postMessage({
+                command: "tuneProgress",
+                runId,
+                stage: event.stage,
+                status: event.status,
+                detail: event.detail,
+              });
+            },
+          );
+
+          if (this.activeTuneRunId !== runId) {
+            return;
+          }
+
+          await this.postMessage({
+            command: "tuneRunFinished",
+            runId,
+            success: result.success,
+            artifactDir: result.artifactDir,
+          });
+        } finally {
+          if (this.activeTuneRunId === runId) {
+            this.activeTuneRunId = "";
+          }
+          this.tuneRunInFlight = false;
+        }
         return;
       }
       case "loadEndpoints":
@@ -192,4 +246,8 @@ function endpointContext(
   request: DashboardEndpointRequest | DashboardTuneRequest,
 ): string {
   return `${(request.cliPath ?? "").trim()}\n${(request.harnessPath ?? "").trim()}`;
+}
+
+function createTuneRunId(): string {
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }

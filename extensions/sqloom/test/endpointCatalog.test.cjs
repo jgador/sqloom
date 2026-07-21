@@ -210,6 +210,7 @@ test("passes the selected stable operation key to tune exactly once", () => {
     openAiModel: "gpt-test",
     replayDataAgent: "required",
     readOnlyConnectionString: "Server=localhost",
+    artifactDir: "artifacts/sqloom/tune/dashboard-test",
   });
 
   assert.equal(args.filter((value) => value === "--target").length, 1);
@@ -227,6 +228,7 @@ test("rejects dashboard tune arguments without an endpoint", () => {
         openAiModel: "gpt-test",
         replayDataAgent: "required",
         readOnlyConnectionString: "Server=localhost",
+        artifactDir: "artifacts/sqloom/tune/dashboard-test",
       }),
     /endpoint target is required/,
   );

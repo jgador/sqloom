@@ -161,6 +161,8 @@ ${dashboardStyles}
         let verifiedCliReady = root ? root.getAttribute("data-cli-ready") === "true" : false;
         let verifiedCliDetail = root ? root.getAttribute("data-cli-detail") || "" : "";
         const readinessCheckCount = root ? Number(root.getAttribute("data-readiness-check-count") || "0") : 0;
+        let activeTuneRunId = "";
+        let tuneRunInFlight = false;
         let appliedSetup = captureForm();
         let endpointRequestSequence = 0;
         let activeEndpointRequestId = "";
@@ -170,7 +172,33 @@ ${dashboardStyles}
 
         window.addEventListener("message", (event) => {
             const message = event.data;
-            if (!message || message.requestId !== activeEndpointRequestId) {
+            if (!message || typeof message !== "object") {
+                return;
+            }
+
+            if (message.command === "tuneRunStarted" && message.runId) {
+                activeTuneRunId = message.runId;
+                tuneRunInFlight = true;
+                resetTuneStages();
+                setTuneStage("replay", "active");
+                setRunTuneDisabled(true);
+                return;
+            }
+
+            if (message.command === "tuneProgress" && message.runId === activeTuneRunId) {
+                setTuneStage(message.stage, message.status, message.detail);
+                return;
+            }
+
+            if (message.command === "tuneRunFinished" && message.runId === activeTuneRunId) {
+                tuneRunInFlight = false;
+                activeTuneRunId = "";
+                setRunTuneDisabled(false);
+                validateSetup();
+                return;
+            }
+
+            if (message.requestId !== activeEndpointRequestId) {
                 return;
             }
 
@@ -381,9 +409,44 @@ ${dashboardStyles}
                 detectedLabel.textContent = harnessPresent ? values.harnessPath : "Not detected";
             }
             updateEndpointSummary(values, endpointReady);
+            setRunTuneDisabled(!ready);
+        }
+
+        const defaultStageDetails = {
+            replay: "Captures SQL evidence during replay",
+            observe: "",
+            correlate: "",
+            advise: "",
+        };
+
+        function resetTuneStages() {
+            setTuneStage("replay", "pending", defaultStageDetails.replay);
+            setTuneStage("observe", "pending", defaultStageDetails.observe);
+            setTuneStage("correlate", "pending", defaultStageDetails.correlate);
+            setTuneStage("advise", "pending", defaultStageDetails.advise);
+        }
+
+        function setTuneStage(stageId, status, detail) {
+            document.querySelectorAll('[data-stage-id="' + stageId + '"]').forEach((element) => {
+                element.classList.remove("active", "completed", "failed");
+                if (status === "active" || status === "completed" || status === "failed") {
+                    element.classList.add(status);
+                }
+                const detailElement = element.querySelector(".step-detail");
+                if (detailElement) {
+                    if (detail !== undefined) {
+                        detailElement.textContent = detail;
+                    } else if (status === "pending") {
+                        detailElement.textContent = defaultStageDetails[stageId] || "";
+                    }
+                }
+            });
+        }
+
+        function setRunTuneDisabled(disabled) {
             document.querySelectorAll("[data-command='runTune']").forEach((button) => {
                 if (button instanceof HTMLButtonElement) {
-                    button.disabled = !ready;
+                    button.disabled = disabled || tuneRunInFlight;
                 }
             });
         }
@@ -645,9 +708,10 @@ ${dashboardStyles}
 }
 
 function renderStage(stage: DashboardStage): string {
-  const activeClass = stage.active ? " active" : "";
+  const statusClass =
+    stage.status === "pending" ? "" : ` ${escapeHtml(stage.status)}`;
   const detail = stage.detail ? escapeHtml(stage.detail) : "";
-  return `<div class="step${activeClass}">
+  return `<div class="step${statusClass}" data-stage-id="${escapeHtml(stage.id)}">
         <div class="step-index">${stage.number}</div>
         <div class="step-label">${escapeHtml(stage.label)}</div>
         <div class="step-detail">${detail}</div>

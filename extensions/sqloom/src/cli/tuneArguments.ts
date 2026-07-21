@@ -6,6 +6,7 @@ export type DashboardTuneArgumentsInput = {
   openAiModel: string;
   replayDataAgent: string;
   readOnlyConnectionString: string;
+  artifactDir: string;
 };
 
 export function buildDashboardTuneArguments(
@@ -31,5 +32,7 @@ export function buildDashboardTuneArguments(
     input.replayDataAgent,
     "--read-only-connection-string",
     input.readOnlyConnectionString,
+    "--artifact-dir",
+    input.artifactDir,
   ];
 }
