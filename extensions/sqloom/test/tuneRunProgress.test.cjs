@@ -87,6 +87,8 @@ test("builds dashboard tune arguments with artifact directory", () => {
 
   assert.equal(args.at(-2), "--artifact-dir");
   assert.equal(args.at(-1), "artifacts/sqloom/tune/dashboard-test");
+  assert.equal(args[args.indexOf("--replay-data-agent-model") + 1], "gpt-test");
+  assert.equal(args[args.indexOf("--openai-model") + 1], "gpt-test");
 });
 
 test("matches artifact paths case-insensitively on Windows-style roots", () => {

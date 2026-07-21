@@ -215,6 +215,7 @@ test("passes the selected stable operation key to tune exactly once", () => {
 
   assert.equal(args.filter((value) => value === "--target").length, 1);
   assert.equal(args[args.indexOf("--target") + 1], endpoint.stableOperationKey);
+  assert.equal(args[args.indexOf("--replay-data-agent-model") + 1], "gpt-test");
 });
 
 test("rejects dashboard tune arguments without an endpoint", () => {

@@ -421,6 +421,8 @@ async function runTune(cliService: CliService): Promise<void> {
     openAiModel,
     "--replay-data-agent",
     replayDataAgent,
+    "--replay-data-agent-model",
+    openAiModel,
     "--read-only-connection-string",
     trimmedReadOnlyConnectionString,
   ];

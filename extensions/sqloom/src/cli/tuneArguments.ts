@@ -30,6 +30,8 @@ export function buildDashboardTuneArguments(
     input.openAiModel,
     "--replay-data-agent",
     input.replayDataAgent,
+    "--replay-data-agent-model",
+    input.openAiModel,
     "--read-only-connection-string",
     input.readOnlyConnectionString,
     "--artifact-dir",
