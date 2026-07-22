@@ -13,7 +13,7 @@ The public release uploads these NuGet packages:
 
 The `sqloom` dotnet tool is self-contained for normal tool installs, but app-owned file-based and project-backed harnesses need `Sqloom.Testing` as a compile-time package. `Sqloom.Testing` also contains the shared `Sqloom.Pipeline.*` pipeline surface.
 
-The release package version comes from [Directory.Build.props](../Directory.Build.props). Published packages use the bare package version in `sqloom --version`; the local development wrapper can opt into Git commit metadata and print values such as `0.4.0+<commit>`. Library package metadata lives in [src/Sqloom.Testing/Sqloom.Testing.csproj](../src/Sqloom.Testing/Sqloom.Testing.csproj). The tool package metadata lives in [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj), and the tool package readme comes from [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md).
+The release package version comes from [Directory.Build.props](../Directory.Build.props). Published packages use the bare package version in `sqloom --version`; the local development wrapper can opt into Git commit metadata and print values such as `0.5.0+<commit>`. Library package metadata lives in [src/Sqloom.Testing/Sqloom.Testing.csproj](../src/Sqloom.Testing/Sqloom.Testing.csproj). The tool package metadata lives in [src/Sqloom.Host/Sqloom.Host.csproj](../src/Sqloom.Host/Sqloom.Host.csproj), and the tool package readme comes from [src/Sqloom.Host/PackageReadme.md](../src/Sqloom.Host/PackageReadme.md).
 
 ## 1. Update release metadata
 

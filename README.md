@@ -145,6 +145,6 @@ pwsh .\scripts\deploy-sqloom-local.ps1
 sqloom-local --version
 ```
 
-The local wrapper opts into Git build metadata, so `sqloom-local --version` can print `0.4.0+<commit>` while public packages use the bare release version.
+The local wrapper opts into Git build metadata, so `sqloom-local --version` can print `0.5.0+<commit>` while public packages use the bare release version.
 
 For package preparation and release workflow, see [docs/dotnet-tool-release.md](docs/dotnet-tool-release.md).
