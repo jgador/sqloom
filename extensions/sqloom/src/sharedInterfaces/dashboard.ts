@@ -85,10 +85,36 @@ export type DashboardArtifact = {
   name: string;
   description: string;
   type: string;
-  typeTone: "markdown" | "json" | "sql" | "html";
+  typeTone: "markdown" | "json" | "sql" | "html" | "other";
   size: string;
   updated: string;
   summary: string;
+  relativePath: string;
+  sortOrder: number;
+};
+
+export type DashboardArtifactsPanelState = {
+  selectedRunId: string;
+  selectedArtifactDir: string;
+  selectedRunLabel: string;
+  workspaceFolderUri: string;
+  artifactCountLabel: string;
+  footerPrimary: string;
+  footerSecondary: string;
+  emptyTitle: string;
+  emptyDetail: string;
+  artifacts: DashboardArtifact[];
+};
+
+export type DashboardRecentRunStatus = "completed" | "failed";
+
+export type DashboardRecentRun = {
+  id: string;
+  target: string;
+  status: DashboardRecentRunStatus;
+  statusLabel: string;
+  startedRelative: string;
+  artifactDir: string;
 };
 
 export type DashboardState = {
@@ -109,10 +135,10 @@ export type DashboardState = {
   recentRunsAction: string;
   recentRunsEmptyTitle: string;
   recentRunsEmptyDetail: string;
+  recentRuns: DashboardRecentRun[];
   summaryItems: DashboardSummaryItem[];
   configFields: DashboardConfigField[];
   readinessChecks: DashboardCheck[];
-  artifacts: DashboardArtifact[];
 };
 
 export type DashboardTuneRequest = {
@@ -159,6 +185,24 @@ export type DashboardMessage =
       payload?: DashboardEndpointRequest;
     }
   | {
+      command: "selectRecentRun";
+      runId: string;
+      artifactDir: string;
+    }
+  | {
+      command: "openArtifact";
+      relativePath: string;
+      workspaceFolderUri?: string;
+    }
+  | {
+      command: "revealArtifact";
+      relativePath: string;
+      workspaceFolderUri?: string;
+    }
+  | {
+      command: "openRecentRunsFolder";
+    }
+  | {
       command: "refreshChecks" | "createHarness" | "openDashboard";
     };
 
@@ -201,4 +245,15 @@ export type DashboardHostMessage =
       success: boolean;
       artifactDir?: string;
       message?: string;
+      recentRuns?: DashboardRecentRun[];
+      artifactsPanel?: DashboardArtifactsPanelState;
+    }
+  | {
+      command: "recentRunsUpdated";
+      recentRuns: DashboardRecentRun[];
+    }
+  | {
+      command: "artifactsLoaded";
+      runId: string;
+      panel: DashboardArtifactsPanelState;
     };

@@ -299,6 +299,7 @@ test("renders syntactically valid dashboard client script", async () => {
     recentRunsAction: "View all",
     recentRunsEmptyTitle: "No runs",
     recentRunsEmptyDetail: "No runs yet",
+    recentRuns: [],
     summaryItems: [],
     configFields: [],
     readinessChecks: [],
@@ -329,6 +330,19 @@ test("renders syntactically valid dashboard client script", async () => {
       {
         asWebviewUri: (value) => value,
         cspSource: "vscode-resource:",
+      },
+      [],
+      {
+        selectedRunId: "",
+        selectedArtifactDir: "",
+        selectedRunLabel: "",
+        workspaceFolderUri: "",
+        artifactCountLabel: "0 artifacts",
+        footerPrimary: "Latest run: --",
+        footerSecondary: "Artifacts will appear here after you run a tune.",
+        emptyTitle: "No artifacts yet",
+        emptyDetail: "Run a tune or select a recent run to inspect artifacts.",
+        artifacts: [],
       },
     );
     const script = html.match(/<script nonce="[^"]+">([\s\S]*?)<\/script>/);

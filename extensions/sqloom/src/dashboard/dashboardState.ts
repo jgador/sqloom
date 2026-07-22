@@ -13,14 +13,19 @@ import {
 import {
   DashboardCheck,
   DashboardConfigField,
+  DashboardRecentRun,
   DashboardSetupField,
   DashboardSetupSummaryItem,
   DashboardState,
   DashboardStatus,
   DashboardStatusCheck,
 } from "../sharedInterfaces/dashboard";
+import { formatLastTuneRunSummary, toDashboardRecentRun } from "../recentRuns/formatRecentRun";
+import type { TuneRunRecord } from "../recentRuns/recentRunsStore";
 
-export async function createDashboardState(): Promise<DashboardState> {
+export async function createDashboardState(
+  recentRuns: readonly TuneRunRecord[] = [],
+): Promise<DashboardState> {
   const configuration = getConfiguration();
   const workspaceFolder = getPrimaryWorkspaceFolder();
   const cliPath = configuration.get<string>("cli.path", "sqloom").trim();
@@ -367,6 +372,11 @@ export async function createDashboardState(): Promise<DashboardState> {
     },
   ];
 
+  const lastTuneRunSummary = formatLastTuneRunSummary(recentRuns);
+  const dashboardRecentRuns: DashboardRecentRun[] = recentRuns.map((record) =>
+    toDashboardRecentRun(record),
+  );
+
   return {
     title: "Sqloom Tune",
     subtitle: "Tune SQL for performance with confidence.",
@@ -418,6 +428,7 @@ export async function createDashboardState(): Promise<DashboardState> {
     recentRunsEmptyTitle: "No runs yet",
     recentRunsEmptyDetail:
       "Your recent tune runs will appear here. Run a tune to get started.",
+    recentRuns: dashboardRecentRuns,
     summaryItems: [
       {
         label: "Configuration",
@@ -439,69 +450,12 @@ export async function createDashboardState(): Promise<DashboardState> {
       },
       {
         label: "Last tune run",
-        detail: "Never run",
-        status: "idle",
+        detail: lastTuneRunSummary.detail,
+        status: lastTuneRunSummary.status,
       },
     ],
     configFields: legacyConfigFields,
     readinessChecks,
-    artifacts: [
-      {
-        name: "SQL tuning proposal",
-        description: "AI-generated tuning recommendations",
-        type: "Markdown",
-        typeTone: "markdown",
-        size: "128 KB",
-        updated: "2m ago",
-        summary:
-          "Prioritized recommendations with rationale and expected impact.",
-      },
-      {
-        name: "tune-summary.json",
-        description: "Summary of tuning run and key metrics",
-        type: "JSON",
-        typeTone: "json",
-        size: "36 KB",
-        updated: "2m ago",
-        summary: "Run configuration, metrics, and high-level outcomes.",
-      },
-      {
-        name: "query-store-snapshot.json",
-        description: "Captured query store snapshot",
-        type: "JSON",
-        typeTone: "json",
-        size: "212 KB",
-        updated: "2m ago",
-        summary: "Query store data used for analysis and tuning.",
-      },
-      {
-        name: "recommended-changes.sql",
-        description: "Suggested SQL and index changes",
-        type: "SQL",
-        typeTone: "sql",
-        size: "96 KB",
-        updated: "2m ago",
-        summary: "T-SQL scripts with suggested indexes and rewrites.",
-      },
-      {
-        name: "impact-estimates.json",
-        description: "Estimated impact of recommendations",
-        type: "JSON",
-        typeTone: "json",
-        size: "48 KB",
-        updated: "2m ago",
-        summary: "Estimated gains, confidence scores, and trade-offs.",
-      },
-      {
-        name: "execution-plan-diffs.html",
-        description: "Before/after execution plan comparisons",
-        type: "HTML",
-        typeTone: "html",
-        size: "320 KB",
-        updated: "2m ago",
-        summary: "Visual plan diffs highlighting improvements.",
-      },
-    ],
   };
 }
 

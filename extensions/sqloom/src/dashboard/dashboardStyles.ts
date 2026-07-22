@@ -795,6 +795,19 @@ export const dashboardStyles = `
             font-size: 16px;
         }
 
+        .compact-empty-state {
+            min-height: 180px;
+            margin-top: 8px;
+        }
+
+        .text-button {
+            width: auto;
+            min-width: 58px;
+            padding: 0 8px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
         .clock-icon {
             position: relative;
             width: 42px;
@@ -819,6 +832,78 @@ export const dashboardStyles = `
             top: 20px;
             height: 10px;
             transform: rotate(120deg);
+        }
+
+        .recent-runs-body {
+            min-height: 230px;
+        }
+
+        .recent-run-list {
+            display: grid;
+            gap: 10px;
+            padding-top: 14px;
+        }
+
+        .recent-run-item {
+            display: grid;
+            gap: 6px;
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid var(--sqloom-border);
+            border-radius: 6px;
+            background: var(--sqloom-card-soft);
+            color: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .recent-run-item:hover {
+            border-color: var(--vscode-focusBorder);
+            background: var(--vscode-list-hoverBackground);
+        }
+
+        .recent-run-item.selected {
+            border-color: var(--vscode-focusBorder);
+            background: color-mix(in srgb, var(--vscode-focusBorder) 12%, var(--sqloom-card-soft));
+            box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--vscode-focusBorder) 35%, transparent);
+        }
+
+        .recent-run-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .recent-run-header strong {
+            overflow-wrap: anywhere;
+            font-weight: 600;
+        }
+
+        .recent-run-badge {
+            flex: 0 0 auto;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+        }
+
+        .recent-run-badge.status-completed {
+            color: var(--vscode-testing-iconPassed);
+            background: color-mix(in srgb, var(--vscode-testing-iconPassed) 16%, transparent);
+        }
+
+        .recent-run-badge.status-failed {
+            color: var(--vscode-testing-iconFailed);
+            background: color-mix(in srgb, var(--vscode-testing-iconFailed) 16%, transparent);
+        }
+
+        .recent-run-meta {
+            color: var(--sqloom-muted);
+            font-size: 12px;
+            overflow-wrap: anywhere;
         }
 
         .status-dot {

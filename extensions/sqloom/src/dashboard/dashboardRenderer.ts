@@ -1,22 +1,27 @@
 import * as vscode from "vscode";
 import {
   DashboardArtifact,
+  DashboardArtifactsPanelState,
+  DashboardRecentRun,
   DashboardSetupField,
   DashboardSetupSummaryItem,
   DashboardStage,
   DashboardStatus,
   DashboardStatusCheck,
 } from "../sharedInterfaces/dashboard";
-import { escapeHtml, getNonce } from "../utils/webview";
+import type { TuneRunRecord } from "../recentRuns/recentRunsStore";
+import { escapeHtml, getNonce, serializeForScript } from "../utils/webview";
 import { createDashboardState } from "./dashboardState";
 import { dashboardStyles } from "./dashboardStyles";
 
 export async function renderDashboardHtml(
   context: vscode.ExtensionContext,
   webview: vscode.Webview,
+  recentRuns: readonly TuneRunRecord[] = [],
+  artifactsPanel: DashboardArtifactsPanelState,
 ): Promise<string> {
   const nonce = getNonce();
-  const state = await createDashboardState();
+  const state = await createDashboardState(recentRuns);
   const logoUri = webview.asWebviewUri(
     vscode.Uri.joinPath(context.extensionUri, "images", "extensionIcon.png"),
   );
@@ -118,21 +123,7 @@ ${dashboardStyles}
                 </section>
 
                 <section class="panel artifacts-panel" aria-label="Tune results and artifacts">
-                    <div class="panel-heading artifact-heading">
-                        <div>
-                            <h2>Tune results / artifacts</h2>
-                            <p>Artifacts will appear here after a successful run.</p>
-                        </div>
-                        <div class="artifact-tools">
-                            <span>${state.artifacts.length} artifacts</span>
-                            <button class="icon-button" type="button" aria-label="Artifact display options">${renderIcon("menu")}</button>
-                        </div>
-                    </div>
-                    ${renderArtifactsTable(state.artifacts)}
-                    <div class="artifact-footer">
-                        <span>Latest run: --</span>
-                        <span>Artifacts will appear here after you run a tune.</span>
-                    </div>
+                    ${renderArtifactsPanel(artifactsPanel)}
                 </section>
             </div>
 
@@ -142,13 +133,9 @@ ${dashboardStyles}
                 <section class="panel recent-panel" aria-label="${escapeHtml(state.recentRunsTitle)}">
                     <div class="panel-heading compact-heading">
                         <h2>${escapeHtml(state.recentRunsTitle)}</h2>
-                        <button class="link-button" type="button">${escapeHtml(state.recentRunsAction)}</button>
+                        <button class="link-button" type="button" data-command="openRecentRunsFolder">${escapeHtml(state.recentRunsAction)}</button>
                     </div>
-                    <div class="empty-state">
-                        <span class="clock-icon" aria-hidden="true"></span>
-                        <strong>${escapeHtml(state.recentRunsEmptyTitle)}</strong>
-                        <p>${escapeHtml(state.recentRunsEmptyDetail)}</p>
-                    </div>
+                    ${renderRecentRunsPanel(state, artifactsPanel.selectedRunId)}
                 </section>
             </aside>
         </section>
@@ -169,6 +156,11 @@ ${dashboardStyles}
         let activeEndpointRequestContext = "";
         let loadedEndpointContext = "";
         let endpointLoadState = "idle";
+        let recentRuns = ${serializeForScript(state.recentRuns)};
+        let artifactsPanel = ${serializeForScript(artifactsPanel)};
+        let selectedRunId = artifactsPanel.selectedRunId || "";
+        const recentRunsEmptyTitle = ${serializeForScript(state.recentRunsEmptyTitle)};
+        const recentRunsEmptyDetail = ${serializeForScript(state.recentRunsEmptyDetail)};
 
         window.addEventListener("message", (event) => {
             const message = event.data;
@@ -194,7 +186,28 @@ ${dashboardStyles}
                 tuneRunInFlight = false;
                 activeTuneRunId = "";
                 setRunTuneDisabled(false);
+                if (Array.isArray(message.recentRuns)) {
+                    recentRuns = message.recentRuns;
+                    renderRecentRunsPanel();
+                }
+                if (message.artifactsPanel) {
+                    applyArtifactsPanel(message.artifactsPanel);
+                }
                 validateSetup();
+                return;
+            }
+
+            if (message.command === "artifactsLoaded" && message.panel) {
+                if (message.runId && message.runId !== selectedRunId) {
+                    return;
+                }
+                applyArtifactsPanel(message.panel);
+                return;
+            }
+
+            if (message.command === "recentRunsUpdated" && Array.isArray(message.recentRuns)) {
+                recentRuns = message.recentRuns;
+                renderRecentRunsPanel();
                 return;
             }
 
@@ -238,6 +251,71 @@ ${dashboardStyles}
                 vscode.postMessage({ command: "runTune", payload: readTuneRequest() });
             });
         });
+
+        document.querySelectorAll("[data-command='openRecentRunsFolder']").forEach((element) => {
+            element.addEventListener("click", () => {
+                vscode.postMessage({ command: "openRecentRunsFolder" });
+            });
+        });
+
+        const recentRunsPanel = document.querySelector("[data-recent-runs-panel]");
+        const artifactsPanelRoot = document.querySelector("[data-artifacts-panel]");
+        recentRunsPanel?.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            const button = target.closest("[data-command='selectRecentRun']");
+            if (!(button instanceof HTMLElement)) {
+                return;
+            }
+
+            const runId = button.getAttribute("data-run-id") || "";
+            const artifactDir = button.getAttribute("data-artifact-dir") || "";
+            if (runId.length === 0 || artifactDir.length === 0) {
+                return;
+            }
+
+            selectedRunId = runId;
+            renderRecentRunsPanel();
+            vscode.postMessage({ command: "selectRecentRun", runId, artifactDir });
+        });
+
+        artifactsPanelRoot?.addEventListener("click", (event) => {
+            const target = event.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            const previewButton = target.closest("[data-command='openArtifact']");
+            if (previewButton instanceof HTMLElement) {
+                const relativePath = previewButton.getAttribute("data-relative-path") || "";
+                if (relativePath.length > 0) {
+                    vscode.postMessage({
+                        command: "openArtifact",
+                        relativePath,
+                        workspaceFolderUri: artifactsPanel.workspaceFolderUri || "",
+                    });
+                }
+                return;
+            }
+
+            const revealButton = target.closest("[data-command='revealArtifact']");
+            if (revealButton instanceof HTMLElement) {
+                const relativePath = revealButton.getAttribute("data-relative-path") || "";
+                if (relativePath.length > 0) {
+                    vscode.postMessage({
+                        command: "revealArtifact",
+                        relativePath,
+                        workspaceFolderUri: artifactsPanel.workspaceFolderUri || "",
+                    });
+                }
+            }
+        });
+
+        renderRecentRunsPanel();
+        renderArtifactsPanel();
 
         document.querySelectorAll("[data-client-action]").forEach((element) => {
             element.addEventListener("click", () => {
@@ -702,6 +780,133 @@ ${dashboardStyles}
                 detailElement.textContent = detail;
             });
         }
+
+        function renderRecentRunsPanel() {
+            if (!(recentRunsPanel instanceof HTMLElement)) {
+                return;
+            }
+
+            if (!Array.isArray(recentRuns) || recentRuns.length === 0) {
+                recentRunsPanel.innerHTML = '<div class="empty-state"><span class="clock-icon" aria-hidden="true"></span><strong>'
+                    + escapeClientText(recentRunsEmptyTitle)
+                    + '</strong><p>'
+                    + escapeClientText(recentRunsEmptyDetail)
+                    + "</p></div>";
+                return;
+            }
+
+            recentRunsPanel.innerHTML = '<div class="recent-run-list">'
+                + recentRuns.map(renderRecentRunItem).join("")
+                + "</div>";
+        }
+
+        function renderRecentRunItem(run) {
+            const target = escapeClientText(run.target || "Tune run");
+            const statusLabel = escapeClientText(run.statusLabel || (run.status === "failed" ? "Failed" : "Completed"));
+            const startedRelative = escapeClientText(run.startedRelative || "Just now");
+            const artifactDir = escapeClientText(run.artifactDir || "");
+            const runId = escapeClientText(run.id || "");
+            const status = run.status === "failed" ? "failed" : "completed";
+            const selectedClass = run.id === selectedRunId ? " selected" : "";
+            return '<button class="recent-run-item' + selectedClass + '" type="button" data-command="selectRecentRun" data-run-id="'
+                + runId
+                + '" data-artifact-dir="'
+                + artifactDir
+                + '"><div class="recent-run-header"><strong>'
+                + target
+                + '</strong><span class="recent-run-badge status-'
+                + status
+                + '">'
+                + statusLabel
+                + '</span></div><span class="recent-run-meta">'
+                + startedRelative
+                + " · "
+                + artifactDir
+                + "</span></button>";
+        }
+
+        function applyArtifactsPanel(panel) {
+            artifactsPanel = panel;
+            selectedRunId = panel.selectedRunId || selectedRunId;
+            renderArtifactsPanel();
+            renderRecentRunsPanel();
+        }
+
+        function renderArtifactsPanel() {
+            if (!(artifactsPanelRoot instanceof HTMLElement)) {
+                return;
+            }
+
+            artifactsPanelRoot.innerHTML = renderArtifactsPanelMarkup(artifactsPanel);
+        }
+
+        function renderArtifactsPanelMarkup(panel) {
+            const subtitle = panel.selectedRunId
+                ? "Artifacts for the selected tune run."
+                : "Artifacts will appear here after a successful run.";
+            const tableMarkup = panel.artifacts.length > 0
+                ? renderArtifactsTableMarkup(panel.artifacts)
+                : '<div class="empty-state compact-empty-state"><strong>'
+                    + escapeClientText(panel.emptyTitle)
+                    + '</strong><p>'
+                    + escapeClientText(panel.emptyDetail)
+                    + "</p></div>";
+
+            return '<div class="panel-heading artifact-heading"><div><h2>Tune results / artifacts</h2><p>'
+                + escapeClientText(subtitle)
+                + '</p></div><div class="artifact-tools"><span data-artifact-count>'
+                + escapeClientText(panel.artifactCountLabel)
+                + '</span></div></div>'
+                + tableMarkup
+                + '<div class="artifact-footer"><span data-artifact-footer-primary>'
+                + escapeClientText(panel.footerPrimary)
+                + '</span><span data-artifact-footer-secondary>'
+                + escapeClientText(panel.footerSecondary)
+                + "</span></div>";
+        }
+
+        function renderArtifactsTableMarkup(artifacts) {
+            return '<div class="artifact-table-wrap"><table class="artifact-table"><thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Updated</th><th>Preview / Summary</th><th aria-label="Actions"></th></tr></thead><tbody>'
+                + artifacts.map(renderArtifactRowMarkup).join("")
+                + "</tbody></table></div>";
+        }
+
+        function renderArtifactRowMarkup(artifact) {
+            const relativePath = escapeClientText(artifact.relativePath || "");
+            return '<tr><td><div class="artifact-name"><span class="artifact-icon tone-'
+                + escapeClientText(artifact.typeTone || "other")
+                + '" aria-hidden="true"></span><span><strong>'
+                + escapeClientText(artifact.name || "")
+                + "</strong><small>"
+                + escapeClientText(artifact.description || "")
+                + '</small></span></div></td><td><span class="type-badge tone-'
+                + escapeClientText(artifact.typeTone || "other")
+                + '">'
+                + escapeClientText(artifact.type || "")
+                + "</td><td>"
+                + escapeClientText(artifact.size || "")
+                + "</td><td>"
+                + escapeClientText(artifact.updated || "")
+                + "</td><td>"
+                + escapeClientText(artifact.summary || "")
+                + '</td><td><div class="row-actions"><button class="icon-button text-button" type="button" data-command="openArtifact" data-relative-path="'
+                + relativePath
+                + '" aria-label="Preview '
+                + escapeClientText(artifact.name || "artifact")
+                + '">Preview</button><button class="icon-button text-button" type="button" data-command="revealArtifact" data-relative-path="'
+                + relativePath
+                + '" aria-label="Reveal '
+                + escapeClientText(artifact.name || "artifact")
+                + '">Show</button></div></td></tr>';
+        }
+
+        function escapeClientText(value) {
+            return String(value)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;");
+        }
     </script>
 </body>
 </html>`;
@@ -820,6 +1025,36 @@ function renderStatusCheck(check: DashboardStatusCheck): string {
     </div>`;
 }
 
+function renderArtifactsPanel(panel: DashboardArtifactsPanelState): string {
+  const subtitle = panel.selectedRunId
+    ? "Artifacts for the selected tune run."
+    : "Artifacts will appear here after a successful run.";
+
+  return `<div data-artifacts-panel>
+        <div class="panel-heading artifact-heading">
+            <div>
+                <h2>Tune results / artifacts</h2>
+                <p>${escapeHtml(subtitle)}</p>
+            </div>
+            <div class="artifact-tools">
+                <span data-artifact-count>${escapeHtml(panel.artifactCountLabel)}</span>
+            </div>
+        </div>
+        ${
+          panel.artifacts.length > 0
+            ? renderArtifactsTable(panel.artifacts)
+            : `<div class="empty-state compact-empty-state">
+            <strong>${escapeHtml(panel.emptyTitle)}</strong>
+            <p>${escapeHtml(panel.emptyDetail)}</p>
+        </div>`
+        }
+        <div class="artifact-footer">
+            <span data-artifact-footer-primary>${escapeHtml(panel.footerPrimary)}</span>
+            <span data-artifact-footer-secondary>${escapeHtml(panel.footerSecondary)}</span>
+        </div>
+    </div>`;
+}
+
 function renderArtifactsTable(artifacts: readonly DashboardArtifact[]): string {
   return `<div class="artifact-table-wrap">
         <table class="artifact-table">
@@ -857,8 +1092,8 @@ function renderArtifactRow(artifact: DashboardArtifact): string {
         <td>${escapeHtml(artifact.summary)}</td>
         <td>
             <div class="row-actions">
-                <button class="icon-button" type="button" aria-label="Preview ${escapeHtml(artifact.name)}">${renderIcon("eye")}</button>
-                <button class="icon-button" type="button" aria-label="Actions for ${escapeHtml(artifact.name)}">${renderIcon("moreVertical")}</button>
+                <button class="icon-button text-button" type="button" data-command="openArtifact" data-relative-path="${escapeHtml(artifact.relativePath)}" aria-label="Preview ${escapeHtml(artifact.name)}">Preview</button>
+                <button class="icon-button text-button" type="button" data-command="revealArtifact" data-relative-path="${escapeHtml(artifact.relativePath)}" aria-label="Reveal ${escapeHtml(artifact.name)}">Show</button>
             </div>
         </td>
     </tr>`;
@@ -877,6 +1112,46 @@ function renderArtifactIcon(tone: DashboardArtifact["typeTone"]): string {
     default:
       return renderIcon("fileText", "artifact-type-icon");
   }
+}
+
+function renderRecentRunsPanel(
+  state: {
+    recentRuns: readonly DashboardRecentRun[];
+    recentRunsEmptyTitle: string;
+    recentRunsEmptyDetail: string;
+  },
+  selectedRunId: string,
+): string {
+  if (state.recentRuns.length === 0) {
+    return `<div class="recent-runs-body" data-recent-runs-panel>
+        <div class="empty-state">
+            <span class="clock-icon" aria-hidden="true"></span>
+            <strong>${escapeHtml(state.recentRunsEmptyTitle)}</strong>
+            <p>${escapeHtml(state.recentRunsEmptyDetail)}</p>
+        </div>
+    </div>`;
+  }
+
+  return `<div class="recent-runs-body" data-recent-runs-panel>
+        <div class="recent-run-list">
+            ${state.recentRuns.map((run) => renderRecentRunItem(run, selectedRunId)).join("")}
+        </div>
+    </div>`;
+}
+
+function renderRecentRunItem(
+  run: DashboardRecentRun,
+  selectedRunId: string,
+): string {
+  const statusClass = run.status === "failed" ? "failed" : "completed";
+  const selectedClass = run.id === selectedRunId ? " selected" : "";
+  return `<button class="recent-run-item${selectedClass}" type="button" data-command="selectRecentRun" data-run-id="${escapeHtml(run.id)}" data-artifact-dir="${escapeHtml(run.artifactDir)}">
+        <div class="recent-run-header">
+            <strong>${escapeHtml(run.target)}</strong>
+            <span class="recent-run-badge status-${statusClass}">${escapeHtml(run.statusLabel)}</span>
+        </div>
+        <span class="recent-run-meta">${escapeHtml(run.startedRelative)} · ${escapeHtml(run.artifactDir)}</span>
+    </button>`;
 }
 
 function renderStatusDot(status: DashboardStatus): string {

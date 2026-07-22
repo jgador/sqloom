@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { loadArtifactsPanelForRun } from "../artifacts/loadArtifactsPanel";
 import { EndpointCatalogSession } from "../cli/endpointCatalogSession";
 import {
   tuneDashboardTitle,
@@ -6,14 +7,17 @@ import {
 } from "../constants/dashboardConstants";
 import { renderDashboardHtml } from "../dashboard/dashboardRenderer";
 import {
+  DashboardArtifactsPanelState,
   DashboardEndpointRequest,
   DashboardEndpointResult,
   DashboardHostMessage,
   DashboardMessage,
+  DashboardRecentRun,
   DashboardTuneProgressEvent,
   DashboardTuneRequest,
   DashboardTuneRunResult,
 } from "../sharedInterfaces/dashboard";
+import type { TuneRunRecord } from "../recentRuns/recentRunsStore";
 
 let dashboardController: DashboardWebviewController | undefined;
 
@@ -26,6 +30,17 @@ export type DashboardCallbacks = {
   loadEndpoints: (
     request: DashboardEndpointRequest,
   ) => Promise<DashboardEndpointResult>;
+  getRecentTuneRuns: () => readonly TuneRunRecord[];
+  getRecentRuns: () => DashboardRecentRun[];
+  loadArtifactsPanel: (
+    runId?: string,
+  ) => Promise<DashboardArtifactsPanelState>;
+  revealArtifactDirectory: (artifactDir: string) => Promise<void>;
+  openArtifact: (relativePath: string, workspaceFolderUri?: string) => Promise<void>;
+  revealArtifact: (
+    relativePath: string,
+    workspaceFolderUri?: string,
+  ) => Promise<void>;
 };
 
 export async function openDashboard(
@@ -50,6 +65,7 @@ class DashboardWebviewController implements vscode.Disposable {
   private readonly endpointCatalogSession = new EndpointCatalogSession();
   private activeTuneRunId = "";
   private tuneRunInFlight = false;
+  private artifactLoadGeneration = 0;
 
   constructor(
     private readonly context: vscode.ExtensionContext,
@@ -117,9 +133,16 @@ class DashboardWebviewController implements vscode.Disposable {
     }
 
     this.clearEndpointCatalog();
+    this.artifactLoadGeneration += 1;
+    const [recentRuns, artifactsPanel] = await Promise.all([
+      Promise.resolve(this.callbacks.getRecentTuneRuns()),
+      this.callbacks.loadArtifactsPanel(),
+    ]);
     this.panel.webview.html = await renderDashboardHtml(
       this.context,
       this.panel.webview,
+      recentRuns,
+      artifactsPanel,
     );
   }
 
@@ -171,11 +194,14 @@ class DashboardWebviewController implements vscode.Disposable {
             return;
           }
 
+          const artifactsPanel = await this.callbacks.loadArtifactsPanel(runId);
           await this.postMessage({
             command: "tuneRunFinished",
             runId,
             success: result.success,
             artifactDir: result.artifactDir,
+            recentRuns: this.callbacks.getRecentRuns(),
+            artifactsPanel,
           });
         } finally {
           if (this.activeTuneRunId === runId) {
@@ -187,6 +213,24 @@ class DashboardWebviewController implements vscode.Disposable {
       }
       case "loadEndpoints":
         await this.loadEndpoints(message.requestId, message.payload ?? {});
+        return;
+      case "selectRecentRun":
+        await this.loadArtifactsForRun(message.runId, message.artifactDir);
+        return;
+      case "openArtifact":
+        await this.callbacks.openArtifact(
+          message.relativePath,
+          message.workspaceFolderUri,
+        );
+        return;
+      case "revealArtifact":
+        await this.callbacks.revealArtifact(
+          message.relativePath,
+          message.workspaceFolderUri,
+        );
+        return;
+      case "openRecentRunsFolder":
+        await this.callbacks.revealArtifactDirectory("artifacts/sqloom/tune");
         return;
       case "refreshChecks":
         await this.refresh();
@@ -230,6 +274,23 @@ class DashboardWebviewController implements vscode.Disposable {
       command: "endpointsFailed",
       requestId,
       message: result.message,
+    });
+  }
+
+  private async loadArtifactsForRun(
+    runId: string,
+    _artifactDir: string,
+  ): Promise<void> {
+    const generation = ++this.artifactLoadGeneration;
+    const panel = await this.callbacks.loadArtifactsPanel(runId);
+    if (generation !== this.artifactLoadGeneration) {
+      return;
+    }
+
+    await this.postMessage({
+      command: "artifactsLoaded",
+      runId,
+      panel,
     });
   }
 

@@ -49,7 +49,7 @@
     "build": "tsc -p tsconfig.extension.json",
     "watch": "tsc -watch -p tsconfig.extension.json --preserveWatchOutput",
     "lint": "npm run sync:version:check && tsc -p tsconfig.extension.json --noEmit",
-    "test": "npm run build && node --test test/endpointCatalog.test.cjs test/tuneRunProgress.test.cjs",
+    "test": "npm run build && node --test test/endpointCatalog.test.cjs test/tuneRunProgress.test.cjs test/recentRunsStore.test.cjs test/artifactCatalog.test.cjs test/webview.test.cjs",
     "package": "npm run sync:version && vsce package --no-dependencies",
     "publish:preview": "npm run sync:version && vsce publish --pre-release --no-dependencies"
   },

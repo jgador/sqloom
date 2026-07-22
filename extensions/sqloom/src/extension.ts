@@ -14,7 +14,11 @@ import {
   sampleAppHarnessPath,
 } from "./constants/sampleAppDefaults";
 import { openDashboard, registerDashboardLauncher } from "./dashboard";
+import { loadArtifactsPanelForRun } from "./artifacts/loadArtifactsPanel";
+import { RecentRunsStore } from "./recentRuns/recentRunsStore";
+import { resolveWorkspaceFolder } from "./utils/workspaceFolder";
 import {
+  DashboardArtifactsPanelState,
   DashboardEndpointRequest,
   DashboardEndpointResult,
   DashboardTuneProgressEvent,
@@ -26,14 +30,32 @@ const outputChannel = vscode.window.createOutputChannel("Sqloom");
 
 export function activate(context: vscode.ExtensionContext) {
   const cliService = new CliService();
+  const recentRunsStore = new RecentRunsStore(context.workspaceState);
   const dashboardCallbacks = {
     runTune: (
       request: DashboardTuneRequest,
       runId: string,
       onProgress: (event: DashboardTuneProgressEvent) => void,
-    ) => runTuneFromDashboard(cliService, request, runId, onProgress),
+    ) =>
+      runTuneFromDashboard(
+        cliService,
+        recentRunsStore,
+        request,
+        runId,
+        onProgress,
+      ),
     loadEndpoints: (request: DashboardEndpointRequest) =>
       loadDashboardEndpoints(request),
+    getRecentTuneRuns: () => recentRunsStore.list(),
+    getRecentRuns: () => recentRunsStore.listForDashboard(),
+    loadArtifactsPanel: (runId?: string) =>
+      loadDashboardArtifactsPanel(recentRunsStore, runId),
+    revealArtifactDirectory: (artifactDir: string) =>
+      revealArtifactDirectory(artifactDir),
+    openArtifact: (relativePath: string, workspaceFolderUri?: string) =>
+      openArtifactFile(relativePath, workspaceFolderUri),
+    revealArtifact: (relativePath: string, workspaceFolderUri?: string) =>
+      revealArtifactFile(relativePath, workspaceFolderUri),
   };
 
   context.subscriptions.push(
@@ -151,6 +173,7 @@ class CliService {
 
 async function runTuneFromDashboard(
   cliService: CliService,
+  recentRunsStore: RecentRunsStore,
   request: DashboardTuneRequest,
   runId: string,
   onProgress: (event: DashboardTuneProgressEvent) => void,
@@ -220,6 +243,7 @@ async function runTuneFromDashboard(
   }
 
   const artifactDir = getDashboardArtifactDir(runId);
+  const startedAtUtc = new Date().toISOString();
   const args = buildDashboardTuneArguments({
     harnessPath,
     target,
@@ -244,6 +268,15 @@ async function runTuneFromDashboard(
       quietCompletionToasts: true,
     });
     await tracker.finish(result.exitCode);
+    await recentRunsStore.record({
+      id: runId,
+      startedAtUtc,
+      success: result.exitCode === 0,
+      target,
+      artifactDir,
+      workspaceFolderUri: workspaceFolder.uri.toString(),
+      openAiModel,
+    });
     if (result.exitCode === 0) {
       vscode.window.showInformationMessage("Sqloom tune completed.");
       return { success: true, artifactDir };
@@ -491,6 +524,124 @@ function getConfiguration(): vscode.WorkspaceConfiguration {
 
 function getDashboardWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
   return vscode.workspace.workspaceFolders?.[0];
+}
+
+async function loadDashboardArtifactsPanel(
+  recentRunsStore: RecentRunsStore,
+  runId?: string,
+): Promise<DashboardArtifactsPanelState> {
+  const runs = recentRunsStore.list();
+  const selectedRun = runId
+    ? runs.find((run) => run.id === runId) ?? runs[0]
+    : runs[0];
+  const workspaceFolder = resolveWorkspaceFolder(
+    selectedRun?.workspaceFolderUri,
+  );
+  if (!workspaceFolder) {
+    return createEmptyArtifactsPanel();
+  }
+
+  return loadArtifactsPanelForRun(workspaceFolder, selectedRun);
+}
+
+function createEmptyArtifactsPanel(): DashboardArtifactsPanelState {
+  return {
+    selectedRunId: "",
+    selectedArtifactDir: "",
+    selectedRunLabel: "",
+    workspaceFolderUri: "",
+    artifactCountLabel: "0 artifacts",
+    footerPrimary: "Latest run: --",
+    footerSecondary: "Artifacts will appear here after you run a tune.",
+    emptyTitle: "No artifacts yet",
+    emptyDetail: "Run a tune or select a recent run to inspect artifacts.",
+    artifacts: [],
+  };
+}
+
+async function openArtifactFile(
+  relativePath: string,
+  workspaceFolderUri?: string,
+): Promise<void> {
+  const workspaceFolder = resolveWorkspaceFolder(workspaceFolderUri);
+  const normalizedPath = relativePath.trim();
+  if (!workspaceFolder || normalizedPath.length === 0) {
+    return;
+  }
+
+  const artifactUri = vscode.Uri.joinPath(
+    workspaceFolder.uri,
+    ...splitPath(normalizedPath),
+  );
+
+  try {
+    await vscode.workspace.fs.stat(artifactUri);
+  } catch {
+    void vscode.window.showWarningMessage(
+      `Sqloom artifact was not found: ${normalizedPath}`,
+    );
+    return;
+  }
+
+  if (normalizedPath.toLowerCase().endsWith(".dacpac")) {
+    await vscode.commands.executeCommand("revealInExplorer", artifactUri);
+    return;
+  }
+
+  await vscode.window.showTextDocument(artifactUri, { preview: true });
+}
+
+async function revealArtifactFile(
+  relativePath: string,
+  workspaceFolderUri?: string,
+): Promise<void> {
+  const workspaceFolder = resolveWorkspaceFolder(workspaceFolderUri);
+  const normalizedPath = relativePath.trim();
+  if (!workspaceFolder || normalizedPath.length === 0) {
+    return;
+  }
+
+  const artifactUri = vscode.Uri.joinPath(
+    workspaceFolder.uri,
+    ...splitPath(normalizedPath),
+  );
+
+  try {
+    await vscode.workspace.fs.stat(artifactUri);
+  } catch {
+    void vscode.window.showWarningMessage(
+      `Sqloom artifact was not found: ${normalizedPath}`,
+    );
+    return;
+  }
+
+  await vscode.commands.executeCommand("revealInExplorer", artifactUri);
+}
+
+async function revealArtifactDirectory(
+  artifactDir: string,
+): Promise<void> {
+  const workspaceFolder = getDashboardWorkspaceFolder();
+  const normalizedArtifactDir = artifactDir.trim();
+  if (!workspaceFolder || normalizedArtifactDir.length === 0) {
+    return;
+  }
+
+  const artifactUri = vscode.Uri.joinPath(
+    workspaceFolder.uri,
+    ...splitPath(normalizedArtifactDir),
+  );
+
+  try {
+    await vscode.workspace.fs.stat(artifactUri);
+  } catch {
+    void vscode.window.showWarningMessage(
+      `Sqloom artifact directory was not found: ${normalizedArtifactDir}`,
+    );
+    return;
+  }
+
+  await vscode.commands.executeCommand("revealInExplorer", artifactUri);
 }
 
 async function defaultHarnessPath(

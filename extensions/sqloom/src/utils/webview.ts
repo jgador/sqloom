@@ -9,6 +9,10 @@ export function getNonce(): string {
   return nonce;
 }
 
+export function serializeForScript(value: unknown): string {
+  return JSON.stringify(value).replace(/</g, "\\u003c");
+}
+
 export function escapeHtml(value: string): string {
   return value.replace(/[&<>"']/g, (character) => {
     switch (character) {
