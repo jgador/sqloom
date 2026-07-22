@@ -2,6 +2,8 @@
 
 Sqloom for Visual Studio Code runs the existing `sqloom` CLI from a workspace UI. The Activity Bar logo opens a compact Sqloom webview launcher, and the launcher opens the Sqloom Tune dashboard preview inside the editor.
 
+![Sqloom Tune dashboard](images/sqloom-vscode.png)
+
 ## Requirements
 
 - Install the `sqloom` .NET tool and make sure the `sqloom` command is on `PATH`.

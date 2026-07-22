@@ -12,7 +12,18 @@ This repo includes a sample app and harness for `GET /api/products/by-category`.
 
 ![Sqloom tuning pipeline diagram](docs/images/sqloom-diagram.png)
 
+Sqloom ships two surfaces over the same workflow:
+
+- **CLI** (`sqloom`): the primary path for automation, terminal use, and agent skills.
+- **VS Code extension** ([extensions/sqloom](extensions/sqloom)): a preview Tune dashboard for setup checks, endpoint discovery, `init`, and `tune` runs inside the editor.
+
+![Sqloom Tune dashboard](extensions/sqloom/images/sqloom-vscode.png)
+
+Coding agents can use either surface. Run `sqloom init` to scaffold the Sqloom agent skill, then drive tuning with `sqloom tune` from the terminal or through the extension when the user works in VS Code. The extension shells out to the public CLI and does not duplicate host behavior.
+
 ## Install
+
+### CLI
 
 Install the public tool from NuGet.org:
 
@@ -45,18 +56,16 @@ dotnet add package Sqloom.Testing
 
 `Sqloom.Testing` contains the harness APIs plus the shared `Sqloom.Pipeline.*` pipeline surface used by replay, Query Store, artifact, and advice flows.
 
-## VS Code Extension Preview
+### VS Code extension
 
-Sqloom also has an initial VS Code extension workspace under [extensions/sqloom](extensions/sqloom). The extension is a preview UI over the `sqloom` CLI: it can open the Sqloom Tune dashboard webview with masked one-run tuning inputs, load replayable operations through `sqloom endpoints`, require an explicit dashboard endpoint selection, initialize agent skill files, and run `sqloom tune --target "METHOD /path/template"`.
-
-Build and package the extension from the repo root:
+Install the Marketplace preview extension `jessegador.sqloom`, or build a local `.vsix` from the repo root:
 
 ```powershell
 npm install
 npm run package -- --target sqloom
 ```
 
-The Marketplace preview is published under publisher ID `jessegador`. See [docs/vscode-extension-release.md](docs/vscode-extension-release.md) for the preview release checklist.
+See [extensions/sqloom/README.md](extensions/sqloom/README.md) for dashboard features and settings. See [docs/vscode-extension-release.md](docs/vscode-extension-release.md) for the preview release checklist.
 
 ## Quick Start
 
