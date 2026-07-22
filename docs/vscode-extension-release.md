@@ -47,7 +47,9 @@ npm run build -- --target sqloom
 npm run package -- --target sqloom
 ```
 
-The package command writes a `.vsix` under [extensions/sqloom](../extensions/sqloom). Install it locally with VS Code before publishing:
+The package command writes a `.vsix` under [extensions/sqloom](../extensions/sqloom). The extension `package` and `publish:preview` scripts pass `--baseImagesUrl` so Marketplace README screenshots resolve from `extensions/sqloom/` in the GitHub repo instead of the repository root.
+
+Install it locally with VS Code before publishing:
 
 ```powershell
 $version = (Select-Xml -Path .\Directory.Build.props -XPath '/Project/PropertyGroup/Version').Node.InnerText

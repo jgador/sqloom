@@ -1,6 +1,6 @@
 {
   "name": "sqloom-workspace",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "private": true,
   "packageManager": "npm@11.12.0",
   "description": "Workspace for Sqloom and its VS Code extension",

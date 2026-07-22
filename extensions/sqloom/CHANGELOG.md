@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.5.1
+
+- Fixed Marketplace README screenshot resolution for the monorepo layout by packaging with `--baseImagesUrl`.
+
 ## 0.5.0
 
 - Added the Sqloom VS Code preview with an Activity Bar launcher, Tune dashboard webview, and CLI-backed `init` and `tune` commands.

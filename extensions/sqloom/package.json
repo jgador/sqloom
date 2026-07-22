@@ -1,7 +1,7 @@
 {
   "name": "sqloom",
   "displayName": "Sqloom",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "preview": true,
   "description": "Open the Sqloom Tune dashboard and run Sqloom CLI workflows from Visual Studio Code.",
   "publisher": "jessegador",
@@ -50,8 +50,8 @@
     "watch": "tsc -watch -p tsconfig.extension.json --preserveWatchOutput",
     "lint": "npm run sync:version:check && tsc -p tsconfig.extension.json --noEmit",
     "test": "npm run build && node --test test/endpointCatalog.test.cjs test/tuneRunProgress.test.cjs test/recentRunsStore.test.cjs test/artifactCatalog.test.cjs test/webview.test.cjs",
-    "package": "npm run sync:version && vsce package --no-dependencies",
-    "publish:preview": "npm run sync:version && vsce publish --pre-release --no-dependencies"
+    "package": "npm run sync:version && vsce package --no-dependencies --baseImagesUrl=https://github.com/jgador/sqloom/raw/master/extensions/sqloom",
+    "publish:preview": "npm run sync:version && vsce publish --pre-release --no-dependencies --baseImagesUrl=https://github.com/jgador/sqloom/raw/master/extensions/sqloom"
   },
   "capabilities": {
     "untrustedWorkspaces": {
