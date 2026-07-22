@@ -22,6 +22,26 @@ public sealed class ArtifactLayoutTests
         Path.Combine(ArtifactRoot, "replay", "replay-20260608T040506000Z");
 
     [Fact]
+    public void GetEndpointCatalogPath_UsesReplayArtifactDir()
+    {
+        var path = ArtifactLayout.GetEndpointCatalogPath(ReplayArtifactDir);
+
+        Assert.Equal(
+            Path.Combine(ReplayArtifactDir, "endpoints.json"),
+            path);
+    }
+
+    [Fact]
+    public void GetDiscoveredOpsPath_UsesLegacyFileName()
+    {
+        var path = ArtifactLayout.GetDiscoveredOpsPath(ReplayArtifactDir);
+
+        Assert.Equal(
+            Path.Combine(ReplayArtifactDir, "discovered-operations.json"),
+            path);
+    }
+
+    [Fact]
     public void GetQueryStoreSnapshotPath_UsesTimestampedFileName()
     {
         DateTimeOffset capturedAtUtc = new(2026, 6, 7, 13, 39, 58, TimeSpan.Zero);

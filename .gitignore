@@ -12,3 +12,14 @@
 
 **/bin/
 **/obj/
+
+node_modules/
+/.npm/
+/.vscode-test/
+/.eslintcache
+*.vsix
+
+/extensions/*/dist/
+/extensions/*/out/
+/extensions/*/.vscode-test/
+/extensions/*/coverage/

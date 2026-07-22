@@ -20,7 +20,7 @@ Write-Host "wrapper path: $($context.WrapperPath)"
 Push-Location $context.RepoRoot
 try
 {
-    Invoke-SqloomPackSet -Context $context
+    Invoke-SqloomPackSet -Context $context -IncludeSourceRevisionInVersion
     Assert-SqloomPackagesExist -Context $context
     Install-SqloomToolPath -Context $context -ToolPath $context.LocalToolPath
     Write-SqloomLocalWrapper -Context $context
@@ -28,11 +28,7 @@ try
 
     $localCommand = (Get-Command "sqloom-local" -ErrorAction Stop).Source
 
-    & $localCommand --version
-    if ($LASTEXITCODE -ne 0)
-    {
-        throw "sqloom-local version check failed."
-    }
+    Assert-SqloomToolVersion -Context $context -CommandPath $localCommand -ExpectSourceRevision
 
     & $localCommand --help
     if ($LASTEXITCODE -ne 0)
@@ -42,12 +38,18 @@ try
 
     if (-not $SkipSmoke)
     {
-        $sampleHarnessProject = Join-Path $context.RepoRoot "tests\Sqloom.TestApp.Harness\Sqloom.TestApp.Harness.csproj"
-        # Exercise harness resolution and OpenAPI discovery without requiring generated replay query values.
-        & $localCommand replay $sampleHarnessProject --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
+        $sampleHarnessFile = Join-Path $context.RepoRoot "tests\Sqloom\Sqloom.TestApp\default\Harness.cs"
+        # Exercise harness resolution and source-discovered endpoints without requiring generated replay query values.
+        & $localCommand replay $sampleHarnessFile --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
         if ($LASTEXITCODE -ne 0)
         {
-            throw "sqloom-local sample app smoke check failed."
+            throw "sqloom-local file-harness smoke check failed."
+        }
+
+        & $localCommand replay $sampleHarnessFile --no-build --target "GET /api/products/by-category" --max-operations 0 --replay-data-agent off
+        if ($LASTEXITCODE -eq 0)
+        {
+            throw "sqloom-local file-harness --no-build rejection check failed."
         }
     }
 }

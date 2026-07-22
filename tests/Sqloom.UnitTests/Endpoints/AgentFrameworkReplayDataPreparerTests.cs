@@ -191,21 +191,21 @@ public sealed class AgentFrameworkReplayDataPreparerTests
     {
         return new ReplayDataPreparationContext
         {
-            Operation = new OpenApiOperation
+            Operation = new ReplayOperation
             {
                 StableOperationKey = SampleCatalogReplayScenario.OperationKey,
                 HttpMethod = "GET",
                 Route = SampleCatalogReplayScenario.Route,
                 Parameters =
                 [
-                    new OpenApiParameter
+                    new ReplayParameter
                     {
                         Name = "categoryId",
                         Location = "query",
                         Required = true,
                         SchemaType = "integer",
                     },
-                    new OpenApiParameter
+                    new ReplayParameter
                     {
                         Name = "minPrice",
                         Location = "query",

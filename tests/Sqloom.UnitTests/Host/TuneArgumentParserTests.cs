@@ -21,11 +21,10 @@ public sealed class TuneArgumentParserTests
         var workflowRoot = Path.Combine(currentDirectory, "custom-tune-run");
         var dacpacPath = Path.Combine(currentDirectory, "test-schema-source.dacpac");
         var seedSqlPath = Path.Combine(currentDirectory, "test-seed.sql");
-        var openApiPath = Path.Combine(currentDirectory, "openapi.json");
+        var sourceProjectPath = Sqloom.Tests.RepositoryPaths.GetTestAppProjectPath();
         var schemaPath = Path.Combine(currentDirectory, "manual.schema.sql");
         File.WriteAllText(dacpacPath, "sqloom");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
-        File.WriteAllText(openApiPath, "{}");
         File.WriteAllText(
             schemaPath,
             """
@@ -51,8 +50,8 @@ public sealed class TuneArgumentParserTests
                 dacpacPath,
                 "--sqlserver-seed-sql-file",
                 seedSqlPath,
-                "--openapi-file",
-                openApiPath,
+                "--app-project",
+                sourceProjectPath,
                 "--target",
                 SampleCatalogReplayScenario.OperationKey,
                 "--replay-data-agent",
@@ -73,6 +72,7 @@ public sealed class TuneArgumentParserTests
 
         var expectedWorkflowRoot = Path.GetFullPath(workflowRoot, currentDirectory);
         var expectedReplayDirectory = ArtifactLayout.GetTuneReplayArtifactDir(expectedWorkflowRoot);
+        var expectedEndpointCatalogPath = ArtifactLayout.GetEndpointCatalogPath(expectedReplayDirectory);
         var expectedSnapshotPath = ArtifactLayout.GetTuneQueryStoreSnapshotPath(expectedWorkflowRoot);
         var expectedCorrelationPath = ArtifactLayout.GetCorrelationPath(expectedReplayDirectory);
         var expectedAdvicePath = ArtifactLayout.GetReplayTuningAdvicePath(expectedReplayDirectory);
@@ -80,6 +80,10 @@ public sealed class TuneArgumentParserTests
         Assert.Equal(expectedWorkflowRoot, arguments.WorkflowArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedSnapshotPath, arguments.ObserveArguments.JsonOutputPathOverride, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedReplayDirectory, arguments.ReplayArguments.RunnerOptions.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
+        Assert.Equal(
+            Path.Combine(expectedWorkflowRoot, "replay", "endpoints.json"),
+            expectedEndpointCatalogPath,
+            StringComparer.OrdinalIgnoreCase);
         Assert.Equal(TimeSpan.FromHours(6), arguments.ObserveArguments.ObservationOptions.LookbackWindow);
         Assert.Equal(100, arguments.ObserveArguments.ObservationOptions.MaxPlans);
         Assert.Equal(10, arguments.ObserveArguments.ObservationOptions.MaxWaits);
@@ -87,8 +91,8 @@ public sealed class TuneArgumentParserTests
         Assert.True(arguments.ObserveArguments.AppOnly);
         Assert.True(arguments.ObserveArguments.ShowClassification);
         Assert.Equal(
-            Path.GetFullPath(openApiPath),
-            arguments.ReplayArguments.RunnerOptions.OpenApiPath,
+            Path.GetFullPath(sourceProjectPath),
+            arguments.ReplayArguments.RunnerOptions.SourceProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(
             Path.GetFullPath(dacpacPath),
@@ -133,8 +137,8 @@ public sealed class TuneArgumentParserTests
                     Path.Combine(currentDirectory, "tune-summary.json"),
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                new ReplayHostFake(),
+                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
                 currentDirectory));
 
         Assert.Contains("Unsupported switch", exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -157,9 +161,10 @@ public sealed class TuneArgumentParserTests
                     "openai-key",
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
-                currentDirectory));
+                new ReplayHostFake(),
+                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                currentDirectory,
+                sourceProjectPathOverride: Sqloom.Tests.RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("--model-provider", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -180,9 +185,10 @@ public sealed class TuneArgumentParserTests
                     "openai",
                 ],
                 ManifestFactory.CreateManifest(),
-            new ReplayHostFake(),
-            "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
-                currentDirectory));
+                new ReplayHostFake(),
+                "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
+                currentDirectory,
+                sourceProjectPathOverride: Sqloom.Tests.RepositoryPaths.GetTestAppProjectPath()));
 
         Assert.Contains("--openai-api-key", exception.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -265,7 +271,6 @@ public sealed class TuneArgumentParserTests
         var manifest = new SqloomApplicationManifest
         {
             Name = "Sqloom Test Harness",
-            OpenApiPath = Sqloom.Tests.RepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = ManifestFactory.CreateReplayProfile(),
             SqlServerDacpacPath = dacpacPath,
         };
@@ -283,7 +288,8 @@ public sealed class TuneArgumentParserTests
             manifest,
             new ReplayHostFake(),
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
-            currentDirectory);
+            currentDirectory,
+            sourceProjectPathOverride: Sqloom.Tests.RepositoryPaths.GetTestAppProjectPath());
 
         Assert.Null(arguments.AdviseArguments.SchemaPath);
         Assert.Equal(Path.GetFullPath(dacpacPath), arguments.AdviseArguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
@@ -313,7 +319,8 @@ public sealed class TuneArgumentParserTests
             ManifestFactory.CreateManifest(),
             new ReplayHostFake(),
             readOnlyConnectionString,
-            currentDirectory);
+            currentDirectory,
+            sourceProjectPathOverride: Sqloom.Tests.RepositoryPaths.GetTestAppProjectPath());
 
         Assert.Null(arguments.AdviseArguments.SchemaPath);
         Assert.Null(arguments.AdviseArguments.DacpacPath);
@@ -386,6 +393,7 @@ public sealed class TuneArgumentParserTests
             new ReplayHostFake(),
             readOnlyConnectionString,
             currentDirectory,
+            sourceProjectPathOverride: Sqloom.Tests.RepositoryPaths.GetTestAppProjectPath(),
             workflowArtifactDirOverride: workflowRoot,
             replayLaunchOptionsOverride: new ReplayLaunchOptions
             {

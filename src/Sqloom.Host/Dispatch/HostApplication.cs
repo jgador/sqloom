@@ -91,6 +91,7 @@ internal sealed class HostApplication
                 _consoleWriter.PrintHelp(startupOptions.ApplicationArguments);
                 return 0;
             case HostCommandKind.Init:
+            case HostCommandKind.Endpoints:
                 return await RunTargetIndependentHandlerAsync(
                         commandKind,
                         startupOptions,
@@ -226,6 +227,7 @@ internal sealed class HostApplication
         return new CommandRegistry(
             new InitCommand(),
             new ObserveCommand(),
+            new EndpointsCommand(),
             new TuneCommand(),
             new ReplayCommand(),
             new CorrelateCommand(),

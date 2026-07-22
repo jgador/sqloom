@@ -16,10 +16,10 @@ public sealed class EndpointReplayPlan
     public required string AppName { get; init; }
 
     /// <summary>
-    /// Gets the open api path.
+    /// ASP.NET Core source project used to discover replay operations.
     /// </summary>
-    [JsonPropertyName("openApiPath")]
-    public required string OpenApiPath { get; init; }
+    [JsonPropertyName("sourceProjectPath")]
+    public required string SourceProjectPath { get; init; }
 
     /// <summary>
     /// Gets the planned at utc.

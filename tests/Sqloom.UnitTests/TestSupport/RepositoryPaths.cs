@@ -48,31 +48,15 @@ internal static class RepositoryPaths
             "Sqloom.TestApp");
     }
 
-    public static string GetTestAppOpenApiPath()
-    {
-        return Path.Combine(
-            GetTestAppProjectDirectory(),
-            "openapi.json");
-    }
-
-    public static string GetSampleApplicationProjectPath()
+    public static string GetSampleApplicationFilePath()
     {
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
-            "Sqloom.TestApp.Harness",
-            "Sqloom.TestApp.Harness.csproj");
-    }
-
-    public static string GetExpectedSampleApplicationBuildOutputPath()
-    {
-        return Path.Combine(
-            GetRepositoryRoot(),
-            "artifacts",
-            "bin",
-            "Sqloom.TestApp.Harness",
-            "debug",
-            "Sqloom.TestApp.Harness.dll");
+            "Sqloom",
+            "Sqloom.TestApp",
+            "default",
+            "Harness.cs");
     }
 
     public static string GetDefaultArtifactRoot()

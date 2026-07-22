@@ -8,9 +8,9 @@ namespace Sqloom.Host.Replay;
 public sealed class ReplayDataPreparationContext
 {
     /// <summary>
-    /// Gets the OpenAPI operation being prepared.
+    /// Gets the endpoint operation being prepared.
     /// </summary>
-    public required OpenApiOperation Operation { get; init; }
+    public required ReplayOperation Operation { get; init; }
 
     /// <summary>
     /// Gets the operation after profile and harness inputs have been resolved.

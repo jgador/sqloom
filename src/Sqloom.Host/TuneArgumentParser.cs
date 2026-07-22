@@ -25,7 +25,7 @@ internal sealed class TuneArgumentParser
 
     private static readonly HashSet<string> ReplaySwitches = new(StringComparer.OrdinalIgnoreCase)
     {
-        "--openapi-file",
+        "--app-project",
         "--sqlserver-dacpac-file",
         "--sqlserver-seed-sql-file",
         "--max-operations",
@@ -91,14 +91,12 @@ internal sealed class TuneArgumentParser
             allowMissingSchemaSource: true);
     }
 
-    public string GetOpenApiPath(
+    public string? GetAppProjectPath(
         string[] args,
-        SqloomApplicationManifest manifest,
         string currentDirectory)
     {
-        return _replayArgumentParser.GetOpenApiPath(
+        return _replayArgumentParser.GetAppProjectPath(
             ExtractSwitchArguments(args, ReplaySwitches),
-            manifest,
             currentDirectory);
     }
 
@@ -108,7 +106,7 @@ internal sealed class TuneArgumentParser
         IReplayHost replayHost,
         string readOnlyConnectionString,
         string currentDirectory,
-        string? openApiPathOverride = null,
+        string? sourceProjectPathOverride = null,
         string? workflowArtifactDirOverride = null,
         ReplayLaunchOptions? replayLaunchOptionsOverride = null,
         string? adviceDacpacPathOverride = null)
@@ -139,7 +137,7 @@ internal sealed class TuneArgumentParser
             replayHost,
             currentDirectory,
             replayArtifactDirectory,
-            openApiPathOverride,
+            sourceProjectPathOverride,
             replayLaunchOptionsOverride);
         var adviseArguments = _adviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),

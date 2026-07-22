@@ -18,7 +18,6 @@ internal sealed class TestApplicationA : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "TestApplicationA",
-            OpenApiPath = RepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = ManifestFactory.CreateReplayProfile(),
         };
     }
@@ -41,7 +40,6 @@ internal sealed class TestApplicationB : ISqloomApplication
         return new SqloomApplicationManifest
         {
             Name = "TestApplicationB",
-            OpenApiPath = RepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = ManifestFactory.CreateReplayProfile(),
         };
     }
@@ -64,7 +62,6 @@ internal static class ManifestFactory
         return new SqloomApplicationManifest
         {
             Name = "Sqloom Test Harness",
-            OpenApiPath = RepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = CreateReplayProfile(),
         };
     }

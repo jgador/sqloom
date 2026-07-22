@@ -17,7 +17,6 @@ using Sqloom.Host.Replay;
 using Sqloom.Pipeline.QueryStore;
 using Sqloom.Pipeline.Artifacts;
 using Sqloom.Pipeline.Execution;
-using Sqloom.TestApp.Harness;
 using Sqloom.Testing;
 using Xunit;
 
@@ -42,13 +41,15 @@ public sealed class HostCatalogAdviceTests
     {
         var artifactDirectory = CreateTempDir();
         var currentDirectory = Directory.GetCurrentDirectory();
-        QueryStoreEnabledReplayHostFactory replayHostFactory = new(LocalhostConnectionString);
+        var application = await SqloomTestAppPaths.ResolveApplicationAsync().ConfigureAwait(true);
+        QueryStoreEnabledReplayHostFactory replayHostFactory = new(
+            application,
+            LocalhostConnectionString);
 
         await using (replayHostFactory.ConfigureAwait(true))
         {
             try
             {
-                SampleApplication application = new();
                 var manifest = application.Describe(new Sqloom.Testing.SqloomApplicationContext
                 {
                     CurrentDirectory = currentDirectory,
@@ -61,7 +62,7 @@ public sealed class HostCatalogAdviceTests
                         new ReplayRunnerOptions
                         {
                             AppName = manifest.Name,
-                            OpenApiPath = manifest.OpenApiPath,
+                            SourceProjectPath = SqloomTestAppPaths.GetProjectPath(),
                             ReplayArtifactDir = artifactDirectory,
                             ReplayProfile = replayProfile,
                             ReplayHostFactory = replayHostFactory,
@@ -214,6 +215,8 @@ public sealed class HostCatalogAdviceTests
                             "tune",
                             "--artifact-dir",
                             artifactDirectory,
+                            "--app-project",
+                            SqloomTestAppPaths.GetProjectPath(),
                             "--target",
                             SampleCatalogReplayScenario.OperationKey,
                             "--model-provider",
@@ -226,7 +229,8 @@ public sealed class HostCatalogAdviceTests
                             fakeOpenAiServer.BaseUrl.AbsoluteUri,
                         ],
                         currentDirectory,
-                        new StaticReplayDataSampleApplication())
+                        new StaticReplayDataSampleApplication(
+                            await SqloomTestAppPaths.ResolveApplicationAsync().ConfigureAwait(true)))
                     .ConfigureAwait(true);
                 AssertCommandSucceeded("tune", tuneResult.ExitCode, tuneResult.StdOut, tuneResult.StdErr);
 
@@ -491,6 +495,8 @@ public sealed class HostCatalogAdviceTests
         string currentDirectory,
         ISqloomApplication? application = null)
     {
+        var selectedApplication = application
+            ?? await SqloomTestAppPaths.ResolveApplicationAsync().ConfigureAwait(false);
         return await CaptureConsoleAsync(
             static async state =>
             {
@@ -505,7 +511,7 @@ public sealed class HostCatalogAdviceTests
                     string.Empty,
                     string.Empty);
             },
-            (Application: application ?? new SampleApplication(), Args: args, CurrentDirectory: currentDirectory))
+            (Application: selectedApplication, Args: args, CurrentDirectory: currentDirectory))
             .ConfigureAwait(false);
     }
 
@@ -570,7 +576,12 @@ public sealed class HostCatalogAdviceTests
 
     private sealed class StaticReplayDataSampleApplication : ISqloomApplication
     {
-        private readonly SampleApplication _inner = new();
+        private readonly ISqloomApplication _inner;
+
+        public StaticReplayDataSampleApplication(ISqloomApplication inner)
+        {
+            _inner = inner ?? throw new ArgumentNullException(nameof(inner));
+        }
 
         public SqloomApplicationManifest Describe(SqloomApplicationContext context)
         {
@@ -578,7 +589,6 @@ public sealed class HostCatalogAdviceTests
             return new SqloomApplicationManifest
             {
                 Name = manifest.Name,
-                OpenApiPath = manifest.OpenApiPath,
                 ReplayProfile = CreateCatalogReplayProfile(),
                 WorkloadProfile = manifest.WorkloadProfile,
                 SqlServerDacpacPath = manifest.SqlServerDacpacPath,
@@ -712,12 +722,17 @@ public sealed class HostCatalogAdviceTests
     /// </summary>
     private sealed class QueryStoreEnabledReplayHostFactory : IReplayHostFactory, IAsyncDisposable
     {
-        private readonly ReplayHostFactory _inner;
+        private readonly ISqloomApplication _application;
+        private readonly string _applicationConnectionString;
         private RetainedReplayHost? _retainedHost;
+        private ISqloomApplicationSession? _session;
 
-        public QueryStoreEnabledReplayHostFactory(string applicationConnectionString)
+        public QueryStoreEnabledReplayHostFactory(
+            ISqloomApplication application,
+            string applicationConnectionString)
         {
-            _inner = new ReplayHostFactory(applicationConnectionString);
+            _application = application ?? throw new ArgumentNullException(nameof(application));
+            _applicationConnectionString = applicationConnectionString;
         }
 
         public string? ApplicationConnectionString { get; private set; }
@@ -729,22 +744,40 @@ public sealed class HostCatalogAdviceTests
             ReplayLaunchOptions? launchOptions = null,
             CancellationToken cancellationToken = default)
         {
-            var replayHost = await _inner
-                .CreateAsync(launchOptions, cancellationToken)
+            var session = await _application
+                .StartAsync(
+                    new SqloomApplicationContext
+                    {
+                        CurrentDirectory = SqloomTestAppPaths.GetRepositoryRoot(),
+                        ApplicationConnectionString = _applicationConnectionString,
+                        ReplayLaunchOptions = launchOptions ?? new ReplayLaunchOptions(),
+                    },
+                    cancellationToken)
                 .ConfigureAwait(false);
-            var configuration = replayHost.Services.GetRequiredService<IConfiguration>();
-            ApplicationConnectionString = configuration[DefaultConnectionKey]
-                ?? throw new InvalidOperationException("Missing sample replay application connection string.");
-            await EnableQueryStoreAsync(ApplicationConnectionString, cancellationToken).ConfigureAwait(false);
-            _retainedHost = new RetainedReplayHost(replayHost);
-            return _retainedHost;
+            try
+            {
+                var replayHost = session.ReplayHost;
+                var configuration = replayHost.Services.GetRequiredService<IConfiguration>();
+                ApplicationConnectionString = configuration[DefaultConnectionKey]
+                    ?? throw new InvalidOperationException("Missing sample replay application connection string.");
+                await EnableQueryStoreAsync(ApplicationConnectionString, cancellationToken).ConfigureAwait(false);
+                _session = session;
+                _retainedHost = new RetainedReplayHost(replayHost);
+                return _retainedHost;
+            }
+            catch
+            {
+                await session.DisposeAsync().ConfigureAwait(false);
+                throw;
+            }
         }
 
         public async ValueTask DisposeAsync()
         {
-            if (_retainedHost is not null)
+            if (_session is not null)
             {
-                await _retainedHost.DisposeInnerAsync().ConfigureAwait(false);
+                await _session.DisposeAsync().ConfigureAwait(false);
+                _session = null;
                 _retainedHost = null;
             }
         }
@@ -776,10 +809,6 @@ public sealed class HostCatalogAdviceTests
                 return ValueTask.CompletedTask;
             }
 
-            public ValueTask DisposeInnerAsync()
-            {
-                return _inner.DisposeAsync();
-            }
         }
     }
 

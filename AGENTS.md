@@ -44,10 +44,37 @@ Skip sub-agents only when the environment does not expose repo-defined sub-agent
 
 Do not use Repository Synapse in this repository. Do not run `synapse ensure`, `synapse recall`, `synapse tests`, or any other command that creates `.synapse/` repo-local cache files. Use Atlas, scout agents, direct file/test inspection, and build/test output instead.
 
+### Category-Specific Scan Paths
+
+Implement repository search as category selection before literal search. The goal is to behave like an expert scan path, not a repo-wide text crawler.
+
+1. Encode the task frame before choosing a category: goal, symptoms or observations, constraints and exclusions, and the behavior, artifact, command output, or test signal that would prove the answer. Label missing parts as unknown instead of silently inventing them.
+2. Classify the request by semantic intent before searching for names. Use behavior words, runtime stage, artifact type, public surface, configuration surface, or validation need as the primary signal. Treat explicit filenames, directories, and symbols as evidence, not as the whole category.
+3. Use [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) as the resident pre-scan. Select the most likely category from its domains and category scan paths, name the initial scope, name what to ignore first, and choose the first structural signals to inspect.
+4. Follow a two-stage scan path:
+   - Gaze control: the main agent, or `advisor` when sub-agents are enabled and useful, selects the semantic category, first read order, exclusions, and specialist handoffs.
+   - Deep processing: the main agent or selected Atlas mapper reads only the bounded files, symbols, line ranges, tests, or artifacts needed to answer the question.
+5. Treat the category hypothesis as an anticipatory retrieval cue. Choose it before deep search, use it to constrain what gets read, then refine or replace it as direct evidence returns.
+6. When the category is genuinely ambiguous, keep one primary hypothesis and normally no more than two alternatives. Admit a hypothesis only when it fits the task frame, has a plausible owner or structural anchor, and predicts distinct observable evidence. Do not manufacture alternatives for an obvious route.
+7. Return situated context, not isolated definitions, when the task is about behavior. A situated answer should identify the owning module, relevant symbol or contract, nearby callers or command entry points, nearest tests, configuration or artifact dependencies, and the validation command or artifact to inspect next.
+8. Use dynamic switching. Start with a fast lexical or semantic candidate pass inside the selected category, then switch to grounded inspection when uncertainty remains, behavior matters, or the change is risky. Grounded inspection means RoslynKit definitions/references, project references, runtime flow, artifact readers/writers, test output, generated artifacts, or focused command execution.
+9. Use a predictive simulation scratchpad before a deeper probe when behavior or ownership is unclear. For the active hypothesis, state the expected confirming evidence, the evidence that would weaken it, and the cheapest bounded inspection that can discriminate between them.
+10. Declare the switch trigger before running the probe. Use the result to confirm and stay, refine the hypothesis, or reclassify to the next admitted category; widen the search only after the bounded hypothesis set fails.
+11. Prefer distributed structural signals over single landmarks: command catalogs, project references, runtime flow, RoslynKit definitions/references, public contracts, artifact writers/readers, and nearest tests. Use `rg` after the category is bounded, or when the request is truly literal.
+12. Avoid overfitting to current file names. If a path or filename cue fails, continue from the semantic feature and project graph instead of expanding immediately to a repo-wide search.
+13. Guard against recency contamination. Recently edited files, prior-task context, or recently read paths should not dominate routing unless they match the current semantic category; treat them as possible distractors or exclusions.
+14. Promote only durable routing learning. When repeated work or independent structural evidence proves a stable category route, ownership fact, boundary, artifact route, or test route, update [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) and refresh `Last verified`. A successful or failed search path is not itself durable memory; retain a failure only when it establishes a stable boundary. Do not cache source snippets, generated outputs, exhaustive file inventories, or transient search results in Atlas.
+
 ### Repository Atlas Reading Policy
 
 - Load [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) into the active agent context before broad source reading. Treat it as required structural context for this repository, not optional reference material.
+- Before broad literal search, encode the task frame, assign a semantic category from [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md), choose a bounded scan path, and state the category hypothesis when the task is non-trivial.
+- When more than one category remains plausible, retain one primary hypothesis and normally no more than two alternatives. Require each admitted hypothesis to name a structural anchor and distinct expected evidence.
+- Before a deeper probe, state its confirming evidence, disconfirming evidence, and switch trigger. Prefer the cheapest live structural check that can distinguish the active hypotheses.
+- Update the category hypothesis from the probe result. If the first matched files do not support the intended behavior, refine or reclassify before widening the search.
 - When [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) contains a runtime, architecture, artifact, or test spine for the task domain, convert that spine into the first read order before broad literal search or scout discovery.
+- For behavior, debugging, refactoring, or architecture questions, build a situated bundle before finalizing: owner, symbol or contract, callers, tests, configuration or artifacts, and validation evidence.
+- Escalate from lexical search to grounded inspection when the first pass finds multiple plausible categories, no clear owner, stale names, behavior/config interaction, public surface impact, or failing tests/artifacts.
 - The main agent owns Atlas routing. With [.codex/atlas/repo-map.md](.codex/atlas/repo-map.md) in context, identify the task domain, choose the first read order, and decide whether a specialist Atlas mapper should run. Use `advisor` when a non-trivial task needs request classification or sub-agent routing recommendations before that decision. Do not add or use a separate Atlas router role.
 - Do not use `scout` for Atlas domain routing. Use `scout` only after the main agent has bounded a domain, path prefix, diff scope, symbol area, artifact area, or mapper handoff.
 - When the current environment exposes repo-defined sub-agents, the read-only repo roles are approved by default for Sqloom repo work. The main agent may dispatch them without an explicit user prompt when the task benefits from specialist or parallel mapping.
@@ -86,6 +113,7 @@ When using `scout`:
 Every scout prompt must include:
 - `assigned_scope`
 - `search_goal`
+- the selected semantic category or category hypothesis when known
 - known keywords, symbols, routes, config keys, or filenames when available
 - the required response format
 
@@ -154,6 +182,8 @@ Recent history mixes short imperative subjects with scoped prefixes such as `fea
 ## Security & Configuration Tips
 
 Do not commit secrets. Do not introduce environment-variable reads or writes in runtime code unless the variable is explicitly whitelisted here. The whitelist is `OPENAI_API_KEY`, `ASPNETCORE_ENVIRONMENT`, and `PATH` (`Path` on Windows); use normal configuration and explicit parameters for all other values. Prefer `localhost` for sample SQL Server connection strings unless the task explicitly targets another host. Do not hand-edit generated snapshots, replay outputs, or SQL proposal artifacts unless the task is specifically about those generated files.
+
+Use [.agents/skills/security-audit/SKILL.md](.agents/skills/security-audit/SKILL.md) for full repo, full-history, all-blob, dependency, and code-level security audits. Use [.agents/skills/security-audit-fast/SKILL.md](.agents/skills/security-audit-fast/SKILL.md) for staged, named-path, working-tree, or base-ref diff leak checks that only need to determine whether the selected change set introduced secrets or credentials.
 
 ### Checked-In Password Exceptions
 

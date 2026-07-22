@@ -7,10 +7,11 @@ Resident architecture context for first-pass navigation. Atlas stores durable ro
 - Solution: [Sqloom.slnx](../../Sqloom.slnx)
 - Focused solution filters: [Sqloom.UnitTests.slnf](../../Sqloom.UnitTests.slnf), [Sqloom.IntegrationTests.slnf](../../Sqloom.IntegrationTests.slnf)
 - Production: [src/Sqloom.Testing/](../../src/Sqloom.Testing/) for harness contracts and the shared `Sqloom.Pipeline.*` pipeline surface, [src/Sqloom.Host/](../../src/Sqloom.Host/) for the CLI/tool host
-- Tests and sample harness: [tests/Sqloom.UnitTests/](../../tests/Sqloom.UnitTests/), [tests/Sqloom.IntegrationTests/](../../tests/Sqloom.IntegrationTests/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), [tests/Sqloom.TestApp.Harness/](../../tests/Sqloom.TestApp.Harness/)
+- VS Code extension preview: [extensions/sqloom/](../../extensions/sqloom/) for the Marketplace package that shells out to the public `sqloom` CLI, anchors the Activity Bar logo with a compact webview launcher, and renders the Sqloom Tune dashboard webview
+- Tests and sample harness: [tests/Sqloom.UnitTests/](../../tests/Sqloom.UnitTests/), [tests/Sqloom.IntegrationTests/](../../tests/Sqloom.IntegrationTests/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), [tests/Sqloom/Sqloom.TestApp/default/Harness.cs](../../tests/Sqloom/Sqloom.TestApp/default/Harness.cs)
 - Docs and tooling: [README.md](../../README.md), [docs/](../../docs/), [scripts/](../../scripts/)
 - Generated artifacts: `artifacts/sqloom/`
-- Agent assets: [AGENTS.md](../../AGENTS.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/roslynkit/references/commands.md](../../.agents/skills/roslynkit/references/commands.md), [.agents/skills/roslynkit/references/output.md](../../.agents/skills/roslynkit/references/output.md), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), [.agents/skills/sqloom/SKILL.md](../../.agents/skills/sqloom/SKILL.md), [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md)
+- Agent assets: [AGENTS.md](../../AGENTS.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/roslynkit/references/commands.md](../../.agents/skills/roslynkit/references/commands.md), [.agents/skills/roslynkit/references/output.md](../../.agents/skills/roslynkit/references/output.md), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), [.agents/skills/security-audit-fast/SKILL.md](../../.agents/skills/security-audit-fast/SKILL.md), [.agents/skills/sqloom/SKILL.md](../../.agents/skills/sqloom/SKILL.md), [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md)
 
 ## Runtime Diagram
 
@@ -31,6 +32,7 @@ flowchart TB
 
   subgraph Commands["Commands In Sqloom.Host"]
     Init["InitCommand<br/>agent skill scaffolding"]
+    Endpoints["EndpointsCommand<br/>source endpoint catalog"]
     Tune["TuneCommand<br/>common workflow front door"]
     Replay["ReplayCommand<br/>ASP.NET Core replay"]
     Observe["ObserveCommand<br/>SQL Server Query Store collection"]
@@ -39,6 +41,7 @@ flowchart TB
   end
 
   Registry --> Init
+  Registry --> Endpoints
   Registry --> Tune
   Registry --> Replay
   Registry --> Observe
@@ -51,7 +54,7 @@ flowchart TB
   Tune --> Advise
 
   subgraph Resolution["Target And Harness Resolution"]
-    TargetInput["Target input<br/>project, assembly, solution, solution filter, directory"]
+    TargetInput["Target input<br/>C# file, project, assembly, solution, solution filter, directory"]
     Resolver["Resolution pipeline<br/>find/load harness assembly"]
     HarnessContract["Sqloom.Testing<br/>ISqloomApplication + session contracts"]
     HarnessApp["App-owned harness<br/>exactly one public non-abstract ISqloomApplication"]
@@ -64,6 +67,8 @@ flowchart TB
 
   subgraph ReplayFlow["Replay Stage"]
     ReplayArgs["ReplayArgumentParser"]
+    SourceProject["ASP.NET Core source project<br/>target inference or --app-project"]
+    RoslynCatalog["Roslyn endpoint catalog<br/>controller methods + parameters"]
     ReplayPlan["Replay plan<br/>endpoint request selection"]
     AspNetReplay["ASP.NET Core replay runner"]
     EndpointExecution["Endpoint execution contracts"]
@@ -71,7 +76,10 @@ flowchart TB
     ReplayArtifact["Replay stage artifacts"]
   end
 
-  Replay --> ReplayArgs --> ReplayPlan --> AspNetReplay
+  Endpoints --> SourceProject --> RoslynCatalog
+  Replay --> ReplayArgs --> SourceProject
+  Tune --> SourceProject
+  RoslynCatalog --> ReplayPlan --> AspNetReplay
   AspNetReplay --> Session
   AspNetReplay --> EndpointExecution --> ReplayEvidence --> ReplayArtifact
 
@@ -188,9 +196,9 @@ flowchart TB
   classDef pipeline fill:#eef0f3,stroke:#555f6d,color:#171a1f
 
   class User,Tool,Program,Runtime,Startup,App,Registry entry
-  class Init,Tune,Replay,Observe,Correlate,Advise,TuneArgs,TuneContext,TuneReport command
+  class Init,Endpoints,Tune,Replay,Observe,Correlate,Advise,TuneArgs,TuneContext,TuneReport command
   class TargetInput,Resolver,HarnessContract,HarnessApp,Session harness
-  class ReplayArgs,ReplayPlan,AspNetReplay,EndpointExecution,ReplayEvidence,ReplayArtifact replay
+  class ReplayArgs,SourceProject,RoslynCatalog,ReplayPlan,AspNetReplay,EndpointExecution,ReplayEvidence,ReplayArtifact replay
   class ObserveArgs,QueryStoreCollector,DiscoveredObjects,WorkloadClassifier,QueryStoreEvidence,ObserveArtifact observe
   class CorrelateArgs,Correlator,StatementHandles,CorrelationReport,CorrelationArtifact correlate
   class AdviseArgs,SchemaSource,DacpacExtractor,EvidencePack,AdviceGenerator,AdviceContracts,LocalValidation,AdviceArtifact,SqlProposal advise
@@ -202,38 +210,74 @@ flowchart TB
 
 - User-facing pipeline: `replay -> observe -> correlate -> advise`.
 - Setup command: `init` scaffolds the embedded `sqloom` agent skill and skips harness resolution.
+- Source catalog command: `endpoints` lists ASP.NET Core controller operations and parameter metadata from source without starting a harness.
 - Convenience front door: `tune` runs the common workflow and writes stage-owned artifacts under `artifacts/sqloom/`.
+- Explicit .NET 10 C# file-based harness targets are always built into isolated system-temporary output and loaded through a per-build assembly load context before normal application discovery; `--no-build` remains project-only. The load context keeps app and provider assemblies isolated while sharing `Sqloom.Testing` plus EF Core Abstractions, Core, and Relational so public replay interceptor types retain one runtime identity; incompatible shared assembly identities fail during harness loading.
+- File-based harness source is generated once and owned as checked-in test support per app/startup profile, defaulting to `tests/Sqloom/<app>/<profile>/Harness.cs`; endpoint selection remains a replay/tune `--target` input. Replay, tune, and endpoints infer the ASP.NET Core source project from a Web SDK target, a file-harness `#:project` directive, a project-backed harness reference, or explicit `--app-project`.
 - `tune` can export a DACPAC from an explicit command-line read-only connection before harness startup when no CLI DACPAC or harness manifest DACPAC exists; this exported package is replay launch input and the advice schema source.
 - DACPAC-backed advice keeps the raw DacFx unpack under `replay/sqlserver-dacpac-extract/` and writes the normalized schema copy to `replay/sqlserver-schema.sql`.
 - [src/Sqloom.Host/Program.cs](../../src/Sqloom.Host/Program.cs) calls `HostRuntime.RunAsync`.
 - [src/Sqloom.Host/HostRuntime.cs](../../src/Sqloom.Host/HostRuntime.cs) parses startup options, handles help/version, creates `HostApplication`, and delegates command execution.
 - [src/Sqloom.Host/CommandCatalog.cs](../../src/Sqloom.Host/CommandCatalog.cs) is the ordered source of truth for command verbs, target requirements, options, runtime structural validation, help syntax, and generated command reference metadata. [tools/Sqloom.CommandDocs.cs](../../tools/Sqloom.CommandDocs.cs) writes or checks the canonical command reference at [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md); hand-written docs should link to that generated file instead of duplicating command tables.
 - [src/Sqloom.Host/Dispatch/HostApplication.cs](../../src/Sqloom.Host/Dispatch/HostApplication.cs) resolves the selected harness or bound `ISqloomApplication`, chooses a `HostCommandKind`, creates command context, and dispatches through `CommandRegistry`.
-- Commands own their behavior: [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/AdviceCommand.cs](../../src/Sqloom.Host/AdviceCommand.cs), and [src/Sqloom.Host/TuneCommand.cs](../../src/Sqloom.Host/TuneCommand.cs).
+- Commands own their behavior: [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/EndpointsCommand.cs](../../src/Sqloom.Host/EndpointsCommand.cs), [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/AdviceCommand.cs](../../src/Sqloom.Host/AdviceCommand.cs), and [src/Sqloom.Host/TuneCommand.cs](../../src/Sqloom.Host/TuneCommand.cs).
+- The VS Code extension in [extensions/sqloom/](../../extensions/sqloom/) is a UI shell over the CLI. Its Tune dashboard loads replay choices from `sqloom endpoints --json-output-file`, requires a session-scoped stable operation key, and passes that key to `sqloom tune --target`; it must not duplicate pipeline or endpoint-discovery implementations.
 
 ## Domains
 
-- CLI dispatch and startup: [src/Sqloom.Host/Program.cs](../../src/Sqloom.Host/Program.cs), [src/Sqloom.Host/HostRuntime.cs](../../src/Sqloom.Host/HostRuntime.cs), [src/Sqloom.Host/Startup/](../../src/Sqloom.Host/Startup/), [src/Sqloom.Host/Dispatch/](../../src/Sqloom.Host/Dispatch/), [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/InitCommandExecutor.cs](../../src/Sqloom.Host/InitCommandExecutor.cs), [src/Sqloom.Host/Output/HostConsoleWriter.cs](../../src/Sqloom.Host/Output/HostConsoleWriter.cs); tests usually start in [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs).
-- Replay: [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ReplayArgumentParser.cs](../../src/Sqloom.Host/ReplayArgumentParser.cs), [src/Sqloom.Host/Replay/](../../src/Sqloom.Host/Replay/), endpoint execution contracts in [src/Sqloom.Testing/Pipeline/Execution/](../../src/Sqloom.Testing/Pipeline/Execution/); tests usually start in [tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayPlanBuilderTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayPlanBuilderTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayRequestResolverTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayRequestResolverTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayRunnerTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayRunnerTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs).
+- CLI dispatch and startup: [src/Sqloom.Host/Program.cs](../../src/Sqloom.Host/Program.cs), [src/Sqloom.Host/HostRuntime.cs](../../src/Sqloom.Host/HostRuntime.cs), [src/Sqloom.Host/Startup/](../../src/Sqloom.Host/Startup/), [src/Sqloom.Host/Dispatch/](../../src/Sqloom.Host/Dispatch/), [src/Sqloom.Host/InitCommand.cs](../../src/Sqloom.Host/InitCommand.cs), [src/Sqloom.Host/InitCommandExecutor.cs](../../src/Sqloom.Host/InitCommandExecutor.cs), [src/Sqloom.Host/EndpointsCommand.cs](../../src/Sqloom.Host/EndpointsCommand.cs), [src/Sqloom.Host/Output/HostConsoleWriter.cs](../../src/Sqloom.Host/Output/HostConsoleWriter.cs); tests usually start in [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs).
+- Replay and endpoint discovery: [src/Sqloom.Host/ReplayCommand.cs](../../src/Sqloom.Host/ReplayCommand.cs), [src/Sqloom.Host/ReplayArgumentParser.cs](../../src/Sqloom.Host/ReplayArgumentParser.cs), [src/Sqloom.Host/Replay/](../../src/Sqloom.Host/Replay/) for source project resolution, Roslyn endpoint catalog loading, replay planning, and request execution, plus endpoint execution contracts in [src/Sqloom.Testing/Pipeline/Execution/](../../src/Sqloom.Testing/Pipeline/Execution/); tests usually start in [tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs), [tests/Sqloom.UnitTests/Endpoints/RoslynEndpointCatalogLoaderTests.cs](../../tests/Sqloom.UnitTests/Endpoints/RoslynEndpointCatalogLoaderTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayPlanBuilderTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayPlanBuilderTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayRequestResolverTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayRequestResolverTests.cs), [tests/Sqloom.UnitTests/Endpoints/EndpointReplayRunnerTests.cs](../../tests/Sqloom.UnitTests/Endpoints/EndpointReplayRunnerTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs).
 - Observe and Query Store: [src/Sqloom.Host/ObserveCommand.cs](../../src/Sqloom.Host/ObserveCommand.cs), [src/Sqloom.Host/ObserveArgumentParser.cs](../../src/Sqloom.Host/ObserveArgumentParser.cs), [src/Sqloom.Host/QueryStore/](../../src/Sqloom.Host/QueryStore/), Query Store contracts in [src/Sqloom.Testing/Pipeline/QueryStore/](../../src/Sqloom.Testing/Pipeline/QueryStore/); tests usually start in [tests/Sqloom.UnitTests/Host/ObserveArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/ObserveArgumentParserTests.cs), [tests/Sqloom.UnitTests/QueryStore/SqlServerQueryStoreCollectorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/SqlServerQueryStoreCollectorTests.cs), [tests/Sqloom.UnitTests/QueryStore/SqlServerDiscoveredObjectCollectorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/SqlServerDiscoveredObjectCollectorTests.cs), and [tests/Sqloom.UnitTests/QueryStore/WorkloadClassifierTests.cs](../../tests/Sqloom.UnitTests/QueryStore/WorkloadClassifierTests.cs).
 - Correlate: [src/Sqloom.Host/CorrelateCommand.cs](../../src/Sqloom.Host/CorrelateCommand.cs), [src/Sqloom.Host/CorrelateArgumentParser.cs](../../src/Sqloom.Host/CorrelateArgumentParser.cs), [src/Sqloom.Host/QueryStore/QueryStoreCorrelator.cs](../../src/Sqloom.Host/QueryStore/QueryStoreCorrelator.cs), correlation contracts in [src/Sqloom.Testing/Pipeline/QueryStore/](../../src/Sqloom.Testing/Pipeline/QueryStore/); tests usually start in [tests/Sqloom.UnitTests/Host/CorrelateArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/CorrelateArgumentParserTests.cs), [tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelatorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelatorTests.cs), and [tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelationAdvisorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelationAdvisorTests.cs).
 - Advise and SQL proposals: [src/Sqloom.Host/AdviceCommand.cs](../../src/Sqloom.Host/AdviceCommand.cs), [src/Sqloom.Host/AdviseArgumentParser.cs](../../src/Sqloom.Host/AdviseArgumentParser.cs), [src/Sqloom.Host/Providers/OpenAIAdviceGenerator.cs](../../src/Sqloom.Host/Providers/OpenAIAdviceGenerator.cs), [src/Sqloom.Host/Providers/OpenAIAdviceEvidencePackBuilder.cs](../../src/Sqloom.Host/Providers/OpenAIAdviceEvidencePackBuilder.cs), [src/Sqloom.Host/SqlServerDacpacSchemaExtractor.cs](../../src/Sqloom.Host/SqlServerDacpacSchemaExtractor.cs), advice contracts in [src/Sqloom.Testing/Pipeline/Execution/](../../src/Sqloom.Testing/Pipeline/Execution/) and [src/Sqloom.Testing/Pipeline/OpenAI/](../../src/Sqloom.Testing/Pipeline/OpenAI/); tests usually start in [tests/Sqloom.UnitTests/Host/AdviseArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/AdviseArgumentParserTests.cs), [tests/Sqloom.UnitTests/Host/AdviceCommandTests.cs](../../tests/Sqloom.UnitTests/Host/AdviceCommandTests.cs), [tests/Sqloom.UnitTests/Host/OpenAIAdviceGeneratorTests.cs](../../tests/Sqloom.UnitTests/Host/OpenAIAdviceGeneratorTests.cs), and [tests/Sqloom.UnitTests/Host/SqlServerDacpacSchemaExtractorTests.cs](../../tests/Sqloom.UnitTests/Host/SqlServerDacpacSchemaExtractorTests.cs).
 - Tune workflow: [src/Sqloom.Host/TuneCommand.cs](../../src/Sqloom.Host/TuneCommand.cs), [src/Sqloom.Host/TuneArgumentParser.cs](../../src/Sqloom.Host/TuneArgumentParser.cs), [src/Sqloom.Host/TuneWorkflowReport.cs](../../src/Sqloom.Host/TuneWorkflowReport.cs), plus replay, observe, correlate, and advise domains; tests usually start in [tests/Sqloom.UnitTests/Host/TuneArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/TuneArgumentParserTests.cs), [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs).
 - Artifact and JSON contracts: [src/Sqloom.Testing/Pipeline/Artifacts/](../../src/Sqloom.Testing/Pipeline/Artifacts/), persisted models under [src/Sqloom.Testing/Pipeline/Execution/](../../src/Sqloom.Testing/Pipeline/Execution/) and [src/Sqloom.Testing/Pipeline/QueryStore/](../../src/Sqloom.Testing/Pipeline/QueryStore/), and [src/Sqloom.Host/TuneWorkflowReport.cs](../../src/Sqloom.Host/TuneWorkflowReport.cs); tests usually start in [tests/Sqloom.UnitTests/Artifacts/ArtifactLayoutTests.cs](../../tests/Sqloom.UnitTests/Artifacts/ArtifactLayoutTests.cs) and [tests/Sqloom.UnitTests/Artifacts/JsonContractTests.cs](../../tests/Sqloom.UnitTests/Artifacts/JsonContractTests.cs).
-- Harness model: [src/Sqloom.Testing/](../../src/Sqloom.Testing/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), [tests/Sqloom.TestApp.Harness/](../../tests/Sqloom.TestApp.Harness/), and host resolution under [src/Sqloom.Host/Resolution/](../../src/Sqloom.Host/Resolution/); tests usually start in [tests/Sqloom.UnitTests/Host/AppResolverTests.cs](../../tests/Sqloom.UnitTests/Host/AppResolverTests.cs), [tests/Sqloom.UnitTests/Host/TestAppIntegrations.cs](../../tests/Sqloom.UnitTests/Host/TestAppIntegrations.cs), [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs).
+- Harness model: [src/Sqloom.Testing/](../../src/Sqloom.Testing/), [tests/Sqloom.TestApp/](../../tests/Sqloom.TestApp/), the consumer-style [tests/Sqloom/Sqloom.TestApp/default/Harness.cs](../../tests/Sqloom/Sqloom.TestApp/default/Harness.cs), and host resolution under [src/Sqloom.Host/Resolution/](../../src/Sqloom.Host/Resolution/); tests usually start in [tests/Sqloom.UnitTests/Host/AppResolverTests.cs](../../tests/Sqloom.UnitTests/Host/AppResolverTests.cs), [tests/Sqloom.UnitTests/Host/TestAppIntegrations.cs](../../tests/Sqloom.UnitTests/Host/TestAppIntegrations.cs), [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs), and [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs).
 - Packaging and local tooling: [src/Sqloom.Host/Sqloom.Host.csproj](../../src/Sqloom.Host/Sqloom.Host.csproj), [src/Sqloom.Host/PackageReadme.md](../../src/Sqloom.Host/PackageReadme.md), [scripts/Sqloom.Tooling.ps1](../../scripts/Sqloom.Tooling.ps1), [scripts/deploy-sqloom-local.ps1](../../scripts/deploy-sqloom-local.ps1), [scripts/prepare-sqloom-packages.ps1](../../scripts/prepare-sqloom-packages.ps1), [docs/dotnet-tool-release.md](../../docs/dotnet-tool-release.md), [docs/command-reference.md](../../docs/command-reference.md), and the generated [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md).
-- Agent/navigation policy: [AGENTS.md](../../AGENTS.md), [docs/agents/README.md](../../docs/agents/README.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md), and [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/). Use `advisor` for request classification and sub-agent routing recommendations, Atlas mappers for specialist read-only mapping, and `scout` only for bounded literal discovery.
+- VS Code extension packaging: [package.json](../../package.json), [scripts/workspaces.mjs](../../scripts/workspaces.mjs), [scripts/workspace-targets.mjs](../../scripts/workspace-targets.mjs), [extensions/sqloom/package.json](../../extensions/sqloom/package.json), [extensions/sqloom/src/extension.ts](../../extensions/sqloom/src/extension.ts), and [docs/vscode-extension-release.md](../../docs/vscode-extension-release.md).
+- Agent/navigation policy: [AGENTS.md](../../AGENTS.md), [docs/agents/README.md](../../docs/agents/README.md), [.codex/agents/](../agents/), [.codex/atlas/repo-map.md](repo-map.md), [.agents/skills/roslynkit/](../../.agents/skills/roslynkit/), [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md), and [.agents/skills/security-audit-fast/SKILL.md](../../.agents/skills/security-audit-fast/SKILL.md). Use `advisor` for request classification and sub-agent routing recommendations, Atlas mappers for specialist read-only mapping, and `scout` only for bounded literal discovery.
+
+## Category Scan Paths
+
+Use these semantic categories as the first-pass routing index. Pick the category by behavior, contract, artifact, or validation intent before running broad literal search.
+
+- Command UX, help, startup, init, or dispatch -> CLI dispatch and startup domain; first inspect `CommandCatalog`, startup parsing, dispatch, then the specific command/parser.
+- Endpoint discovery, ASP.NET Core route catalog, replay planning, or request execution -> Replay and endpoint discovery domain; first inspect source project resolution, Roslyn endpoint catalog loading, plan building, and endpoint execution contracts.
+- SQL Server Query Store collection, discovered objects, or workload classification -> Observe and Query Store domain; first inspect observe parsing, Query Store collectors, discovered-object collection, then Query Store contracts.
+- Statement matching, replay-to-Query Store linkage, or correlation artifacts -> Correlate domain; first inspect correlate parsing, `QueryStoreCorrelator`, statement handles, then correlation contracts.
+- OpenAI advice, evidence packs, DACPAC schema, SQL proposal validation, or advice JSON -> Advise and SQL proposals domain; first inspect advice parsing, schema extraction, evidence pack building, generator contracts, then proposal normalization.
+- End-to-end workflow, combined stage orchestration, or tune report -> Tune workflow domain; first inspect `TuneCommand`, tune parsing/context, then the stage-specific domain that owns the failing hop.
+- Persisted JSON, artifact layout, replay/observe/correlate/advice files, or public pipeline contracts -> Artifact and JSON contracts domain; first inspect artifact layout and persisted models, then the writer/reader in the owning runtime stage.
+- Harness target resolution, manifest, file-based harness, app-owned harness, or sample target app -> Harness model domain; first inspect `Sqloom.Testing` contracts, sample harness, and host resolution.
+- NuGet tool, local wrapper, release docs, command reference generation, or package metadata -> Packaging and local tooling domain; first inspect package project metadata, tooling scripts, release docs, then generated command-reference workflow only when command metadata changes.
+- VS Code command, Activity Bar, webview launcher, dashboard, or extension package -> VS Code extension packaging domain; first inspect extension package metadata, workspace scripts, extension entry point, then extension release docs.
+- Agent routing, search policy, Atlas memory, security audit paths, or skill prompts -> Agent/navigation policy domain; first inspect `AGENTS.md`, this map, `docs/agents/README.md`, then the specific agent TOML or skill file.
+
+## Situated Search Evidence
+
+Use a live situation bundle for behavior, debugging, refactoring, and architecture work. Do not store these bundles in Atlas; build them from current repo facts during the task.
+
+- Task frame: the goal, symptoms or observations, constraints and exclusions, and behavior, artifact, command output, or test signal that would prove the answer.
+- Owner and category: the selected Atlas domain, command/stage, project, or extension surface.
+- Structural anchor: the command catalog entry, public contract, symbol definition, project reference, artifact contract, or runtime-flow hop that makes the category plausible.
+- Consumers and entry points: callers, dispatch routes, command handlers, extension commands, harness entry points, or artifact readers/writers.
+- Grounding evidence: nearest tests, focused command output, generated artifacts under `artifacts/sqloom/`, package metadata, or configuration that proves how the code behaves.
+- Exclusions: generated output, caches, build products, package output, and unrelated test/config files ignored by the selected category.
+- Recency check: recently edited files, prior-task files, and recently read paths are supporting evidence only when they match the current category; otherwise treat them as likely distractors.
+
+Start with a fast lexical or semantic candidate pass inside the selected category, then switch to grounded inspection when candidates conflict, names look stale, behavior depends on config or artifacts, public contracts are affected, or tests/artifacts are needed to prove the answer. Treat the category as an anticipatory cue that narrows retrieval before deep reading. When the route is genuinely ambiguous, admit one primary category and normally no more than two alternatives; each must fit the task frame, name a plausible structural anchor, and predict distinct evidence. Before a deeper probe, state confirming and disconfirming evidence plus the switch trigger, inspect the cheapest bounded source that can distinguish them, and use the result to confirm, refine, or reclassify before widening.
 
 ## Test Routing
 
-- CLI startup, command dispatch, init scaffolding, and help/version output -> [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), [tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs](../../tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs), [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs)
+- CLI startup, command dispatch, init scaffolding, endpoints, and help/version output -> [tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs](../../tests/Sqloom.UnitTests/Host/HostStartupCommandLineTests.cs), [tests/Sqloom.UnitTests/Host/HostApplicationTests.cs](../../tests/Sqloom.UnitTests/Host/HostApplicationTests.cs), [tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs](../../tests/Sqloom.UnitTests/Host/InitCommandExecutorTests.cs), [tests/Sqloom.UnitTests/Endpoints/RoslynEndpointCatalogLoaderTests.cs](../../tests/Sqloom.UnitTests/Endpoints/RoslynEndpointCatalogLoaderTests.cs), [tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostProcessTests.cs)
 - Parser changes -> matching `*ArgumentParserTests.cs` under [tests/Sqloom.UnitTests/Host/](../../tests/Sqloom.UnitTests/Host/)
-- Replay planning and request execution -> [tests/Sqloom.UnitTests/Endpoints/](../../tests/Sqloom.UnitTests/Endpoints/), [tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs), [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs)
+- Replay discovery, planning, and request execution -> [tests/Sqloom.UnitTests/Endpoints/](../../tests/Sqloom.UnitTests/Endpoints/), [tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/ReplayArgumentParserTests.cs), [tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostRuntimeTests.cs)
 - Query Store collection and classification -> [tests/Sqloom.UnitTests/QueryStore/](../../tests/Sqloom.UnitTests/QueryStore/)
 - Correlation -> [tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelatorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelatorTests.cs), [tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelationAdvisorTests.cs](../../tests/Sqloom.UnitTests/QueryStore/QueryStoreCorrelationAdvisorTests.cs), [tests/Sqloom.UnitTests/Host/CorrelateArgumentParserTests.cs](../../tests/Sqloom.UnitTests/Host/CorrelateArgumentParserTests.cs)
 - Advice, OpenAI evidence, DACPAC schema extraction, and SQL proposals -> [tests/Sqloom.UnitTests/Host/AdviceCommandTests.cs](../../tests/Sqloom.UnitTests/Host/AdviceCommandTests.cs), [tests/Sqloom.UnitTests/Host/OpenAIAdviceGeneratorTests.cs](../../tests/Sqloom.UnitTests/Host/OpenAIAdviceGeneratorTests.cs), [tests/Sqloom.UnitTests/Host/SqlServerDacpacSchemaExtractorTests.cs](../../tests/Sqloom.UnitTests/Host/SqlServerDacpacSchemaExtractorTests.cs), [tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs](../../tests/Sqloom.IntegrationTests/Host/HostCatalogAdviceTests.cs)
 - Artifacts and public JSON contracts -> [tests/Sqloom.UnitTests/Artifacts/](../../tests/Sqloom.UnitTests/Artifacts/)
 - Packaging and local tool behavior -> [scripts/](../../scripts/), [docs/dotnet-tool-release.md](../../docs/dotnet-tool-release.md), [README.md](../../README.md), plus build/pack/local-wrapper smoke commands
+- VS Code extension behavior -> [extensions/sqloom/](../../extensions/sqloom/), [docs/vscode-extension-release.md](../../docs/vscode-extension-release.md), plus `npm run lint -- --target sqloom`, `npm run build -- --target sqloom`, and `npm run package -- --target sqloom`
 
 ## Commands
 
@@ -244,16 +288,26 @@ flowchart TB
 - Local tool deploy: `pwsh .\scripts\deploy-sqloom-local.ps1`
 - Local tool smoke: `sqloom-local --version`
 - Command reference write/check: `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --write` / `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --check`
+- Extension install/build: `npm install`, `npm run lint -- --target sqloom`, `npm run build -- --target sqloom`, `npm run package -- --target sqloom`
 
 ## Navigation Rules
 
 - Follow the runtime flow first for command behavior, then use RoslynKit or direct line reads for the narrow unclear hop.
+- Start non-trivial searches by framing the goal, symptoms or observations, constraints and exclusions, and proof signal; then select a semantic category from Category Scan Paths and convert it into a first read order before repo-wide `rg`.
+- When categories compete, keep one primary and normally no more than two alternatives. Admit only candidates with task fit, a plausible structural anchor, and distinct predicted evidence; do not manufacture alternatives for an obvious route.
+- Treat named files and directories as hints inside a category, not as the category itself. If a name is stale or missing, continue through symbols, project references, runtime flow, artifact contracts, or tests.
+- For behavior questions, return or use a situated bundle: owner, structural anchor, consumers or entry points, grounding evidence, and exclusions.
+- Use lexical search as candidate discovery and grounded inspection as verification. Switch to grounded inspection when uncertainty, behavior/config interaction, public surface impact, or failing tests/artifacts are present.
+- Before deepening an unclear search, state the expected behavior, data flow, artifact delta, or test signal, the evidence that would weaken the active hypothesis, and the condition that should trigger reclassification. Run the cheapest bounded probe first.
+- Use probe results to confirm, refine, or reclassify; widen the search only after the bounded hypothesis set fails.
+- Compare the current category against recently active context and baseline unrelated domains; do not let recency alone route the search.
 - Read nearby tests before implementation when a matching test exists.
 - For public CLI, JSON artifact, package, configuration, or documented workflow changes, update [README.md](../../README.md) or the relevant docs in the same change.
 - Inspect `artifacts/sqloom/` before guessing about replay, correlate, advise, or tune behavior from code alone.
 - Use [.agents/skills/roslynkit/SKILL.md](../../.agents/skills/roslynkit/SKILL.md) for C# semantic inspection when the current environment exposes RoslynKit and the task benefits from symbols, definitions, references, implementations, quick info, or line-range reads.
 - Use repo-defined sub-agents from [.codex/agents/](../agents/) only unless the user explicitly asks otherwise; `advisor` is the first routing handoff for non-trivial tasks when the correct specialist is not already obvious.
 - Do not use Atlas as a file inventory, test inventory, symbol graph, reference graph, artifact cache, or source cache.
+- Promote a successful or failed search path into Atlas only when repeated work or independent structural evidence establishes a durable category, ownership, boundary, artifact-routing, or source-to-test-routing fact. Do not store episodic task traces.
 - Ignore first: `artifacts/`, `TestResults/`, `.vs/`, `.tools/`, `bin/`, `obj/`, and package output unless the task is explicitly about generated artifacts, local tooling, or packaging.
 
-Last verified: `2026-07-13`
+Last verified: `2026-07-21`

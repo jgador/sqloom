@@ -47,8 +47,8 @@ public sealed class AgentFrameworkReplayDataPreparerLiveTests
 
     private static async Task<ReplayDataPreparationContext> CreateContextAsync()
     {
-        var operations = await new OpenApiCatalogLoader()
-            .LoadAsync(SqloomTestAppPaths.GetOpenApiPath());
+        var operations = await new RoslynEndpointCatalogLoader()
+            .LoadAsync(SqloomTestAppPaths.GetProjectPath());
         var operation = operations.Single(operation =>
             string.Equals(operation.StableOperationKey, SampleCatalogReplayScenario.OperationKey, StringComparison.Ordinal));
 

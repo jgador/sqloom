@@ -30,7 +30,10 @@ public sealed class InitCommandExecutorTests
             var commandReferencePath = Path.Combine(root, ".agents", "skills", "sqloom", "references", "commands.md");
             Assert.True(File.Exists(skillPath));
             Assert.True(File.Exists(commandReferencePath));
-            Assert.Contains("name: sqloom", File.ReadAllText(skillPath), StringComparison.Ordinal);
+            var skillText = File.ReadAllText(skillPath);
+            Assert.Contains("name: sqloom", skillText, StringComparison.Ordinal);
+            Assert.Contains("tests/Sqloom/<app>/<profile>/Harness.cs", skillText, StringComparison.Ordinal);
+            Assert.DoesNotContain("artifacts/sqloom/harnesses", skillText, StringComparison.Ordinal);
             Assert.Contains("# Sqloom Command Reference", File.ReadAllText(commandReferencePath), StringComparison.Ordinal);
         }
         finally

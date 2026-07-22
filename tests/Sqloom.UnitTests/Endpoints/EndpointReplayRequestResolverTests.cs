@@ -93,9 +93,9 @@ public sealed class ReplayRequestResolverTests
         Assert.Contains("requires a JSON request body", exception.Message);
     }
 
-    private static OpenApiOperation CreateOperation(bool requestBodyRequired)
+    private static ReplayOperation CreateOperation(bool requestBodyRequired)
     {
-        return new OpenApiOperation
+        return new ReplayOperation
         {
             StableOperationKey = "POST /api/items/{itemId}",
             HttpMethod = "POST",
@@ -105,19 +105,19 @@ public sealed class ReplayRequestResolverTests
             RequestBodyRequired = requestBodyRequired,
             Parameters =
             [
-                new OpenApiParameter
+                new ReplayParameter
                 {
                     Name = "itemId",
                     Location = "path",
                     Required = true,
                 },
-                new OpenApiParameter
+                new ReplayParameter
                 {
                     Name = "since",
                     Location = "query",
                     Required = true,
                 },
-                new OpenApiParameter
+                new ReplayParameter
                 {
                     Name = "x-trace",
                     Location = "header",

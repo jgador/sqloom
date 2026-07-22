@@ -1,6 +1,8 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Sqloom.Pipeline.Execution;
+using Sqloom.Testing;
 
 namespace Sqloom.Host.Tests;
 
@@ -9,10 +11,23 @@ namespace Sqloom.Host.Tests;
 /// </summary>
 internal static class SqloomTestAppPaths
 {
+    private static readonly Lazy<Task<ISqloomApplication>> _application = new(ResolveApplicationCoreAsync);
+
     public static string GetRepositoryRoot()
     {
         return RepositoryRootLocator.TryFind(AppContext.BaseDirectory)
             ?? throw new InvalidOperationException("Could not locate the repository root for Sqloom integration tests.");
+    }
+
+    public static string GetHarnessPath()
+    {
+        return Path.Combine(
+            GetRepositoryRoot(),
+            "tests",
+            "Sqloom",
+            "Sqloom.TestApp",
+            "default",
+            "Harness.cs");
     }
 
     public static string GetProjectPath()
@@ -20,16 +35,22 @@ internal static class SqloomTestAppPaths
         return Path.Combine(
             GetRepositoryRoot(),
             "tests",
-            "Sqloom.TestApp.Harness",
-            "Sqloom.TestApp.Harness.csproj");
+            "Sqloom.TestApp",
+            "Sqloom.TestApp.csproj");
     }
 
-    public static string GetOpenApiPath()
+    public static Task<ISqloomApplication> ResolveApplicationAsync()
     {
-        return Path.Combine(
-            GetRepositoryRoot(),
-            "tests",
-            "Sqloom.TestApp",
-            "openapi.json");
+        return _application.Value;
+    }
+
+    private static Task<ISqloomApplication> ResolveApplicationCoreAsync()
+    {
+        AppResolver resolver = new();
+        return resolver.ResolveAsync(new HostStartupOptions
+        {
+            AppTargetPath = GetHarnessPath(),
+            DotNetCommand = "dotnet",
+        });
     }
 }

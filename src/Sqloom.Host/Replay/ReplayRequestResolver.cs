@@ -6,12 +6,12 @@ using Sqloom.Pipeline.Execution;
 namespace Sqloom.Host.Replay;
 
 /// <summary>
-/// Builds replayable HTTP requests from OpenAPI operations and prepared inputs.
+/// Builds replayable HTTP requests from discovered endpoint operations and prepared inputs.
 /// </summary>
 internal sealed class ReplayRequestResolver
 {
     public EndpointReplayRequest Resolve(
-        OpenApiOperation discoveredOperation,
+        ReplayOperation discoveredOperation,
         ResolvedReplayOperation resolvedOperation,
         PreparedReplayOperation preparedOperation)
     {

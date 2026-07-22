@@ -169,6 +169,7 @@ function Invoke-SqloomPackSet
     param(
         [Parameter(Mandatory = $true)]
         [pscustomobject]$Context,
+        [switch]$IncludeSourceRevisionInVersion,
         [switch]$NoBuild,
         [switch]$NoRestore
     )
@@ -188,6 +189,11 @@ function Invoke-SqloomPackSet
             "-o"
             $Context.PackageFeedPath
         )
+
+        if ($IncludeSourceRevisionInVersion)
+        {
+            $arguments += "-p:SqloomIncludeSourceRevisionInVersion=true"
+        }
 
         if ($NoBuild)
         {
@@ -244,6 +250,43 @@ function Install-SqloomToolPath
         $Context.PackageFeedPath
         "--ignore-failed-sources"
     )
+}
+
+function Assert-SqloomToolVersion
+{
+    param(
+        [Parameter(Mandatory = $true)]
+        [pscustomobject]$Context,
+        [Parameter(Mandatory = $true)]
+        [string]$CommandPath,
+        [switch]$ExpectSourceRevision
+    )
+
+    $versionOutput = (& $CommandPath --version) -join "`n"
+    if ($LASTEXITCODE -ne 0)
+    {
+        throw "$CommandPath version check failed."
+    }
+
+    $versionOutput = $versionOutput.Trim()
+    Write-Host $versionOutput
+
+    if ($ExpectSourceRevision)
+    {
+        $escapedVersion = [regex]::Escape($Context.PackageVersion)
+        if ($versionOutput -notmatch "^sqloom $escapedVersion\+[0-9a-fA-F]{40}$")
+        {
+            throw "Expected $CommandPath --version to include Git source revision metadata, but got '$versionOutput'."
+        }
+
+        return
+    }
+
+    $expectedOutput = "sqloom $($Context.PackageVersion)"
+    if (-not [string]::Equals($versionOutput, $expectedOutput, [System.StringComparison]::Ordinal))
+    {
+        throw "Expected $CommandPath --version to be '$expectedOutput', but got '$versionOutput'."
+    }
 }
 
 function Write-SqloomLocalWrapper
@@ -440,6 +483,65 @@ internal static class Program
         "-clp:ErrorsOnly;NoSummary"
         "-p:RestorePackagesPath=$packageCachePath"
     )
+
+    $fileVerifyRoot = Join-Path $Context.RepoRoot "artifacts\tools\sqloom-testing-file-verify"
+    $filePackageCachePath = Join-Path $fileVerifyRoot "packages"
+    $fileArtifactsPath = Join-Path $fileVerifyRoot "build-artifacts"
+    $fileSourcePath = Join-Path $fileVerifyRoot "SqloomTestingVerify.cs"
+    $fileNugetConfigPath = Join-Path $fileVerifyRoot "NuGet.config"
+
+    Reset-Directory -Path $fileVerifyRoot -RootPath $Context.RepoRoot -Label "Sqloom.Testing file-based package verification"
+    New-Item -ItemType Directory -Path $filePackageCachePath -Force | Out-Null
+
+    Set-Content -LiteralPath $fileNugetConfigPath -Encoding UTF8 -Value @"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="sqloom-local" value="$($Context.PackageFeedPath)" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
+"@
+
+    $fileNugetConfigDirective = $fileNugetConfigPath.Replace("\", "/")
+    $filePackageCacheDirective = $filePackageCachePath.Replace("\", "/")
+    Set-Content -LiteralPath $fileSourcePath -Encoding UTF8 -Value @"
+#:property TargetFramework=net10.0
+#:property ManagePackageVersionsCentrally=false
+#:property RestoreConfigFile=$fileNugetConfigDirective
+#:property RestorePackagesPath=$filePackageCacheDirective
+#:package Sqloom.Testing@$($Context.PackageVersion)
+
+using System;
+using System.IO;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Testing;
+
+var context = new SqloomApplicationContext
+{
+    CurrentDirectory = Directory.GetCurrentDirectory(),
+    ReplayLaunchOptions = new ReplayLaunchOptions()
+};
+
+Console.WriteLine(context.CurrentDirectory);
+"@
+
+    Push-Location $fileVerifyRoot
+    try
+    {
+        Invoke-DotNet -Context $Context -Arguments @(
+            "build"
+            (Split-Path -Leaf $fileSourcePath)
+            "--artifacts-path"
+            $fileArtifactsPath
+            "--nologo"
+        )
+    }
+    finally
+    {
+        Pop-Location
+    }
 }
 
 function Show-SqloomPublishCommands

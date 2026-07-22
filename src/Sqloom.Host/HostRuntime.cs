@@ -109,10 +109,7 @@ public static class HostRuntime
             .InformationalVersion;
         if (!string.IsNullOrWhiteSpace(informationalVersion))
         {
-            var buildMetadataIndex = informationalVersion.IndexOf('+', StringComparison.Ordinal);
-            return buildMetadataIndex >= 0
-                ? informationalVersion[..buildMetadataIndex]
-                : informationalVersion;
+            return informationalVersion;
         }
 
         return assembly.GetName().Version?.ToString()

@@ -135,6 +135,30 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
+    public async Task WithEndpointsVerb_InvokesHandlerWithoutApplication()
+    {
+        StubCommandHandler handler = new(HostCommandKind.Endpoints, 31);
+        HostApplication application = new(
+            new AppResolver(),
+            new HostConsoleWriter(),
+            new CommandRegistry(handler));
+        HostStartupOptions startupOptions = new()
+        {
+            ApplicationArguments = ["endpoints"],
+            AppTargetPath = Path.Combine("tests", "Sqloom.TestApp", "Sqloom.TestApp.csproj"),
+        };
+
+        var result = await application.RunAsync(
+            startupOptions,
+            Directory.GetCurrentDirectory());
+
+        Assert.Equal(31, result);
+        Assert.NotNull(handler.LastContext);
+        Assert.Null(handler.LastContext!.Application);
+        Assert.Equal("endpoints", Assert.Single(handler.LastContext.Arguments));
+    }
+
+    [Fact]
     public async Task WithoutCommand_PrintsNoCommandHint()
     {
         HostApplication application = new(

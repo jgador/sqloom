@@ -11,6 +11,11 @@ namespace Sqloom.Host.Replay;
 /// </summary>
 internal sealed class ReplayArtifactWriter
 {
+    public string GetEndpointCatalogPath(string replayArtifactDirectory)
+    {
+        return ArtifactLayout.GetEndpointCatalogPath(replayArtifactDirectory);
+    }
+
     public string GetDiscoveredOpsPath(string replayArtifactDirectory)
     {
         return ArtifactLayout.GetDiscoveredOpsPath(replayArtifactDirectory);
@@ -44,7 +49,7 @@ internal sealed class ReplayArtifactWriter
 
     public Task WriteDiscoveredOpsAsync(
         string path,
-        IReadOnlyList<OpenApiOperation> discoveredOperations,
+        IReadOnlyList<ReplayOperation> discoveredOperations,
         CancellationToken cancellationToken)
     {
         return JsonFileWriter.WriteAsync(path, discoveredOperations, cancellationToken);

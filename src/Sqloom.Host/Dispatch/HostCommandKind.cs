@@ -9,6 +9,7 @@ internal enum HostCommandKind
     Help,
     Init,
     Observe,
+    Endpoints,
     Tune,
     Replay,
     Correlate,

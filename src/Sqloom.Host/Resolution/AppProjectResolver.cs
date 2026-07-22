@@ -14,6 +14,7 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class AppProjectResolver
 {
+    private const int MinimumFileBasedAppSdkMajorVersion = 10;
     private readonly TargetPathResolver _targetPathResolver = new();
 
     public async Task<string> ResolveAssemblyPathAsync(
@@ -78,6 +79,21 @@ internal sealed class AppProjectResolver
             return NormalizeAndValidateAssemblyPath(targetSelection.TargetPath);
         }
 
+        if (targetSelection.Kind == ResolvedTargetKind.CSharpFile)
+        {
+            if (noBuild)
+            {
+                throw new AppResolutionException(
+                    "C# file-based Sqloom harness targets are always built. Remove --no-build and try again.");
+            }
+
+            return await BuildCSharpFileAsync(
+                    targetSelection.TargetPath,
+                    dotNetCommand,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
         var projectPath = NormalizeAndValidateProjectPath(
             targetSelection.TargetPath,
             "harness project");
@@ -109,6 +125,191 @@ internal sealed class AppProjectResolver
         }
 
         return resolvedAssemblyPath;
+    }
+
+    private static async Task<string> BuildCSharpFileAsync(
+        string sourceFilePath,
+        string dotNetCommand,
+        CancellationToken cancellationToken)
+    {
+        var fullSourceFilePath = NormalizeAndValidateCSharpFilePath(sourceFilePath);
+        var sourceDirectory = Path.GetDirectoryName(fullSourceFilePath)
+            ?? throw new InvalidOperationException($"The C# file-based harness path '{fullSourceFilePath}' has no parent directory.");
+
+        await EnsureFileBasedAppsSupportedAsync(
+                dotNetCommand,
+                sourceDirectory,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var buildId = Guid.NewGuid().ToString("N");
+        var assemblyName = ResolveCSharpFileAssemblyName(fullSourceFilePath);
+        var outputDirectory = Path.Combine(
+            Path.GetTempPath(),
+            "sqloom",
+            "file-harnesses",
+            buildId);
+        var assemblyPath = Path.Combine(
+            outputDirectory,
+            $"{assemblyName}.dll");
+        var dependencyManifestPath = Path.Combine(
+            outputDirectory,
+            $"{assemblyName}.deps.json");
+        Directory.CreateDirectory(outputDirectory);
+
+        try
+        {
+            var result = await ExecuteDotNetCommandAsync(
+                    dotNetCommand,
+                    sourceDirectory,
+                    cancellationToken,
+                    "build",
+                    Path.GetFileName(fullSourceFilePath),
+                    "--configuration",
+                    "Debug",
+                    "--artifacts-path",
+                    Path.Combine(outputDirectory, "build"),
+                    "--output",
+                    outputDirectory,
+                    "--nologo")
+                .ConfigureAwait(false);
+            if (result.ExitCode != 0)
+            {
+                throw new AppResolutionException(
+                    $"Failed to build C# file-based Sqloom harness '{fullSourceFilePath}'. {FormatCommandOutput(dotNetCommand, result)}");
+            }
+
+            if (!File.Exists(assemblyPath)
+                || !File.Exists(dependencyManifestPath))
+            {
+                throw new AppResolutionException(
+                    $"The C# file-based Sqloom harness '{fullSourceFilePath}' built successfully, but its expected assembly and dependency manifest were not found in '{outputDirectory}'.");
+            }
+
+            return assemblyPath;
+        }
+        catch
+        {
+            DeleteDirectoryIfExists(outputDirectory);
+            throw;
+        }
+    }
+
+    private static string ResolveCSharpFileAssemblyName(string sourceFilePath)
+    {
+        var assemblyName = Path.GetFileNameWithoutExtension(sourceFilePath);
+        foreach (var line in File.ReadLines(sourceFilePath))
+        {
+            var trimmedLine = line.Trim();
+            if (trimmedLine.Length == 0
+                || trimmedLine.StartsWith("#!", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            if (!trimmedLine.StartsWith("#:", StringComparison.Ordinal))
+            {
+                break;
+            }
+
+            const string propertyPrefix = "#:property";
+            if (!trimmedLine.StartsWith(
+                    propertyPrefix,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var assignment = trimmedLine[propertyPrefix.Length..].Trim();
+            var separatorIndex = assignment.IndexOf('=');
+            if (separatorIndex <= 0
+                || !string.Equals(
+                    assignment[..separatorIndex].Trim(),
+                    "AssemblyName",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var configuredAssemblyName = assignment[(separatorIndex + 1)..].Trim();
+            if (configuredAssemblyName.Contains("$(", StringComparison.Ordinal))
+            {
+                throw new AppResolutionException(
+                    $"The C# file-based Sqloom harness '{sourceFilePath}' uses an AssemblyName expression. Use a literal AssemblyName value so Sqloom can locate the build output.");
+            }
+
+            if (string.IsNullOrWhiteSpace(configuredAssemblyName)
+                || configuredAssemblyName.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+            {
+                throw new AppResolutionException(
+                    $"The C# file-based Sqloom harness '{sourceFilePath}' has an invalid AssemblyName value.");
+            }
+
+            assemblyName = configuredAssemblyName;
+        }
+
+        return assemblyName;
+    }
+
+    private static async Task EnsureFileBasedAppsSupportedAsync(
+        string dotNetCommand,
+        string workingDirectory,
+        CancellationToken cancellationToken)
+    {
+        var result = await ExecuteDotNetCommandAsync(
+                dotNetCommand,
+                workingDirectory,
+                cancellationToken,
+                "--version")
+            .ConfigureAwait(false);
+        if (result.ExitCode != 0)
+        {
+            throw new AppResolutionException(
+                $"Failed to determine whether '{dotNetCommand}' supports C# file-based apps. {FormatCommandOutput(dotNetCommand, result)}");
+        }
+
+        var reportedVersion = result.StandardOutput.Trim();
+        ValidateFileBasedAppSdkVersion(
+            dotNetCommand,
+            reportedVersion);
+    }
+
+    internal static void ValidateFileBasedAppSdkVersion(
+        string dotNetCommand,
+        string reportedVersion)
+    {
+        if (!TryGetFileBasedAppSdkMajorVersion(
+                reportedVersion,
+                out var majorVersion)
+            || majorVersion < MinimumFileBasedAppSdkMajorVersion)
+        {
+            throw new AppResolutionException(
+                $"C# file-based Sqloom harness targets require .NET SDK {MinimumFileBasedAppSdkMajorVersion} or later, but '{dotNetCommand}' reported '{reportedVersion}'.");
+        }
+    }
+
+    internal static bool TryGetFileBasedAppSdkMajorVersion(
+        string value,
+        out int majorVersion)
+    {
+        majorVersion = 0;
+        foreach (var line in value.Split(
+                     ['\r', '\n'],
+                     StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var versionText = line.Split('-', '+')[0];
+            if (!Version.TryParse(
+                    versionText,
+                    out var version))
+            {
+                continue;
+            }
+
+            majorVersion = version.Major;
+            return true;
+        }
+
+        return false;
     }
 
     private static async Task<string> ResolveTargetPathAsync(
@@ -205,7 +406,7 @@ internal sealed class AppProjectResolver
             if (!process.Start())
             {
                 throw new AppResolutionException(
-                    $"Failed to start '{dotNetCommand}' while resolving a Sqloom harness project.");
+                    $"Failed to start '{dotNetCommand}' while resolving a Sqloom harness target.");
             }
         }
         catch (Exception exception) when (
@@ -213,7 +414,7 @@ internal sealed class AppProjectResolver
                 or Win32Exception)
         {
             throw new AppResolutionException(
-                $"Failed to start '{dotNetCommand}' while resolving a Sqloom harness project: {exception.Message}",
+                $"Failed to start '{dotNetCommand}' while resolving a Sqloom harness target: {exception.Message}",
                 exception);
         }
 
@@ -294,6 +495,27 @@ internal sealed class AppProjectResolver
         return fullProjectPath;
     }
 
+    private static string NormalizeAndValidateCSharpFilePath(string sourceFilePath)
+    {
+        var fullSourceFilePath = Path.GetFullPath(sourceFilePath);
+        if (!File.Exists(fullSourceFilePath))
+        {
+            throw new AppResolutionException(
+                $"The specified C# file-based Sqloom harness '{fullSourceFilePath}' does not exist.");
+        }
+
+        if (!string.Equals(
+                Path.GetExtension(fullSourceFilePath),
+                ".cs",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            throw new AppResolutionException(
+                $"The specified C# file-based Sqloom harness '{fullSourceFilePath}' is not a .cs file.");
+        }
+
+        return fullSourceFilePath;
+    }
+
     private static string NormalizeAndValidateAssemblyPath(string assemblyPath)
     {
         var fullAssemblyPath = Path.GetFullPath(assemblyPath);
@@ -331,6 +553,26 @@ internal sealed class AppProjectResolver
             ".exe" => true,
             _ => false,
         };
+    }
+
+    private static void DeleteDirectoryIfExists(string directoryPath)
+    {
+        if (!Directory.Exists(directoryPath))
+        {
+            return;
+        }
+
+        try
+        {
+            Directory.Delete(
+                directoryPath,
+                recursive: true);
+        }
+        catch (Exception exception) when (
+            exception is IOException
+                or UnauthorizedAccessException)
+        {
+        }
     }
 
     /// <summary>

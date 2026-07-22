@@ -173,6 +173,7 @@ internal sealed class HostStartupCommandLine
 
         return Path.GetExtension(value).ToLowerInvariant() switch
         {
+            ".cs" => true,
             ".csproj" => true,
             ".fsproj" => true,
             ".vbproj" => true,
@@ -209,14 +210,14 @@ internal sealed class HostStartupCommandLine
         if (!IsSwitch(argument) && !IsSupportedCommand(argument))
         {
             throw new ArgumentException(
-                $"Unknown Sqloom command '{argument}'. Use init, tune, observe, replay, correlate, advise, --help, or --version.");
+                $"Unknown Sqloom command '{argument}'. Use init, endpoints, tune, observe, replay, correlate, advise, --help, or --version.");
         }
     }
 
     private static void ThrowUnsupportedStartupSwitch(string switchName)
     {
         throw new ArgumentException(
-            $"Unsupported switch '{switchName}'. Sqloom now requires an explicit stage verb followed by a harness project, harness assembly, solution, solution filter, or directory path when runtime app selection is needed.");
+            $"Unsupported switch '{switchName}'. Sqloom now requires an explicit stage verb followed by a C# file-based harness, harness project, harness assembly, solution, solution filter, or directory path when runtime app selection is needed.");
     }
 
     private static string SetPathOnce(

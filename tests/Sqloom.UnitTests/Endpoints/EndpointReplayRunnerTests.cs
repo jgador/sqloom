@@ -24,53 +24,6 @@ public sealed class EndpointReplayRunnerTests
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
-        var documentPath = Path.Combine(tempDirectory, "openapi.json");
-        await File.WriteAllTextAsync(
-            documentPath,
-            """
-            {
-              "openapi": "3.0.1",
-              "security": [
-                { "Bearer": [] }
-              ],
-              "paths": {
-                "/api/items/{itemId}": {
-                  "post": {
-                    "parameters": [
-                      {
-                        "name": "itemId",
-                        "in": "path",
-                        "required": true,
-                        "schema": { "type": "string" }
-                      },
-                      {
-                        "name": "since",
-                        "in": "query",
-                        "required": true,
-                        "schema": { "type": "string", "format": "date-time" }
-                      },
-                      {
-                        "name": "x-trace",
-                        "in": "header",
-                        "required": true,
-                        "schema": { "type": "string" }
-                      }
-                    ],
-                    "requestBody": {
-                      "required": true,
-                      "content": {
-                        "application/json": {
-                          "example": {
-                            "name": "example"
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            """);
 
         using CapturingHandler handler = new();
         using var services = new ServiceCollection().BuildServiceProvider();
@@ -105,13 +58,25 @@ public sealed class EndpointReplayRunnerTests
             DacpacPath = Path.Combine("artifacts", "test.dacpac"),
             SeedSqlPath = Path.Combine("artifacts", "test.seed.sql"),
         };
+        StaticReplayOperationCatalogLoader catalogLoader = new(
+            CreateOperation(
+                "POST",
+                "/api/items/{itemId}",
+                hasJsonRequestBody: true,
+                requestBodyRequired: true,
+                parameters:
+                [
+                    CreateParameter("itemId", "path", required: true, schemaType: "string"),
+                    CreateParameter("since", "query", required: true, schemaType: "string", format: "date-time"),
+                    CreateParameter("x-trace", "header", required: true, schemaType: "string"),
+                ]));
 
-        EndpointReplayRunner runner = new();
+        EndpointReplayRunner runner = new(catalogLoader);
         var result = await runner.RunAsync(
             new ReplayRunnerOptions
             {
                 AppName = "TestApp",
-                OpenApiPath = documentPath,
+                SourceProjectPath = "app.csproj",
                 ReplayArtifactDir = tempDirectory,
                 ReplayProfile = new ReplayProfile
                 {
@@ -138,6 +103,14 @@ public sealed class EndpointReplayRunnerTests
         Assert.Equal("""{"name":"runtime"}""", handler.RequestBody);
         Assert.Equal("abc123", Assert.Single(handler.RequestHeaders["x-trace"]));
         Assert.Equal("TestApp", result.AppName);
+        var endpointCatalogPath = Path.Combine(tempDirectory, "endpoints.json");
+        var legacyCatalogPath = Path.Combine(tempDirectory, "discovered-operations.json");
+        Assert.Equal(endpointCatalogPath, result.DiscoveredOpsPath, StringComparer.OrdinalIgnoreCase);
+        Assert.True(File.Exists(endpointCatalogPath));
+        Assert.True(File.Exists(legacyCatalogPath));
+        Assert.Equal(
+            await File.ReadAllTextAsync(endpointCatalogPath),
+            await File.ReadAllTextAsync(legacyCatalogPath));
         Assert.Equal(replayLaunchOptions.DacpacPath, hostFactory.ReceivedLaunchOptions?.DacpacPath);
         Assert.Equal(replayLaunchOptions.SeedSqlPath, hostFactory.ReceivedLaunchOptions?.SeedSqlPath);
         Assert.Contains(
@@ -152,43 +125,6 @@ public sealed class EndpointReplayRunnerTests
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
-        var documentPath = Path.Combine(tempDirectory, "openapi.json");
-        await File.WriteAllTextAsync(
-            documentPath,
-            """
-            {
-              "openapi": "3.0.1",
-              "security": [
-                { "Bearer": [] }
-              ],
-              "paths": {
-                "/api/items/{itemId}": {
-                  "get": {
-                    "parameters": [
-                      {
-                        "name": "itemId",
-                        "in": "path",
-                        "required": true,
-                        "schema": { "type": "integer" }
-                      },
-                      {
-                        "name": "since",
-                        "in": "query",
-                        "required": true,
-                        "schema": { "type": "string", "format": "date-time" }
-                      },
-                      {
-                        "name": "x-trace",
-                        "in": "header",
-                        "required": true,
-                        "schema": { "type": "string" }
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-            """);
 
         using CapturingHandler handler = new();
         using var services = new ServiceCollection().BuildServiceProvider();
@@ -202,13 +138,23 @@ public sealed class EndpointReplayRunnerTests
             {
                 AccessToken = "token-123"
             });
+        StaticReplayOperationCatalogLoader catalogLoader = new(
+            CreateOperation(
+                "GET",
+                "/api/items/{itemId}",
+                parameters:
+                [
+                    CreateParameter("itemId", "path", required: true, schemaType: "integer"),
+                    CreateParameter("since", "query", required: true, schemaType: "string", format: "date-time"),
+                    CreateParameter("x-trace", "header", required: true, schemaType: "string"),
+                ]));
 
-        EndpointReplayRunner runner = new();
+        EndpointReplayRunner runner = new(catalogLoader);
         var result = await runner.RunAsync(
             new ReplayRunnerOptions
             {
                 AppName = "TestApp",
-                OpenApiPath = documentPath,
+                SourceProjectPath = "app.csproj",
                 ReplayArtifactDir = tempDirectory,
                 ReplayProfile = new ReplayProfile(),
                 ReplayHost = replayHost,
@@ -271,22 +217,6 @@ public sealed class EndpointReplayRunnerTests
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
-        var documentPath = Path.Combine(tempDirectory, "openapi.json");
-        await File.WriteAllTextAsync(
-            documentPath,
-            """
-            {
-              "openapi": "3.0.1",
-              "security": [
-                { "Bearer": [] }
-              ],
-              "paths": {
-                "/api/items": {
-                  "get": { }
-                }
-              }
-            }
-            """);
 
         using CapturingHandler handler = new();
         using var services = new ServiceCollection().BuildServiceProvider();
@@ -297,13 +227,15 @@ public sealed class EndpointReplayRunnerTests
             },
             services,
             new PreparedReplayOperation());
+        StaticReplayOperationCatalogLoader catalogLoader = new(
+            CreateOperation("GET", "/api/items"));
 
-        EndpointReplayRunner runner = new();
+        EndpointReplayRunner runner = new(catalogLoader);
         var result = await runner.RunAsync(
             new ReplayRunnerOptions
             {
                 AppName = "TestApp",
-                OpenApiPath = documentPath,
+                SourceProjectPath = "app.csproj",
                 ReplayArtifactDir = tempDirectory,
                 ReplayProfile = new ReplayProfile(),
                 ReplayHost = replayHost,
@@ -325,31 +257,6 @@ public sealed class EndpointReplayRunnerTests
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
-        var documentPath = Path.Combine(tempDirectory, "openapi.json");
-        await File.WriteAllTextAsync(
-            documentPath,
-            """
-            {
-              "openapi": "3.0.1",
-              "security": [
-                { "Bearer": [] }
-              ],
-              "paths": {
-                "/api/items/{itemId}": {
-                  "get": {
-                    "parameters": [
-                      {
-                        "name": "itemId",
-                        "in": "path",
-                        "required": true,
-                        "schema": { "type": "integer" }
-                      }
-                    ]
-                  }
-                }
-              }
-            }
-            """);
 
         using CapturingHandler handler = new();
         using var services = new ServiceCollection().BuildServiceProvider();
@@ -360,13 +267,21 @@ public sealed class EndpointReplayRunnerTests
             },
             services,
             new PreparedReplayOperation());
+        StaticReplayOperationCatalogLoader catalogLoader = new(
+            CreateOperation(
+                "GET",
+                "/api/items/{itemId}",
+                parameters:
+                [
+                    CreateParameter("itemId", "path", required: true, schemaType: "integer"),
+                ]));
 
-        EndpointReplayRunner runner = new();
+        EndpointReplayRunner runner = new(catalogLoader);
         var result = await runner.RunAsync(
             new ReplayRunnerOptions
             {
                 AppName = "TestApp",
-                OpenApiPath = documentPath,
+                SourceProjectPath = "app.csproj",
                 ReplayArtifactDir = tempDirectory,
                 ReplayProfile = new ReplayProfile(),
                 ReplayHost = replayHost,
@@ -392,6 +307,42 @@ public sealed class EndpointReplayRunnerTests
         Assert.Contains("prep failed", preparedOperation.Warnings);
     }
 
+    private static ReplayOperation CreateOperation(
+        string httpMethod,
+        string route,
+        bool hasJsonRequestBody = false,
+        bool requestBodyRequired = false,
+        IReadOnlyList<ReplayParameter>? parameters = null)
+    {
+        return new ReplayOperation
+        {
+            StableOperationKey = $"{httpMethod} {route}",
+            HttpMethod = httpMethod,
+            Route = route,
+            RequiresAuthentication = true,
+            Parameters = parameters ?? [],
+            HasJsonRequestBody = hasJsonRequestBody,
+            RequestBodyRequired = requestBodyRequired,
+        };
+    }
+
+    private static ReplayParameter CreateParameter(
+        string name,
+        string location,
+        bool required,
+        string? schemaType = null,
+        string? format = null)
+    {
+        return new ReplayParameter
+        {
+            Name = name,
+            Location = location,
+            Required = required,
+            SchemaType = schemaType,
+            Format = format,
+        };
+    }
+
     /// <summary>
     /// Provides a fake replay host factory for replay runner tests.
     /// </summary>
@@ -412,6 +363,26 @@ public sealed class EndpointReplayRunnerTests
         {
             ReceivedLaunchOptions = launchOptions;
             return Task.FromResult(_host);
+        }
+    }
+
+    private sealed class StaticReplayOperationCatalogLoader : IReplayOperationCatalogLoader
+    {
+        private readonly IReadOnlyList<ReplayOperation> _operations;
+
+        public StaticReplayOperationCatalogLoader(params ReplayOperation[] operations)
+        {
+            _operations = operations;
+        }
+
+        public string? ReceivedSourceProjectPath { get; private set; }
+
+        public Task<IReadOnlyList<ReplayOperation>> LoadAsync(
+            string sourceProjectPath,
+            CancellationToken cancellationToken = default)
+        {
+            ReceivedSourceProjectPath = sourceProjectPath;
+            return Task.FromResult(_operations);
         }
     }
 

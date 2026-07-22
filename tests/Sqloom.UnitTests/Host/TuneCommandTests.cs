@@ -83,7 +83,6 @@ public sealed class TuneCommandTests
         var manifest = new SqloomApplicationManifest
         {
             Name = "Sqloom Test Harness",
-            OpenApiPath = Sqloom.Tests.RepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = ManifestFactory.CreateReplayProfile(),
             SqlServerDacpacPath = manifestDacpacPath,
         };
@@ -115,7 +114,6 @@ public sealed class TuneCommandTests
         var manifest = new SqloomApplicationManifest
         {
             Name = "Sqloom Test Harness",
-            OpenApiPath = Sqloom.Tests.RepositoryPaths.GetTestAppOpenApiPath(),
             ReplayProfile = ManifestFactory.CreateReplayProfile(),
             SqlServerDacpacPath = manifestDacpacPath,
         };

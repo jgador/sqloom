@@ -1,11 +1,13 @@
 ---
 name: security-audit
-description: Run a read-only security audit of the current repository, combining a code-level vulnerability review with secret scanning across the working tree, the full git history, and every blob in the git object database. Use when the user asks for a security audit, a secret scan, or a check for committed API keys, credentials, or similar sensitive data.
+description: Run a read-only full security audit of the current repository, combining a code-level vulnerability review with secret scanning across the working tree, the full git history, and every blob in the git object database. Use for authoritative full audits, committed-secret checks, dependency risk checks, and code-level vulnerability review; use security-audit-fast instead for staged, named-path, or branch-diff leak checks.
 ---
 
 # Security Audit
 
 Run a read-only deep security analysis of the current repository. Do not modify any files and do not run state-changing git commands; read-only git commands such as `git log`, `git ls-files`, and `git cat-file` are allowed. Do not print raw secret values in the final report; report only safe signatures, prefixes, file paths, line numbers, commit IDs, and remediation steps.
+
+Use this skill only for authoritative full repository audits. For PR, staged, named-path, or base-ref diff checks that only need to determine whether a change set introduced a leak, use `security-audit-fast`.
 
 Do not use sub-agents for this audit. Keep the code review, secret triage, and final risk judgment in the main agent. Independent read-only shell/search commands may still run in parallel when they do not depend on each other, but thoroughness takes priority over parallelism.
 

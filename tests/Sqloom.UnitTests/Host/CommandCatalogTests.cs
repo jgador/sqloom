@@ -12,7 +12,7 @@ public sealed class CommandCatalogTests
     public void CommandsHaveStableOrderAndCompleteKinds()
     {
         Assert.Equal(
-            ["init", "observe", "tune", "replay", "correlate", "advise"],
+            ["init", "observe", "endpoints", "tune", "replay", "correlate", "advise"],
             CommandCatalog.Commands.Select(command => command.Verb));
         Assert.Equal(
             Enum.GetValues<HostCommandKind>().Where(kind => kind is not HostCommandKind.None and not HostCommandKind.Help),
@@ -35,6 +35,13 @@ public sealed class CommandCatalogTests
         Assert.True(observe.Options.Single(option => option.Name == "--read-only-connection-string").IsRequired);
         Assert.Equal("24", observe.Options.Single(option => option.Name == "--lookback-hours").DefaultValue);
 
+        var endpoints = CommandCatalog.GetRequired(HostCommandKind.Endpoints);
+        Assert.Equal(CommandTargetKind.Required, endpoints.TargetKind);
+        Assert.True(endpoints.Options.Single(option => option.Name == "--app-project").TakesValue);
+        var endpointsJsonOutput = endpoints.Options.Single(option => option.Name == "--json-output-file");
+        Assert.True(endpointsJsonOutput.TakesValue);
+        Assert.Null(endpointsJsonOutput.DefaultValue);
+
         var replay = CommandCatalog.GetRequired(HostCommandKind.Replay);
         Assert.Equal(CommandTargetKind.Required, replay.TargetKind);
         Assert.True(replay.Options.Single(option => option.Name == "--max-operations").TakesValue);
@@ -49,6 +56,7 @@ public sealed class CommandCatalogTests
         Assert.Equal(
             "observe [<path>] --read-only-connection-string <connection-string> [options]",
             CommandCatalog.GetRequired(HostCommandKind.Observe).Usage);
+        Assert.Equal("endpoints <path> [options]", CommandCatalog.GetRequired(HostCommandKind.Endpoints).Usage);
         Assert.Equal(
             "tune <path> --model-provider <openai> --openai-api-key <key> [options]",
             CommandCatalog.GetRequired(HostCommandKind.Tune).Usage);
@@ -66,6 +74,7 @@ public sealed class CommandCatalogTests
         Assert.Contains("## Agent use", markdown, StringComparison.Ordinal);
         Assert.Contains("## Usage", markdown, StringComparison.Ordinal);
         Assert.Contains("| Command | Description |", markdown, StringComparison.Ordinal);
+        Assert.Contains("### `endpoints`", markdown, StringComparison.Ordinal);
         Assert.Contains("### `replay`", markdown, StringComparison.Ordinal);
         Assert.Contains("#### Required options", markdown, StringComparison.Ordinal);
         Assert.Contains("#### Startup options", markdown, StringComparison.Ordinal);

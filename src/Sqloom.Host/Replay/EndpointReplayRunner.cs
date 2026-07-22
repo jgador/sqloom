@@ -11,15 +11,28 @@ using Sqloom.Pipeline.Artifacts;
 namespace Sqloom.Host.Replay;
 
 /// <summary>
-/// Executes OpenAPI-driven replay operations against a Sqloom app harness.
+/// Executes source-discovered replay operations against a Sqloom app harness.
 /// </summary>
 public sealed class EndpointReplayRunner
 {
-    private readonly OpenApiCatalogLoader _catalogLoader = new();
+    private readonly IReplayOperationCatalogLoader _catalogLoader;
     private readonly ReplayArtifactWriter _artifactWriter = new();
     private readonly ReplayPlanBuilder _planBuilder = new();
     private readonly ReplayRequestExecutor _requestExecutor = new();
     private readonly ReplayRequestResolver _requestResolver = new();
+
+    /// <summary>
+    /// Initializes a replay runner that discovers endpoint operations from ASP.NET Core source projects.
+    /// </summary>
+    public EndpointReplayRunner()
+        : this(new RoslynEndpointCatalogLoader())
+    {
+    }
+
+    internal EndpointReplayRunner(IReplayOperationCatalogLoader catalogLoader)
+    {
+        _catalogLoader = catalogLoader ?? throw new ArgumentNullException(nameof(catalogLoader));
+    }
 
     /// <summary>
     /// Discovers, prepares, executes, and records the configured endpoint replay operations.
@@ -31,13 +44,21 @@ public sealed class EndpointReplayRunner
         ArgumentNullException.ThrowIfNull(options);
 
         var discoveredOperations = await _catalogLoader
-            .LoadAsync(options.OpenApiPath, cancellationToken)
+            .LoadAsync(options.SourceProjectPath, cancellationToken)
             .ConfigureAwait(false);
 
-        var discoveredOperationsPath = _artifactWriter.GetDiscoveredOpsPath(options.ReplayArtifactDir);
+        var endpointCatalogPath = _artifactWriter.GetEndpointCatalogPath(options.ReplayArtifactDir);
         await _artifactWriter
             .WriteDiscoveredOpsAsync(
-                discoveredOperationsPath,
+                endpointCatalogPath,
+                discoveredOperations,
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var legacyDiscoveredOperationsPath = _artifactWriter.GetDiscoveredOpsPath(options.ReplayArtifactDir);
+        await _artifactWriter
+            .WriteDiscoveredOpsAsync(
+                legacyDiscoveredOperationsPath,
                 discoveredOperations,
                 cancellationToken)
             .ConfigureAwait(false);
@@ -88,7 +109,7 @@ public sealed class EndpointReplayRunner
         var finalPlan = new EndpointReplayPlan()
         {
             AppName = initialPlan.AppName,
-            OpenApiPath = initialPlan.OpenApiPath,
+            SourceProjectPath = initialPlan.SourceProjectPath,
             PlannedAtUtc = initialPlan.PlannedAtUtc,
             Operations = finalizedPlanItems,
         };
@@ -121,8 +142,8 @@ public sealed class EndpointReplayRunner
         {
             AppName = options.AppName,
             ReplayArtifactDir = options.ReplayArtifactDir,
-            OpenApiPath = options.OpenApiPath,
-            DiscoveredOpsPath = discoveredOperationsPath,
+            SourceProjectPath = options.SourceProjectPath,
+            DiscoveredOpsPath = endpointCatalogPath,
             ReplayPlanArtifactPath = replayPlanPath,
             SummaryArtifactPath = summaryPath,
             ReplayDataPreparationPath = replayDataPreparationPath,
@@ -159,7 +180,7 @@ public sealed class EndpointReplayRunner
         ReplayRunnerOptions options,
         IReplayHost replayHost,
         EndpointReplayPlan initialPlan,
-        IReadOnlyDictionary<string, OpenApiOperation> discoveredByKey,
+        IReadOnlyDictionary<string, ReplayOperation> discoveredByKey,
         IReadOnlyDictionary<string, ReplayOverlay> overlays,
         ICollection<EndpointReplayResult> results,
         ICollection<EndpointReplayPlanItem> finalizedPlanItems,
@@ -236,7 +257,7 @@ public sealed class EndpointReplayRunner
 
     private static async Task<ResolvedReplayOperation> PrepareReplayDataAsync(
         ReplayRunnerOptions options,
-        OpenApiOperation discoveredOperation,
+        ReplayOperation discoveredOperation,
         ResolvedReplayOperation resolvedOperation,
         ICollection<ReplayDataPreparationOperation> replayDataPreparationOperations,
         CancellationToken cancellationToken)

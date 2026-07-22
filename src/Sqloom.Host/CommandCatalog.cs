@@ -92,8 +92,8 @@ internal static class CommandCatalog
     public static IReadOnlyList<CommandOptionSpec> StartupOptions { get; } =
     [
         new("--debug", "Prints per-stage diagnostics to stderr."),
-        new("--dotnet-command", "Uses a specific dotnet executable for project resolution and builds.", "command", DefaultValue: "dotnet"),
-        new("--no-build", "Skips building harness projects before scanning their outputs."),
+        new("--dotnet-command", "Uses a specific dotnet executable for project resolution and C# file-based harness builds.", "command", DefaultValue: "dotnet"),
+        new("--no-build", "Skips building harness projects before scanning their outputs. Sqloom always builds .cs harness targets and rejects --no-build for them."),
     ];
 
     public static IReadOnlyList<CommandSpec> Commands { get; } =
@@ -132,7 +132,24 @@ internal static class CommandCatalog
             ],
             [
                 "--app-only implies classification display and filters the console view to App-classified queries when the selected harness supplies Query Store profile data.",
-                "When a target path is supplied, Sqloom resolves it, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.",
+                "When a target path is supplied, Sqloom resolves it, builds harness projects unless --no-build is supplied, always builds C# file-based harnesses, and requires exactly one public non-abstract ISqloomApplication implementation.",
+            ]),
+        new(
+            HostCommandKind.Endpoints,
+            "endpoints",
+            "Discovers ASP.NET Core controller endpoints from source.",
+            CommandTargetKind.Required,
+            SupportsDebug: true,
+            SupportsHarnessOptions: false,
+            [
+                new("--app-project", "Overrides the inferred ASP.NET Core source project used for endpoint discovery.", "path"),
+                new("--json-output-file", "Writes discovered endpoint operations to a specific JSON path.", "path"),
+            ],
+            [
+                "Endpoints does not start the app harness or replay requests; it only loads source metadata with Roslyn.",
+                "Endpoints prints to the console by default and writes JSON only when --json-output-file is supplied.",
+                "File-based harness targets infer the source project from exactly one Web SDK #:project directive unless --app-project is supplied.",
+                "A direct ASP.NET Core project target can be used to list endpoints before a Sqloom harness exists.",
             ]),
         new(
             HostCommandKind.Tune,
@@ -149,7 +166,7 @@ internal static class CommandCatalog
                 new("--command-timeout-seconds", "SQL command timeout for Query Store reads.", "seconds", DefaultValue: "30"),
                 new("--app-only", "Filters the console view to App-classified entries and implies --show-classification."),
                 new("--show-classification", "Prints classification details for displayed plans and waits."),
-                new("--openapi-file", "Overrides the app-owned OpenAPI document.", "path"),
+                new("--app-project", "Overrides the inferred ASP.NET Core source project used for endpoint discovery.", "path"),
                 new("--sqlserver-dacpac-file", "Overrides the DACPAC schema source used by replay launch options and advice extraction.", "path"),
                 new("--sqlserver-seed-sql-file", "Passes a SQL seed script path to custom harness replay launch options.", "path"),
                 new("--artifact-dir", "Uses a custom tune workflow root.", "path", DefaultValue: "artifacts/sqloom/tune/tune-<timestamp>"),
@@ -166,21 +183,23 @@ internal static class CommandCatalog
             [
                 "Tune starts the harness session, runs replay -> observe -> correlate -> advise in one command, and disposes the session.",
                 "Tune writes query-store-snapshot.json and tune-summary.json at the workflow root, then replay, correlation, and advice artifacts under the workflow replay/ directory.",
+                "Tune discovers replay operations from the ASP.NET Core source project inferred from the harness target or --app-project.",
                 "Tune uses --read-only-connection-string when supplied, otherwise it uses the harness session connection string.",
                 "When no DACPAC override or harness manifest DACPAC is available, tune exports a DACPAC from the command-line read-only connection before replay and reuses it for advice schema extraction.",
                 "By default, Microsoft Agent Framework fills missing replay path, query, header, and body values; pass --replay-data-agent off to opt out.",
                 "--sqlserver-dacpac-file and --sqlserver-seed-sql-file are harness replay launch overrides; the replay data agent does not generate DACPACs or seed SQL.",
+                "Within tune, the replay stage writes endpoints.json under the workflow replay directory and keeps discovered-operations.json as a compatibility copy.",
                 "When omitted, --artifact-dir defaults to artifacts/sqloom/tune/tune-<timestamp>. With tune, --artifact-dir means the workflow root, not a replay-only directory.",
             ]),
         new(
             HostCommandKind.Replay,
             "replay",
-            "Starts the harness and replays selected OpenAPI operations.",
+            "Starts the harness and replays selected endpoint operations.",
             CommandTargetKind.Required,
             SupportsDebug: true,
             SupportsHarnessOptions: true,
             [
-                new("--openapi-file", "Overrides the app-owned OpenAPI document.", "path"),
+                new("--app-project", "Overrides the inferred ASP.NET Core source project used for endpoint discovery.", "path"),
                 new("--sqlserver-dacpac-file", "Passes a DACPAC path to harness replay launch options.", "path"),
                 new("--sqlserver-seed-sql-file", "Passes a SQL seed script path to harness replay launch options.", "path"),
                 new("--artifact-dir", "Uses a custom replay output directory.", "path", DefaultValue: "artifacts/sqloom/replay/<timestamp>"),
@@ -192,13 +211,16 @@ internal static class CommandCatalog
                 new("--openai-api-key", "Supplies the OpenAI API key used by the replay data agent.", "key"),
             ],
             [
-                "Standalone replay requires an explicit target path after the replay verb. Supported target paths are harness project files, harness assemblies, solution files, solution filters, and directories.",
-                "Sqloom resolves that target, builds harness projects unless --no-build is supplied, and requires exactly one public non-abstract ISqloomApplication implementation.",
-                "Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and builds.",
+                "Standalone replay requires an explicit target path after the replay verb. Supported target paths are C# file-based harnesses, harness project files, harness assemblies, solution files, solution filters, and directories.",
+                "Replay discovers endpoint operations from the ASP.NET Core source project inferred from the harness target or --app-project.",
+                "Sqloom resolves that target, builds harness projects unless --no-build is supplied, always builds C# file-based harnesses, and requires exactly one public non-abstract ISqloomApplication implementation.",
+                "Pass --dotnet-command <command> when Sqloom should use a non-default dotnet executable for nested project resolution and C# file-based harness builds.",
+                "C# file-based harness targets require .NET SDK 10 or later and reject --no-build.",
                 "If a solution, solution filter, or directory resolves to zero or multiple ISqloomApplication implementations, Sqloom fails and asks for a narrower target.",
                 "SQL Server-backed replay harnesses can consume app-owned DACPAC and seed launch options when they implement that setup.",
                 "The replay data agent fills HTTP replay inputs only; it does not generate DACPACs or seed SQL.",
                 "The replay data agent is replay-only. It defaults to required, uses Microsoft Agent Framework, requires --openai-api-key unless --replay-data-agent off is supplied, and writes replay-data-prep.json.",
+                "Replay writes endpoints.json inside its replay artifact directory and keeps discovered-operations.json as a compatibility copy.",
                 "Replay targets must use the exact form 'METHOD /path/template', for example --target \"GET /api/expenses/dashboard\".",
                 "Replay defaults to authenticated GET operations plus any app overlays enabled by default. Opt-in operations such as POST /api/advisor/query require explicit --target selection.",
             ]),
