@@ -47,6 +47,16 @@ Skip sub-agents only when the environment does not expose repo-defined sub-agent
 
 Do not use Repository Synapse in this repository. Do not run `synapse ensure`, `synapse recall`, `synapse tests`, or any other command that creates `.synapse/` repo-local cache files. Use Atlas, scout agents, direct file/test inspection, and build/test output instead.
 
+### Search Tooling
+
+For file discovery and text search, prefer `rg` before PowerShell recursion.
+
+- Use `rg --files` instead of `Get-ChildItem -Recurse` for file discovery.
+- Use `rg -n "pattern"` instead of `Get-Content ... | Select-String` for text search.
+- Use `Get-Content` only after a specific file is already identified and needs to be read.
+- On Windows, if bare `rg` is unavailable, check `%LOCALAPPDATA%\Microsoft\WinGet\Links\rg.exe` and invoke it with PowerShell's call operator `&`.
+- Fall back to PowerShell search only when `rg` is genuinely unavailable.
+
 ### Category-Specific Scan Paths
 
 Implement repository search as category selection before literal search. The goal is to behave like an expert scan path, not a repo-wide text crawler.
