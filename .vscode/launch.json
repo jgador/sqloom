@@ -8,9 +8,7 @@
       "args": [
         "--extensionDevelopmentPath=${workspaceFolder}/extensions/sqloom"
       ],
-      "outFiles": [
-        "${workspaceFolder}/extensions/sqloom/dist/**/*.js"
-      ],
+      "outFiles": ["${workspaceFolder}/extensions/sqloom/dist/**/*.js"],
       "sourceMaps": true
     }
   ]

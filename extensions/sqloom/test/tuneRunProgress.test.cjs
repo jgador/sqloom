@@ -30,7 +30,10 @@ test("maps tune completion artifacts to workflow stages", () => {
     getStageForArtifactRelativePath("replay/tuning-advice.json"),
     undefined,
   );
-  assert.equal(getStageForArtifactRelativePath("replay/replay-plan.json"), undefined);
+  assert.equal(
+    getStageForArtifactRelativePath("replay/replay-plan.json"),
+    undefined,
+  );
 });
 
 test("advances stages in TuneWorkflowRunner order", () => {
@@ -141,7 +144,9 @@ test("marks advise failed on nonzero exit when proposal artifacts are incomplete
   const machine = new TuneRunProgressStateMachine();
   machine.start((event) => events.push(event));
   for (const stage of ["replay", "observe", "correlate"]) {
-    machine.completeStage(stage, `${stage}.json`, (event) => events.push(event));
+    machine.completeStage(stage, `${stage}.json`, (event) =>
+      events.push(event),
+    );
   }
   machine.finish(1, (event) => events.push(event));
 
@@ -158,7 +163,9 @@ test("marks replay failed on nonzero exit after all stages complete", () => {
   const machine = new TuneRunProgressStateMachine();
   machine.start((event) => events.push(event));
   for (const stage of ["replay", "observe", "correlate", "advise"]) {
-    machine.completeStage(stage, `${stage}.json`, (event) => events.push(event));
+    machine.completeStage(stage, `${stage}.json`, (event) =>
+      events.push(event),
+    );
   }
   machine.finish(1, (event) => events.push(event));
 

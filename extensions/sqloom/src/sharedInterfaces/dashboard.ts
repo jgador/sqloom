@@ -1,12 +1,10 @@
+/** Webview-to-host and host-to-webview message contracts for the tune dashboard. */
 export type DashboardStatus = "ready" | "warning" | "neutral" | "idle";
 
 export type DashboardStageId = "replay" | "observe" | "correlate" | "advise";
 
 export type DashboardStageStatus =
-  | "pending"
-  | "active"
-  | "completed"
-  | "failed";
+  "pending" | "active" | "completed" | "failed";
 
 export type DashboardStage = {
   id: DashboardStageId;

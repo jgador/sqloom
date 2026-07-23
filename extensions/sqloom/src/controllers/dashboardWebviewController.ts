@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import { loadArtifactsPanelForRun } from "../artifacts/loadArtifactsPanel";
 import { EndpointCatalogSession } from "../cli/endpointCatalogSession";
 import {
   tuneDashboardTitle,
@@ -19,8 +18,10 @@ import {
 } from "../sharedInterfaces/dashboard";
 import type { TuneRunRecord } from "../recentRuns/recentRunsStore";
 
+// Reuse one dashboard panel so reopening the command focuses the existing webview.
 let dashboardController: DashboardWebviewController | undefined;
 
+/** Host callbacks invoked by dashboard webviews; keeps controllers free of CLI wiring. */
 export type DashboardCallbacks = {
   runTune: (
     request: DashboardTuneRequest,
@@ -32,11 +33,12 @@ export type DashboardCallbacks = {
   ) => Promise<DashboardEndpointResult>;
   getRecentTuneRuns: () => readonly TuneRunRecord[];
   getRecentRuns: () => DashboardRecentRun[];
-  loadArtifactsPanel: (
-    runId?: string,
-  ) => Promise<DashboardArtifactsPanelState>;
+  loadArtifactsPanel: (runId?: string) => Promise<DashboardArtifactsPanelState>;
   revealArtifactDirectory: (artifactDir: string) => Promise<void>;
-  openArtifact: (relativePath: string, workspaceFolderUri?: string) => Promise<void>;
+  openArtifact: (
+    relativePath: string,
+    workspaceFolderUri?: string,
+  ) => Promise<void>;
   revealArtifact: (
     relativePath: string,
     workspaceFolderUri?: string,
@@ -65,6 +67,8 @@ class DashboardWebviewController implements vscode.Disposable {
   private readonly endpointCatalogSession = new EndpointCatalogSession();
   private activeTuneRunId = "";
   private tuneRunInFlight = false;
+
+  // Ignores stale artifact panel responses when the user switches runs quickly.
   private artifactLoadGeneration = 0;
 
   constructor(
@@ -159,6 +163,8 @@ class DashboardWebviewController implements vscode.Disposable {
         const request = message.payload ?? {};
         const target = (request.target ?? "").trim();
         const context = endpointContext(request);
+
+        // Tune must target an endpoint from the current CLI + harness catalog load.
         if (!this.endpointCatalogSession.canRun(context, target)) {
           void vscode.window.showWarningMessage(
             "Select an endpoint loaded from the current Sqloom CLI and harness before running tune.",

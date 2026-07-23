@@ -18,6 +18,7 @@ The user explicitly authorizes Codex to spawn and coordinate repo-defined sub-ag
 Use only sub-agents defined in this repository under [.codex/agents/](.codex/agents/) unless the user explicitly asks otherwise. Do not use generic or built-in sub-agents such as `default`, `explorer`, `reviewer`, or `worker` unless this repository defines and lists them.
 
 Allowed repo-defined sub-agents:
+
 - `advisor`
 - `atlas-csharp-mapper`
 - `atlas-doc-mapper`
@@ -27,6 +28,7 @@ Allowed repo-defined sub-agents:
 For every non-trivial repository task, use at least one non-scout repo-defined sub-agent before finalizing the answer or implementation. Non-trivial tasks include code, tests, docs, configuration, build behavior, CLI behavior, artifacts, architecture, review, debugging, tracing, and file discovery.
 
 Preferred qualifying sub-agents:
+
 - Use `advisor` for overall request analysis and sub-agent routing recommendations.
 - Use `atlas-csharp-mapper` for C#/.NET source, project, symbol, or semantic mapping.
 - Use `atlas-doc-mapper` for docs, config, build scripts, packaging metadata, CI-adjacent files, prompts, or agent-policy surfaces.
@@ -34,6 +36,7 @@ Preferred qualifying sub-agents:
 - Use `scout` only for bounded literal file discovery inside an already selected scope.
 
 Minimum rule:
+
 - At least one non-scout repo-defined sub-agent must be used for every non-trivial repository task.
 - `advisor` satisfies the minimum rule when the main need is request analysis, task classification, or deciding which specialist should run next.
 - `scout` does not satisfy the minimum rule unless the user's task is purely file/path discovery.
@@ -96,6 +99,7 @@ Implement repository search as category selection before literal search. The goa
 Use `scout`, the repo discovery sub-agent, for bounded literal discovery after Atlas routing has identified an assigned scope and files are still unclear inside that scope. `scout` reduces a known search space; it does not choose the repository domain, architecture spine, or first read order for this repository.
 
 Use `scout` when the current agent environment exposes it and any of these are true inside the bounded scope:
+
 - the task needs file discovery inside the assigned scope
 - more than one disjoint path prefix remains inside the assigned scope
 - the likely read set inside the assigned scope is more than 3 files
@@ -103,6 +107,7 @@ Use `scout` when the current agent environment exposes it and any of these are t
 Skip `scout` when one obvious target file is already known, the task is a single-file explanation or edit, or the remaining question is repository-domain selection rather than file discovery.
 
 When using `scout`:
+
 - ground first in [AGENTS.md](AGENTS.md), [README.md](README.md), directly named files, and the Atlas-selected domain or read order when applicable; include [docs/agents/README.md](docs/agents/README.md) for agent workflow or Atlas-policy tasks
 - normalize and de-overlap scopes before spawning
 - spawn one `scout` sub-agent per disjoint scope
@@ -111,6 +116,7 @@ When using `scout`:
 - do not pass repo-wide default buckets such as [src/](src/), [tests/](tests/), [scripts/](scripts/), `artifacts/`, repo-root config files, [.agents/](.agents/), or [.codex/](.codex/) until Atlas or the main agent has selected those areas as the bounded task scope
 
 Every scout prompt must include:
+
 - `assigned_scope`
 - `search_goal`
 - the selected semantic category or category hypothesis when known
@@ -118,6 +124,7 @@ Every scout prompt must include:
 - the required response format
 
 Every scout must return:
+
 - `assigned_scope`
 - `files_examined`
 - `likely_relevant_files`
@@ -127,6 +134,7 @@ Every scout must return:
 - `confidence`
 
 After scouts return:
+
 - inspect `likely_relevant_files` locally first
 - use `handoff_paths` to decide whether another scout batch is needed
 - escalate to deeper tracing only after the likely files have been read
@@ -140,19 +148,60 @@ After scouts return:
 - After CLI surface changes that affect `sqloom-local`, redeploy the local wrapper before trusting manual runs.
 - After command metadata changes, regenerate `.agents/skills/sqloom/references/commands.md` with `dotnet run --file .\tools\Sqloom.CommandDocs.cs -- --write` and run the same file app with `--check`.
 - For replay, correlate, advise, and tune issues, inspect `artifacts/sqloom/` before guessing from code alone.
-- If deeper verification requires Docker, SQL Server assets, or OpenAI credentials, say exactly what you ran and what you skipped.
+- If deeper verification requires Docker, SQL Server assets, or OpenAI credentials, state exactly what was run and what was skipped.
+
+### TypeScript Formatting and Linting
+
+When changing TypeScript or JavaScript under [extensions/sqloom/](extensions/sqloom/) or other npm workspace targets, format and verify the code before finishing—the same discipline as running `dotnet format` after C# edits. Do not defer formatting to the user unless the user explicitly requests skipping it.
+
+Use this toolchain:
+
+- **Prettier** — formatting (`dotnet format` equivalent for TypeScript)
+- **ESLint** — linting and auto-fixable style issues
+
+Run from the repo root after `npm install`:
+
+```bash
+# Prefer scoped formatting for extension work; use whole-repo format only when broader files changed
+npx prettier --write "extensions/sqloom/src/**/*.ts"
+
+# Whole-workspace format/check when needed
+npm run format
+npm run format:check
+
+# Extension verification through the workspace runner
+npm run lint -- --target sqloom
+npm run build -- --target sqloom
+```
+
+Or from [extensions/sqloom/](extensions/sqloom/):
+
+```bash
+npm run lint
+npm run build
+npm test
+```
+
+Agent rules:
+
+- Run Prettier on every touched TypeScript/JavaScript file before finishing the task.
+- Prefer scoped `prettier --write` paths over `npm run format .` when only the extension changed.
+- Run `npm run lint -- --target sqloom` and `npm run build -- --target sqloom` after substantive extension edits.
+- When the repo adds root-level ESLint config, also run ESLint with `--fix` on touched `extensions/sqloom/src` files before finishing; until then, treat `npm run lint -- --target sqloom` as the required lint gate (TypeScript `tsc --noEmit` plus version sync check).
+- Do not hand-edit generated output under `extensions/sqloom/dist/`.
 
 ## State-Changing Git Command Safety
 
 Git read commands such as `git status`, `git log`, `git diff`, `git show`, and `git branch --show-current` are allowed for inspection.
 
-Do not run state-changing Git commands unless the user explicitly asks for that exact action in the current task, or unless you ask for permission in chat and receive approval first. State-changing Git commands include `git commit`, `git push`, `git merge`, `git rebase`, `git cherry-pick`, `git checkout -b`, `git switch -c`, `git tag`, `git reset`, `git revert`, `git stash`, branch deletion, and any command that changes refs, the index, or the working tree.
+Do not run state-changing Git commands unless the user explicitly asks for that exact action in the current task, or unless permission is requested in chat and received first. State-changing Git commands include `git commit`, `git push`, `git merge`, `git rebase`, `git cherry-pick`, `git checkout -b`, `git switch -c`, `git tag`, `git reset`, `git revert`, `git stash`, branch deletion, and any command that changes refs, the index, or the working tree.
 
 If the user asks for one state-changing Git action, do only that action. Do not infer permission for adjacent actions such as creating a branch, committing, pushing, tagging, merging, or opening a release. Before any state-changing Git action approved through chat rather than explicitly requested, state the exact command, target branch or ref, and whether it is local-only or remote-mutating.
 
 Especially for release work, do not create `release/v*` branches unless the user explicitly asks to create that branch. A request to prepare a release does not imply permission to create, switch to, push, publish, or otherwise manage a release branch.
 
 Before any commit or push:
+
 - verify there is a real diff, not just stat or line-ending noise
 - stage only the intended files
 - re-check `git status`
@@ -161,6 +210,8 @@ Before any commit or push:
 ## C# Working Rules
 
 Follow the existing style in touched files. Keep 4-space indentation, file-scoped namespaces when already used, explicit `using` directives, and nullable-aware code. Avoid broad refactors unless the task requires them.
+
+- After C# edits, run `dotnet format` on the touched solution or projects before finishing.
 
 - Preserve the current surviving `Sqloom.*` project names and follow the repo-specific ownership and boundary docs instead of inventing a new project split.
 - Keep comments sparse. Prefer clear names first and add only short comments for non-obvious behavior.

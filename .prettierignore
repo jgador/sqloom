@@ -1,0 +1,11 @@
+artifacts/
+TestResults/
+bin/
+obj/
+node_modules/
+dist/
+**/dist/
+**/node_modules/
+.agents/**/references/*.md
+.claude/skills/**/references/*.md
+.github/skills/**/references/*.md

@@ -14,6 +14,7 @@ import { escapeHtml, getNonce, serializeForScript } from "../utils/webview";
 import { createDashboardState } from "./dashboardState";
 import { dashboardStyles } from "./dashboardStyles";
 
+/** Renders the server-side HTML/JS shell for the tune dashboard webview. */
 export async function renderDashboardHtml(
   context: vscode.ExtensionContext,
   webview: vscode.Webview,

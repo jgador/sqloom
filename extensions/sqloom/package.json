@@ -48,7 +48,7 @@
     "vscode:prepublish": "npm run sync:version && npm run build",
     "build": "tsc -p tsconfig.extension.json",
     "watch": "tsc -watch -p tsconfig.extension.json --preserveWatchOutput",
-    "lint": "npm run sync:version:check && tsc -p tsconfig.extension.json --noEmit",
+    "lint": "npm run sync:version:check && eslint \"src/**/*.ts\" \"test/**/*.cjs\" && tsc -p tsconfig.extension.json --noEmit",
     "test": "npm run build && node --test test/endpointCatalog.test.cjs test/tuneRunProgress.test.cjs test/recentRunsStore.test.cjs test/artifactCatalog.test.cjs test/webview.test.cjs",
     "package": "npm run sync:version && vsce package --no-dependencies --baseImagesUrl=https://github.com/jgador/sqloom/raw/master/extensions/sqloom",
     "publish:preview": "npm run sync:version && vsce publish --pre-release --no-dependencies --baseImagesUrl=https://github.com/jgador/sqloom/raw/master/extensions/sqloom"
