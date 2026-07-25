@@ -48,12 +48,12 @@ internal sealed class ObserveCommand
         context.ConsoleWriter.PrintQueryStoreSnapshot(
             result.Snapshot,
             result.JsonOutputPath,
-            result.AppOnly,
-            result.ShowClassification);
+            arguments.AppOnly,
+            arguments.ShowClassification);
         return 0;
     }
 
-    public async Task<ObserveCommandResult> ExecuteAsync(
+    internal async Task<(QueryStoreSnapshot Snapshot, string JsonOutputPath)> ExecuteAsync(
         ObserveArguments arguments,
         CancellationToken cancellationToken = default)
     {
@@ -103,13 +103,7 @@ internal sealed class ObserveCommand
                 cancellationToken)
             .ConfigureAwait(false);
 
-        return new ObserveCommandResult
-        {
-            Snapshot = snapshot,
-            JsonOutputPath = jsonOutputPath,
-            AppOnly = arguments.AppOnly,
-            ShowClassification = arguments.ShowClassification,
-        };
+        return (snapshot, jsonOutputPath);
     }
 
     private static async Task<DbObjectCatalog> CaptureDbCatalogAsync(
@@ -173,18 +167,4 @@ internal sealed class ObserveCommand
             artifactRoot,
             capturedAtUtc);
     }
-}
-
-/// <summary>
-/// Carries the result of the Sqloom observe command.
-/// </summary>
-internal sealed class ObserveCommandResult
-{
-    public required QueryStoreSnapshot Snapshot { get; init; }
-
-    public required string JsonOutputPath { get; init; }
-
-    public bool AppOnly { get; init; }
-
-    public bool ShowClassification { get; init; }
 }

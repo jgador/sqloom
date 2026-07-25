@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host;
 
@@ -38,7 +40,7 @@ internal sealed class TuneWorkflowRunner
         _adviceCommand = adviceCommand;
     }
 
-    public async Task<TuneWorkflowResult> RunAsync(
+    public async Task<(TuneWorkflowReport Report, string SummaryOutputPath, int ExitCode)> RunAsync(
         TuneArguments arguments,
         CancellationToken cancellationToken = default)
     {
@@ -86,24 +88,15 @@ internal sealed class TuneWorkflowRunner
                 cancellationToken)
             .ConfigureAwait(false);
 
-        return new TuneWorkflowResult
-        {
-            ObserveResult = observeResult,
-            ReplayResult = replayResult,
-            CorrelateResult = correlateResult,
-            AdviceResult = adviceResult,
-            Report = report,
-            SummaryOutputPath = summaryOutputPath,
-            ExitCode = replayResult.ExitCode,
-        };
+        return (report, summaryOutputPath, replayResult.ExitCode);
     }
 
     private static TuneWorkflowReport CreateReport(
         TuneArguments arguments,
-        ObserveCommandResult observeResult,
-        ReplayCommandResult replayResult,
-        CorrelateCommandResult correlateResult,
-        AdviceCommandResult adviceResult)
+        (QueryStoreSnapshot Snapshot, string JsonOutputPath) observeResult,
+        (EndpointReplayRunResult ReplayResult, int ExitCode) replayResult,
+        (QueryCorrelationReport Report, string JsonOutputPath) correlateResult,
+        (AdviceReport Report, string JsonOutputPath) adviceResult)
     {
         HashSet<string> warnings = new(StringComparer.Ordinal);
         if (observeResult.Snapshot.DiscoveredObjectCatalog is { } discoveredObjectCatalog)

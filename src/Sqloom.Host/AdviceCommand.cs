@@ -67,7 +67,7 @@ internal sealed class AdviceCommand
         return 0;
     }
 
-    public async Task<AdviceCommandResult> ExecuteAsync(
+    internal async Task<(AdviceReport Report, string JsonOutputPath)> ExecuteAsync(
         AdviseArguments arguments,
         CancellationToken cancellationToken = default)
     {
@@ -87,7 +87,7 @@ internal sealed class AdviceCommand
             .ConfigureAwait(false);
     }
 
-    internal async Task<AdviceCommandResult> ExecuteAsync(
+    internal async Task<(AdviceReport Report, string JsonOutputPath)> ExecuteAsync(
         AdviseArguments arguments,
         QueryCorrelationReport correlationReport,
         CancellationToken cancellationToken = default)
@@ -119,11 +119,7 @@ internal sealed class AdviceCommand
                 cancellationToken)
             .ConfigureAwait(false);
 
-        return new AdviceCommandResult
-        {
-            Report = report,
-            JsonOutputPath = arguments.JsonOutputPath,
-        };
+        return (report, arguments.JsonOutputPath);
     }
 
     private async Task<string> ResolveSchemaPathAsync(
@@ -218,14 +214,4 @@ internal interface IAdviceReportGenerator : IDisposable
         string adviceOutputPath,
         string sqlServerSchemaPath,
         CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// Carries the result of the Sqloom advice command.
-/// </summary>
-internal sealed class AdviceCommandResult
-{
-    public required AdviceReport Report { get; init; }
-
-    public required string JsonOutputPath { get; init; }
 }

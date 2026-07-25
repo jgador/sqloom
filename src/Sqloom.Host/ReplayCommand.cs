@@ -61,11 +61,11 @@ internal sealed class ReplayCommand
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
         context.ConsoleWriter.PrintReplaySummary(
             result.ReplayResult,
-            result.RunReport);
+            BuildRunReport(result.ReplayResult));
         return result.ExitCode;
     }
 
-    public async Task<ReplayCommandResult> ExecuteAsync(
+    internal async Task<(EndpointReplayRunResult ReplayResult, int ExitCode)> ExecuteAsync(
         ReplayArguments arguments,
         CancellationToken cancellationToken = default)
     {
@@ -73,17 +73,12 @@ internal sealed class ReplayCommand
         var replayResult = await _runner
             .RunAsync(arguments.RunnerOptions, cancellationToken)
             .ConfigureAwait(false);
-        var runReport = BuildRunReport(replayResult);
-
-        return new ReplayCommandResult
-        {
-            ReplayResult = replayResult,
-            RunReport = runReport,
-            ExitCode = replayResult.Results.Any(result =>
+        return (
+            replayResult,
+            replayResult.Results.Any(result =>
                 string.Equals(result.Status, "failed", StringComparison.OrdinalIgnoreCase))
                 ? 1
-                : 0,
-        };
+                : 0);
     }
 
     private static RunReport BuildRunReport(EndpointReplayRunResult replayResult)
@@ -118,16 +113,4 @@ internal sealed class ReplayCommand
             }).ToArray(),
         };
     }
-}
-
-/// <summary>
-/// Carries the result of the Sqloom replay command.
-/// </summary>
-internal sealed class ReplayCommandResult
-{
-    public required EndpointReplayRunResult ReplayResult { get; init; }
-
-    public required RunReport RunReport { get; init; }
-
-    public int ExitCode { get; init; }
 }

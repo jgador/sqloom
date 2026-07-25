@@ -121,7 +121,7 @@ internal sealed class TuneCommand
         return result.ExitCode;
     }
 
-    internal Task<TuneWorkflowResult> ExecuteAsync(
+    internal Task<(TuneWorkflowReport Report, string SummaryOutputPath, int ExitCode)> ExecuteAsync(
         TuneArguments arguments,
         CancellationToken cancellationToken = default)
     {

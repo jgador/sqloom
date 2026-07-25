@@ -55,7 +55,6 @@ public sealed class AdviseArgumentParserTests
                 "gpt-5.4-mini",
             ]);
 
-        Assert.Equal(ModelProviderKind.OpenAI, arguments.ModelProvider);
         Assert.NotNull(arguments.OpenAIOptions);
         Assert.Equal("openai-key", arguments.OpenAIOptions!.ApiKey);
         Assert.Equal("https://api.openai.com", arguments.OpenAIOptions.BaseUrl);
@@ -177,7 +176,6 @@ public sealed class AdviseArgumentParserTests
                 schemaPath,
             ]);
 
-        Assert.Equal(ModelProviderKind.OpenAI, arguments.ModelProvider);
         Assert.NotNull(arguments.OpenAIOptions);
         Assert.Equal("openai-key", arguments.OpenAIOptions!.ApiKey);
         Assert.Equal("https://api.openai.com", arguments.OpenAIOptions.BaseUrl);

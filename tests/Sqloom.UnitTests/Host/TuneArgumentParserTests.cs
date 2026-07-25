@@ -114,7 +114,6 @@ public sealed class TuneArgumentParserTests
         Assert.Equal(Path.GetFullPath(schemaPath), arguments.AdviseArguments.SchemaPath, StringComparer.OrdinalIgnoreCase);
         Assert.Null(arguments.AdviseArguments.DacpacPath);
         Assert.Equal(expectedAdvicePath, arguments.AdviseArguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
-        Assert.Equal(ModelProviderKind.OpenAI, arguments.AdviseArguments.ModelProvider);
         Assert.NotNull(arguments.AdviseArguments.OpenAIOptions);
         Assert.Equal("openai-key", arguments.AdviseArguments.OpenAIOptions!.ApiKey);
         Assert.Equal("https://api.openai.com", arguments.AdviseArguments.OpenAIOptions.BaseUrl);

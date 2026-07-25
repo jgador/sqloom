@@ -129,7 +129,7 @@ internal sealed class HostDebugWriter
                 $"sqlserver_dacpac_file={arguments.DacpacPath ?? "none"}",
                 $"sqlserver_schema_connection={RedactConnectionString(arguments.ReadOnlyConnectionString)}",
                 $"json_output_path={arguments.JsonOutputPath}",
-                $"model_provider={arguments.ModelProvider}",
+                "model_provider=openai",
                 $"openai_base_url={arguments.OpenAIOptions?.BaseUrl ?? "n/a"}",
                 $"openai_model={arguments.OpenAIOptions?.Model ?? "n/a"}",
             ]);
@@ -155,7 +155,7 @@ internal sealed class HostDebugWriter
                 $"sqlserver_schema_file={arguments.AdviseArguments.SchemaPath ?? "none"}",
                 $"sqlserver_dacpac_file={arguments.AdviseArguments.DacpacPath ?? "none"}",
                 $"sqlserver_schema_connection={RedactConnectionString(arguments.AdviseArguments.ReadOnlyConnectionString)}",
-                $"model_provider={arguments.AdviseArguments.ModelProvider}",
+                "model_provider=openai",
                 $"openai_model={arguments.AdviseArguments.OpenAIOptions?.Model ?? "n/a"}",
             ]);
     }

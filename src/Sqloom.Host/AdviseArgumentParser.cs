@@ -58,7 +58,13 @@ internal sealed class AdviseArgumentParser
         ArgumentException.ThrowIfNullOrWhiteSpace(queryStoreCorrelationPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(jsonOutputPath);
 
-        var modelProvider = ParseModelProvider(CommandArgumentSupport.GetRequiredArgumentValue(args, "--model-provider"));
+        var modelProvider = CommandArgumentSupport.GetRequiredArgumentValue(args, "--model-provider").Trim();
+        if (!string.Equals(modelProvider, "openai", StringComparison.OrdinalIgnoreCase))
+        {
+            throw new ArgumentException(
+                "The value for --model-provider must be 'openai'.");
+        }
+
         var openAIOptions = ResolveOpenAIAdviceOptions(args);
         var schemaSource = ResolveSchemaSource(
             args,
@@ -75,24 +81,7 @@ internal sealed class AdviseArgumentParser
             DacpacPath = schemaSource.DacpacPath,
             ReadOnlyConnectionString = schemaSource.ReadOnlyConnectionString,
             JsonOutputPath = jsonOutputPath,
-            ModelProvider = modelProvider,
             OpenAIOptions = openAIOptions,
-        };
-    }
-
-    internal static ModelProviderKind ParseModelProvider(string? value)
-    {
-        var normalized = value?.Trim();
-        if (string.IsNullOrWhiteSpace(normalized))
-        {
-            throw new ArgumentException("Missing required argument --model-provider.");
-        }
-
-        return normalized.ToLowerInvariant() switch
-        {
-            "openai" => ModelProviderKind.OpenAI,
-            _ => throw new ArgumentException(
-                "The value for --model-provider must be 'openai'."),
         };
     }
 

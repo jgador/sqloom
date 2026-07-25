@@ -2,11 +2,11 @@ using System;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Host.Replay;
-using Sqloom.Pipeline.QueryStore;
 using Sqloom.Host.QueryStore;
+using Sqloom.Host.Replay;
 using Sqloom.Pipeline.Artifacts;
 using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host;
 
@@ -45,7 +45,7 @@ internal sealed class CorrelateCommand
         return 0;
     }
 
-    public async Task<CorrelateCommandResult> ExecuteAsync(
+    internal async Task<(QueryCorrelationReport Report, string JsonOutputPath)> ExecuteAsync(
         CorrelateArguments arguments,
         CancellationToken cancellationToken = default)
     {
@@ -75,7 +75,7 @@ internal sealed class CorrelateCommand
             .ConfigureAwait(false);
     }
 
-    internal async Task<CorrelateCommandResult> ExecuteAsync(
+    internal async Task<(QueryCorrelationReport Report, string JsonOutputPath)> ExecuteAsync(
         CorrelateArguments arguments,
         QueryStoreSnapshot snapshot,
         EndpointReplayRunResult replayRunResult,
@@ -104,11 +104,7 @@ internal sealed class CorrelateCommand
                 cancellationToken)
             .ConfigureAwait(false);
 
-        return new CorrelateCommandResult
-        {
-            Report = report,
-            JsonOutputPath = arguments.JsonOutputPath,
-        };
+        return (report, arguments.JsonOutputPath);
     }
 
     private static QueryCorrelationReport CreateFinalReport(
@@ -172,14 +168,4 @@ internal sealed class CorrelateCommand
             Warnings = rawReport.Warnings,
         };
     }
-}
-
-/// <summary>
-/// Carries the result of the Sqloom correlate command.
-/// </summary>
-internal sealed class CorrelateCommandResult
-{
-    public required QueryCorrelationReport Report { get; init; }
-
-    public required string JsonOutputPath { get; init; }
 }

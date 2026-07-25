@@ -88,23 +88,3 @@ internal sealed class TuneWorkflowSummary
     [JsonPropertyName("proposalCount")]
     public int ProposalCount { get; init; }
 }
-
-/// <summary>
-/// Carries the typed in-memory results for a completed Sqloom tune workflow.
-/// </summary>
-internal sealed class TuneWorkflowResult
-{
-    public required ObserveCommandResult ObserveResult { get; init; }
-
-    public required ReplayCommandResult ReplayResult { get; init; }
-
-    public required CorrelateCommandResult CorrelateResult { get; init; }
-
-    public required AdviceCommandResult AdviceResult { get; init; }
-
-    public required TuneWorkflowReport Report { get; init; }
-
-    public required string SummaryOutputPath { get; init; }
-
-    public int ExitCode { get; init; }
-}

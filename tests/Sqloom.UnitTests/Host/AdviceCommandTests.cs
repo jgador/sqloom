@@ -65,7 +65,6 @@ public sealed class AdviceCommandTests
                     QueryStoreCorrelationPath = correlationPath,
                     SchemaPath = schemaPath,
                     JsonOutputPath = advicePath,
-                    ModelProvider = ModelProviderKind.OpenAI,
                     OpenAIOptions = new OpenAIAdviceOptions
                     {
                         ApiKey = "sqloom-openai-key",
@@ -191,7 +190,6 @@ public sealed class AdviceCommandTests
                     QueryStoreCorrelationPath = correlationPath,
                     DacpacPath = dacpacPath,
                     JsonOutputPath = advicePath,
-                    ModelProvider = ModelProviderKind.OpenAI,
                     OpenAIOptions = new OpenAIAdviceOptions
                     {
                         ApiKey = "sqloom-openai-key",
@@ -264,7 +262,6 @@ public sealed class AdviceCommandTests
                     QueryStoreCorrelationPath = correlationPath,
                     ReadOnlyConnectionString = readOnlyConnectionString,
                     JsonOutputPath = advicePath,
-                    ModelProvider = ModelProviderKind.OpenAI,
                     OpenAIOptions = new OpenAIAdviceOptions
                     {
                         ApiKey = "sqloom-openai-key",
