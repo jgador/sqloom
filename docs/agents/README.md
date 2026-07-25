@@ -7,6 +7,7 @@ This folder is for agent-maintenance guidance that should be discoverable during
 - [AGENTS.md](../../AGENTS.md) is the default execution policy for coding agents in this repository.
 - [.codex/atlas/repo-map.md](../../.codex/atlas/repo-map.md) is the durable Atlas routing map for architecture, source-to-test routing, artifact routing, and first-read-order decisions.
 - [.codex/agents/](../../.codex/agents/) contains `.codex/agents/*.toml` read-only sub-agent role prompts for advisor routing, Atlas specialists, and bounded scout discovery.
+- [.agents/skills/dotnet-refactor/SKILL.md](../../.agents/skills/dotnet-refactor/SKILL.md) is the .NET architecture debloat audit, refactor planning, and safe simplification path.
 - [.agents/skills/security-audit/SKILL.md](../../.agents/skills/security-audit/SKILL.md) is the full audit path; [.agents/skills/security-audit-fast/SKILL.md](../../.agents/skills/security-audit-fast/SKILL.md) is the staged, working-tree, named-path, and base-ref diff leak-check path.
 
 Keep user-facing quick starts and workflow overview prose in [README.md](../../README.md). Keep exact Sqloom command syntax, options, defaults, allowed values, and command notes in the generated [.agents/skills/sqloom/references/commands.md](../../.agents/skills/sqloom/references/commands.md). Keep architecture ownership and project-boundary details in [docs/architecture/](../architecture/).
