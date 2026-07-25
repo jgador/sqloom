@@ -16,7 +16,6 @@ namespace Sqloom.Host.Replay;
 public sealed class EndpointReplayRunner
 {
     private readonly EndpointCatalogLoader _catalogLoader = new();
-    private readonly ReplayArtifactWriter _artifactWriter = new();
     private readonly ReplayPlanBuilder _planBuilder = new();
     private readonly ReplayRequestExecutor _requestExecutor = new();
     private readonly ReplayRequestResolver _requestResolver = new();
@@ -45,26 +44,26 @@ public sealed class EndpointReplayRunner
         ArgumentNullException.ThrowIfNull(options);
         ArgumentNullException.ThrowIfNull(discoveredOperations);
 
-        var endpointCatalogPath = _artifactWriter.GetEndpointCatalogPath(options.ReplayArtifactDir);
-        await _artifactWriter
-            .WriteDiscoveredOpsAsync(
+        var endpointCatalogPath = ArtifactLayout.GetEndpointCatalogPath(options.ReplayArtifactDir);
+        await JsonFileWriter
+            .WriteAsync(
                 endpointCatalogPath,
                 discoveredOperations,
                 cancellationToken)
             .ConfigureAwait(false);
 
-        var legacyDiscoveredOperationsPath = _artifactWriter.GetDiscoveredOpsPath(options.ReplayArtifactDir);
-        await _artifactWriter
-            .WriteDiscoveredOpsAsync(
+        var legacyDiscoveredOperationsPath = ArtifactLayout.GetDiscoveredOpsPath(options.ReplayArtifactDir);
+        await JsonFileWriter
+            .WriteAsync(
                 legacyDiscoveredOperationsPath,
                 discoveredOperations,
                 cancellationToken)
             .ConfigureAwait(false);
 
         var initialPlan = _planBuilder.BuildInitialPlan(options, discoveredOperations);
-        var replayPlanPath = _artifactWriter.GetPlanPath(options.ReplayArtifactDir);
-        await _artifactWriter
-            .WritePlanAsync(replayPlanPath, initialPlan, cancellationToken)
+        var replayPlanPath = ArtifactLayout.GetReplayPlanPath(options.ReplayArtifactDir);
+        await JsonFileWriter
+            .WriteAsync(replayPlanPath, initialPlan, cancellationToken)
             .ConfigureAwait(false);
 
         var results = new List<EndpointReplayResult>();
@@ -111,15 +110,15 @@ public sealed class EndpointReplayRunner
             PlannedAtUtc = initialPlan.PlannedAtUtc,
             Operations = finalizedPlanItems,
         };
-        await _artifactWriter
-            .WritePlanAsync(replayPlanPath, finalPlan, cancellationToken)
+        await JsonFileWriter
+            .WriteAsync(replayPlanPath, finalPlan, cancellationToken)
             .ConfigureAwait(false);
 
-        var summaryPath = _artifactWriter.GetSummaryPath(options.ReplayArtifactDir);
+        var summaryPath = ArtifactLayout.GetReplaySummaryPath(options.ReplayArtifactDir);
         var replayDataGenerationPath =
             options.ReplayDataAgentOptions.Mode == ReplayDataAgentMode.Off
                 ? null
-                : _artifactWriter.GetReplayDataGenerationPath(options.ReplayArtifactDir);
+                : ArtifactLayout.GetReplayDataGenerationPath(options.ReplayArtifactDir);
         var replayDataGeneration = replayDataGenerationPath is null
             ? null
             : CreateReplayDataGenerationReport(
@@ -128,8 +127,8 @@ public sealed class EndpointReplayRunner
         if (replayDataGenerationPath is not null
             && replayDataGeneration is not null)
         {
-            await _artifactWriter
-                .WriteReplayDataGenerationAsync(
+            await JsonFileWriter
+                .WriteAsync(
                     replayDataGenerationPath,
                     replayDataGeneration,
                     cancellationToken)
@@ -152,8 +151,8 @@ public sealed class EndpointReplayRunner
             ReplayBootstrap = replayBootstrap,
             Results = results,
         };
-        await _artifactWriter
-            .WriteSummaryAsync(summaryPath, runResult, cancellationToken)
+        await JsonFileWriter
+            .WriteAsync(summaryPath, runResult, cancellationToken)
             .ConfigureAwait(false);
 
         return runResult;
@@ -203,7 +202,7 @@ public sealed class EndpointReplayRunner
             var resolvedOperation = ReplayOperationResolver.Resolve(
                 discoveredOperation,
                 overlay);
-            var artifactPath = _artifactWriter.GetOperationArtifactPath(
+            var artifactPath = ArtifactLayout.GetOperationArtifactPath(
                 options.ReplayArtifactDir,
                 ordinal,
                 planItem.OperationKey);
@@ -239,18 +238,43 @@ public sealed class EndpointReplayRunner
             }
             catch (Exception exception) when (exception is not OperationCanceledException)
             {
-                result = EndpointReplayResultFactory.CreateFailed(
+                result = CreateFailedResult(
                     planItem,
                     artifactPath,
                     exception.Message);
             }
 
-            await _artifactWriter
-                .WriteOperationResultAsync(result, cancellationToken)
+            await JsonFileWriter
+                .WriteAsync(result.ArtifactPath, result, cancellationToken)
                 .ConfigureAwait(false);
             results.Add(result);
             finalizedPlanItems.Add(CreateFinalPlanItem(planItem, result));
         }
+    }
+
+    private static EndpointReplayResult CreateFailedResult(
+        EndpointReplayPlanItem planItem,
+        string artifactPath,
+        string errorMessage)
+    {
+        return new EndpointReplayResult
+        {
+            OperationKey = planItem.OperationKey,
+            HttpMethod = planItem.HttpMethod,
+            Route = planItem.Route,
+            Persona = planItem.Persona,
+            Status = "failed",
+            ErrorMessage = errorMessage,
+            Request = new EndpointReplayRequest
+            {
+                OperationKey = planItem.OperationKey,
+                HttpMethod = planItem.HttpMethod,
+                Route = planItem.Route,
+                Persona = planItem.Persona,
+                RelativePathAndQuery = planItem.Route,
+            },
+            ArtifactPath = artifactPath,
+        };
     }
 
     private static async Task<ResolvedReplayOperation> GenerateReplayDataAsync(

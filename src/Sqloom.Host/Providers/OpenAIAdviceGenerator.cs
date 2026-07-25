@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Pipeline.Artifacts;
 using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.OpenAI.Advice;
 using Sqloom.Pipeline.QueryStore;
 
 namespace Sqloom.Host;
@@ -143,7 +144,7 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
                 warnings.Add(warning);
             }
 
-            var request = OpenAIAdviceRequestBuilder.Build(
+            var request = CreateAdviceRequest(
                 appName,
                 operation,
                 evidencePack.ArtifactManifestJson,
@@ -202,6 +203,31 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
         {
             _httpClient.Dispose();
         }
+    }
+
+    private static OpenAITuningAdviceRequest CreateAdviceRequest(
+        string appName,
+        OperationCorrelationSummary operation,
+        string artifactManifestJson,
+        string sourceEvidenceJson,
+        string schemaSql)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(appName);
+        ArgumentNullException.ThrowIfNull(operation);
+        ArgumentException.ThrowIfNullOrWhiteSpace(artifactManifestJson);
+        ArgumentException.ThrowIfNullOrWhiteSpace(sourceEvidenceJson);
+        ArgumentException.ThrowIfNullOrWhiteSpace(schemaSql);
+
+        return new OpenAITuningAdviceRequest
+        {
+            AppName = appName,
+            OperationKey = operation.OperationKey,
+            HttpMethod = operation.HttpMethod,
+            Route = operation.Route,
+            ArtifactManifestJson = artifactManifestJson,
+            SourceEvidenceJson = sourceEvidenceJson,
+            SchemaSql = schemaSql,
+        };
     }
 
     private static HttpClient CreateHttpClient(OpenAIAdviceOptions options)

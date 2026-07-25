@@ -46,16 +46,12 @@ internal static class OpenAIAdviceResponseNormalizer
         return normalizedRecommendations;
     }
 
-    public static NormalizedProposalResult NormalizeProposals(
+    public static (IReadOnlyList<SqlTuningProposal> Proposals, IReadOnlyList<string> Warnings) NormalizeProposals(
         IReadOnlyList<SqlTuningProposal>? proposals)
     {
         if (proposals is null || proposals.Count == 0)
         {
-            return new NormalizedProposalResult
-            {
-                Proposals = [],
-                Warnings = [],
-            };
+            return (Array.Empty<SqlTuningProposal>(), Array.Empty<string>());
         }
 
         // Normalize model output into stable review artifacts without discarding rollback-warning cases.
@@ -111,10 +107,6 @@ internal static class OpenAIAdviceResponseNormalizer
             });
         }
 
-        return new NormalizedProposalResult
-        {
-            Proposals = normalizedProposals,
-            Warnings = warnings,
-        };
+        return (normalizedProposals, warnings);
     }
 }

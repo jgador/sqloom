@@ -11,23 +11,8 @@ namespace Sqloom.Host;
 internal sealed class EndpointsCommand
     : ICommandHandler
 {
-    private readonly EndpointCatalogLoader _catalogLoader;
-    private readonly EndpointSourceProjectResolver _sourceProjectResolver;
-
-    public EndpointsCommand()
-        : this(
-            new EndpointCatalogLoader(),
-            new EndpointSourceProjectResolver())
-    {
-    }
-
-    internal EndpointsCommand(
-        EndpointCatalogLoader catalogLoader,
-        EndpointSourceProjectResolver sourceProjectResolver)
-    {
-        _catalogLoader = catalogLoader ?? throw new ArgumentNullException(nameof(catalogLoader));
-        _sourceProjectResolver = sourceProjectResolver ?? throw new ArgumentNullException(nameof(sourceProjectResolver));
-    }
+    private readonly EndpointCatalogLoader _catalogLoader = new();
+    private readonly EndpointSourceProjectResolver _sourceProjectResolver = new();
 
     public HostCommandKind CommandKind => HostCommandKind.Endpoints;
 

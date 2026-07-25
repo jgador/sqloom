@@ -9,17 +9,7 @@ namespace Sqloom.Host;
 internal sealed class InitCommand
     : ICommandHandler
 {
-    private readonly InitCommandExecutor _executor;
-
-    public InitCommand()
-        : this(new InitCommandExecutor())
-    {
-    }
-
-    internal InitCommand(InitCommandExecutor executor)
-    {
-        _executor = executor ?? throw new ArgumentNullException(nameof(executor));
-    }
+    private readonly InitCommandExecutor _executor = new();
 
     public HostCommandKind CommandKind => HostCommandKind.Init;
 

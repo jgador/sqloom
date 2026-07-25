@@ -12,17 +12,17 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class HostApplication
 {
+    private readonly AppResolver _appResolver;
+    private readonly ISqloomApplication? _boundApplication;
     private readonly CommandRegistry _commandRegistry;
     private readonly HostConsoleWriter _consoleWriter;
-    private readonly HostCommandExecutionContextFactory _contextFactory;
-    private readonly HostCommandIntegrationResolver _integrationResolver;
 
     public HostApplication(
         AppResolver appResolver,
         HostConsoleWriter consoleWriter)
         : this(
-            new HostCommandIntegrationResolver(appResolver),
-            new HostCommandExecutionContextFactory(consoleWriter),
+            appResolver,
+            null,
             consoleWriter,
             CreateDefaultRegistry())
     {
@@ -33,8 +33,8 @@ internal sealed class HostApplication
         HostConsoleWriter consoleWriter,
         CommandRegistry commandRegistry)
         : this(
-            new HostCommandIntegrationResolver(appResolver),
-            new HostCommandExecutionContextFactory(consoleWriter),
+            appResolver,
+            null,
             consoleWriter,
             commandRegistry)
     {
@@ -44,8 +44,8 @@ internal sealed class HostApplication
         ISqloomApplication application,
         HostConsoleWriter consoleWriter)
         : this(
-            new HostCommandIntegrationResolver(application),
-            new HostCommandExecutionContextFactory(consoleWriter),
+            new AppResolver(),
+            application,
             consoleWriter,
             CreateDefaultRegistry())
     {
@@ -56,22 +56,22 @@ internal sealed class HostApplication
         HostConsoleWriter consoleWriter,
         CommandRegistry commandRegistry)
         : this(
-            new HostCommandIntegrationResolver(application),
-            new HostCommandExecutionContextFactory(consoleWriter),
+            new AppResolver(),
+            application,
             consoleWriter,
             commandRegistry)
     {
     }
 
     internal HostApplication(
-        HostCommandIntegrationResolver integrationResolver,
-        HostCommandExecutionContextFactory contextFactory,
+        AppResolver appResolver,
+        ISqloomApplication? boundApplication,
         HostConsoleWriter consoleWriter,
         CommandRegistry commandRegistry)
     {
-        _integrationResolver = integrationResolver ?? throw new ArgumentNullException(nameof(integrationResolver));
-        _contextFactory = contextFactory ?? throw new ArgumentNullException(nameof(contextFactory));
-        _consoleWriter = consoleWriter;
+        _appResolver = appResolver ?? throw new ArgumentNullException(nameof(appResolver));
+        _boundApplication = boundApplication;
+        _consoleWriter = consoleWriter ?? throw new ArgumentNullException(nameof(consoleWriter));
         _commandRegistry = commandRegistry ?? throw new ArgumentNullException(nameof(commandRegistry));
     }
 
@@ -161,13 +161,15 @@ internal sealed class HostApplication
         string currentDirectory,
         CancellationToken cancellationToken)
     {
-        var bindings = await _integrationResolver
-            .ResolveAsync(commandKind, startupOptions, cancellationToken)
+        var application = await ResolveApplicationAsync(
+                commandKind,
+                startupOptions,
+                cancellationToken)
             .ConfigureAwait(false);
-        var context = _contextFactory.Create(
+        var context = CreateContext(
             startupOptions,
             currentDirectory,
-            bindings.Application);
+            application);
 
         return await _commandRegistry
             .GetRequiredHandler(commandKind)
@@ -180,7 +182,7 @@ internal sealed class HostApplication
         HostStartupOptions startupOptions,
         string currentDirectory)
     {
-        var context = _contextFactory.Create(
+        var context = CreateContext(
             startupOptions,
             currentDirectory);
 
@@ -201,12 +203,79 @@ internal sealed class HostApplication
                 "Sqloom now requires an explicit stage verb. Use tune, observe, replay, correlate, or advise.");
         }
 
-        var application = await _integrationResolver
-            .ResolveBannerApplicationAsync(startupOptions, cancellationToken)
+        var application = await ResolveObserveApplicationAsync(startupOptions, cancellationToken)
             .ConfigureAwait(false);
         PrintBanner(application, currentDirectory);
         _consoleWriter.PrintNoCommandHint();
         return 0;
+    }
+
+    private async Task<ISqloomApplication?> ResolveApplicationAsync(
+        HostCommandKind commandKind,
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(startupOptions);
+
+        // Map command kinds to harness requirements: optional for observe, required for replay/tune,
+        // and pre-bound-only for artifact-only follow-up commands.
+        switch (commandKind)
+        {
+            case HostCommandKind.Observe:
+                return await ResolveObserveApplicationAsync(
+                        startupOptions,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            case HostCommandKind.Tune:
+            case HostCommandKind.Replay:
+                return await ResolveRequiredApplicationAsync(
+                        startupOptions,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+            case HostCommandKind.Correlate:
+            case HostCommandKind.Advise:
+                return _boundApplication;
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(commandKind),
+                    commandKind,
+                    "Sqloom could not resolve an app harness for the selected command kind.");
+        }
+    }
+
+    private async Task<ISqloomApplication?> ResolveObserveApplicationAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken)
+    {
+        if (_boundApplication is not null)
+        {
+            return _boundApplication;
+        }
+
+        // Observe can collect Query Store evidence without a harness; a supplied target only adds
+        // application manifest data for workload profile classification.
+        if (!startupOptions.HasTargetSelection)
+        {
+            return null;
+        }
+
+        return await _appResolver
+            .ResolveAsync(startupOptions, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    private async Task<ISqloomApplication> ResolveRequiredApplicationAsync(
+        HostStartupOptions startupOptions,
+        CancellationToken cancellationToken)
+    {
+        if (_boundApplication is not null)
+        {
+            return _boundApplication;
+        }
+
+        return await _appResolver
+            .ResolveAsync(startupOptions, cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private void PrintBanner(
@@ -220,6 +289,27 @@ internal sealed class HostApplication
         _consoleWriter.PrintBanner(
             manifest?.Name,
             GetProjectNames(application));
+    }
+
+    private CommandExecutionContext CreateContext(
+        HostStartupOptions startupOptions,
+        string currentDirectory,
+        ISqloomApplication? application = null)
+    {
+        ArgumentNullException.ThrowIfNull(startupOptions);
+        ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);
+
+        return new CommandExecutionContext
+        {
+            StartupOptions = startupOptions,
+            Arguments = startupOptions.ApplicationArguments,
+            CurrentDirectory = currentDirectory,
+            ConsoleWriter = _consoleWriter,
+            DebugWriter = startupOptions.DebugEnabled
+                ? new HostDebugWriter(isEnabled: true)
+                : HostDebugWriter.Disabled,
+            Application = application,
+        };
     }
 
     private static CommandRegistry CreateDefaultRegistry()
