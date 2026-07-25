@@ -17,12 +17,12 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Discovers replayable MVC controller endpoints from ASP.NET Core project source using Roslyn.
 /// </summary>
-internal sealed partial class EndpointCatalogLoader
+internal static partial class EndpointCatalogLoader
 {
     private static readonly object MSBuildLocatorLock = new();
     private static bool _msbuildRegistered;
 
-    public async Task<IReadOnlyList<ReplayOperation>> LoadAsync(
+    public static async Task<IReadOnlyList<ReplayOperation>> LoadAsync(
         string sourceProjectPath,
         CancellationToken cancellationToken = default)
     {

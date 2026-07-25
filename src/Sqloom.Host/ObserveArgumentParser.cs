@@ -8,14 +8,14 @@ namespace Sqloom.Host;
 /// <summary>
 /// Parses and validates the Sqloom observe command arguments.
 /// </summary>
-internal sealed class ObserveArgumentParser
+internal static class ObserveArgumentParser
 {
-    public string? GetQueryStoreConnectionString(string[] args)
+    public static string? GetQueryStoreConnectionString(string[] args)
     {
         return CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string");
     }
 
-    public ObserveArguments Parse(
+    public static ObserveArguments Parse(
         string[] args,
         SqloomApplicationManifest? manifest,
         string readOnlyConnectionString,

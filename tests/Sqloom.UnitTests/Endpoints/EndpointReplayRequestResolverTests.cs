@@ -14,8 +14,7 @@ public sealed class ReplayRequestResolverTests
     [Fact]
     public void MergesPreparedValuesOverReplayDefaults()
     {
-        ReplayRequestResolver resolver = new();
-        var request = resolver.Resolve(
+        var request = ReplayRequestResolver.Resolve(
             CreateOperation(requestBodyRequired: true),
             new ResolvedReplayOperation
             {
@@ -64,9 +63,8 @@ public sealed class ReplayRequestResolverTests
     [Fact]
     public void ThrowsWhenRequiredRequestBodyIsMissing()
     {
-        ReplayRequestResolver resolver = new();
 
-        var exception = Assert.Throws<InvalidOperationException>(() => resolver.Resolve(
+        var exception = Assert.Throws<InvalidOperationException>(() => ReplayRequestResolver.Resolve(
             CreateOperation(requestBodyRequired: true),
             new ResolvedReplayOperation
             {

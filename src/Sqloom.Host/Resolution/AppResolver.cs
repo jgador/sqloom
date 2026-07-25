@@ -13,13 +13,13 @@ namespace Sqloom.Host;
 /// <summary>
 /// Loads Sqloom application harnesses from the resolved target projects or assemblies.
 /// </summary>
-internal sealed class AppResolver
+internal static class AppResolver
 {
     private static readonly object _defaultProbeDirectoryLock = new();
     private static readonly List<AssemblyProbe> _defaultAssemblyProbes = [];
     private static bool _defaultAssemblyResolverRegistered;
 
-    public async Task<ISqloomApplication> ResolveAsync(
+    public static async Task<ISqloomApplication> ResolveAsync(
         HostStartupOptions startupOptions,
         CancellationToken cancellationToken = default)
     {
@@ -38,7 +38,7 @@ internal sealed class AppResolver
             assemblySelections);
     }
 
-    public Task<string> ResolveAssemblyPathAsync(
+    public static Task<string> ResolveAssemblyPathAsync(
         HostStartupOptions startupOptions,
         CancellationToken cancellationToken = default)
     {

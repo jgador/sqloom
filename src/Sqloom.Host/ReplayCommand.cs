@@ -14,9 +14,6 @@ namespace Sqloom.Host;
 internal sealed class ReplayCommand
     : ICommandHandler
 {
-    private readonly ReplayArgumentParser _argumentParser = new();
-    private readonly EndpointReplayRunner _runner = new();
-
     public HostCommandKind CommandKind => HostCommandKind.Replay;
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
@@ -24,7 +21,7 @@ internal sealed class ReplayCommand
         var application = context.Application
             ?? throw new InvalidOperationException(
                 "Sqloom replay requires one resolved app harness.");
-        var launchOptions = _argumentParser.CreateReplayLaunchOptions(
+        var launchOptions = ReplayArgumentParser.CreateReplayLaunchOptions(
             context.Arguments,
             context.CurrentDirectory);
         var applicationContext = new SqloomApplicationContext
@@ -38,7 +35,7 @@ internal sealed class ReplayCommand
             manifest.Name,
             HostApplication.GetProjectNames(application));
 
-        var replayArtifactDirectory = _argumentParser.GetReplayArtifactDir(
+        var replayArtifactDirectory = ReplayArgumentParser.GetReplayArtifactDir(
             context.Arguments,
             context.CurrentDirectory);
         var sourceProjectPath = EndpointSourceProjectResolver.Resolve(
@@ -49,7 +46,7 @@ internal sealed class ReplayCommand
         await using var session = await application
             .StartAsync(applicationContext)
             .ConfigureAwait(false);
-        var arguments = _argumentParser.Parse(
+        var arguments = ReplayArgumentParser.Parse(
             context.Arguments,
             manifest,
             session.ReplayHost,
@@ -69,7 +66,7 @@ internal sealed class ReplayCommand
         CancellationToken cancellationToken = default)
     {
         arguments.DebugWriter.PrintReplayRun(arguments);
-        var replayResult = await _runner
+        var replayResult = await EndpointReplayRunner
             .RunAsync(arguments.RunnerOptions, cancellationToken)
             .ConfigureAwait(false);
         return (

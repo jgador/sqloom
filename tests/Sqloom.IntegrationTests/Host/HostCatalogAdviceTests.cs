@@ -56,8 +56,7 @@ public sealed class HostCatalogAdviceTests
                     ApplicationConnectionString = LocalhostConnectionString,
                 });
                 var replayProfile = manifest.ReplayProfile;
-                EndpointReplayRunner replayRunner = new();
-                var replayResult = await replayRunner
+                var replayResult = await EndpointReplayRunner
                     .RunAsync(
                         new ReplayRunnerOptions
                         {

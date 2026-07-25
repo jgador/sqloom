@@ -12,10 +12,9 @@ public sealed class ObserveArgumentParserTests
     [Fact]
     public void GetQueryStoreConnectionString_UsesExplicitConnectionStringSwitch()
     {
-        ObserveArgumentParser parser = new();
         const string expectedConnectionString = "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
 
-        var connectionString = parser.GetQueryStoreConnectionString(
+        var connectionString = ObserveArgumentParser.GetQueryStoreConnectionString(
             [
                 "--read-only-connection-string",
                 expectedConnectionString,
@@ -27,19 +26,16 @@ public sealed class ObserveArgumentParserTests
     [Fact]
     public void GetQueryStoreConnectionString_ReturnsNullWhenExplicitMissing()
     {
-        ObserveArgumentParser parser = new();
-
-        Assert.Null(parser.GetQueryStoreConnectionString([]));
+        Assert.Null(ObserveArgumentParser.GetQueryStoreConnectionString([]));
     }
 
     [Fact]
     public void Parse_UsesJsonOutputFileOverride()
     {
-        ObserveArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var jsonOutputPath = Path.Combine(currentDirectory, "query-store.json");
 
-        var arguments = parser.Parse(
+        var arguments = ObserveArgumentParser.Parse(
             [
                 "--json-output-file",
                 jsonOutputPath,
@@ -54,10 +50,9 @@ public sealed class ObserveArgumentParserTests
     [Fact]
     public void Parse_UsesExpandedDefaultPlanWindow()
     {
-        ObserveArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
-        var arguments = parser.Parse(
+        var arguments = ObserveArgumentParser.Parse(
             [],
             null,
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;",
@@ -72,11 +67,10 @@ public sealed class ObserveArgumentParserTests
     [Fact]
     public void Parse_RejectsLegacyJsonOutSwitch()
     {
-        ObserveArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ObserveArgumentParser.Parse(
                 [
                     "--json-out",
                     Path.Combine(currentDirectory, "query-store.json"),

@@ -16,7 +16,7 @@ namespace Sqloom.Host;
 /// <summary>
 /// Generates Sqloom tuning advice by calling the OpenAI Responses API.
 /// </summary>
-internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
+internal sealed class OpenAIAdviceGenerator : IDisposable
 {
     private const string OpenAIAdviceStrategyName = "openai-responses-structured-outputs";
     private readonly HostDebugWriter _debugWriter;

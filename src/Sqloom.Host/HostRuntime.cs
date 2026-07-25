@@ -119,9 +119,7 @@ public static class HostRuntime
         HostConsoleWriter consoleWriter)
     {
         return application is null
-            ? new HostApplication(
-                new AppResolver(),
-                consoleWriter)
+            ? new HostApplication(consoleWriter)
             : new HostApplication(
                 application,
                 consoleWriter);

@@ -15,7 +15,6 @@ public sealed class HostApplicationTests
     {
         StubCommandHandler handler = new(HostCommandKind.Init, 13);
         HostApplication application = new(
-            new AppResolver(),
             new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
@@ -38,7 +37,6 @@ public sealed class HostApplicationTests
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 17);
         HostApplication application = new(
-            new AppResolver(),
             new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
@@ -93,7 +91,6 @@ public sealed class HostApplicationTests
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 19);
         HostApplication application = new(
-            new AppResolver(),
             new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
@@ -139,7 +136,6 @@ public sealed class HostApplicationTests
     {
         StubCommandHandler handler = new(HostCommandKind.Endpoints, 31);
         HostApplication application = new(
-            new AppResolver(),
             new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
@@ -161,9 +157,7 @@ public sealed class HostApplicationTests
     [Fact]
     public async Task WithoutCommand_PrintsNoCommandHint()
     {
-        HostApplication application = new(
-            new AppResolver(),
-            new HostConsoleWriter());
+        HostApplication application = new(new HostConsoleWriter());
         HostStartupOptions startupOptions = new();
         var originalOut = Console.Out;
         using StringWriter stdOut = new();

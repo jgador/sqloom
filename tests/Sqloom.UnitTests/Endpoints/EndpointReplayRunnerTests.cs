@@ -73,8 +73,7 @@ public sealed class EndpointReplayRunnerTests
                 ]),
         };
 
-        EndpointReplayRunner runner = new();
-        var result = await runner.RunAsync(
+        var result = await EndpointReplayRunner.RunAsync(
             new ReplayRunnerOptions
             {
                 AppName = "TestApp",
@@ -154,8 +153,7 @@ public sealed class EndpointReplayRunnerTests
                 ]),
         };
 
-        EndpointReplayRunner runner = new();
-        var result = await runner.RunAsync(
+        var result = await EndpointReplayRunner.RunAsync(
             new ReplayRunnerOptions
             {
                 AppName = "TestApp",
@@ -238,8 +236,7 @@ public sealed class EndpointReplayRunnerTests
             CreateOperation("GET", "/api/items"),
         };
 
-        EndpointReplayRunner runner = new();
-        var result = await runner.RunAsync(
+        var result = await EndpointReplayRunner.RunAsync(
             new ReplayRunnerOptions
             {
                 AppName = "TestApp",
@@ -287,8 +284,7 @@ public sealed class EndpointReplayRunnerTests
                 ]),
         };
 
-        EndpointReplayRunner runner = new();
-        var result = await runner.RunAsync(
+        var result = await EndpointReplayRunner.RunAsync(
             new ReplayRunnerOptions
             {
                 AppName = "TestApp",

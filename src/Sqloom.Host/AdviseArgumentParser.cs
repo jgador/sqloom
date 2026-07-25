@@ -8,9 +8,9 @@ namespace Sqloom.Host;
 /// <summary>
 /// Parses and validates the Sqloom advise command arguments.
 /// </summary>
-internal sealed class AdviseArgumentParser
+internal static class AdviseArgumentParser
 {
-    public AdviseArguments Parse(
+    public static AdviseArguments Parse(
         string[] args,
         string? currentDirectory = null)
     {
@@ -44,7 +44,7 @@ internal sealed class AdviseArgumentParser
             currentDirectory: currentDirectory);
     }
 
-    internal AdviseArguments CreateArguments(
+    internal static AdviseArguments CreateArguments(
         string[] args,
         string replayArtifactDirectory,
         string queryStoreCorrelationPath,

@@ -9,7 +9,7 @@ namespace Sqloom.Host;
 /// <summary>
 /// Scaffolds the embedded Sqloom harness skill bundle into an agent-specific repository folder.
 /// </summary>
-internal sealed class InitCommandExecutor
+internal static class InitCommandExecutor
 {
     private const string DefaultAgent = "codex";
     private const string ResourcePrefix = "Sqloom.Host.InitAssets/skills/sqloom/";
@@ -21,7 +21,7 @@ internal sealed class InitCommandExecutor
         new("copilot", ".github/skills/sqloom"),
     ];
 
-    public InitResult Execute(
+    public static InitResult Execute(
         string[] args,
         string currentDirectory)
     {

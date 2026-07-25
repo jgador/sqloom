@@ -16,8 +16,6 @@ namespace Sqloom.Host;
 internal sealed class ObserveCommand
     : ICommandHandler
 {
-    private readonly ObserveArgumentParser _argumentParser = new();
-
     public HostCommandKind CommandKind => HostCommandKind.Observe;
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
@@ -30,7 +28,7 @@ internal sealed class ObserveCommand
             manifest?.Name,
             HostApplication.GetProjectNames(context.Application));
 
-        var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments);
+        var readOnlyConnectionString = ObserveArgumentParser.GetQueryStoreConnectionString(context.Arguments);
         if (string.IsNullOrWhiteSpace(readOnlyConnectionString))
         {
             Console.Error.WriteLine(
@@ -38,7 +36,7 @@ internal sealed class ObserveCommand
             return 1;
         }
 
-        var arguments = _argumentParser.Parse(
+        var arguments = ObserveArgumentParser.Parse(
             context.Arguments,
             manifest,
             readOnlyConnectionString,

@@ -11,9 +11,9 @@ namespace Sqloom.Host;
 /// <summary>
 /// Parses and validates the Sqloom replay command arguments.
 /// </summary>
-internal sealed class ReplayArgumentParser
+internal static class ReplayArgumentParser
 {
-    public ReplayArguments Parse(
+    public static ReplayArguments Parse(
         string[] args,
         SqloomApplicationManifest manifest,
         IReplayHost replayHost,
@@ -58,7 +58,7 @@ internal sealed class ReplayArgumentParser
         };
     }
 
-    public string? GetAppProjectPath(
+    public static string? GetAppProjectPath(
         string[] args,
         string currentDirectory)
     {
@@ -75,7 +75,7 @@ internal sealed class ReplayArgumentParser
             "--app-project");
     }
 
-    public string GetReplayArtifactDir(string[] args, string currentDirectory)
+    public static string GetReplayArtifactDir(string[] args, string currentDirectory)
     {
         var artifactDirectory = CommandArgumentSupport.GetArgumentValue(args, "--artifact-dir");
         if (!string.IsNullOrWhiteSpace(artifactDirectory))
@@ -110,7 +110,7 @@ internal sealed class ReplayArgumentParser
         return appProjectPath;
     }
 
-    internal ReplayLaunchOptions CreateReplayLaunchOptions(
+    internal static ReplayLaunchOptions CreateReplayLaunchOptions(
         string[] args,
         string currentDirectory,
         bool requireDacpacForSeed = true)
@@ -174,7 +174,7 @@ internal sealed class ReplayArgumentParser
         return fullSeedSqlPath;
     }
 
-    internal ReplayDataAgentOptions CreateReplayDataAgentOptions(string[] args)
+    internal static ReplayDataAgentOptions CreateReplayDataAgentOptions(string[] args)
     {
         var mode = ParseReplayDataAgentMode(
             CommandArgumentSupport.GetArgumentValue(args, "--replay-data-agent"));
@@ -194,7 +194,7 @@ internal sealed class ReplayArgumentParser
         };
     }
 
-    internal void ValidateReplayDataAgentOptions(string[] args)
+    internal static void ValidateReplayDataAgentOptions(string[] args)
     {
         var replayDataAgentOptions = CreateReplayDataAgentOptions(args);
         _ = CreateReplayDataGenerator(args, replayDataAgentOptions);

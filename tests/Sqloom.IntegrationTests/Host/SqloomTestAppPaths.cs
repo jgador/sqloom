@@ -46,8 +46,7 @@ internal static class SqloomTestAppPaths
 
     private static Task<ISqloomApplication> ResolveApplicationCoreAsync()
     {
-        AppResolver resolver = new();
-        return resolver.ResolveAsync(new HostStartupOptions
+        return AppResolver.ResolveAsync(new HostStartupOptions
         {
             AppTargetPath = GetHarnessPath(),
             DotNetCommand = "dotnet",

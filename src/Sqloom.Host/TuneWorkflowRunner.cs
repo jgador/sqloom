@@ -12,32 +12,32 @@ namespace Sqloom.Host;
 /// <summary>
 /// Runs the observe, replay, correlate, and advise stages as one typed workflow.
 /// </summary>
-internal sealed class TuneWorkflowRunner
+internal static class TuneWorkflowRunner
 {
-    private readonly AdviceCommand _adviceCommand = new();
-    private readonly CorrelateCommand _correlateCommand = new();
-    private readonly ObserveCommand _observeCommand = new();
-    private readonly ReplayCommand _replayCommand = new();
-
-    public async Task<(TuneWorkflowReport Report, string SummaryOutputPath, int ExitCode)> RunAsync(
+    public static async Task<(TuneWorkflowReport Report, string SummaryOutputPath, int ExitCode)> RunAsync(
         TuneArguments arguments,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(arguments);
         arguments.DebugWriter.PrintTuneRun(arguments);
 
+        ReplayCommand replayCommand = new();
         arguments.DebugWriter.PrintTuneStageStarting("replay");
-        var replayResult = await _replayCommand
+        var replayResult = await replayCommand
             .ExecuteAsync(arguments.ReplayArguments, cancellationToken)
             .ConfigureAwait(false);
         arguments.DebugWriter.PrintTuneStageCompleted("replay", replayResult.ReplayResult.SummaryArtifactPath);
+
+        ObserveCommand observeCommand = new();
         arguments.DebugWriter.PrintTuneStageStarting("observe");
-        var observeResult = await _observeCommand
+        var observeResult = await observeCommand
             .ExecuteAsync(arguments.ObserveArguments, cancellationToken)
             .ConfigureAwait(false);
         arguments.DebugWriter.PrintTuneStageCompleted("observe", observeResult.JsonOutputPath);
+
+        CorrelateCommand correlateCommand = new();
         arguments.DebugWriter.PrintTuneStageStarting("correlate");
-        var correlateResult = await _correlateCommand
+        var correlateResult = await correlateCommand
             .ExecuteAsync(
                 arguments.CorrelateArguments,
                 observeResult.Snapshot,
@@ -45,8 +45,10 @@ internal sealed class TuneWorkflowRunner
                 cancellationToken)
             .ConfigureAwait(false);
         arguments.DebugWriter.PrintTuneStageCompleted("correlate", correlateResult.JsonOutputPath);
+
+        AdviceCommand adviceCommand = new();
         arguments.DebugWriter.PrintTuneStageStarting("advise");
-        var adviceResult = await _adviceCommand
+        var adviceResult = await adviceCommand
             .ExecuteAsync(
                 arguments.AdviseArguments,
                 correlateResult.Report,

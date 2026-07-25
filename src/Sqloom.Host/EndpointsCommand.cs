@@ -11,8 +11,6 @@ namespace Sqloom.Host;
 internal sealed class EndpointsCommand
     : ICommandHandler
 {
-    private readonly EndpointCatalogLoader _catalogLoader = new();
-
     public HostCommandKind CommandKind => HostCommandKind.Endpoints;
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
@@ -24,7 +22,7 @@ internal sealed class EndpointsCommand
             context.Arguments,
             context.StartupOptions,
             context.CurrentDirectory);
-        var operations = await _catalogLoader
+        var operations = await EndpointCatalogLoader
             .LoadAsync(sourceProjectPath)
             .ConfigureAwait(false);
         var jsonOutputPath = CommandArgumentSupport.GetArgumentValue(

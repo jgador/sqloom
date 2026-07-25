@@ -15,17 +15,11 @@ namespace Sqloom.Host;
 internal sealed class TuneCommand
     : ICommandHandler
 {
-    private readonly TuneArgumentParser _argumentParser;
-    private readonly TuneWorkflowRunner _workflowRunner;
     private readonly ISqlServerDacpacExporter _dacpacExporter;
 
     public TuneCommand(
-        TuneArgumentParser? argumentParser = null,
-        TuneWorkflowRunner? workflowRunner = null,
         ISqlServerDacpacExporter? dacpacExporter = null)
     {
-        _argumentParser = argumentParser ?? new TuneArgumentParser();
-        _workflowRunner = workflowRunner ?? new TuneWorkflowRunner();
         _dacpacExporter = dacpacExporter ?? new SqlServerDacpacExporter();
     }
 
@@ -36,7 +30,7 @@ internal sealed class TuneCommand
         var application = context.Application
             ?? throw new InvalidOperationException(
                 "Sqloom tune requires one resolved app harness.");
-        var requestedLaunchOptions = _argumentParser.CreateReplayLaunchOptions(
+        var requestedLaunchOptions = TuneArgumentParser.CreateReplayLaunchOptions(
             context.Arguments,
             context.CurrentDirectory);
         var requestedApplicationContext = new SqloomApplicationContext
@@ -49,7 +43,7 @@ internal sealed class TuneCommand
         context.ConsoleWriter.PrintBanner(
             manifest.Name,
             HostApplication.GetProjectNames(application));
-        _argumentParser.ValidateBeforeSession(
+        TuneArgumentParser.ValidateBeforeSession(
             context.Arguments,
             manifest,
             context.CurrentDirectory);
@@ -58,11 +52,11 @@ internal sealed class TuneCommand
             context.Arguments,
             context.StartupOptions,
             context.CurrentDirectory);
-        var workflowArtifactDir = _argumentParser.GetWorkflowArtifactDir(
+        var workflowArtifactDir = TuneArgumentParser.GetWorkflowArtifactDir(
             context.Arguments,
             context.CurrentDirectory);
         var replayArtifactDirectory = ArtifactLayout.GetTuneReplayArtifactDir(workflowArtifactDir);
-        var commandLineReadOnlyConnectionString = _argumentParser
+        var commandLineReadOnlyConnectionString = TuneArgumentParser
             .GetQueryStoreConnectionString(context.Arguments);
         var launchOptions = await ResolveReplayLaunchOptionsAsync(
                 requestedLaunchOptions,
@@ -90,7 +84,7 @@ internal sealed class TuneCommand
             return 1;
         }
 
-        var arguments = _argumentParser.Parse(
+        var arguments = TuneArgumentParser.Parse(
             context.Arguments,
             manifest,
             session.ReplayHost,
@@ -116,7 +110,7 @@ internal sealed class TuneCommand
         TuneArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        return _workflowRunner.RunAsync(arguments, cancellationToken);
+        return TuneWorkflowRunner.RunAsync(arguments, cancellationToken);
     }
 
     internal async Task<ReplayLaunchOptions> ResolveReplayLaunchOptionsAsync(

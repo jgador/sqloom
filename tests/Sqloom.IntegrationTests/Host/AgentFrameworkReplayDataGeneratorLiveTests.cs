@@ -47,8 +47,7 @@ public sealed class AgentFrameworkReplayDataGeneratorLiveTests
 
     private static async Task<ReplayDataGenerationContext> CreateContextAsync()
     {
-        var operations = await new EndpointCatalogLoader()
-            .LoadAsync(SqloomTestAppPaths.GetProjectPath());
+        var operations = await EndpointCatalogLoader.LoadAsync(SqloomTestAppPaths.GetProjectPath());
         var operation = operations.Single(operation =>
             string.Equals(operation.StableOperationKey, SampleCatalogReplayScenario.OperationKey, StringComparison.Ordinal));
 

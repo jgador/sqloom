@@ -17,9 +17,7 @@ public sealed class InitCommandExecutorTests
         var root = CreateRepositoryRoot();
         try
         {
-            InitCommandExecutor executor = new();
-
-            var result = executor.Execute(
+            var result = InitCommandExecutor.Execute(
                 ["init"],
                 root);
 
@@ -48,9 +46,7 @@ public sealed class InitCommandExecutorTests
         var root = CreateRepositoryRoot();
         try
         {
-            InitCommandExecutor executor = new();
-
-            var result = executor.Execute(
+            var result = InitCommandExecutor.Execute(
                 ["init", "--agent", "claude"],
                 root);
 
@@ -71,9 +67,7 @@ public sealed class InitCommandExecutorTests
         var root = CreateRepositoryRoot();
         try
         {
-            InitCommandExecutor executor = new();
-
-            var result = executor.Execute(
+            var result = InitCommandExecutor.Execute(
                 ["init", "--agent", "all"],
                 root);
 
@@ -95,10 +89,9 @@ public sealed class InitCommandExecutorTests
         var root = CreateRepositoryRoot();
         try
         {
-            InitCommandExecutor executor = new();
-            executor.Execute(["init"], root);
+            InitCommandExecutor.Execute(["init"], root);
 
-            var result = executor.Execute(
+            var result = InitCommandExecutor.Execute(
                 ["init"],
                 root);
 
@@ -119,10 +112,9 @@ public sealed class InitCommandExecutorTests
             var skillPath = Path.Combine(root, ".agents", "skills", "sqloom", "SKILL.md");
             Directory.CreateDirectory(Path.GetDirectoryName(skillPath)!);
             File.WriteAllText(skillPath, "local content");
-            InitCommandExecutor executor = new();
 
             var exception = Assert.Throws<ArgumentException>(
-                () => executor.Execute(["init"], root));
+                () => InitCommandExecutor.Execute(["init"], root));
 
             Assert.Contains("Refusing to overwrite existing file '.agents/skills/sqloom/SKILL.md'", exception.Message, StringComparison.Ordinal);
             Assert.Contains("--overwrite", exception.Message, StringComparison.Ordinal);
@@ -142,9 +134,8 @@ public sealed class InitCommandExecutorTests
             var skillPath = Path.Combine(root, ".agents", "skills", "sqloom", "SKILL.md");
             Directory.CreateDirectory(Path.GetDirectoryName(skillPath)!);
             File.WriteAllText(skillPath, "local content");
-            InitCommandExecutor executor = new();
 
-            var result = executor.Execute(
+            var result = InitCommandExecutor.Execute(
                 ["init", "--overwrite"],
                 root);
 
@@ -163,10 +154,9 @@ public sealed class InitCommandExecutorTests
         var root = CreateTestRoot();
         try
         {
-            InitCommandExecutor executor = new();
 
             var exception = Assert.Throws<ArgumentException>(
-                () => executor.Execute(["init"], root));
+                () => InitCommandExecutor.Execute(["init"], root));
 
             Assert.Contains("Current directory must be a Git repository root", exception.Message, StringComparison.Ordinal);
             Assert.Contains("Run sqloom init from the repository root.", exception.Message, StringComparison.Ordinal);
@@ -183,10 +173,9 @@ public sealed class InitCommandExecutorTests
         var root = CreateRepositoryRoot();
         try
         {
-            InitCommandExecutor executor = new();
 
             var exception = Assert.Throws<ArgumentException>(
-                () => executor.Execute(["init", "--agent", "cursor"], root));
+                () => InitCommandExecutor.Execute(["init", "--agent", "cursor"], root));
 
             Assert.Contains("Unknown agent 'cursor'", exception.Message, StringComparison.Ordinal);
             Assert.Contains("codex, claude, copilot, all", exception.Message, StringComparison.Ordinal);

@@ -52,7 +52,7 @@ public sealed class AdviceCommandTests
         AdviceCommand command = new(options =>
         {
             resolvedOptions = options;
-            return new FakeAdviceReportGenerator(
+            return CreateFakeAdviceReportGenerator(
                 expectedReport,
                 path => resolvedSchemaPath = path);
         });
@@ -164,7 +164,7 @@ public sealed class AdviceCommandTests
         await File.WriteAllTextAsync(dacpacPath, "sqloom");
 
         AdviceCommand command = new(
-            options => new FakeAdviceReportGenerator(
+            options => CreateFakeAdviceReportGenerator(
                 expectedReport,
                 path => resolvedSchemaPath = path),
             new FakeSqlServerDacpacSchemaExtractor(
@@ -236,7 +236,7 @@ public sealed class AdviceCommandTests
             ;
 
         AdviceCommand command = new(
-            options => new FakeAdviceReportGenerator(
+            options => CreateFakeAdviceReportGenerator(
                 expectedReport,
                 path => resolvedSchemaPath = path),
             new FakeSqlServerDacpacSchemaExtractor(
@@ -477,11 +477,13 @@ public sealed class AdviceCommandTests
         return directory;
     }
 
-    private sealed class FakeAdviceReportGenerator(
+    private static AdviceReportGenerator CreateFakeAdviceReportGenerator(
         AdviceReport report,
-        Action<string> captureSchemaPath) : IAdviceReportGenerator
+        Action<string> captureSchemaPath)
     {
-        public Task<AdviceReport> CreateReportAsync(
+        return CreateReportAsync;
+
+        Task<AdviceReport> CreateReportAsync(
             QueryCorrelationReport correlationReport,
             string queryStoreCorrelationPath,
             string adviceOutputPath,
@@ -490,10 +492,6 @@ public sealed class AdviceCommandTests
         {
             captureSchemaPath(sqlServerSchemaPath);
             return Task.FromResult(report);
-        }
-
-        public void Dispose()
-        {
         }
     }
 

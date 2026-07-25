@@ -8,9 +8,9 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Builds replayable HTTP requests from discovered endpoint operations and prepared inputs.
 /// </summary>
-internal sealed class ReplayRequestResolver
+internal static class ReplayRequestResolver
 {
-    public EndpointReplayRequest Resolve(
+    public static EndpointReplayRequest Resolve(
         ReplayOperation discoveredOperation,
         ResolvedReplayOperation resolvedOperation,
         PreparedReplayOperation preparedOperation)

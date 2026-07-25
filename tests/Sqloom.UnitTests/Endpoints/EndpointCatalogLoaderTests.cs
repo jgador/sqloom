@@ -15,9 +15,7 @@ public sealed class EndpointCatalogLoaderTests
     [Fact]
     public async Task LoadAsync_ReadsControllerMethodAndParameterMetadata()
     {
-        EndpointCatalogLoader loader = new();
-
-        var operations = await loader.LoadAsync(RepositoryPaths.GetTestAppProjectPath());
+        var operations = await EndpointCatalogLoader.LoadAsync(RepositoryPaths.GetTestAppProjectPath());
 
         var operation = Assert.Single(
             operations,

@@ -16,7 +16,6 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void WithSqlServerDacpac_ResolvesReplayLaunchOptions()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var dacpacPath = Path.Combine(currentDirectory, "SqloomTestApp.dacpac");
         var seedSqlPath = Path.Combine(currentDirectory, "SqloomTestApp.seed.sql");
@@ -24,7 +23,7 @@ public sealed class ReplayArgumentParserTests
         File.WriteAllText(dacpacPath, "sqloom");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
 
-        var arguments = parser.Parse(
+        var arguments = ReplayArgumentParser.Parse(
             [
                 "--sqlserver-dacpac-file",
                 dacpacPath,
@@ -56,11 +55,10 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void UsesAppProjectPathByDefault()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var sourceProjectPath = RepositoryPaths.GetTestAppProjectPath();
 
-        var arguments = parser.Parse(
+        var arguments = ReplayArgumentParser.Parse(
             [
                 "--app-project",
                 sourceProjectPath,
@@ -82,10 +80,9 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void WithReplayDataAgentOff_DisablesAgentGenerator()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
-        var arguments = parser.Parse(
+        var arguments = ReplayArgumentParser.Parse(
             [
                 "--replay-data-agent",
                 "off",
@@ -102,10 +99,9 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void WithReplayDataAgentAuto_CreatesAgentGenerator()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
-        var arguments = parser.Parse(
+        var arguments = ReplayArgumentParser.Parse(
             [
                 "--replay-data-agent",
                 "auto",
@@ -127,11 +123,10 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void WithReplayDataAgentAuto_RequiresOpenAIKey()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "--replay-data-agent",
                     "auto",
@@ -147,10 +142,9 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void WithRequiredReplayDataAgent_CreatesAgentGenerator()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
-        var arguments = parser.Parse(
+        var arguments = ReplayArgumentParser.Parse(
             [
                 "--replay-data-agent",
                 "required",
@@ -172,11 +166,10 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void WithReplayDataAgentRequired_RequiresOpenAIKey()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "--replay-data-agent",
                     "required",
@@ -192,11 +185,10 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void RejectsInvalidReplayDataAgentMode()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "--replay-data-agent",
                     "always",
@@ -212,11 +204,10 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void ThrowsWhenSourceProjectPathIsMissing()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [],
                 ManifestFactory.CreateManifest(),
                 new ReplayHostFake(),
@@ -229,12 +220,11 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void ThrowsWhenSqlServerDacpacIsMissing()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var missingDacpacPath = Path.Combine(currentDirectory, "missing.dacpac");
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "--sqlserver-dacpac-file",
                     missingDacpacPath,
@@ -250,14 +240,13 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void ThrowsWhenSqlSeedScriptIsMissing()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var dacpacPath = Path.Combine(currentDirectory, "SqloomTestApp.dacpac");
         var missingSeedSqlPath = Path.Combine(currentDirectory, "missing.seed.sql");
         File.WriteAllText(dacpacPath, "sqloom");
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "--sqlserver-dacpac-file",
                     dacpacPath,
@@ -275,13 +264,12 @@ public sealed class ReplayArgumentParserTests
     [Fact]
     public void ThrowsWhenSqlSeedScriptIsSuppliedWithoutDacpac()
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var seedSqlPath = Path.Combine(currentDirectory, "SqloomTestApp.seed.sql");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "--sqlserver-seed-sql-file",
                     seedSqlPath,
@@ -299,11 +287,10 @@ public sealed class ReplayArgumentParserTests
     [InlineData("--operation", "GET /api/expenses/dashboard")]
     public void RejectsLegacyOperationSwitches(string legacySwitch, string value)
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     legacySwitch,
                     value,
@@ -322,11 +309,10 @@ public sealed class ReplayArgumentParserTests
     [InlineData("--sqlserver-dacpac", "SqloomTestApp.dacpac")]
     public void RejectsLegacyPathSwitches(string legacySwitch, string fileName)
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     legacySwitch,
                     Path.Combine(currentDirectory, fileName),
@@ -350,11 +336,10 @@ public sealed class ReplayArgumentParserTests
         string expectedReason,
         string expectedSuggestion)
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "--target",
                     targetFilter,
@@ -374,11 +359,10 @@ public sealed class ReplayArgumentParserTests
     [InlineData("GetSecure")]
     public void RejectsNonOperationKeyTargetValues(string targetFilter)
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "--target",
                     targetFilter,
@@ -399,11 +383,10 @@ public sealed class ReplayArgumentParserTests
     [InlineData("--advise")]
     public void RejectsLegacyStageAliasSwitches(string legacySwitch)
     {
-        ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => ReplayArgumentParser.Parse(
                 [
                     "replay",
                     legacySwitch,

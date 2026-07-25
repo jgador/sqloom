@@ -16,7 +16,6 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void Parse_BuildsWorkflowArtifactLayoutAndNestedStageArguments()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var workflowRoot = Path.Combine(currentDirectory, "custom-tune-run");
         var dacpacPath = Path.Combine(currentDirectory, "test-schema-source.dacpac");
@@ -36,7 +35,7 @@ public sealed class TuneArgumentParserTests
             GO
             """);
 
-        var arguments = parser.Parse(
+        var arguments = TuneArgumentParser.Parse(
             [
                 "tune",
                 "--read-only-connection-string",
@@ -123,11 +122,10 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void Parse_RejectsTuneJsonOutputFileOverride()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => TuneArgumentParser.Parse(
                 [
                     "tune",
                     "--read-only-connection-string",
@@ -147,11 +145,10 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void RequiresModelProvider()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => TuneArgumentParser.Parse(
                 [
                     "tune",
                     "--read-only-connection-string",
@@ -171,11 +168,10 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void WithOpenAIModelProvider_RequiresApiKey()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => TuneArgumentParser.Parse(
                 [
                     "tune",
                     "--read-only-connection-string",
@@ -195,11 +191,10 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void ValidateBeforeSession_RejectsInvalidReplayDataAgentMode()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.ValidateBeforeSession(
+            () => TuneArgumentParser.ValidateBeforeSession(
                 [
                     "tune",
                     "--replay-data-agent",
@@ -221,11 +216,10 @@ public sealed class TuneArgumentParserTests
     public void ValidateBeforeSession_RequiresOpenAIKeyForEnabledReplayDataAgent(
         string replayDataAgentMode)
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.ValidateBeforeSession(
+            () => TuneArgumentParser.ValidateBeforeSession(
                 [
                     "tune",
                     "--replay-data-agent",
@@ -243,11 +237,10 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void ValidateBeforeSession_RequiresOpenAIKeyForDefaultReplayDataAgent()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.ValidateBeforeSession(
+            () => TuneArgumentParser.ValidateBeforeSession(
                 [
                     "tune",
                     "--model-provider",
@@ -263,7 +256,6 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void Parse_UsesManifestDacpacForAdviceSchemaSource()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var dacpacPath = Path.Combine(currentDirectory, "manifest-schema-source.dacpac");
         File.WriteAllText(dacpacPath, "sqloom");
@@ -274,7 +266,7 @@ public sealed class TuneArgumentParserTests
             SqlServerDacpacPath = dacpacPath,
         };
 
-        var arguments = parser.Parse(
+        var arguments = TuneArgumentParser.Parse(
             [
                 "tune",
                 "--read-only-connection-string",
@@ -300,12 +292,11 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void Parse_UsesReadOnlyConnectionStringForAdviceSchemaSource()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         const string readOnlyConnectionString =
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
 
-        var arguments = parser.Parse(
+        var arguments = TuneArgumentParser.Parse(
             [
                 "tune",
                 "--read-only-connection-string",
@@ -329,10 +320,9 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void ValidateBeforeSession_AllowsSessionReadOnlyConnectionSchemaSource()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
-        parser.ValidateBeforeSession(
+        TuneArgumentParser.ValidateBeforeSession(
             [
                 "tune",
                 "--model-provider",
@@ -347,12 +337,11 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void CreateReplayLaunchOptions_AllowsSeedSqlWithoutExplicitDacpac()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var seedSqlPath = Path.Combine(currentDirectory, "seed.sql");
         File.WriteAllText(seedSqlPath, "SELECT 1;");
 
-        var launchOptions = parser.CreateReplayLaunchOptions(
+        var launchOptions = TuneArgumentParser.CreateReplayLaunchOptions(
             [
                 "tune",
                 "--sqlserver-seed-sql-file",
@@ -370,7 +359,6 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void Parse_UsesResolvedDacpacForReplayAndAdvice()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
         var workflowRoot = Path.Combine(currentDirectory, "tune-output");
         var exportedDacpacPath = Path.Combine(currentDirectory, "exported.dacpac");
@@ -378,7 +366,7 @@ public sealed class TuneArgumentParserTests
         const string readOnlyConnectionString =
             "Server=localhost;Database=Sqloom;Trusted_Connection=True;";
 
-        var arguments = parser.Parse(
+        var arguments = TuneArgumentParser.Parse(
             [
                 "tune",
                 "--read-only-connection-string",
@@ -412,11 +400,10 @@ public sealed class TuneArgumentParserTests
     [Fact]
     public void RejectsLegacyAdviceProviderSwitch()
     {
-        TuneArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => TuneArgumentParser.Parse(
                 [
                     "tune",
                     "--read-only-connection-string",

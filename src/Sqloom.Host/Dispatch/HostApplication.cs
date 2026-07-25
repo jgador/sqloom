@@ -12,45 +12,26 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class HostApplication
 {
-    private readonly AppResolver _appResolver;
     private readonly ISqloomApplication? _boundApplication;
     private readonly CommandRegistry _commandRegistry;
     private readonly HostConsoleWriter _consoleWriter;
 
     public HostApplication(
-        AppResolver appResolver,
         HostConsoleWriter consoleWriter,
         CommandRegistry? commandRegistry = null)
-        : this(
-            appResolver,
-            null,
-            consoleWriter,
-            commandRegistry ?? CreateDefaultRegistry())
     {
+        _consoleWriter = consoleWriter ?? throw new ArgumentNullException(nameof(consoleWriter));
+        _commandRegistry = commandRegistry ?? CreateDefaultRegistry();
     }
 
     public HostApplication(
         ISqloomApplication application,
         HostConsoleWriter consoleWriter,
         CommandRegistry? commandRegistry = null)
-        : this(
-            new AppResolver(),
-            application,
-            consoleWriter,
-            commandRegistry ?? CreateDefaultRegistry())
     {
-    }
-
-    private HostApplication(
-        AppResolver appResolver,
-        ISqloomApplication? boundApplication,
-        HostConsoleWriter consoleWriter,
-        CommandRegistry commandRegistry)
-    {
-        _appResolver = appResolver ?? throw new ArgumentNullException(nameof(appResolver));
-        _boundApplication = boundApplication;
+        _boundApplication = application ?? throw new ArgumentNullException(nameof(application));
         _consoleWriter = consoleWriter ?? throw new ArgumentNullException(nameof(consoleWriter));
-        _commandRegistry = commandRegistry ?? throw new ArgumentNullException(nameof(commandRegistry));
+        _commandRegistry = commandRegistry ?? CreateDefaultRegistry();
     }
 
     public async Task<int> RunAsync(
@@ -237,7 +218,7 @@ internal sealed class HostApplication
             return null;
         }
 
-        return await _appResolver
+        return await AppResolver
             .ResolveAsync(startupOptions, cancellationToken)
             .ConfigureAwait(false);
     }
@@ -251,7 +232,7 @@ internal sealed class HostApplication
             return _boundApplication;
         }
 
-        return await _appResolver
+        return await AppResolver
             .ResolveAsync(startupOptions, cancellationToken)
             .ConfigureAwait(false);
     }

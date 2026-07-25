@@ -11,7 +11,7 @@ namespace Sqloom.Host;
 /// <summary>
 /// Parses and validates the Sqloom tune workflow arguments.
 /// </summary>
-internal sealed class TuneArgumentParser
+internal static class TuneArgumentParser
 {
     private static readonly HashSet<string> ObserveSwitches = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -46,26 +46,22 @@ internal sealed class TuneArgumentParser
         "--openai-api-key",
     };
 
-    private readonly ObserveArgumentParser _observeArgumentParser = new();
-    private readonly ReplayArgumentParser _replayArgumentParser = new();
-    private readonly AdviseArgumentParser _adviseArgumentParser = new();
-
-    public string? GetQueryStoreConnectionString(string[] args)
+    public static string? GetQueryStoreConnectionString(string[] args)
     {
         return CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string");
     }
 
-    public ReplayLaunchOptions CreateReplayLaunchOptions(
+    public static ReplayLaunchOptions CreateReplayLaunchOptions(
         string[] args,
         string currentDirectory)
     {
-        return _replayArgumentParser.CreateReplayLaunchOptions(
+        return ReplayArgumentParser.CreateReplayLaunchOptions(
             ExtractSwitchArguments(args, ReplaySwitches),
             currentDirectory,
             requireDacpacForSeed: false);
     }
 
-    public void ValidateBeforeSession(
+    public static void ValidateBeforeSession(
         string[] args,
         SqloomApplicationManifest manifest,
         string currentDirectory)
@@ -78,9 +74,9 @@ internal sealed class TuneArgumentParser
         var validationPath = Path.Combine(
             currentDirectory,
             "sqloom-validation-placeholder.json");
-        _replayArgumentParser.ValidateReplayDataAgentOptions(
+        ReplayArgumentParser.ValidateReplayDataAgentOptions(
             ExtractSwitchArguments(args, ReplaySwitches));
-        _adviseArgumentParser.CreateArguments(
+        AdviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             currentDirectory,
             validationPath,
@@ -91,16 +87,16 @@ internal sealed class TuneArgumentParser
             allowMissingSchemaSource: true);
     }
 
-    public string? GetAppProjectPath(
+    public static string? GetAppProjectPath(
         string[] args,
         string currentDirectory)
     {
-        return _replayArgumentParser.GetAppProjectPath(
+        return ReplayArgumentParser.GetAppProjectPath(
             ExtractSwitchArguments(args, ReplaySwitches),
             currentDirectory);
     }
 
-    public TuneArguments Parse(
+    public static TuneArguments Parse(
         string[] args,
         SqloomApplicationManifest manifest,
         IReplayHost replayHost,
@@ -123,7 +119,7 @@ internal sealed class TuneArgumentParser
         var correlationPath = ArtifactLayout.GetCorrelationPath(replayArtifactDirectory);
         var advicePath = ArtifactLayout.GetReplayTuningAdvicePath(replayArtifactDirectory);
 
-        var observeArguments = _observeArgumentParser.Parse(
+        var observeArguments = ObserveArgumentParser.Parse(
             AddSwitchValue(
                 ExtractSwitchArguments(args, ObserveSwitches),
                 "--json-output-file",
@@ -131,7 +127,7 @@ internal sealed class TuneArgumentParser
             manifest,
             readOnlyConnectionString,
             currentDirectory);
-        var replayArguments = _replayArgumentParser.Parse(
+        var replayArguments = ReplayArgumentParser.Parse(
             ExtractSwitchArguments(args, ReplaySwitches),
             manifest,
             replayHost,
@@ -139,7 +135,7 @@ internal sealed class TuneArgumentParser
             replayArtifactDirectory,
             sourceProjectPathOverride,
             replayLaunchOptionsOverride);
-        var adviseArguments = _adviseArgumentParser.CreateArguments(
+        var adviseArguments = AdviseArgumentParser.CreateArguments(
             ExtractSwitchArguments(args, AdviceSwitches),
             replayArtifactDirectory,
             correlationPath,
@@ -165,7 +161,7 @@ internal sealed class TuneArgumentParser
         };
     }
 
-    internal string GetWorkflowArtifactDir(string[] args, string currentDirectory)
+    internal static string GetWorkflowArtifactDir(string[] args, string currentDirectory)
     {
         var artifactDirectory = CommandArgumentSupport.GetArgumentValue(args, "--artifact-dir");
         if (!string.IsNullOrWhiteSpace(artifactDirectory))

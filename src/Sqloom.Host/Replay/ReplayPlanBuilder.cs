@@ -8,9 +8,9 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Builds the initial replay plan from discovered operations and app overlays.
 /// </summary>
-internal sealed class ReplayPlanBuilder
+internal static class ReplayPlanBuilder
 {
-    public EndpointReplayPlan BuildInitialPlan(
+    public static EndpointReplayPlan BuildInitialPlan(
         ReplayRunnerOptions options,
         IReadOnlyList<ReplayOperation> discoveredOperations)
     {

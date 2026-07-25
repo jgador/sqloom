@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Text.Json.Serialization;
 using System.Threading;
@@ -16,13 +15,12 @@ namespace Sqloom.Host;
 internal sealed class AdviceCommand
     : ICommandHandler
 {
-    private readonly AdviseArgumentParser _argumentParser = new();
-    private readonly Func<OpenAIAdviceOptions, IAdviceReportGenerator>? _generatorFactory;
+    private readonly Func<OpenAIAdviceOptions, AdviceReportGenerator>? _generatorFactory;
     private readonly ISqlServerDacpacSchemaExtractor _schemaExtractor;
     private readonly ISqlServerDacpacExporter _dacpacExporter;
 
     public AdviceCommand(
-        Func<OpenAIAdviceOptions, IAdviceReportGenerator>? generatorFactory = null,
+        Func<OpenAIAdviceOptions, AdviceReportGenerator>? generatorFactory = null,
         ISqlServerDacpacSchemaExtractor? schemaExtractor = null,
         ISqlServerDacpacExporter? dacpacExporter = null)
     {
@@ -39,7 +37,7 @@ internal sealed class AdviceCommand
             null,
             HostApplication.GetProjectNames(context.Application));
 
-        var arguments = _argumentParser.Parse(
+        var arguments = AdviseArgumentParser.Parse(
             context.Arguments,
             context.CurrentDirectory);
         arguments.DebugWriter = context.DebugWriter;
@@ -86,9 +84,8 @@ internal sealed class AdviceCommand
                 arguments,
                 cancellationToken)
             .ConfigureAwait(false);
-        using IAdviceReportGenerator adviceGenerator = CreateAdviceReportGenerator(arguments);
-        var report = await adviceGenerator
-            .CreateReportAsync(
+        var report = await CreateAdviceReportAsync(
+                arguments,
                 correlationReport,
                 arguments.QueryStoreCorrelationPath,
                 arguments.JsonOutputPath,
@@ -145,15 +142,36 @@ internal sealed class AdviceCommand
             .ConfigureAwait(false);
     }
 
-    [SuppressMessage(
-        "Reliability",
-        "CA2000:Dispose objects before losing scope",
-        Justification = "Ownership of the created advice generator is transferred to the caller.")]
-    private IAdviceReportGenerator CreateAdviceReportGenerator(AdviseArguments arguments)
+    private async Task<AdviceReport> CreateAdviceReportAsync(
+        AdviseArguments arguments,
+        QueryCorrelationReport correlationReport,
+        string queryStoreCorrelationPath,
+        string adviceOutputPath,
+        string sqlServerSchemaPath,
+        CancellationToken cancellationToken)
     {
-        return _generatorFactory is null
-            ? new OpenAIAdviceGenerator(arguments.OpenAIOptions!, debugWriter: arguments.DebugWriter)
-            : _generatorFactory(arguments.OpenAIOptions!);
+        if (_generatorFactory is not null)
+        {
+            return await _generatorFactory(arguments.OpenAIOptions!)
+                .Invoke(
+                    correlationReport,
+                    queryStoreCorrelationPath,
+                    adviceOutputPath,
+                    sqlServerSchemaPath,
+                    cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        using OpenAIAdviceGenerator adviceGenerator =
+            new(arguments.OpenAIOptions!, debugWriter: arguments.DebugWriter);
+        return await adviceGenerator
+            .CreateReportAsync(
+                correlationReport,
+                queryStoreCorrelationPath,
+                adviceOutputPath,
+                sqlServerSchemaPath,
+                cancellationToken)
+            .ConfigureAwait(false);
     }
 
     private static async Task WriteArtifactsAsync(
@@ -189,12 +207,9 @@ internal sealed class AdviceCommand
     }
 }
 
-internal interface IAdviceReportGenerator : IDisposable
-{
-    Task<AdviceReport> CreateReportAsync(
-        QueryCorrelationReport correlationReport,
-        string queryStoreCorrelationPath,
-        string adviceOutputPath,
-        string sqlServerSchemaPath,
-        CancellationToken cancellationToken = default);
-}
+internal delegate Task<AdviceReport> AdviceReportGenerator(
+    QueryCorrelationReport correlationReport,
+    string queryStoreCorrelationPath,
+    string adviceOutputPath,
+    string sqlServerSchemaPath,
+    CancellationToken cancellationToken = default);

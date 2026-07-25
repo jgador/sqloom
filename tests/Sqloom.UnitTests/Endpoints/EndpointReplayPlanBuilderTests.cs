@@ -15,8 +15,7 @@ public sealed class ReplayPlanBuilderTests
     [Fact]
     public void PlansAuthenticatedGetOperationsWithoutAppOverlays()
     {
-        ReplayPlanBuilder builder = new();
-        var plan = builder.BuildInitialPlan(
+        var plan = ReplayPlanBuilder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile()),
             [
@@ -32,8 +31,7 @@ public sealed class ReplayPlanBuilderTests
     [Fact]
     public void SkipsUnsafeOperationsWithoutReplayOverlays()
     {
-        ReplayPlanBuilder builder = new();
-        var plan = builder.BuildInitialPlan(
+        var plan = ReplayPlanBuilder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile()),
             [
@@ -58,8 +56,7 @@ public sealed class ReplayPlanBuilderTests
     [Fact]
     public void SkipsUnselectedOptInReplay()
     {
-        ReplayPlanBuilder builder = new();
-        var plan = builder.BuildInitialPlan(
+        var plan = ReplayPlanBuilder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile
                 {
@@ -91,8 +88,7 @@ public sealed class ReplayPlanBuilderTests
     [Fact]
     public void AllowsOptInReplayWhenTargetMatchesOperationKey()
     {
-        ReplayPlanBuilder builder = new();
-        var plan = builder.BuildInitialPlan(
+        var plan = ReplayPlanBuilder.BuildInitialPlan(
             CreateOptions(
                 new ReplayProfile
                 {
@@ -123,9 +119,8 @@ public sealed class ReplayPlanBuilderTests
     [Fact]
     public void ThrowsWhenTargetMatchesOperationId()
     {
-        ReplayPlanBuilder builder = new();
         var exception = Assert.Throws<ArgumentException>(
-            () => builder.BuildInitialPlan(
+            () => ReplayPlanBuilder.BuildInitialPlan(
                 CreateOptions(
                     new ReplayProfile
                     {
@@ -145,9 +140,8 @@ public sealed class ReplayPlanBuilderTests
     [Fact]
     public void ThrowsWhenTargetMatchesNoOperation()
     {
-        ReplayPlanBuilder builder = new();
         var exception = Assert.Throws<ArgumentException>(
-            () => builder.BuildInitialPlan(
+            () => ReplayPlanBuilder.BuildInitialPlan(
                 CreateOptions(
                     new ReplayProfile
                     {
@@ -168,10 +162,9 @@ public sealed class ReplayPlanBuilderTests
     [Fact]
     public void ThrowsWhenTargetUsesInvalidOperationKeySyntax()
     {
-        ReplayPlanBuilder builder = new();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => builder.BuildInitialPlan(
+            () => ReplayPlanBuilder.BuildInitialPlan(
                 CreateOptions(
                     new ReplayProfile
                     {

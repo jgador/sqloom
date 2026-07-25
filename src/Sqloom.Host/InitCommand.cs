@@ -9,15 +9,13 @@ namespace Sqloom.Host;
 internal sealed class InitCommand
     : ICommandHandler
 {
-    private readonly InitCommandExecutor _executor = new();
-
     public HostCommandKind CommandKind => HostCommandKind.Init;
 
     public Task<int> ExecuteAsync(CommandExecutionContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
 
-        var result = _executor.Execute(
+        var result = InitCommandExecutor.Execute(
             context.Arguments,
             context.CurrentDirectory);
         context.ConsoleWriter.PrintInitResult(result);

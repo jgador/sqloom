@@ -157,10 +157,7 @@ public sealed class TuneCommandTests
 
     private static TuneCommand CreateCommand(ISqlServerDacpacExporter dacpacExporter)
     {
-        return new TuneCommand(
-            new TuneArgumentParser(),
-            new TuneWorkflowRunner(),
-            dacpacExporter);
+        return new TuneCommand(dacpacExporter);
     }
 
     private static string CreateTempDir()

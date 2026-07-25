@@ -13,29 +13,25 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Executes source-discovered replay operations against a Sqloom app harness.
 /// </summary>
-internal sealed class EndpointReplayRunner
+internal static class EndpointReplayRunner
 {
-    private readonly EndpointCatalogLoader _catalogLoader = new();
-    private readonly ReplayPlanBuilder _planBuilder = new();
-    private readonly ReplayRequestResolver _requestResolver = new();
-
     /// <summary>
     /// Discovers, prepares, executes, and records the configured endpoint replay operations.
     /// </summary>
-    public async Task<EndpointReplayRunResult> RunAsync(
+    public static async Task<EndpointReplayRunResult> RunAsync(
         ReplayRunnerOptions options,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(options);
 
-        var discoveredOperations = await _catalogLoader
+        var discoveredOperations = await EndpointCatalogLoader
             .LoadAsync(options.SourceProjectPath, cancellationToken)
             .ConfigureAwait(false);
         return await RunAsync(options, discoveredOperations, cancellationToken)
             .ConfigureAwait(false);
     }
 
-    internal async Task<EndpointReplayRunResult> RunAsync(
+    internal static async Task<EndpointReplayRunResult> RunAsync(
         ReplayRunnerOptions options,
         IReadOnlyList<ReplayOperation> discoveredOperations,
         CancellationToken cancellationToken = default)
@@ -59,7 +55,7 @@ internal sealed class EndpointReplayRunner
                 cancellationToken)
             .ConfigureAwait(false);
 
-        var initialPlan = _planBuilder.BuildInitialPlan(options, discoveredOperations);
+        var initialPlan = ReplayPlanBuilder.BuildInitialPlan(options, discoveredOperations);
         var replayPlanPath = ArtifactLayout.GetReplayPlanPath(options.ReplayArtifactDir);
         await JsonFileWriter
             .WriteAsync(replayPlanPath, initialPlan, cancellationToken)
@@ -172,7 +168,7 @@ internal sealed class EndpointReplayRunner
             .ConfigureAwait(false);
     }
 
-    private async Task ExecuteReplayPlanAsync(
+    private static async Task ExecuteReplayPlanAsync(
         ReplayRunnerOptions options,
         IReplayHost replayHost,
         EndpointReplayPlan initialPlan,
@@ -221,7 +217,7 @@ internal sealed class EndpointReplayRunner
                         replayInputOperation,
                         cancellationToken)
                     .ConfigureAwait(false);
-                var request = _requestResolver.Resolve(
+                var request = ReplayRequestResolver.Resolve(
                     discoveredOperation,
                     replayInputOperation,
                     preparedOperation);
