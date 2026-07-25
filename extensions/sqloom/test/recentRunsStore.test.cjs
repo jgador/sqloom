@@ -28,18 +28,9 @@ function createMemoryMemento() {
 
 test("formats relative times for recent runs", () => {
   const now = Date.parse("2026-07-22T06:00:00.000Z");
-  assert.equal(
-    formatRelativeTime("2026-07-22T05:59:40.000Z", now),
-    "Just now",
-  );
-  assert.equal(
-    formatRelativeTime("2026-07-22T05:30:00.000Z", now),
-    "30m ago",
-  );
-  assert.equal(
-    formatRelativeTime("2026-07-21T06:00:00.000Z", now),
-    "1d ago",
-  );
+  assert.equal(formatRelativeTime("2026-07-22T05:59:40.000Z", now), "Just now");
+  assert.equal(formatRelativeTime("2026-07-22T05:30:00.000Z", now), "30m ago");
+  assert.equal(formatRelativeTime("2026-07-21T06:00:00.000Z", now), "1d ago");
 });
 
 test("records dashboard tune runs in workspace order", async () => {

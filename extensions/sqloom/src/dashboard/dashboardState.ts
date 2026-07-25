@@ -20,9 +20,13 @@ import {
   DashboardStatus,
   DashboardStatusCheck,
 } from "../sharedInterfaces/dashboard";
-import { formatLastTuneRunSummary, toDashboardRecentRun } from "../recentRuns/formatRecentRun";
+import {
+  formatLastTuneRunSummary,
+  toDashboardRecentRun,
+} from "../recentRuns/formatRecentRun";
 import type { TuneRunRecord } from "../recentRuns/recentRunsStore";
 
+/** Builds the initial dashboard view model from workspace settings and recent runs. */
 export async function createDashboardState(
   recentRuns: readonly TuneRunRecord[] = [],
 ): Promise<DashboardState> {
@@ -58,8 +62,7 @@ export async function createDashboardState(
       : "Default missing";
   const cliStatusDetail = `${cliStatus.cliPath}: ${cliStatus.detail}`;
   const modelReady = openAiModel.length > 0;
-  const readOnlyConnectionStringReady =
-    readOnlyConnectionString.length > 0;
+  const readOnlyConnectionStringReady = readOnlyConnectionString.length > 0;
   const setupReady =
     workspaceReady &&
     cliReady &&
@@ -162,7 +165,9 @@ export async function createDashboardState(
       id: "harnessPath",
       label: "Harness",
       value: harnessReady ? "Default harness" : "Not detected",
-      detail: harnessReady ? harnessPath : "Default harness path was not found.",
+      detail: harnessReady
+        ? harnessPath
+        : "Default harness path was not found.",
       status: harnessReady ? "ready" : "warning",
     },
     {
@@ -269,12 +274,17 @@ export async function createDashboardState(
     {
       id: "harness",
       label: harnessReady ? "Harness detected" : "Harness not detected",
-      detail: harnessReady ? harnessPath : "Default harness path was not found.",
+      detail: harnessReady
+        ? harnessPath
+        : "Default harness path was not found.",
       status: harnessReady ? "ready" : "warning",
     },
     {
       id: "preflight",
-      label: warningCheckCount === 0 ? "Preflight checks passed" : "Preflight checks need review",
+      label:
+        warningCheckCount === 0
+          ? "Preflight checks passed"
+          : "Preflight checks need review",
       detail: `${readyCheckCount} of ${readinessChecks.length} checks passed`,
       status: warningCheckCount === 0 ? "ready" : "warning",
     },
@@ -291,7 +301,9 @@ export async function createDashboardState(
     {
       id: "harness",
       label: harnessReady ? "Harness detected" : "Harness not detected",
-      detail: harnessReady ? harnessPath : "Default harness path was not found.",
+      detail: harnessReady
+        ? harnessPath
+        : "Default harness path was not found.",
       status: harnessReady ? "ready" : "warning",
     },
     {
@@ -367,7 +379,9 @@ export async function createDashboardState(
         ? "Prefilled for the test app. Masked and never saved."
         : "Required for tune runs. Masked and never saved.",
       status: readOnlyConnectionStringReady ? "ready" : "warning",
-      statusLabel: readOnlyConnectionStringReady ? "Sample default" : "Required",
+      statusLabel: readOnlyConnectionStringReady
+        ? "Sample default"
+        : "Required",
       required: true,
     },
   ];
@@ -380,9 +394,6 @@ export async function createDashboardState(
   return {
     title: "Sqloom Tune",
     subtitle: "Tune SQL for performance with confidence.",
-    runNote: harnessReady
-      ? "Uses the detected default harness"
-      : "Default harness required to run",
     readinessLabel,
     stages: [
       {

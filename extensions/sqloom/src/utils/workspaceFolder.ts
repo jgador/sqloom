@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 
-export function getPrimaryWorkspaceFolder(): vscode.WorkspaceFolder | undefined {
+export function getPrimaryWorkspaceFolder():
+  vscode.WorkspaceFolder | undefined {
   return vscode.workspace.workspaceFolders?.[0];
 }
 
@@ -36,5 +37,6 @@ export function resolveWorkspaceFolder(
     return match;
   }
 
+  // Recent runs from older extension builds may not have stored a workspace URI.
   return getPrimaryWorkspaceFolder();
 }

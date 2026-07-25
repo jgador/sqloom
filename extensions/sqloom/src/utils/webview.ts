@@ -9,6 +9,7 @@ export function getNonce(): string {
   return nonce;
 }
 
+/** Escapes `<` so embedded JSON cannot break out of inline webview scripts. */
 export function serializeForScript(value: unknown): string {
   return JSON.stringify(value).replace(/</g, "\\u003c");
 }

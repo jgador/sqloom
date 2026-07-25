@@ -7,6 +7,7 @@ import {
   openDashboard,
 } from "./dashboardWebviewController";
 
+/** Activity Bar webview that launches the full tune dashboard panel. */
 export function registerDashboardLauncher(
   context: vscode.ExtensionContext,
   callbacks: DashboardCallbacks,

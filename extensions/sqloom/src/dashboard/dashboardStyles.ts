@@ -96,7 +96,6 @@ export const dashboardStyles = `
 
         .brand p,
         .panel p,
-        .run-note,
         .field-note,
         .summary-detail,
         .artifact-tools,
@@ -114,13 +113,6 @@ export const dashboardStyles = `
         .status-footer,
         .empty-state p {
             margin: 4px 0 0;
-        }
-
-        .top-actions {
-            display: grid;
-            justify-items: stretch;
-            gap: 7px;
-            min-width: 180px;
         }
 
         .primary-action,
@@ -217,11 +209,6 @@ export const dashboardStyles = `
             padding: 0;
             color: var(--vscode-textLink-foreground);
             background: transparent;
-        }
-
-        .run-note {
-            text-align: center;
-            font-size: 12px;
         }
 
         .stepper {
@@ -1003,10 +990,6 @@ export const dashboardStyles = `
             .dashboard-grid,
             .topbar {
                 grid-template-columns: 1fr;
-            }
-
-            .top-actions {
-                justify-items: start;
             }
 
             .stepper {

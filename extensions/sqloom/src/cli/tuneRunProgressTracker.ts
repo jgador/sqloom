@@ -12,6 +12,7 @@ import {
 
 const pollIntervalMs = 1000;
 
+/** Derives dashboard stage progress from tune artifacts as the CLI writes them. */
 export class TuneRunProgressTracker implements vscode.Disposable {
   private readonly stateMachine = new TuneRunProgressStateMachine();
   private readonly disposables: vscode.Disposable[] = [];
@@ -24,7 +25,8 @@ export class TuneRunProgressTracker implements vscode.Disposable {
     artifactDirRelative: string,
     private readonly onProgress: (event: DashboardTuneProgressEvent) => void,
   ) {
-    this.artifactDirRelative = normalizeArtifactRelativePath(artifactDirRelative);
+    this.artifactDirRelative =
+      normalizeArtifactRelativePath(artifactDirRelative);
     this.workspaceRoot = workspaceFolder.uri.fsPath;
   }
 
@@ -38,6 +40,8 @@ export class TuneRunProgressTracker implements vscode.Disposable {
     watcher.onDidCreate((uri) => void this.handleUri(uri));
     watcher.onDidChange((uri) => void this.handleUri(uri));
     this.disposables.push(watcher);
+
+    // File watchers can miss rapid writes; polling keeps stage transitions responsive.
     this.pollTimer = setInterval(() => {
       void this.scanExistingArtifacts();
     }, pollIntervalMs);

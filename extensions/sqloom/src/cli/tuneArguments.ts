@@ -9,6 +9,7 @@ export type DashboardTuneArgumentsInput = {
   artifactDir: string;
 };
 
+/** Builds argv for dashboard-initiated tune runs, including an isolated artifact directory. */
 export function buildDashboardTuneArguments(
   input: DashboardTuneArgumentsInput,
 ): string[] {

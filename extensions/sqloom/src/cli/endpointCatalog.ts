@@ -39,6 +39,7 @@ export type EndpointCatalogLoadResult =
       stderr: string;
     };
 
+// The CLI writes endpoint JSON to a caller-owned temp file so stdout stays clean for logging.
 export async function loadEndpointCatalog(
   input: EndpointCatalogInput,
   runProcess: EndpointProcessRunner = runEndpointProcess,

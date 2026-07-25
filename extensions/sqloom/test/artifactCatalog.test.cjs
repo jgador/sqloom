@@ -5,7 +5,9 @@ const {
   formatFileSize,
   mapScannedFilesToArtifacts,
 } = require("../dist/artifacts/artifactCatalogCore.js");
-const { getArtifactMetadata } = require("../dist/artifacts/artifactMetadata.js");
+const {
+  getArtifactMetadata,
+} = require("../dist/artifacts/artifactMetadata.js");
 
 test("maps known tune artifacts with stable ordering", () => {
   const artifacts = mapScannedFilesToArtifacts(
@@ -39,7 +41,10 @@ test("maps known tune artifacts with stable ordering", () => {
   assert.equal(artifacts[0]?.name, "tune-summary.json");
   assert.equal(artifacts[1]?.name, "sql-tuning-proposal.sql");
   assert.equal(artifacts[2]?.name, "replay-summary.json");
-  assert.equal(artifacts[0]?.relativePath, "artifacts/sqloom/tune/dashboard-test/tune-summary.json");
+  assert.equal(
+    artifacts[0]?.relativePath,
+    "artifacts/sqloom/tune/dashboard-test/tune-summary.json",
+  );
   assert.equal(artifacts[0]?.size, "1 KB");
   assert.equal(artifacts[0]?.updated, "2m ago");
 });

@@ -19,6 +19,7 @@ const emptyPanelDefaults = {
   artifacts: [],
 } satisfies DashboardArtifactsPanelState;
 
+/** Scans a tune run directory and maps files into dashboard artifact rows. */
 export async function loadArtifactsPanelForRun(
   workspaceFolder: vscode.WorkspaceFolder,
   run: Pick<TuneRunRecord, "id" | "target" | "artifactDir"> | undefined,

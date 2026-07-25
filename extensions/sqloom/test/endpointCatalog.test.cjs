@@ -58,9 +58,8 @@ test("keeps the sample connection aligned with the test app", async () => {
 });
 
 test("initializes the dashboard connection for the detected sample app", async () => {
-  const dashboardStatePath = require.resolve(
-    "../dist/dashboard/dashboardState.js",
-  );
+  const dashboardStatePath =
+    require.resolve("../dist/dashboard/dashboardState.js");
   const originalLoad = Module._load;
 
   try {
@@ -269,7 +268,6 @@ test("renders syntactically valid dashboard client script", async () => {
   const state = {
     title: "Sqloom Tune",
     subtitle: "Test dashboard",
-    runNote: "Test run",
     readinessLabel: "Ready",
     stages: [],
     setupSummaryItems: [],

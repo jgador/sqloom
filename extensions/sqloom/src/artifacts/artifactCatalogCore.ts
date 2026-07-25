@@ -2,6 +2,7 @@ import { formatRelativeTime } from "../recentRuns/formatRecentRun";
 import type { DashboardArtifact } from "../sharedInterfaces/dashboard";
 import { getArtifactMetadata, normalizeArtifactCatalogPath } from "./artifactMetadata";
 
+/** Workspace-relative artifact file discovered under a tune run directory. */
 export type ScannedArtifactFile = {
   artifactRelativePath: string;
   workspaceRelativePath: string;

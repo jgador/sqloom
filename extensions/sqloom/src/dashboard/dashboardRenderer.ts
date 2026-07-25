@@ -14,6 +14,7 @@ import { escapeHtml, getNonce, serializeForScript } from "../utils/webview";
 import { createDashboardState } from "./dashboardState";
 import { dashboardStyles } from "./dashboardStyles";
 
+/** Renders the server-side HTML/JS shell for the tune dashboard webview. */
 export async function renderDashboardHtml(
   context: vscode.ExtensionContext,
   webview: vscode.Webview,
@@ -52,10 +53,6 @@ ${dashboardStyles}
                     <h1>${escapeHtml(state.title)}</h1>
                     <p>${escapeHtml(state.subtitle)}</p>
                 </div>
-            </div>
-            <div class="top-actions">
-                <button class="primary-action" type="button" data-command="runTune" disabled>${renderIcon("play")}<span>Run tune</span></button>
-                <div class="run-note">${escapeHtml(state.runNote)}</div>
             </div>
         </header>
 

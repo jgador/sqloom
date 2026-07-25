@@ -2,6 +2,8 @@ import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 
 const defaultCliPath = "sqloom";
 const defaultProbeTimeoutMs = 4000;
+
+// Collapse concurrent availability probes for the same configured CLI path.
 const inFlightChecks = new Map<string, Promise<CliAvailabilityStatus>>();
 
 export type CliAvailabilityStatus = {
@@ -25,21 +27,8 @@ export async function checkCliAvailability(
 
   const check = new Promise<CliAvailabilityStatus>((resolve) => {
     let settled = false;
-    let timeout: ReturnType<typeof setTimeout> | undefined;
     const stdout: Buffer[] = [];
     const stderr: Buffer[] = [];
-
-    const complete = (status: CliAvailabilityStatus): void => {
-      if (settled) {
-        return;
-      }
-
-      settled = true;
-      if (timeout) {
-        clearTimeout(timeout);
-      }
-      resolve(status);
-    };
 
     let child: ChildProcessWithoutNullStreams;
     try {
@@ -49,7 +38,7 @@ export async function checkCliAvailability(
         windowsHide: true,
       });
     } catch (error) {
-      complete({
+      resolve({
         cliPath: effectiveCliPath,
         ready: false,
         detail: launchFailureDetail(error),
@@ -57,7 +46,7 @@ export async function checkCliAvailability(
       return;
     }
 
-    timeout = setTimeout(() => {
+    const timeout = setTimeout(() => {
       child.kill();
       complete({
         cliPath: effectiveCliPath,
@@ -66,6 +55,16 @@ export async function checkCliAvailability(
           "Timed out checking the Sqloom CLI. Install the CLI or update sqloom.cli.path.",
       });
     }, timeoutMs);
+
+    const complete = (status: CliAvailabilityStatus): void => {
+      if (settled) {
+        return;
+      }
+
+      settled = true;
+      clearTimeout(timeout);
+      resolve(status);
+    };
 
     child.stdout.on("data", (chunk: Buffer) => {
       stdout.push(chunk);

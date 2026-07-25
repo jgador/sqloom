@@ -1,5 +1,6 @@
 import { ReplayEndpoint } from "../sharedInterfaces/dashboard";
 
+/** Tracks the latest endpoint catalog so tune can only run against a loaded selection. */
 export class EndpointCatalogSession {
   private generation = 0;
   private context: string | undefined;

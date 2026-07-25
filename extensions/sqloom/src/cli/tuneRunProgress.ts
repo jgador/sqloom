@@ -18,6 +18,7 @@ export const STAGE_COMPLETION_ARTIFACTS: Record<DashboardStageId, string> = {
   advise: "replay/sql-tuning-proposal.sql",
 };
 
+/** Isolated artifact root per dashboard tune run. */
 export function getDashboardArtifactDir(runId: string): string {
   return `artifacts/sqloom/tune/dashboard-${runId}`;
 }
@@ -55,7 +56,10 @@ export function getStageForArtifactRelativePath(
   const normalized = normalizeArtifactRelativePath(relativePath);
   for (const stage of TUNE_STAGE_ORDER) {
     const artifactPath = STAGE_COMPLETION_ARTIFACTS[stage];
-    if (normalized === artifactPath || normalized.endsWith(`/${artifactPath}`)) {
+    if (
+      normalized === artifactPath ||
+      normalized.endsWith(`/${artifactPath}`)
+    ) {
       return stage;
     }
   }

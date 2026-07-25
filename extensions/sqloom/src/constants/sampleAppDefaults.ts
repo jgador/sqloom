@@ -12,6 +12,7 @@ export function defaultReadOnlyConnectionStringForHarness(
     .replace(/^\.[\\/]/, "")
     .replaceAll("\\", "/");
 
+  // Prefill only for the repo sample harness; never invent connection strings elsewhere.
   return normalizedHarnessPath === sampleAppHarnessPath
     ? sampleAppReadOnlyConnectionString
     : "";

@@ -28,6 +28,7 @@ export type TuneRunRecordInput = Omit<
   finishedAtUtc?: string;
 };
 
+/** Persists recent dashboard tune runs in workspace state for the artifacts panel. */
 export class RecentRunsStore {
   constructor(private readonly workspaceState: vscode.Memento) {}
 
@@ -59,7 +60,10 @@ export class RecentRunsStore {
       finishedAtUtc: input.finishedAtUtc ?? new Date().toISOString(),
       source: "dashboard",
     };
-    const nextRuns = [record, ...this.list().filter((item) => item.id !== record.id)]
+    const nextRuns = [
+      record,
+      ...this.list().filter((item) => item.id !== record.id),
+    ]
       .sort(
         (left, right) =>
           Date.parse(right.finishedAtUtc) - Date.parse(left.finishedAtUtc),
