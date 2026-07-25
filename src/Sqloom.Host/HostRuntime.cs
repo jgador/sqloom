@@ -21,15 +21,14 @@ public static class HostRuntime
     /// <summary>
     /// Runs Sqloom from an explicit working directory and resolves the application harness from the command line.
     /// </summary>
-    public static async Task<int> RunAsync(
+    public static Task<int> RunAsync(
         string[] args,
         string currentDirectory)
     {
-        return await RunCoreAsync(
-                null,
-                args,
-                currentDirectory)
-            .ConfigureAwait(false);
+        return RunCoreAsync(
+            null,
+            args,
+            currentDirectory);
     }
 
     /// <summary>
@@ -48,18 +47,17 @@ public static class HostRuntime
     /// <summary>
     /// Runs Sqloom against a caller-supplied application harness from an explicit working directory.
     /// </summary>
-    public static async Task<int> RunAsync(
+    public static Task<int> RunAsync(
         ISqloomApplication application,
         string[] args,
         string currentDirectory)
     {
         ArgumentNullException.ThrowIfNull(application);
 
-        return await RunCoreAsync(
-                application,
-                args,
-                currentDirectory)
-            .ConfigureAwait(false);
+        return RunCoreAsync(
+            application,
+            args,
+            currentDirectory);
     }
 
     private static async Task<int> RunCoreAsync(

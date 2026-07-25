@@ -58,7 +58,7 @@ internal sealed class AppResolver
     {
         // Gather public concrete ISqloomApplication implementations across all resolved assemblies,
         // then require the target to identify exactly one harness application.
-        List<SqloomApplicationTypeSelection> appTypes = [];
+        List<(Type Type, string AssemblyPath)> appTypes = [];
         foreach (var assemblySelection in assemblySelections)
         {
             var assembly = LoadAppAssembly(assemblySelection);
@@ -79,7 +79,7 @@ internal sealed class AppResolver
         return CreateApplication(selectedType);
     }
 
-    private static ISqloomApplication CreateApplication(SqloomApplicationTypeSelection appType)
+    private static ISqloomApplication CreateApplication((Type Type, string AssemblyPath) appType)
     {
         try
         {
@@ -214,7 +214,7 @@ internal sealed class AppResolver
                     StringComparison.OrdinalIgnoreCase));
     }
 
-    private static IReadOnlyList<SqloomApplicationTypeSelection> GetSqloomApplicationTypes(
+    private static IReadOnlyList<(Type Type, string AssemblyPath)> GetSqloomApplicationTypes(
         Assembly assembly,
         string assemblyPath)
     {
@@ -224,9 +224,9 @@ internal sealed class AppResolver
                 && !type.IsInterface
                 && (type.IsPublic || type.IsNestedPublic)
                 && typeof(ISqloomApplication).IsAssignableFrom(type))
-            .Select(type => new SqloomApplicationTypeSelection(
-                type,
-                assemblyPath))
+            .Select(type => (
+                Type: type,
+                AssemblyPath: assemblyPath))
             .ToArray();
     }
 
@@ -272,10 +272,6 @@ internal sealed class AppResolver
         string MainAssemblyPath,
         string AssemblyDirectory,
         AssemblyDependencyResolver DependencyResolver);
-
-    private sealed record SqloomApplicationTypeSelection(
-        Type Type,
-        string AssemblyPath);
 
     private sealed class FileHarnessLoadContext : AssemblyLoadContext
     {

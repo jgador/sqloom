@@ -10,8 +10,8 @@ public static class Program
     /// <summary>
     /// Runs the packaged Sqloom command-line tool and returns its process exit code.
     /// </summary>
-    public static async Task<int> Main(string[] args)
+    public static Task<int> Main(string[] args)
     {
-        return await HostRuntime.RunAsync(args).ConfigureAwait(false);
+        return HostRuntime.RunAsync(args);
     }
 }

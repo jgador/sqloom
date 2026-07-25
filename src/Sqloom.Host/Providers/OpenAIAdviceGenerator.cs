@@ -37,24 +37,13 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
 
     internal OpenAIAdviceGenerator(
         OpenAIAdviceOptions options,
-        HttpClient httpClient)
-        : this(
-            options,
-            httpClient,
-            ownsHttpClient: false,
-            HostDebugWriter.Disabled)
-    {
-    }
-
-    internal OpenAIAdviceGenerator(
-        OpenAIAdviceOptions options,
         HttpClient httpClient,
-        HostDebugWriter debugWriter)
+        HostDebugWriter? debugWriter = null)
         : this(
             options,
             httpClient,
             ownsHttpClient: false,
-            debugWriter)
+            debugWriter ?? HostDebugWriter.Disabled)
     {
     }
 

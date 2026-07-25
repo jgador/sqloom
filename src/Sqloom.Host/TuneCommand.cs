@@ -20,22 +20,14 @@ internal sealed class TuneCommand
     private readonly ISqlServerDacpacExporter _dacpacExporter;
     private readonly EndpointSourceProjectResolver _sourceProjectResolver = new();
 
-    public TuneCommand()
-        : this(
-            new TuneArgumentParser(),
-            new TuneWorkflowRunner(),
-            new SqlServerDacpacExporter())
+    public TuneCommand(
+        TuneArgumentParser? argumentParser = null,
+        TuneWorkflowRunner? workflowRunner = null,
+        ISqlServerDacpacExporter? dacpacExporter = null)
     {
-    }
-
-    internal TuneCommand(
-        TuneArgumentParser argumentParser,
-        TuneWorkflowRunner workflowRunner,
-        ISqlServerDacpacExporter dacpacExporter)
-    {
-        _argumentParser = argumentParser;
-        _workflowRunner = workflowRunner;
-        _dacpacExporter = dacpacExporter;
+        _argumentParser = argumentParser ?? new TuneArgumentParser();
+        _workflowRunner = workflowRunner ?? new TuneWorkflowRunner();
+        _dacpacExporter = dacpacExporter ?? new SqlServerDacpacExporter();
     }
 
     public HostCommandKind CommandKind => HostCommandKind.Tune;

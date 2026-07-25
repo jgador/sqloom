@@ -25,7 +25,7 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
             @QuerySqlText,
             @RequestedParamType) AS resolved;
         """;
-    private static readonly RequestedParamType[] _requestedParamTypes =
+    private static readonly (byte? Value, string Description)[] _requestedParamTypes =
     [
         new(null, "Default"),
         new(0, "None"),
@@ -398,10 +398,4 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
         string QueryTextShape,
         string QuerySqlText);
 
-    /// <summary>
-    /// Represents one requested parameterization mode accepted by SQL Server handle resolution.
-    /// </summary>
-    private sealed record RequestedParamType(
-        byte? Value,
-        string Description);
 }

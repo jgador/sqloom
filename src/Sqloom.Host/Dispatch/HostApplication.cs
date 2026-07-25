@@ -19,51 +19,29 @@ internal sealed class HostApplication
 
     public HostApplication(
         AppResolver appResolver,
-        HostConsoleWriter consoleWriter)
-        : this(
-            appResolver,
-            null,
-            consoleWriter,
-            CreateDefaultRegistry())
-    {
-    }
-
-    internal HostApplication(
-        AppResolver appResolver,
         HostConsoleWriter consoleWriter,
-        CommandRegistry commandRegistry)
+        CommandRegistry? commandRegistry = null)
         : this(
             appResolver,
             null,
             consoleWriter,
-            commandRegistry)
+            commandRegistry ?? CreateDefaultRegistry())
     {
     }
 
     public HostApplication(
         ISqloomApplication application,
-        HostConsoleWriter consoleWriter)
-        : this(
-            new AppResolver(),
-            application,
-            consoleWriter,
-            CreateDefaultRegistry())
-    {
-    }
-
-    internal HostApplication(
-        ISqloomApplication application,
         HostConsoleWriter consoleWriter,
-        CommandRegistry commandRegistry)
+        CommandRegistry? commandRegistry = null)
         : this(
             new AppResolver(),
             application,
             consoleWriter,
-            commandRegistry)
+            commandRegistry ?? CreateDefaultRegistry())
     {
     }
 
-    internal HostApplication(
+    private HostApplication(
         AppResolver appResolver,
         ISqloomApplication? boundApplication,
         HostConsoleWriter consoleWriter,
@@ -117,7 +95,7 @@ internal sealed class HostApplication
         }
     }
 
-    public async Task<int> RunAsync(
+    public Task<int> RunAsync(
         string[] args,
         string currentDirectory,
         CancellationToken cancellationToken = default)
@@ -127,7 +105,7 @@ internal sealed class HostApplication
             ApplicationArguments = args,
         };
 
-        return await RunAsync(startupOptions, currentDirectory, cancellationToken).ConfigureAwait(false);
+        return RunAsync(startupOptions, currentDirectory, cancellationToken);
     }
 
     internal static IReadOnlyList<string> GetProjectNames(ISqloomApplication? application)

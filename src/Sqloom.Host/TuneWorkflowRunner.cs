@@ -14,31 +14,10 @@ namespace Sqloom.Host;
 /// </summary>
 internal sealed class TuneWorkflowRunner
 {
-    private readonly AdviceCommand _adviceCommand;
-    private readonly CorrelateCommand _correlateCommand;
-    private readonly ObserveCommand _observeCommand;
-    private readonly ReplayCommand _replayCommand;
-
-    public TuneWorkflowRunner()
-        : this(
-            new ObserveCommand(),
-            new ReplayCommand(),
-            new CorrelateCommand(),
-            new AdviceCommand())
-    {
-    }
-
-    internal TuneWorkflowRunner(
-        ObserveCommand observeCommand,
-        ReplayCommand replayCommand,
-        CorrelateCommand correlateCommand,
-        AdviceCommand adviceCommand)
-    {
-        _observeCommand = observeCommand;
-        _replayCommand = replayCommand;
-        _correlateCommand = correlateCommand;
-        _adviceCommand = adviceCommand;
-    }
+    private readonly AdviceCommand _adviceCommand = new();
+    private readonly CorrelateCommand _correlateCommand = new();
+    private readonly ObserveCommand _observeCommand = new();
+    private readonly ReplayCommand _replayCommand = new();
 
     public async Task<(TuneWorkflowReport Report, string SummaryOutputPath, int ExitCode)> RunAsync(
         TuneArguments arguments,

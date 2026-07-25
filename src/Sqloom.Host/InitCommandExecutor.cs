@@ -21,18 +21,6 @@ internal sealed class InitCommandExecutor
         new("copilot", ".github/skills/sqloom"),
     ];
 
-    private readonly Assembly _assembly;
-
-    public InitCommandExecutor()
-        : this(typeof(InitCommandExecutor).Assembly)
-    {
-    }
-
-    internal InitCommandExecutor(Assembly assembly)
-    {
-        _assembly = assembly ?? throw new ArgumentNullException(nameof(assembly));
-    }
-
     public InitResult Execute(
         string[] args,
         string currentDirectory)
@@ -49,7 +37,7 @@ internal sealed class InitCommandExecutor
 
         var options = Parse(args);
         var targets = ResolveTargets(options.AgentSelection);
-        var assets = LoadAssets(_assembly);
+        var assets = LoadAssets(typeof(InitCommandExecutor).Assembly);
         var files = new List<InitFileResult>(targets.Count * assets.Count);
 
         foreach (var target in targets)

@@ -21,24 +21,14 @@ internal sealed class AdviceCommand
     private readonly ISqlServerDacpacSchemaExtractor _schemaExtractor;
     private readonly ISqlServerDacpacExporter _dacpacExporter;
 
-    public AdviceCommand()
-        : this(null, new SqlServerDacpacSchemaExtractor(), new SqlServerDacpacExporter())
-    {
-    }
-
-    internal AdviceCommand(Func<OpenAIAdviceOptions, IAdviceReportGenerator> generatorFactory)
-        : this(generatorFactory, new SqlServerDacpacSchemaExtractor(), new SqlServerDacpacExporter())
-    {
-    }
-
-    internal AdviceCommand(
-        Func<OpenAIAdviceOptions, IAdviceReportGenerator>? generatorFactory,
-        ISqlServerDacpacSchemaExtractor schemaExtractor,
-        ISqlServerDacpacExporter dacpacExporter)
+    public AdviceCommand(
+        Func<OpenAIAdviceOptions, IAdviceReportGenerator>? generatorFactory = null,
+        ISqlServerDacpacSchemaExtractor? schemaExtractor = null,
+        ISqlServerDacpacExporter? dacpacExporter = null)
     {
         _generatorFactory = generatorFactory;
-        _schemaExtractor = schemaExtractor ?? throw new ArgumentNullException(nameof(schemaExtractor));
-        _dacpacExporter = dacpacExporter ?? throw new ArgumentNullException(nameof(dacpacExporter));
+        _schemaExtractor = schemaExtractor ?? new SqlServerDacpacSchemaExtractor();
+        _dacpacExporter = dacpacExporter ?? new SqlServerDacpacExporter();
     }
 
     public HostCommandKind CommandKind => HostCommandKind.Advise;
