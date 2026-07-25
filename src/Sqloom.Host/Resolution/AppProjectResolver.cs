@@ -375,7 +375,7 @@ internal sealed class AppProjectResolver
         }
     }
 
-    private static async Task<DotNetCommandResult> ExecuteDotNetCommandAsync(
+    private static async Task<(int ExitCode, string StandardOutput, string StandardError)> ExecuteDotNetCommandAsync(
         string dotNetCommand,
         string workingDirectory,
         CancellationToken cancellationToken,
@@ -435,7 +435,7 @@ internal sealed class AppProjectResolver
         var standardOutput = await standardOutputTask.ConfigureAwait(false);
         var standardError = await standardErrorTask.ConfigureAwait(false);
 
-        return new DotNetCommandResult(
+        return (
             process.ExitCode,
             standardOutput,
             standardError);
@@ -460,7 +460,7 @@ internal sealed class AppProjectResolver
 
     private static string FormatCommandOutput(
         string dotNetCommand,
-        DotNetCommandResult result)
+        (int ExitCode, string StandardOutput, string StandardError) result)
     {
         var output = string.Join(
             Environment.NewLine,
@@ -575,13 +575,6 @@ internal sealed class AppProjectResolver
         }
     }
 
-    /// <summary>
-    /// Captures dotnet process output so build and TargetPath failures can preserve stderr context.
-    /// </summary>
-    private sealed record DotNetCommandResult(
-        int ExitCode,
-        string StandardOutput,
-        string StandardError);
 }
 
 /// <summary>

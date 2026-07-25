@@ -288,7 +288,7 @@ internal sealed class AppResolver
         ];
         private readonly AssemblyDependencyResolver _dependencyResolver;
 
-        public FileHarnessLoadContext(string mainAssemblyPath)
+        internal FileHarnessLoadContext(string mainAssemblyPath)
             : base(
                 $"Sqloom.FileHarness.{Guid.NewGuid():N}",
                 isCollectible: false)

@@ -27,9 +27,9 @@ public sealed class AgentFrameworkReplayDataGeneratorTests
     }
 
     [Fact]
-    public void AgentReplayPreparedData_ConvertsValueListsToReplayPreparedData()
+    public void AgentReplayGeneratedData_ConvertsValueListsToReplayPreparedData()
     {
-        AgentFrameworkReplayDataGenerator.AgentReplayPreparedData agentData = new()
+        AgentFrameworkReplayDataGenerator.AgentReplayGeneratedData agentData = new()
         {
             Persona = "customer",
             RequestBodyJson = """{"name":"probe"}""",
@@ -63,7 +63,7 @@ public sealed class AgentFrameworkReplayDataGeneratorTests
     public async Task GenerateAsync_WhenResolvedOperationNeedsNoData_ReturnsNotNeededWithoutCallingAgent()
     {
         FakeAgentReplayDataClient agentClient = new(
-            new AgentFrameworkReplayDataGenerator.AgentReplayPreparedData());
+            new AgentFrameworkReplayDataGenerator.AgentReplayGeneratedData());
         AgentFrameworkReplayDataGenerator generator = new(
             CreateOptions(),
             agentClient);
@@ -85,7 +85,7 @@ public sealed class AgentFrameworkReplayDataGeneratorTests
     public async Task GenerateAsync_WhenValuesAreMissing_UsesAgentValues()
     {
         FakeAgentReplayDataClient agentClient = new(
-            new AgentFrameworkReplayDataGenerator.AgentReplayPreparedData
+            new AgentFrameworkReplayDataGenerator.AgentReplayGeneratedData
             {
                 QueryValues =
                 [
@@ -136,7 +136,7 @@ public sealed class AgentFrameworkReplayDataGeneratorTests
     public async Task GenerateAsync_WhenAgentMissesRequiredValue_Throws()
     {
         FakeAgentReplayDataClient agentClient = new(
-            new AgentFrameworkReplayDataGenerator.AgentReplayPreparedData
+            new AgentFrameworkReplayDataGenerator.AgentReplayGeneratedData
             {
                 QueryValues =
                 [
@@ -157,7 +157,7 @@ public sealed class AgentFrameworkReplayDataGeneratorTests
     public async Task GenerateAsync_WhenAgentReturnsInvalidPrimitiveValue_Throws()
     {
         FakeAgentReplayDataClient agentClient = new(
-            new AgentFrameworkReplayDataGenerator.AgentReplayPreparedData
+            new AgentFrameworkReplayDataGenerator.AgentReplayGeneratedData
             {
                 QueryValues =
                 [
@@ -230,11 +230,11 @@ public sealed class AgentFrameworkReplayDataGeneratorTests
     private sealed class FakeAgentReplayDataClient
         : AgentFrameworkReplayDataGenerator.IAgentReplayDataClient
     {
-        private readonly AgentFrameworkReplayDataGenerator.AgentReplayPreparedData? _response;
+        private readonly AgentFrameworkReplayDataGenerator.AgentReplayGeneratedData? _response;
         private readonly Exception? _exception;
 
         public FakeAgentReplayDataClient(
-            AgentFrameworkReplayDataGenerator.AgentReplayPreparedData response)
+            AgentFrameworkReplayDataGenerator.AgentReplayGeneratedData response)
         {
             _response = response;
         }
@@ -248,7 +248,7 @@ public sealed class AgentFrameworkReplayDataGeneratorTests
 
         public string? Prompt { get; private set; }
 
-        public Task<AgentFrameworkReplayDataGenerator.AgentReplayPreparedData> RunAsync(
+        public Task<AgentFrameworkReplayDataGenerator.AgentReplayGeneratedData> RunAsync(
             string prompt,
             CancellationToken cancellationToken = default)
         {

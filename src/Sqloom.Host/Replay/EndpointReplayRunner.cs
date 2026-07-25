@@ -290,10 +290,10 @@ internal sealed class EndpointReplayRunner
             return resolvedOperation;
         }
 
-        ReplayDataGenerationOperation preparedData;
+        ReplayDataGenerationOperation generationOperation;
         try
         {
-            preparedData = await options.ReplayDataGenerator
+            generationOperation = await options.ReplayDataGenerator
                 .GenerateAsync(
                     new ReplayDataGenerationContext
                     {
@@ -326,15 +326,15 @@ internal sealed class EndpointReplayRunner
             throw;
         }
 
-        replayDataGenerationOperations.Add(preparedData);
-        return ApplyPreparedData(resolvedOperation, preparedData.PreparedData);
+        replayDataGenerationOperations.Add(generationOperation);
+        return ApplyPreparedData(resolvedOperation, generationOperation.PreparedData);
     }
 
     private static ResolvedReplayOperation ApplyPreparedData(
         ResolvedReplayOperation resolvedOperation,
         ReplayPreparedData preparedData)
     {
-        // Agent-prepared data is backfill only; explicit resolved operation values always win.
+        // Agent-generated data is backfill only; explicit resolved operation values always win.
         return new ResolvedReplayOperation
         {
             OperationKey = resolvedOperation.OperationKey,

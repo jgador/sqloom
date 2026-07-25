@@ -23,7 +23,7 @@ namespace Sqloom.Host.Replay;
 internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
 {
     private const string Instructions =
-        "You prepare ASP.NET Core endpoint replay data for Sqloom. " +
+        "You generate ASP.NET Core endpoint replay data for Sqloom. " +
         "Use the supplied endpoint operation and missing input list to choose replay values. " +
         "Return only type-valid values for missing path, query, header, and JSON body inputs. " +
         "Return pathValues, queryValues, and headerValues as arrays of name=value strings. " +
@@ -70,7 +70,7 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
             };
         }
 
-        AgentReplayPreparedData response;
+        AgentReplayGeneratedData response;
         try
         {
             var prompt = BuildPrompt(context, missingInputs);
@@ -85,7 +85,7 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
                 exception);
         }
 
-        var validation = ValidatePreparedData(response, missingInputs);
+        var validation = ValidateGeneratedData(response, missingInputs);
         return new ReplayDataGenerationOperation
         {
             OperationKey = context.Operation.StableOperationKey,
@@ -146,8 +146,8 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
         return JsonSerializer.Serialize(payload, JsonSerializerOptions.Web);
     }
 
-    private static PreparedDataValidationResult ValidatePreparedData(
-        AgentReplayPreparedData agentData,
+    private static (ReplayPreparedData PreparedData, IReadOnlyList<string> Warnings) ValidateGeneratedData(
+        AgentReplayGeneratedData agentData,
         MissingReplayInputs missingInputs)
     {
         var rawPreparedData = agentData.ToReplayPreparedData();
@@ -172,7 +172,7 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
             rawPreparedData.RequestBodyJson,
             warnings);
 
-        return new PreparedDataValidationResult(
+        return (
             new ReplayPreparedData
             {
                 Persona = rawPreparedData.Persona,
@@ -314,12 +314,12 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
 
     internal interface IAgentReplayDataClient
     {
-        Task<AgentReplayPreparedData> RunAsync(
+        Task<AgentReplayGeneratedData> RunAsync(
             string prompt,
             CancellationToken cancellationToken = default);
     }
 
-    internal sealed class AgentReplayPreparedData
+    internal sealed class AgentReplayGeneratedData
     {
         [JsonPropertyName("persona")]
         public string? Persona { get; init; }
@@ -336,7 +336,7 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
         [JsonPropertyName("headerValues")]
         public List<string> HeaderValues { get; init; } = [];
 
-        public ReplayPreparedData ToReplayPreparedData()
+        internal ReplayPreparedData ToReplayPreparedData()
         {
             return new ReplayPreparedData
             {
@@ -376,18 +376,18 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
     {
         private readonly OpenAIAdviceOptions _options;
 
-        public OpenAIAgentReplayDataClient(OpenAIAdviceOptions options)
+        internal OpenAIAgentReplayDataClient(OpenAIAdviceOptions options)
         {
             _options = options;
         }
 
-        public async Task<AgentReplayPreparedData> RunAsync(
+        public async Task<AgentReplayGeneratedData> RunAsync(
             string prompt,
             CancellationToken cancellationToken = default)
         {
             var agent = CreateAgent();
             var response = await agent
-                .RunAsync<AgentReplayPreparedData>(
+                .RunAsync<AgentReplayGeneratedData>(
                     prompt,
                     serializerOptions: JsonSerializerOptions.Web,
                     cancellationToken: cancellationToken)
@@ -439,7 +439,7 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
             || HeaderParameters.Count > 0
             || RequestBodyRequired;
 
-        public static MissingReplayInputs Create(ReplayDataGenerationContext context)
+        internal static MissingReplayInputs Create(ReplayDataGenerationContext context)
         {
             List<ReplayParameter> pathParameters = [];
             List<ReplayParameter> queryParameters = [];
@@ -489,10 +489,4 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
         }
     }
 
-    /// <summary>
-    /// Carries agent-prepared replay data after validation plus warnings for values Sqloom ignored.
-    /// </summary>
-    private sealed record PreparedDataValidationResult(
-        ReplayPreparedData PreparedData,
-        IReadOnlyList<string> Warnings);
 }

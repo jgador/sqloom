@@ -12,11 +12,6 @@ internal sealed class CommandRegistry
     private readonly IReadOnlyDictionary<HostCommandKind, ICommandHandler> _handlers;
 
     public CommandRegistry(params ICommandHandler[] handlers)
-        : this((IEnumerable<ICommandHandler>)handlers)
-    {
-    }
-
-    public CommandRegistry(IEnumerable<ICommandHandler> handlers)
     {
         ArgumentNullException.ThrowIfNull(handlers);
 

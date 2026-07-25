@@ -35,27 +35,16 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
     ];
 
     private readonly string _connectionString;
-    private readonly ReadOnlySqlConnectionFactory _connectionFactory;
-    private readonly int _commandTimeoutSeconds;
+    private readonly ReadOnlySqlConnectionFactory _connectionFactory = new();
 
     /// <summary>
-    /// Creates a resolver for the target database with an optional connection factory and command timeout.
+    /// Creates a resolver for the target database.
     /// </summary>
-    public SqlStatementHandleResolver(
-        string connectionString,
-        ReadOnlySqlConnectionFactory? connectionFactory = null,
-        int commandTimeoutSeconds = DefaultCommandTimeoutSeconds)
+    public SqlStatementHandleResolver(string connectionString)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
         _connectionString = connectionString;
-        _connectionFactory = connectionFactory ?? new ReadOnlySqlConnectionFactory();
-        _commandTimeoutSeconds = commandTimeoutSeconds > 0
-            ? commandTimeoutSeconds
-            : throw new ArgumentOutOfRangeException(
-                nameof(commandTimeoutSeconds),
-                commandTimeoutSeconds,
-                "The command timeout must be positive.");
     }
 
     /// <inheritdoc />
@@ -80,7 +69,7 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
             {
                 using var command = connection.CreateCommand();
                 command.CommandText = ResolveStatementHandleSql;
-                command.CommandTimeout = _commandTimeoutSeconds;
+                command.CommandTimeout = DefaultCommandTimeoutSeconds;
                 var querySqlTextParameter = command.Parameters.Add(
                     new SqlParameter("@QuerySqlText", System.Data.SqlDbType.NVarChar, -1));
                 var requestedParamTypeParameter = command.Parameters.Add(

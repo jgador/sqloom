@@ -14,7 +14,7 @@ internal sealed class InitCommandExecutor
     private const string DefaultAgent = "codex";
     private const string ResourcePrefix = "Sqloom.Host.InitAssets/skills/sqloom/";
 
-    private static readonly InitAgentTarget[] AgentTargets =
+    private static readonly (string Agent, string BundleRoot)[] AgentTargets =
     [
         new("codex", ".agents/skills/sqloom"),
         new("claude", ".claude/skills/sqloom"),
@@ -73,7 +73,7 @@ internal sealed class InitCommandExecutor
             files);
     }
 
-    private static InitCommandOptions Parse(string[] args)
+    private static (string AgentSelection, bool Overwrite) Parse(string[] args)
     {
         var agentSelection = DefaultAgent;
         var overwrite = false;
@@ -130,9 +130,7 @@ internal sealed class InitCommandExecutor
                 $"Unexpected argument '{argument}' for 'init'. Use --agent codex, --agent claude, --agent copilot, or --agent all.");
         }
 
-        return new InitCommandOptions(
-            agentSelection,
-            overwrite);
+        return (agentSelection, overwrite);
     }
 
     private static bool HasCurrentDirectoryGitMarker(string repositoryRoot)
@@ -141,7 +139,7 @@ internal sealed class InitCommandExecutor
         return Directory.Exists(gitPath) || File.Exists(gitPath);
     }
 
-    private static IReadOnlyList<InitAgentTarget> ResolveTargets(string agentSelection)
+    private static IReadOnlyList<(string Agent, string BundleRoot)> ResolveTargets(string agentSelection)
     {
         if (string.Equals(agentSelection, "all", StringComparison.Ordinal))
         {
@@ -160,9 +158,9 @@ internal sealed class InitCommandExecutor
             $"Unknown agent '{agentSelection}'. Supported values: {SupportedAgentsText()}.");
     }
 
-    private static IReadOnlyList<InitAsset> LoadAssets(Assembly assembly)
+    private static IReadOnlyList<(string RelativePath, byte[] Content)> LoadAssets(Assembly assembly)
     {
-        var assets = new List<InitAsset>();
+        var assets = new List<(string RelativePath, byte[] Content)>();
         foreach (var resourceName in assembly
                      .GetManifestResourceNames()
                      .OrderBy(resourceName => resourceName, StringComparer.Ordinal))
@@ -182,7 +180,7 @@ internal sealed class InitCommandExecutor
                 ?? throw new InvalidOperationException($"Embedded init asset '{resourceName}' could not be opened.");
             using var buffer = new MemoryStream();
             stream.CopyTo(buffer);
-            assets.Add(new InitAsset(relativePath, buffer.ToArray()));
+            assets.Add((relativePath, buffer.ToArray()));
         }
 
         if (assets.Count == 0)
@@ -246,19 +244,6 @@ internal sealed class InitCommandExecutor
         return "codex, claude, copilot, all";
     }
 
-    /// <summary>
-    /// Maps a supported agent name to the repository-relative skill bundle root it owns.
-    /// </summary>
-    private sealed record InitAgentTarget(string Agent, string BundleRoot);
-
-    /// <summary>
-    /// Represents one packaged init resource after converting its embedded name to a bundle-relative path.
-    /// </summary>
-    private sealed record InitAsset(string RelativePath, byte[] Content);
-
-    private sealed record InitCommandOptions(
-        string AgentSelection,
-        bool Overwrite);
 }
 
 /// <summary>

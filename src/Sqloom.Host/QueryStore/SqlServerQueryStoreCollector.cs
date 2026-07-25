@@ -147,23 +147,7 @@ internal sealed class SqlServerQueryStoreCollector
             query_store_wait_stats.plan_id ASC;
         """;
 
-    private readonly ReadOnlySqlConnectionFactory _connectionFactory;
-
-    /// <summary>
-    /// Creates a collector with the default readonly SQL connection factory.
-    /// </summary>
-    public SqlServerQueryStoreCollector()
-        : this(new ReadOnlySqlConnectionFactory())
-    {
-    }
-
-    /// <summary>
-    /// Creates a collector with an explicit readonly SQL connection factory.
-    /// </summary>
-    public SqlServerQueryStoreCollector(ReadOnlySqlConnectionFactory connectionFactory)
-    {
-        _connectionFactory = connectionFactory ?? throw new ArgumentNullException(nameof(connectionFactory));
-    }
+    private readonly ReadOnlySqlConnectionFactory _connectionFactory = new();
 
     /// <inheritdoc />
     public async Task<QueryStoreSnapshot> CaptureAsync(

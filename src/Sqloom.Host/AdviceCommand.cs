@@ -33,13 +33,6 @@ internal sealed class AdviceCommand
 
     internal AdviceCommand(
         Func<OpenAIAdviceOptions, IAdviceReportGenerator>? generatorFactory,
-        ISqlServerDacpacSchemaExtractor schemaExtractor)
-        : this(generatorFactory, schemaExtractor, new SqlServerDacpacExporter())
-    {
-    }
-
-    internal AdviceCommand(
-        Func<OpenAIAdviceOptions, IAdviceReportGenerator>? generatorFactory,
         ISqlServerDacpacSchemaExtractor schemaExtractor,
         ISqlServerDacpacExporter dacpacExporter)
     {

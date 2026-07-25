@@ -24,15 +24,6 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
     private readonly OpenAIAdviceOptions _options;
     private readonly bool _ownsHttpClient;
 
-    public OpenAIAdviceGenerator(OpenAIAdviceOptions options)
-        : this(
-            options,
-            CreateHttpClient(options),
-            ownsHttpClient: true,
-            HostDebugWriter.Disabled)
-    {
-    }
-
     internal OpenAIAdviceGenerator(
         OpenAIAdviceOptions options,
         HostDebugWriter debugWriter)
