@@ -394,9 +394,6 @@ export async function createDashboardState(
   return {
     title: "Sqloom Tune",
     subtitle: "Tune SQL for performance with confidence.",
-    runNote: harnessReady
-      ? "Uses the detected default harness"
-      : "Default harness required to run",
     readinessLabel,
     stages: [
       {

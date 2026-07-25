@@ -54,10 +54,6 @@ ${dashboardStyles}
                     <p>${escapeHtml(state.subtitle)}</p>
                 </div>
             </div>
-            <div class="top-actions">
-                <button class="primary-action" type="button" data-command="runTune" disabled>${renderIcon("play")}<span>Run tune</span></button>
-                <div class="run-note">${escapeHtml(state.runNote)}</div>
-            </div>
         </header>
 
         <nav class="stepper" aria-label="Tune workflow stages">

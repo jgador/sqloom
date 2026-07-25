@@ -268,7 +268,6 @@ test("renders syntactically valid dashboard client script", async () => {
   const state = {
     title: "Sqloom Tune",
     subtitle: "Test dashboard",
-    runNote: "Test run",
     readinessLabel: "Ready",
     stages: [],
     setupSummaryItems: [],

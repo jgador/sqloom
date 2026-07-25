@@ -118,7 +118,6 @@ export type DashboardRecentRun = {
 export type DashboardState = {
   title: string;
   subtitle: string;
-  runNote: string;
   readinessLabel: string;
   stages: DashboardStage[];
   setupSummaryItems: DashboardSetupSummaryItem[];
