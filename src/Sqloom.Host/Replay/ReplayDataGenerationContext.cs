@@ -5,7 +5,7 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Carries the context needed to prepare replay request data.
 /// </summary>
-public sealed class ReplayDataGenerationContext
+internal sealed class ReplayDataGenerationContext
 {
     /// <summary>
     /// Gets the endpoint operation being prepared.

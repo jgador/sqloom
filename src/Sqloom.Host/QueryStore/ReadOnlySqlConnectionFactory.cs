@@ -9,7 +9,7 @@ namespace Sqloom.Host.QueryStore;
 /// <summary>
 /// Creates readonly SQL connection.
 /// </summary>
-public sealed class ReadOnlySqlConnectionFactory
+internal sealed class ReadOnlySqlConnectionFactory
 {
     /// <summary>
     /// Creates a SQL Server connection builder and supplies Sqloom's application name when none is configured.

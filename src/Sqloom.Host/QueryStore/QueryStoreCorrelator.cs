@@ -12,7 +12,7 @@ namespace Sqloom.Host.QueryStore;
 /// <summary>
 /// Maps captured replay SQL back to Query Store rows.
 /// </summary>
-public sealed class QueryStoreCorrelator
+internal sealed class QueryStoreCorrelator
 {
     private const double FingerprintFallbackConfidence = 0.40d;
     private const double QueryTextExactConfidence = 0.92d;

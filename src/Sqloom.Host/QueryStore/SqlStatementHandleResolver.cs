@@ -14,7 +14,7 @@ namespace Sqloom.Host.QueryStore;
 /// <summary>
 /// Resolves SQL statement_sql_handle values for captured commands.
 /// </summary>
-public sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
+internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
 {
     private const int DefaultCommandTimeoutSeconds = 30;
     private const string ResolveStatementHandleSql = """

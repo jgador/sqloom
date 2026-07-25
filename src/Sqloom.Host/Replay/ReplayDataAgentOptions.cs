@@ -3,7 +3,7 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Carries replay data generation options.
 /// </summary>
-public sealed class ReplayDataAgentOptions
+internal sealed class ReplayDataAgentOptions
 {
     /// <summary>
     /// Gets the policy controlling agent-assisted replay data generation.

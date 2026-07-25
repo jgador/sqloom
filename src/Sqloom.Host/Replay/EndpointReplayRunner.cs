@@ -13,7 +13,7 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Executes source-discovered replay operations against a Sqloom app harness.
 /// </summary>
-public sealed class EndpointReplayRunner
+internal sealed class EndpointReplayRunner
 {
     private readonly EndpointCatalogLoader _catalogLoader = new();
     private readonly ReplayPlanBuilder _planBuilder = new();

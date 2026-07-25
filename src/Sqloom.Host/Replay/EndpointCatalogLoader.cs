@@ -136,7 +136,7 @@ internal sealed partial class EndpointCatalogLoader
                     var httpMethod = httpRoute.HttpMethod.ToUpperInvariant();
                     yield return new ReplayOperation
                     {
-                        StableOperationKey = ReplayOperationKeys.Build(httpMethod, route),
+                        StableOperationKey = BuildStableOperationKey(httpMethod, route),
                         OperationId = method.Name,
                         HttpMethod = httpMethod,
                         Route = route,
@@ -312,6 +312,14 @@ internal sealed partial class EndpointCatalogLoader
         string attributeName)
     {
         return attributes.Any(attribute => string.Equals(attribute.AttributeClass?.Name, attributeName, StringComparison.Ordinal));
+    }
+
+    private static string BuildStableOperationKey(string httpMethod, string route)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(httpMethod);
+        ArgumentException.ThrowIfNullOrWhiteSpace(route);
+
+        return $"{httpMethod.Trim().ToUpperInvariant()} {route.Trim()}";
     }
 
     private static bool RequiresAuthentication(

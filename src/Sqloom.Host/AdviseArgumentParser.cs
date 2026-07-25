@@ -118,7 +118,7 @@ internal sealed class AdviseArgumentParser
         };
     }
 
-    private static AdviceSchemaSource ResolveSchemaSource(
+    private static (string? SchemaPath, string? DacpacPath, string? ReadOnlyConnectionString) ResolveSchemaSource(
         string[] args,
         string? defaultDacpacPath,
         string? defaultReadOnlyConnectionString,
@@ -141,10 +141,7 @@ internal sealed class AdviseArgumentParser
                     $"The SQL Server schema file '{sqlServerSchemaPath}' does not exist.");
             }
 
-            return new AdviceSchemaSource
-            {
-                SchemaPath = sqlServerSchemaPath,
-            };
+            return (sqlServerSchemaPath, null, null);
         }
 
         var rawDacpacPath = CommandArgumentSupport.GetArgumentValue(args, "--sqlserver-dacpac-file")
@@ -160,37 +157,22 @@ internal sealed class AdviseArgumentParser
                     $"The SQL Server DACPAC '{sqlServerDacpacPath}' does not exist.");
             }
 
-            return new AdviceSchemaSource
-            {
-                DacpacPath = sqlServerDacpacPath,
-            };
+            return (null, sqlServerDacpacPath, null);
         }
 
         var readOnlyConnectionString = CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string")
             ?? defaultReadOnlyConnectionString;
         if (!string.IsNullOrWhiteSpace(readOnlyConnectionString))
         {
-            return new AdviceSchemaSource
-            {
-                ReadOnlyConnectionString = readOnlyConnectionString,
-            };
+            return (null, null, readOnlyConnectionString);
         }
 
         if (allowMissingSchemaSource)
         {
-            return new AdviceSchemaSource();
+            return (null, null, null);
         }
 
         throw new ArgumentException(
             "Sqloom advice needs --sqlserver-schema-file, --sqlserver-dacpac-file, or --read-only-connection-string.");
     }
-}
-
-internal sealed class AdviceSchemaSource
-{
-    public string? SchemaPath { get; init; }
-
-    public string? DacpacPath { get; init; }
-
-    public string? ReadOnlyConnectionString { get; init; }
 }

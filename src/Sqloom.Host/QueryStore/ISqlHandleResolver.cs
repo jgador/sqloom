@@ -8,7 +8,7 @@ namespace Sqloom.Host.QueryStore;
 /// <summary>
 /// Resolves captured SQL text and parameters to SQL Server statement handles.
 /// </summary>
-public interface ISqlHandleResolver
+internal interface ISqlHandleResolver
 {
     /// <summary>
     /// Resolves the best statement-handle match for a captured SQL command.

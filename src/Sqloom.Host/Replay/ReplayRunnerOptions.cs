@@ -5,7 +5,7 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Carries the inputs required to execute an endpoint replay run.
 /// </summary>
-public sealed class ReplayRunnerOptions
+internal sealed class ReplayRunnerOptions
 {
     /// <summary>
     /// Gets the application name written to replay artifacts.

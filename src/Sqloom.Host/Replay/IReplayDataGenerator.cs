@@ -7,7 +7,7 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Generates safe, replay-only request data before the app harness prepares an operation.
 /// </summary>
-public interface IReplayDataGenerator
+internal interface IReplayDataGenerator
 {
     /// <summary>
     /// Generates replay-only request data for a resolved endpoint operation.

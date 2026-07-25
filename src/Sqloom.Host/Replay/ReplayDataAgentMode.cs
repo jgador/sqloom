@@ -3,7 +3,7 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Controls replay data generation.
 /// </summary>
-public enum ReplayDataAgentMode
+internal enum ReplayDataAgentMode
 {
     /// <summary>
     /// Disables agent-assisted replay data generation.
