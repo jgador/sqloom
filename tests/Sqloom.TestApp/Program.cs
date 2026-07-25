@@ -14,7 +14,7 @@ public partial class Program
         var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
         builder.Services.AddControllers();
-        builder.Services.AddScoped<IProductCatalogService, ProductCatalogService>();
+        builder.Services.AddScoped<ProductCatalogService>();
         builder.Services.AddDbContext<TestAppProductCatalogDbContext>(options =>
         {
             if (!string.IsNullOrWhiteSpace(connectionString))

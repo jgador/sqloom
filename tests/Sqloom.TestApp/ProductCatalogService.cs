@@ -6,16 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Sqloom.TestApp;
 
-public interface IProductCatalogService
-{
-    Task<IReadOnlyList<ProductResponse>> GetByCategoryAsync(
-        int categoryId,
-        decimal minPrice,
-        CancellationToken cancellationToken);
-}
-
 public sealed class ProductCatalogService
-    : IProductCatalogService
 {
     private readonly TestAppProductCatalogDbContext _dbContext;
 

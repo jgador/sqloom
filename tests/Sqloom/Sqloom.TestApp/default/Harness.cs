@@ -89,7 +89,7 @@ public sealed class SqloomTestApplication : ISqloomApplication
         builder.Services
             .AddControllers()
             .AddApplicationPart(typeof(SqloomTestApp.ProductsController).Assembly);
-        builder.Services.AddScoped<SqloomTestApp.IProductCatalogService, SqloomTestApp.ProductCatalogService>();
+        builder.Services.AddScoped<SqloomTestApp.ProductCatalogService>();
         builder.Services.AddSingleton<ReplaySqlCaptureCollector>();
         builder.Services.AddSingleton<ReplaySqlCommandInterceptor>();
         builder.Services.AddSingleton<IStartupFilter, ReplaySqlCaptureStartupFilter>();

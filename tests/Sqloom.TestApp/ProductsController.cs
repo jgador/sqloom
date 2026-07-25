@@ -14,9 +14,9 @@ namespace Sqloom.TestApp;
 public sealed class ProductsController
     : ControllerBase
 {
-    private readonly IProductCatalogService _productCatalogService;
+    private readonly ProductCatalogService _productCatalogService;
 
-    public ProductsController(IProductCatalogService productCatalogService)
+    public ProductsController(ProductCatalogService productCatalogService)
     {
         _productCatalogService = productCatalogService;
     }
