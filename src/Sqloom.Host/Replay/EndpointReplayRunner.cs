@@ -15,24 +15,11 @@ namespace Sqloom.Host.Replay;
 /// </summary>
 public sealed class EndpointReplayRunner
 {
-    private readonly IReplayOperationCatalogLoader _catalogLoader;
+    private readonly EndpointCatalogLoader _catalogLoader = new();
     private readonly ReplayArtifactWriter _artifactWriter = new();
     private readonly ReplayPlanBuilder _planBuilder = new();
     private readonly ReplayRequestExecutor _requestExecutor = new();
     private readonly ReplayRequestResolver _requestResolver = new();
-
-    /// <summary>
-    /// Initializes a replay runner that discovers endpoint operations from ASP.NET Core source projects.
-    /// </summary>
-    public EndpointReplayRunner()
-        : this(new RoslynEndpointCatalogLoader())
-    {
-    }
-
-    internal EndpointReplayRunner(IReplayOperationCatalogLoader catalogLoader)
-    {
-        _catalogLoader = catalogLoader ?? throw new ArgumentNullException(nameof(catalogLoader));
-    }
 
     /// <summary>
     /// Discovers, prepares, executes, and records the configured endpoint replay operations.
@@ -46,6 +33,17 @@ public sealed class EndpointReplayRunner
         var discoveredOperations = await _catalogLoader
             .LoadAsync(options.SourceProjectPath, cancellationToken)
             .ConfigureAwait(false);
+        return await RunAsync(options, discoveredOperations, cancellationToken)
+            .ConfigureAwait(false);
+    }
+
+    internal async Task<EndpointReplayRunResult> RunAsync(
+        ReplayRunnerOptions options,
+        IReadOnlyList<ReplayOperation> discoveredOperations,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(discoveredOperations);
 
         var endpointCatalogPath = _artifactWriter.GetEndpointCatalogPath(options.ReplayArtifactDir);
         await _artifactWriter

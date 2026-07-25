@@ -11,18 +11,18 @@ namespace Sqloom.Host;
 internal sealed class EndpointsCommand
     : ICommandHandler
 {
-    private readonly IReplayOperationCatalogLoader _catalogLoader;
+    private readonly EndpointCatalogLoader _catalogLoader;
     private readonly EndpointSourceProjectResolver _sourceProjectResolver;
 
     public EndpointsCommand()
         : this(
-            new RoslynEndpointCatalogLoader(),
+            new EndpointCatalogLoader(),
             new EndpointSourceProjectResolver())
     {
     }
 
     internal EndpointsCommand(
-        IReplayOperationCatalogLoader catalogLoader,
+        EndpointCatalogLoader catalogLoader,
         EndpointSourceProjectResolver sourceProjectResolver)
     {
         _catalogLoader = catalogLoader ?? throw new ArgumentNullException(nameof(catalogLoader));

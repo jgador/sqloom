@@ -58,7 +58,8 @@ public sealed class EndpointReplayRunnerTests
             DacpacPath = Path.Combine("artifacts", "test.dacpac"),
             SeedSqlPath = Path.Combine("artifacts", "test.seed.sql"),
         };
-        StaticReplayOperationCatalogLoader catalogLoader = new(
+        var discoveredOperations = new[]
+        {
             CreateOperation(
                 "POST",
                 "/api/items/{itemId}",
@@ -69,9 +70,10 @@ public sealed class EndpointReplayRunnerTests
                     CreateParameter("itemId", "path", required: true, schemaType: "string"),
                     CreateParameter("since", "query", required: true, schemaType: "string", format: "date-time"),
                     CreateParameter("x-trace", "header", required: true, schemaType: "string"),
-                ]));
+                ]),
+        };
 
-        EndpointReplayRunner runner = new(catalogLoader);
+        EndpointReplayRunner runner = new();
         var result = await runner.RunAsync(
             new ReplayRunnerOptions
             {
@@ -92,7 +94,8 @@ public sealed class EndpointReplayRunnerTests
                 },
                 ReplayHostFactory = hostFactory,
                 ReplayLaunchOptions = replayLaunchOptions,
-            });
+            },
+            discoveredOperations);
 
         var replay = Assert.Single(result.Results);
         Assert.Equal("POST /api/items/{itemId}", replay.OperationKey);
@@ -138,7 +141,8 @@ public sealed class EndpointReplayRunnerTests
             {
                 AccessToken = "token-123"
             });
-        StaticReplayOperationCatalogLoader catalogLoader = new(
+        var discoveredOperations = new[]
+        {
             CreateOperation(
                 "GET",
                 "/api/items/{itemId}",
@@ -147,9 +151,10 @@ public sealed class EndpointReplayRunnerTests
                     CreateParameter("itemId", "path", required: true, schemaType: "integer"),
                     CreateParameter("since", "query", required: true, schemaType: "string", format: "date-time"),
                     CreateParameter("x-trace", "header", required: true, schemaType: "string"),
-                ]));
+                ]),
+        };
 
-        EndpointReplayRunner runner = new(catalogLoader);
+        EndpointReplayRunner runner = new();
         var result = await runner.RunAsync(
             new ReplayRunnerOptions
             {
@@ -186,7 +191,8 @@ public sealed class EndpointReplayRunnerTests
                             },
                         },
                     }),
-            });
+            },
+            discoveredOperations);
 
         var replay = Assert.Single(result.Results);
         Assert.Equal("replayed", replay.Status);
@@ -227,10 +233,12 @@ public sealed class EndpointReplayRunnerTests
             },
             services,
             new PreparedReplayOperation());
-        StaticReplayOperationCatalogLoader catalogLoader = new(
-            CreateOperation("GET", "/api/items"));
+        var discoveredOperations = new[]
+        {
+            CreateOperation("GET", "/api/items"),
+        };
 
-        EndpointReplayRunner runner = new(catalogLoader);
+        EndpointReplayRunner runner = new();
         var result = await runner.RunAsync(
             new ReplayRunnerOptions
             {
@@ -244,7 +252,8 @@ public sealed class EndpointReplayRunnerTests
                     Mode = ReplayDataAgentMode.Off,
                 },
                 ReplayDataGenerator = new ThrowingReplayDataGenerator(),
-            });
+            },
+            discoveredOperations);
 
         Assert.Null(result.ReplayDataGenerationPath);
         Assert.Null(result.ReplayDataGeneration);
@@ -267,16 +276,18 @@ public sealed class EndpointReplayRunnerTests
             },
             services,
             new PreparedReplayOperation());
-        StaticReplayOperationCatalogLoader catalogLoader = new(
+        var discoveredOperations = new[]
+        {
             CreateOperation(
                 "GET",
                 "/api/items/{itemId}",
                 parameters:
                 [
                     CreateParameter("itemId", "path", required: true, schemaType: "integer"),
-                ]));
+                ]),
+        };
 
-        EndpointReplayRunner runner = new(catalogLoader);
+        EndpointReplayRunner runner = new();
         var result = await runner.RunAsync(
             new ReplayRunnerOptions
             {
@@ -291,7 +302,8 @@ public sealed class EndpointReplayRunnerTests
                     ModelName = "gpt-test",
                 },
                 ReplayDataGenerator = new ThrowingReplayDataGenerator("generation failed"),
-            });
+            },
+            discoveredOperations);
 
         var replay = Assert.Single(result.Results);
         Assert.Equal("failed", replay.Status);
@@ -363,26 +375,6 @@ public sealed class EndpointReplayRunnerTests
         {
             ReceivedLaunchOptions = launchOptions;
             return Task.FromResult(_host);
-        }
-    }
-
-    private sealed class StaticReplayOperationCatalogLoader : IReplayOperationCatalogLoader
-    {
-        private readonly IReadOnlyList<ReplayOperation> _operations;
-
-        public StaticReplayOperationCatalogLoader(params ReplayOperation[] operations)
-        {
-            _operations = operations;
-        }
-
-        public string? ReceivedSourceProjectPath { get; private set; }
-
-        public Task<IReadOnlyList<ReplayOperation>> LoadAsync(
-            string sourceProjectPath,
-            CancellationToken cancellationToken = default)
-        {
-            ReceivedSourceProjectPath = sourceProjectPath;
-            return Task.FromResult(_operations);
         }
     }
 

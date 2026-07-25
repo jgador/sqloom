@@ -8,14 +8,14 @@ using Xunit;
 namespace Sqloom.Host.Tests.Replay;
 
 /// <summary>
-/// Exercises Roslyn-backed endpoint catalog discovery.
+/// Exercises Roslyn-powered endpoint catalog discovery.
 /// </summary>
-public sealed class RoslynEndpointCatalogLoaderTests
+public sealed class EndpointCatalogLoaderTests
 {
     [Fact]
     public async Task LoadAsync_ReadsControllerMethodAndParameterMetadata()
     {
-        RoslynEndpointCatalogLoader loader = new();
+        EndpointCatalogLoader loader = new();
 
         var operations = await loader.LoadAsync(RepositoryPaths.GetTestAppProjectPath());
 

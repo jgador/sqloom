@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Host.Replay;
-using Sqloom.Pipeline.Execution;
 using Sqloom.Tests;
 using Xunit;
 
@@ -56,13 +52,13 @@ public sealed class EndpointsCommandTests
             Assert.Equal(1, root.GetArrayLength());
             var operation = root[0];
             Assert.Equal(
-                "GET /api/items",
+                SampleCatalogReplayScenario.OperationKey,
                 operation.GetProperty("stableOperationKey").GetString());
             Assert.Equal(
                 "GET",
                 operation.GetProperty("httpMethod").GetString());
             Assert.Equal(
-                "/api/items",
+                SampleCatalogReplayScenario.Route,
                 operation.GetProperty("route").GetString());
             Assert.False(Directory.Exists(Path.Combine(currentDirectory, "artifacts")));
         }
@@ -76,19 +72,7 @@ public sealed class EndpointsCommandTests
         string currentDirectory,
         string[] arguments)
     {
-        ReplayOperation operation = new()
-        {
-            StableOperationKey = "GET /api/items",
-            HttpMethod = "GET",
-            Route = "/api/items",
-            RequiresAuthentication = false,
-            HasJsonRequestBody = false,
-            RequestBodyRequired = false,
-            Parameters = [],
-        };
-        EndpointsCommand command = new(
-            new StaticReplayOperationCatalogLoader(operation),
-            new EndpointSourceProjectResolver());
+        EndpointsCommand command = new();
         CommandExecutionContext context = new()
         {
             StartupOptions = new HostStartupOptions
@@ -116,20 +100,4 @@ public sealed class EndpointsCommandTests
         return directory;
     }
 
-    private sealed class StaticReplayOperationCatalogLoader : IReplayOperationCatalogLoader
-    {
-        private readonly IReadOnlyList<ReplayOperation> _operations;
-
-        public StaticReplayOperationCatalogLoader(params ReplayOperation[] operations)
-        {
-            _operations = operations;
-        }
-
-        public Task<IReadOnlyList<ReplayOperation>> LoadAsync(
-            string sourceProjectPath,
-            CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(_operations);
-        }
-    }
 }
