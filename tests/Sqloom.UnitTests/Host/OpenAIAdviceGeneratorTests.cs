@@ -9,9 +9,9 @@ using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
 using Sqloom.Host.Replay;
-using Sqloom.Pipeline.QueryStore;
 using Sqloom.Pipeline.Artifacts;
 using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -226,7 +226,7 @@ public sealed class OpenAIAdviceGeneratorTests
     }
 
     [Fact]
-    public async Task WithDebugWriter_PrintsRedactedRequestAndResponse()
+    public async Task WithDebugEnabled_PrintsRedactedRequestAndResponse()
     {
         var replayArtifactDirectory = CreateTempDir();
         var correlationPath = Path.Combine(replayArtifactDirectory, "query-store-correlation.json");
@@ -268,8 +268,6 @@ public sealed class OpenAIAdviceGeneratorTests
         {
             BaseAddress = new Uri("https://api.openai.com/"),
         };
-        HostDebugWriter debugWriter = new(isEnabled: true);
-
         using OpenAIAdviceGenerator generator = new(
             new OpenAIAdviceOptions
             {
@@ -278,7 +276,7 @@ public sealed class OpenAIAdviceGeneratorTests
                 Model = "gpt-5.4-mini",
             },
             httpClient,
-            debugWriter);
+            debugEnabled: true);
 
         var result = await CaptureStderrAsync(async () =>
         {

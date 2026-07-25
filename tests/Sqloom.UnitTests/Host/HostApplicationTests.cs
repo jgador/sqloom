@@ -14,9 +14,7 @@ public sealed class HostApplicationTests
     public async Task WithInitVerb_InvokesHandlerWithoutApplication()
     {
         StubCommandHandler handler = new(HostCommandKind.Init, 13);
-        HostApplication application = new(
-            new HostConsoleWriter(),
-            new CommandRegistry(handler));
+        HostApplication application = new(new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
         {
             ApplicationArguments = ["init"],
@@ -36,9 +34,7 @@ public sealed class HostApplicationTests
     public async Task WithAdviseVerb_InvokesMatchingHandler()
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 17);
-        HostApplication application = new(
-            new HostConsoleWriter(),
-            new CommandRegistry(handler));
+        HostApplication application = new(new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
         {
             ApplicationArguments = ["advise"],
@@ -60,7 +56,6 @@ public sealed class HostApplicationTests
         StubCommandHandler handler = new(HostCommandKind.Tune, 23);
         HostApplication application = new(
             applicationHarness,
-            new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
         {
@@ -87,12 +82,10 @@ public sealed class HostApplicationTests
     }
 
     [Fact]
-    public async Task WithDebugEnabled_DispatchesEnabledDebugWriter()
+    public async Task WithDebugEnabled_DispatchesDebugFlag()
     {
         StubCommandHandler handler = new(HostCommandKind.Advise, 19);
-        HostApplication application = new(
-            new HostConsoleWriter(),
-            new CommandRegistry(handler));
+        HostApplication application = new(new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
         {
             ApplicationArguments = ["advise"],
@@ -105,7 +98,7 @@ public sealed class HostApplicationTests
 
         Assert.Equal(19, result);
         Assert.NotNull(handler.LastContext);
-        Assert.True(handler.LastContext!.DebugWriter.IsEnabled);
+        Assert.True(handler.LastContext!.DebugEnabled);
     }
 
     [Fact]
@@ -115,7 +108,6 @@ public sealed class HostApplicationTests
         StubCommandHandler handler = new(HostCommandKind.Replay, 29);
         HostApplication application = new(
             applicationHarness,
-            new HostConsoleWriter(),
             new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
         {
@@ -135,9 +127,7 @@ public sealed class HostApplicationTests
     public async Task WithEndpointsVerb_InvokesHandlerWithoutApplication()
     {
         StubCommandHandler handler = new(HostCommandKind.Endpoints, 31);
-        HostApplication application = new(
-            new HostConsoleWriter(),
-            new CommandRegistry(handler));
+        HostApplication application = new(new CommandRegistry(handler));
         HostStartupOptions startupOptions = new()
         {
             ApplicationArguments = ["endpoints"],
@@ -157,7 +147,7 @@ public sealed class HostApplicationTests
     [Fact]
     public async Task WithoutCommand_PrintsNoCommandHint()
     {
-        HostApplication application = new(new HostConsoleWriter());
+        HostApplication application = new();
         HostStartupOptions startupOptions = new();
         var originalOut = Console.Out;
         using StringWriter stdOut = new();

@@ -28,11 +28,10 @@ public sealed class HostDebugWriterTests
                 },
             },
         });
-        HostDebugWriter writer = new(isEnabled: true);
-
         var standardError = CaptureStandardError(() =>
         {
-            writer.PrintOpenAIRequest(
+            HostDebugWriter.PrintOpenAIRequest(
+                debugEnabled: true,
                 new Uri("https://api.openai.com/v1/responses"),
                 new AuthenticationHeaderValue("Bearer", "secret-value"),
                 requestJson);
@@ -71,11 +70,10 @@ public sealed class HostDebugWriterTests
                 proposals = Array.Empty<object>(),
             }),
         });
-        HostDebugWriter writer = new(isEnabled: true);
-
         var standardError = CaptureStandardError(() =>
         {
-            writer.PrintOpenAIResponse(
+            HostDebugWriter.PrintOpenAIResponse(
+                debugEnabled: true,
                 HttpStatusCode.OK,
                 responseJson);
         });
@@ -97,11 +95,10 @@ public sealed class HostDebugWriterTests
                 message = "{not-json}\nnext \"line\"",
             },
         });
-        HostDebugWriter writer = new(isEnabled: true);
-
         var standardError = CaptureStandardError(() =>
         {
-            writer.PrintOpenAIResponse(
+            HostDebugWriter.PrintOpenAIResponse(
+                debugEnabled: true,
                 HttpStatusCode.BadRequest,
                 responseJson);
         });

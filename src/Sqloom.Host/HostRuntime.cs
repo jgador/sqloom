@@ -65,24 +65,18 @@ public static class HostRuntime
         string[] args,
         string currentDirectory)
     {
-        HostConsoleWriter consoleWriter = new();
-        HostStartupCommandLine startupCommandLine = new();
-
         try
         {
-            var startupOptions = startupCommandLine.Parse(args, currentDirectory);
+            var startupOptions = HostStartupCommandLine.Parse(args, currentDirectory);
             if (TryHandleStartupAction(
                 startupOptions,
                 application is not null,
-                consoleWriter,
                 out var exitCode))
             {
                 return exitCode;
             }
 
-            var hostApplication = CreateApplication(
-                application,
-                consoleWriter);
+            var hostApplication = CreateApplication(application);
             return await hostApplication
                 .RunAsync(
                     startupOptions,
@@ -91,11 +85,11 @@ public static class HostRuntime
         }
         catch (ArgumentException exception)
         {
-            return HandleStartupFailure(exception.Message, consoleWriter);
+            return HandleStartupFailure(exception.Message);
         }
         catch (AppResolutionException exception)
         {
-            return HandleStartupFailure(exception.Message, consoleWriter);
+            return HandleStartupFailure(exception.Message);
         }
     }
 
@@ -114,43 +108,36 @@ public static class HostRuntime
             ?? "unknown";
     }
 
-    private static HostApplication CreateApplication(
-        ISqloomApplication? application,
-        HostConsoleWriter consoleWriter)
+    private static HostApplication CreateApplication(ISqloomApplication? application)
     {
         return application is null
-            ? new HostApplication(consoleWriter)
-            : new HostApplication(
-                application,
-                consoleWriter);
+            ? new HostApplication()
+            : new HostApplication(application);
     }
 
-    private static int HandleStartupFailure(
-        string message,
-        HostConsoleWriter consoleWriter)
+    private static int HandleStartupFailure(string message)
     {
         Console.Error.WriteLine(message);
-        consoleWriter.PrintUsage();
+        HostConsoleWriter.PrintUsage();
         return 1;
     }
 
     private static bool TryHandleStartupAction(
         HostStartupOptions startupOptions,
         bool hasBoundApplication,
-        HostConsoleWriter consoleWriter,
         out int exitCode)
     {
         // Handle global actions before dispatch and reject target paths when this host is already app-bound.
         if (startupOptions.ShowVersion)
         {
-            consoleWriter.PrintVersion(GetDisplayVersion());
+            HostConsoleWriter.PrintVersion(GetDisplayVersion());
             exitCode = 0;
             return true;
         }
 
         if (startupOptions.ShowHelp)
         {
-            consoleWriter.PrintHelp(startupOptions.ApplicationArguments);
+            HostConsoleWriter.PrintHelp(startupOptions.ApplicationArguments);
             exitCode = 0;
             return true;
         }

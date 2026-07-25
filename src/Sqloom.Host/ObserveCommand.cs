@@ -24,7 +24,7 @@ internal sealed class ObserveCommand
         {
             CurrentDirectory = context.CurrentDirectory,
         });
-        context.ConsoleWriter.PrintBanner(
+        HostConsoleWriter.PrintBanner(
             manifest?.Name,
             HostApplication.GetProjectNames(context.Application));
 
@@ -41,9 +41,9 @@ internal sealed class ObserveCommand
             manifest,
             readOnlyConnectionString,
             context.CurrentDirectory);
-        arguments.DebugWriter = context.DebugWriter;
+        arguments.DebugEnabled = context.DebugEnabled;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
-        context.ConsoleWriter.PrintQueryStoreSnapshot(
+        HostConsoleWriter.PrintQueryStoreSnapshot(
             result.Snapshot,
             result.JsonOutputPath,
             arguments.AppOnly,
@@ -63,8 +63,7 @@ internal sealed class ObserveCommand
         var workloadProfile = arguments.BaseWorkloadProfile.WithDiscoveredObjectCatalog(
             discoveredObjectCatalog);
 
-        SqlServerQueryStoreCollector collector = new();
-        var rawSnapshot = await collector
+        var rawSnapshot = await SqlServerQueryStoreCollector
             .CaptureAsync(
                 arguments.ReadOnlyConnection,
                 arguments.ObservationOptions,
@@ -89,7 +88,8 @@ internal sealed class ObserveCommand
             arguments.JsonOutputPathOverride,
             arguments.CurrentDirectory,
             snapshot.CapturedAtUtc);
-        arguments.DebugWriter.PrintObserveRun(
+        HostDebugWriter.PrintObserveRun(
+            arguments.DebugEnabled,
             arguments,
             jsonOutputPath,
             snapshot);
@@ -109,7 +109,6 @@ internal sealed class ObserveCommand
         QueryStoreOptions options,
         CancellationToken cancellationToken)
     {
-        SqlServerDiscoveredObjectCollector collector = new();
         DbObjectScanOptions discoveryOptions = new()
         {
             CommandTimeoutSeconds = options.CommandTimeoutSeconds,
@@ -117,7 +116,7 @@ internal sealed class ObserveCommand
 
         try
         {
-            return await collector
+            return await SqlServerDiscoveredObjectCollector
                 .CaptureAsync(
                     readOnlyConnectionString,
                     discoveryOptions,

@@ -18,7 +18,7 @@ internal sealed class InitCommand
         var result = InitCommandExecutor.Execute(
             context.Arguments,
             context.CurrentDirectory);
-        context.ConsoleWriter.PrintInitResult(result);
+        HostConsoleWriter.PrintInitResult(result);
         return Task.FromResult(0);
     }
 }

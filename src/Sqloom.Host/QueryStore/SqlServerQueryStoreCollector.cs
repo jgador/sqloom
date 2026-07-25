@@ -12,7 +12,7 @@ namespace Sqloom.Host.QueryStore;
 /// <summary>
 /// Collects Query Store evidence from SQL Server or Azure SQL using a readonly connection.
 /// </summary>
-internal sealed class SqlServerQueryStoreCollector
+internal static class SqlServerQueryStoreCollector
 {
     // Reads Query Store state and storage so observe can report whether capture is usable.
     private const string QueryStoreOptionsSql = """
@@ -147,8 +147,10 @@ internal sealed class SqlServerQueryStoreCollector
             query_store_wait_stats.plan_id ASC;
         """;
 
-    /// <inheritdoc />
-    public async Task<QueryStoreSnapshot> CaptureAsync(
+    /// <summary>
+    /// Captures Query Store options, plan metrics, and wait stats from a readonly SQL Server connection.
+    /// </summary>
+    public static async Task<QueryStoreSnapshot> CaptureAsync(
         string readOnlyConnectionString,
         QueryStoreOptions options,
         CancellationToken cancellationToken = default)

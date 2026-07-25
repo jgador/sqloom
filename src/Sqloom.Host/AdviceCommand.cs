@@ -33,16 +33,16 @@ internal sealed class AdviceCommand
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
-        context.ConsoleWriter.PrintBanner(
+        HostConsoleWriter.PrintBanner(
             null,
             HostApplication.GetProjectNames(context.Application));
 
         var arguments = AdviseArgumentParser.Parse(
             context.Arguments,
             context.CurrentDirectory);
-        arguments.DebugWriter = context.DebugWriter;
+        arguments.DebugEnabled = context.DebugEnabled;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
-        context.ConsoleWriter.PrintAdviceSummary(
+        HostConsoleWriter.PrintAdviceSummary(
             result.Report,
             result.JsonOutputPath);
         return 0;
@@ -73,7 +73,7 @@ internal sealed class AdviceCommand
         QueryCorrelationReport correlationReport,
         CancellationToken cancellationToken = default)
     {
-        arguments.DebugWriter.PrintAdviceRun(arguments);
+        HostDebugWriter.PrintAdviceRun(arguments.DebugEnabled, arguments);
         if (arguments.OpenAIOptions is null)
         {
             throw new InvalidOperationException(
@@ -163,7 +163,7 @@ internal sealed class AdviceCommand
         }
 
         using OpenAIAdviceGenerator adviceGenerator =
-            new(arguments.OpenAIOptions!, debugWriter: arguments.DebugWriter);
+            new(arguments.OpenAIOptions!, debugEnabled: arguments.DebugEnabled);
         return await adviceGenerator
             .CreateReportAsync(
                 correlationReport,

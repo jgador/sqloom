@@ -19,7 +19,7 @@ namespace Sqloom.Host;
 internal sealed class OpenAIAdviceGenerator : IDisposable
 {
     private const string OpenAIAdviceStrategyName = "openai-responses-structured-outputs";
-    private readonly HostDebugWriter _debugWriter;
+    private readonly bool _debugEnabled;
     private readonly HttpClient _httpClient;
     private readonly OpenAIAdviceOptions _options;
     private readonly bool _ownsHttpClient;
@@ -27,12 +27,12 @@ internal sealed class OpenAIAdviceGenerator : IDisposable
     internal OpenAIAdviceGenerator(
         OpenAIAdviceOptions options,
         HttpClient? httpClient = null,
-        HostDebugWriter? debugWriter = null)
+        bool debugEnabled = false)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
         _httpClient = httpClient ?? CreateHttpClient(_options);
         _ownsHttpClient = httpClient is null;
-        _debugWriter = debugWriter ?? HostDebugWriter.Disabled;
+        _debugEnabled = debugEnabled;
         _httpClient.BaseAddress ??= BuildOpenAIBaseAddress(_options.BaseUrl);
         _httpClient.DefaultRequestHeaders.Authorization ??=
             new AuthenticationHeaderValue("Bearer", _options.ApiKey);
@@ -68,10 +68,6 @@ internal sealed class OpenAIAdviceGenerator : IDisposable
                 correlationReport.QueryStoreSnapshotPath,
                 cancellationToken)
             .ConfigureAwait(false);
-        OpenAIAdviceClient client = new(
-            _httpClient,
-            _options.Model,
-            _debugWriter);
         HashSet<string> warnings = new(StringComparer.Ordinal);
         foreach (var warning in correlationReport.Warnings)
         {
@@ -106,8 +102,13 @@ internal sealed class OpenAIAdviceGenerator : IDisposable
                 evidencePack.ArtifactManifestJson,
                 evidencePack.SourceEvidenceJson,
                 evidencePack.SchemaSql);
-            var response = await client
-                .CreateAdviceAsync(request, cancellationToken)
+            var response = await OpenAIAdviceClient
+                .CreateAdviceAsync(
+                    _httpClient,
+                    _options.Model,
+                    request,
+                    _debugEnabled,
+                    cancellationToken)
                 .ConfigureAwait(false);
             foreach (var warning in response.Warnings)
             {

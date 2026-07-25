@@ -40,7 +40,7 @@ internal sealed class TuneCommand
         };
         var manifest = application.Describe(requestedApplicationContext);
 
-        context.ConsoleWriter.PrintBanner(
+        HostConsoleWriter.PrintBanner(
             manifest.Name,
             HostApplication.GetProjectNames(application));
         TuneArgumentParser.ValidateBeforeSession(
@@ -94,13 +94,13 @@ internal sealed class TuneCommand
             workflowArtifactDir,
             launchOptions,
             launchOptions.DacpacPath);
-        arguments.DebugWriter = context.DebugWriter;
-        arguments.ObserveArguments.DebugWriter = context.DebugWriter;
-        arguments.ReplayArguments.DebugWriter = context.DebugWriter;
-        arguments.CorrelateArguments.DebugWriter = context.DebugWriter;
-        arguments.AdviseArguments.DebugWriter = context.DebugWriter;
+        arguments.DebugEnabled = context.DebugEnabled;
+        arguments.ObserveArguments.DebugEnabled = context.DebugEnabled;
+        arguments.ReplayArguments.DebugEnabled = context.DebugEnabled;
+        arguments.CorrelateArguments.DebugEnabled = context.DebugEnabled;
+        arguments.AdviseArguments.DebugEnabled = context.DebugEnabled;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
-        context.ConsoleWriter.PrintTuneSummary(
+        HostConsoleWriter.PrintTuneSummary(
             result.Report,
             result.SummaryOutputPath);
         return result.ExitCode;

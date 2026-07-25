@@ -15,5 +15,5 @@ internal sealed class TuneArguments
 
     public required AdviseArguments AdviseArguments { get; init; }
 
-    public HostDebugWriter DebugWriter { get; set; } = HostDebugWriter.Disabled;
+    public bool DebugEnabled { get; set; }
 }

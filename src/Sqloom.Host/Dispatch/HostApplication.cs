@@ -14,23 +14,17 @@ internal sealed class HostApplication
 {
     private readonly ISqloomApplication? _boundApplication;
     private readonly CommandRegistry _commandRegistry;
-    private readonly HostConsoleWriter _consoleWriter;
 
-    public HostApplication(
-        HostConsoleWriter consoleWriter,
-        CommandRegistry? commandRegistry = null)
+    public HostApplication(CommandRegistry? commandRegistry = null)
     {
-        _consoleWriter = consoleWriter ?? throw new ArgumentNullException(nameof(consoleWriter));
         _commandRegistry = commandRegistry ?? CreateDefaultRegistry();
     }
 
     public HostApplication(
         ISqloomApplication application,
-        HostConsoleWriter consoleWriter,
         CommandRegistry? commandRegistry = null)
     {
         _boundApplication = application ?? throw new ArgumentNullException(nameof(application));
-        _consoleWriter = consoleWriter ?? throw new ArgumentNullException(nameof(consoleWriter));
         _commandRegistry = commandRegistry ?? CreateDefaultRegistry();
     }
 
@@ -47,7 +41,7 @@ internal sealed class HostApplication
         switch (commandKind)
         {
             case HostCommandKind.Help:
-                _consoleWriter.PrintHelp(startupOptions.ApplicationArguments);
+                HostConsoleWriter.PrintHelp(startupOptions.ApplicationArguments);
                 return 0;
             case HostCommandKind.Init:
             case HostCommandKind.Endpoints:
@@ -165,7 +159,7 @@ internal sealed class HostApplication
         var application = await ResolveObserveApplicationAsync(startupOptions, cancellationToken)
             .ConfigureAwait(false);
         PrintBanner(application, currentDirectory);
-        _consoleWriter.PrintNoCommandHint();
+        HostConsoleWriter.PrintNoCommandHint();
         return 0;
     }
 
@@ -237,7 +231,7 @@ internal sealed class HostApplication
             .ConfigureAwait(false);
     }
 
-    private void PrintBanner(
+    private static void PrintBanner(
         ISqloomApplication? application,
         string currentDirectory)
     {
@@ -245,7 +239,7 @@ internal sealed class HostApplication
         {
             CurrentDirectory = currentDirectory,
         });
-        _consoleWriter.PrintBanner(
+        HostConsoleWriter.PrintBanner(
             manifest?.Name,
             GetProjectNames(application));
     }
@@ -261,12 +255,8 @@ internal sealed class HostApplication
         return new CommandExecutionContext
         {
             StartupOptions = startupOptions,
-            Arguments = startupOptions.ApplicationArguments,
             CurrentDirectory = currentDirectory,
-            ConsoleWriter = _consoleWriter,
-            DebugWriter = startupOptions.DebugEnabled
-                ? new HostDebugWriter(isEnabled: true)
-                : HostDebugWriter.Disabled,
+            DebugEnabled = startupOptions.DebugEnabled,
             Application = application,
         };
     }

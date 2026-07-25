@@ -13,7 +13,7 @@ namespace Sqloom.Host.QueryStore;
 /// <summary>
 /// Discovers user-defined database objects from SQL Server or Azure SQL using a readonly connection.
 /// </summary>
-internal sealed class SqlServerDiscoveredObjectCollector
+internal static class SqlServerDiscoveredObjectCollector
 {
     private const string UserTablesAndViewsSql = """
         SELECT
@@ -56,8 +56,10 @@ internal sealed class SqlServerDiscoveredObjectCollector
             object_kind;
         """;
 
-    /// <inheritdoc />
-    public async Task<DbObjectCatalog> CaptureAsync(
+    /// <summary>
+    /// Captures user-defined database object metadata from a readonly SQL Server connection.
+    /// </summary>
+    public static async Task<DbObjectCatalog> CaptureAsync(
         string readOnlyConnectionString,
         DbObjectScanOptions options,
         CancellationToken cancellationToken = default)

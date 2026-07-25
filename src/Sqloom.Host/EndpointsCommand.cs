@@ -38,7 +38,7 @@ internal sealed class EndpointsCommand
                 .ConfigureAwait(false);
         }
 
-        context.ConsoleWriter.PrintEndpointCatalog(
+        HostConsoleWriter.PrintEndpointCatalog(
             sourceProjectPath,
             operations,
             jsonOutputPath);

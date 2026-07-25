@@ -7,9 +7,9 @@ namespace Sqloom.Host;
 /// <summary>
 /// Parses and validates the Sqloom host startup command line.
 /// </summary>
-internal sealed class HostStartupCommandLine
+internal static class HostStartupCommandLine
 {
-    public HostStartupOptions Parse(string[] args, string currentDirectory)
+    public static HostStartupOptions Parse(string[] args, string currentDirectory)
     {
         ArgumentNullException.ThrowIfNull(args);
         ArgumentException.ThrowIfNullOrWhiteSpace(currentDirectory);

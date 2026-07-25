@@ -20,7 +20,7 @@ internal sealed class CorrelateCommand
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
     {
-        context.ConsoleWriter.PrintBanner(
+        HostConsoleWriter.PrintBanner(
             null,
             HostApplication.GetProjectNames(context.Application));
 
@@ -35,9 +35,9 @@ internal sealed class CorrelateCommand
         var arguments = CorrelateArgumentParser.Parse(
             context.Arguments,
             readOnlyConnectionString);
-        arguments.DebugWriter = context.DebugWriter;
+        arguments.DebugEnabled = context.DebugEnabled;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
-        context.ConsoleWriter.PrintCorrelationSummary(
+        HostConsoleWriter.PrintCorrelationSummary(
             result.Report,
             result.JsonOutputPath);
         return 0;
@@ -93,7 +93,7 @@ internal sealed class CorrelateCommand
             rawReport,
             replayRunResult.AppName,
             arguments.JsonOutputPath);
-        arguments.DebugWriter.PrintCorrelationRun(arguments, report);
+        HostDebugWriter.PrintCorrelationRun(arguments.DebugEnabled, arguments, report);
 
         await JsonFileWriter.WriteAsync(
                 arguments.JsonOutputPath,

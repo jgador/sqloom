@@ -12,7 +12,7 @@ namespace Sqloom.Host;
 /// <summary>
 /// Posts advice requests to the configured OpenAI-compatible endpoint.
 /// </summary>
-internal sealed class OpenAIAdviceClient
+internal static class OpenAIAdviceClient
 {
     private const string ResponsesPath = "v1/responses";
 
@@ -21,38 +21,28 @@ internal sealed class OpenAIAdviceClient
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    private readonly HttpClient _httpClient;
-    private readonly HostDebugWriter _debugWriter;
-    private readonly string _model;
-
-    public OpenAIAdviceClient(
+    internal static async Task<OpenAITuningAdviceResponse> CreateAdviceAsync(
         HttpClient httpClient,
         string model,
-        HostDebugWriter debugWriter)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(model);
-
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _model = model;
-        _debugWriter = debugWriter ?? throw new ArgumentNullException(nameof(debugWriter));
-    }
-
-    public async Task<OpenAITuningAdviceResponse> CreateAdviceAsync(
         OpenAITuningAdviceRequest request,
+        bool debugEnabled,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(httpClient);
+        ArgumentException.ThrowIfNullOrWhiteSpace(model);
         ArgumentNullException.ThrowIfNull(request);
 
-        var requestPayload = BuildResponsesRequest(request);
+        var requestPayload = BuildResponsesRequest(model, request);
         var requestJson = JsonSerializer.Serialize(
             requestPayload,
             _serializerOptions);
-        var requestUri = _httpClient.BaseAddress is { } baseAddress
+        var requestUri = httpClient.BaseAddress is { } baseAddress
             ? new Uri(baseAddress, ResponsesPath)
             : new Uri(ResponsesPath, UriKind.Relative);
-        _debugWriter.PrintOpenAIRequest(
+        HostDebugWriter.PrintOpenAIRequest(
+            debugEnabled,
             requestUri,
-            _httpClient.DefaultRequestHeaders.Authorization,
+            httpClient.DefaultRequestHeaders.Authorization,
             requestJson);
 
         using var httpRequest = new HttpRequestMessage(HttpMethod.Post, requestUri)
@@ -63,13 +53,14 @@ internal sealed class OpenAIAdviceClient
                 "application/json"),
         };
 
-        using var response = await _httpClient
+        using var response = await httpClient
             .SendAsync(httpRequest, cancellationToken)
             .ConfigureAwait(false);
         var responseJson = await response.Content
             .ReadAsStringAsync(cancellationToken)
             .ConfigureAwait(false);
-        _debugWriter.PrintOpenAIResponse(
+        HostDebugWriter.PrintOpenAIResponse(
+            debugEnabled,
             response.StatusCode,
             responseJson);
         if (!response.IsSuccessStatusCode)
@@ -97,7 +88,7 @@ internal sealed class OpenAIAdviceClient
             Recommendations = recommendations,
             Proposals = proposalResult.Proposals,
             Warnings = proposalResult.Warnings,
-            ModelName = _model,
+            ModelName = model,
         };
     }
 
@@ -173,11 +164,13 @@ internal sealed class OpenAIAdviceClient
         return true;
     }
 
-    private object BuildResponsesRequest(OpenAITuningAdviceRequest request)
+    private static object BuildResponsesRequest(
+        string model,
+        OpenAITuningAdviceRequest request)
     {
         return new
         {
-            model = _model,
+            model,
             instructions = BuildSystemPrompt(),
             input = BuildInput(request),
             text = new

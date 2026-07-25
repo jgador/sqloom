@@ -19,24 +19,24 @@ internal static class TuneWorkflowRunner
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(arguments);
-        arguments.DebugWriter.PrintTuneRun(arguments);
+        HostDebugWriter.PrintTuneRun(arguments.DebugEnabled, arguments);
 
         ReplayCommand replayCommand = new();
-        arguments.DebugWriter.PrintTuneStageStarting("replay");
+        HostDebugWriter.PrintTuneStageStarting(arguments.DebugEnabled, "replay");
         var replayResult = await replayCommand
             .ExecuteAsync(arguments.ReplayArguments, cancellationToken)
             .ConfigureAwait(false);
-        arguments.DebugWriter.PrintTuneStageCompleted("replay", replayResult.ReplayResult.SummaryArtifactPath);
+        HostDebugWriter.PrintTuneStageCompleted(arguments.DebugEnabled, "replay", replayResult.ReplayResult.SummaryArtifactPath);
 
         ObserveCommand observeCommand = new();
-        arguments.DebugWriter.PrintTuneStageStarting("observe");
+        HostDebugWriter.PrintTuneStageStarting(arguments.DebugEnabled, "observe");
         var observeResult = await observeCommand
             .ExecuteAsync(arguments.ObserveArguments, cancellationToken)
             .ConfigureAwait(false);
-        arguments.DebugWriter.PrintTuneStageCompleted("observe", observeResult.JsonOutputPath);
+        HostDebugWriter.PrintTuneStageCompleted(arguments.DebugEnabled, "observe", observeResult.JsonOutputPath);
 
         CorrelateCommand correlateCommand = new();
-        arguments.DebugWriter.PrintTuneStageStarting("correlate");
+        HostDebugWriter.PrintTuneStageStarting(arguments.DebugEnabled, "correlate");
         var correlateResult = await correlateCommand
             .ExecuteAsync(
                 arguments.CorrelateArguments,
@@ -44,17 +44,17 @@ internal static class TuneWorkflowRunner
                 replayResult.ReplayResult,
                 cancellationToken)
             .ConfigureAwait(false);
-        arguments.DebugWriter.PrintTuneStageCompleted("correlate", correlateResult.JsonOutputPath);
+        HostDebugWriter.PrintTuneStageCompleted(arguments.DebugEnabled, "correlate", correlateResult.JsonOutputPath);
 
         AdviceCommand adviceCommand = new();
-        arguments.DebugWriter.PrintTuneStageStarting("advise");
+        HostDebugWriter.PrintTuneStageStarting(arguments.DebugEnabled, "advise");
         var adviceResult = await adviceCommand
             .ExecuteAsync(
                 arguments.AdviseArguments,
                 correlateResult.Report,
                 cancellationToken)
             .ConfigureAwait(false);
-        arguments.DebugWriter.PrintTuneStageCompleted("advise", adviceResult.JsonOutputPath);
+        HostDebugWriter.PrintTuneStageCompleted(arguments.DebugEnabled, "advise", adviceResult.JsonOutputPath);
 
         var report = CreateReport(
             arguments,

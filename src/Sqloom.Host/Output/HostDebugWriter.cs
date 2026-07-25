@@ -16,7 +16,7 @@ namespace Sqloom.Host;
 /// <summary>
 /// Prints Sqloom stage diagnostics to stderr when debug output is enabled.
 /// </summary>
-internal sealed class HostDebugWriter
+internal static class HostDebugWriter
 {
     private static readonly string[] SecretConnectionStringKeys =
     [
@@ -27,21 +27,13 @@ internal sealed class HostDebugWriter
         "key",
     ];
 
-    public static HostDebugWriter Disabled { get; } = new(false);
-
-    public HostDebugWriter(bool isEnabled)
-    {
-        IsEnabled = isEnabled;
-    }
-
-    public bool IsEnabled { get; }
-
-    public void PrintObserveRun(
+    public static void PrintObserveRun(
+        bool debugEnabled,
         ObserveArguments arguments,
         string jsonOutputPath,
         QueryStoreSnapshot snapshot)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }
@@ -64,9 +56,11 @@ internal sealed class HostDebugWriter
             ]);
     }
 
-    public void PrintReplayRun(ReplayArguments arguments)
+    public static void PrintReplayRun(
+        bool debugEnabled,
+        ReplayArguments arguments)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }
@@ -88,11 +82,12 @@ internal sealed class HostDebugWriter
             ]);
     }
 
-    public void PrintCorrelationRun(
+    public static void PrintCorrelationRun(
+        bool debugEnabled,
         CorrelateArguments arguments,
         QueryCorrelationReport report)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }
@@ -112,9 +107,11 @@ internal sealed class HostDebugWriter
             ]);
     }
 
-    public void PrintAdviceRun(AdviseArguments arguments)
+    public static void PrintAdviceRun(
+        bool debugEnabled,
+        AdviseArguments arguments)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }
@@ -135,9 +132,11 @@ internal sealed class HostDebugWriter
             ]);
     }
 
-    public void PrintTuneRun(TuneArguments arguments)
+    public static void PrintTuneRun(
+        bool debugEnabled,
+        TuneArguments arguments)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }
@@ -160,9 +159,11 @@ internal sealed class HostDebugWriter
             ]);
     }
 
-    public void PrintTuneStageStarting(string stageName)
+    public static void PrintTuneStageStarting(
+        bool debugEnabled,
+        string stageName)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }
@@ -173,11 +174,12 @@ internal sealed class HostDebugWriter
             [$"stage={stageName}"]);
     }
 
-    public void PrintTuneStageCompleted(
+    public static void PrintTuneStageCompleted(
+        bool debugEnabled,
         string stageName,
         string artifactPath)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }
@@ -191,12 +193,13 @@ internal sealed class HostDebugWriter
             ]);
     }
 
-    public void PrintOpenAIRequest(
+    public static void PrintOpenAIRequest(
+        bool debugEnabled,
         Uri requestUri,
         AuthenticationHeaderValue? authorizationHeader,
         string requestJson)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }
@@ -213,11 +216,12 @@ internal sealed class HostDebugWriter
             requestJson);
     }
 
-    public void PrintOpenAIResponse(
+    public static void PrintOpenAIResponse(
+        bool debugEnabled,
         HttpStatusCode statusCode,
         string responseJson)
     {
-        if (!IsEnabled)
+        if (!debugEnabled)
         {
             return;
         }

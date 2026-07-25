@@ -19,5 +19,5 @@ internal sealed class AdviseArguments
 
     public OpenAIAdviceOptions? OpenAIOptions { get; init; }
 
-    public HostDebugWriter DebugWriter { get; set; } = HostDebugWriter.Disabled;
+    public bool DebugEnabled { get; set; }
 }

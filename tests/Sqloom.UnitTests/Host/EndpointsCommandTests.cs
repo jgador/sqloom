@@ -77,12 +77,10 @@ public sealed class EndpointsCommandTests
         {
             StartupOptions = new HostStartupOptions
             {
+                ApplicationArguments = arguments,
                 AppTargetPath = RepositoryPaths.GetTestAppProjectPath(),
             },
-            Arguments = arguments,
             CurrentDirectory = currentDirectory,
-            ConsoleWriter = new HostConsoleWriter(),
-            DebugWriter = HostDebugWriter.Disabled,
         };
 
         var exitCode = await command.ExecuteAsync(context);

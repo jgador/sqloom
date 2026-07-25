@@ -11,9 +11,9 @@ namespace Sqloom.Host;
 /// <summary>
 /// Prints Sqloom host output to the console.
 /// </summary>
-internal sealed class HostConsoleWriter
+internal static class HostConsoleWriter
 {
-    public void PrintBanner(
+    public static void PrintBanner(
         string? appName,
         IReadOnlyList<string> projectNames)
     {
@@ -28,7 +28,7 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("Replay catalog: source-discovered endpoints with app-owned overlays.");
     }
 
-    public void PrintUsage()
+    public static void PrintUsage()
     {
         Console.WriteLine("Sqloom");
         Console.WriteLine();
@@ -47,7 +47,7 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("Run 'sqloom help <command>' for more information on a command.");
     }
 
-    public void PrintHelp(string[] applicationArguments)
+    public static void PrintHelp(string[] applicationArguments)
     {
         var command = ResolveHelpCommand(applicationArguments);
         if (command is null)
@@ -59,12 +59,12 @@ internal sealed class HostConsoleWriter
         PrintCommandHelp(command);
     }
 
-    public void PrintVersion(string version)
+    public static void PrintVersion(string version)
     {
         Console.WriteLine($"sqloom {version}");
     }
 
-    public void PrintNoCommandHint()
+    public static void PrintNoCommandHint()
     {
         Console.WriteLine("Use sqloom help to list commands.");
         Console.WriteLine("Use sqloom help tune to see the end-to-end workflow.");
@@ -72,7 +72,7 @@ internal sealed class HostConsoleWriter
         Console.WriteLine("Use sqloom --version to print the installed Sqloom tool version.");
     }
 
-    public void PrintInitResult(InitResult result)
+    public static void PrintInitResult(InitResult result)
     {
         Console.WriteLine($"Scaffolded sqloom skill for agent selection '{result.AgentSelection}' in {result.RepositoryRoot}.");
         foreach (var file in result.Files)
@@ -81,7 +81,7 @@ internal sealed class HostConsoleWriter
         }
     }
 
-    public void PrintQueryStoreSnapshot(
+    public static void PrintQueryStoreSnapshot(
         QueryStoreSnapshot snapshot,
         string jsonOutputPath,
         bool appOnly,
@@ -171,7 +171,7 @@ internal sealed class HostConsoleWriter
         }
     }
 
-    public void PrintReplaySummary(
+    public static void PrintReplaySummary(
         EndpointReplayRunResult replayResult,
         RunReport runReport)
     {
@@ -251,7 +251,7 @@ internal sealed class HostConsoleWriter
         }
     }
 
-    public void PrintEndpointCatalog(
+    public static void PrintEndpointCatalog(
         string sourceProjectPath,
         IReadOnlyList<ReplayOperation> operations,
         string? jsonOutputPath)
@@ -282,7 +282,7 @@ internal sealed class HostConsoleWriter
         }
     }
 
-    public void PrintCorrelationSummary(
+    public static void PrintCorrelationSummary(
         QueryCorrelationReport report,
         string jsonOutputPath)
     {
@@ -319,7 +319,7 @@ internal sealed class HostConsoleWriter
         }
     }
 
-    public void PrintAdviceSummary(
+    public static void PrintAdviceSummary(
         AdviceReport report,
         string jsonOutputPath)
     {
@@ -370,7 +370,7 @@ internal sealed class HostConsoleWriter
         }
     }
 
-    public void PrintTuneSummary(
+    public static void PrintTuneSummary(
         TuneWorkflowReport report,
         string summaryOutputPath)
     {

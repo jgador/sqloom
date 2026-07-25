@@ -9,5 +9,5 @@ internal sealed class ReplayArguments
 {
     public required ReplayRunnerOptions RunnerOptions { get; init; }
 
-    public HostDebugWriter DebugWriter { get; set; } = HostDebugWriter.Disabled;
+    public bool DebugEnabled { get; set; }
 }

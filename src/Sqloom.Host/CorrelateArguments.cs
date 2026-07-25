@@ -13,5 +13,5 @@ internal sealed class CorrelateArguments
 
     public required string JsonOutputPath { get; init; }
 
-    public HostDebugWriter DebugWriter { get; set; } = HostDebugWriter.Disabled;
+    public bool DebugEnabled { get; set; }
 }

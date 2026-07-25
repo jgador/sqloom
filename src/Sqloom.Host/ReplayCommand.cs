@@ -31,7 +31,7 @@ internal sealed class ReplayCommand
         };
         var manifest = application.Describe(applicationContext);
 
-        context.ConsoleWriter.PrintBanner(
+        HostConsoleWriter.PrintBanner(
             manifest.Name,
             HostApplication.GetProjectNames(application));
 
@@ -53,9 +53,9 @@ internal sealed class ReplayCommand
             context.CurrentDirectory,
             artifactDirectoryOverride: replayArtifactDirectory,
             sourceProjectPathOverride: sourceProjectPath);
-        arguments.DebugWriter = context.DebugWriter;
+        arguments.DebugEnabled = context.DebugEnabled;
         var result = await ExecuteAsync(arguments).ConfigureAwait(false);
-        context.ConsoleWriter.PrintReplaySummary(
+        HostConsoleWriter.PrintReplaySummary(
             result.ReplayResult,
             BuildRunReport(result.ReplayResult));
         return result.ExitCode;
@@ -65,7 +65,7 @@ internal sealed class ReplayCommand
         ReplayArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        arguments.DebugWriter.PrintReplayRun(arguments);
+        HostDebugWriter.PrintReplayRun(arguments.DebugEnabled, arguments);
         var replayResult = await EndpointReplayRunner
             .RunAsync(arguments.RunnerOptions, cancellationToken)
             .ConfigureAwait(false);
