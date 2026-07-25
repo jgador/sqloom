@@ -16,8 +16,6 @@ namespace Sqloom.Host;
 internal sealed class CorrelateCommand
     : ICommandHandler
 {
-    private readonly CorrelateArgumentParser _argumentParser = new();
-
     public HostCommandKind CommandKind => HostCommandKind.Correlate;
 
     public async Task<int> ExecuteAsync(CommandExecutionContext context)
@@ -26,7 +24,7 @@ internal sealed class CorrelateCommand
             null,
             HostApplication.GetProjectNames(context.Application));
 
-        var readOnlyConnectionString = _argumentParser.GetQueryStoreConnectionString(context.Arguments);
+        var readOnlyConnectionString = CorrelateArgumentParser.GetQueryStoreConnectionString(context.Arguments);
         if (string.IsNullOrWhiteSpace(readOnlyConnectionString))
         {
             Console.Error.WriteLine(
@@ -34,7 +32,7 @@ internal sealed class CorrelateCommand
             return 1;
         }
 
-        var arguments = _argumentParser.Parse(
+        var arguments = CorrelateArgumentParser.Parse(
             context.Arguments,
             readOnlyConnectionString);
         arguments.DebugWriter = context.DebugWriter;

@@ -18,7 +18,6 @@ internal sealed class TuneCommand
     private readonly TuneArgumentParser _argumentParser;
     private readonly TuneWorkflowRunner _workflowRunner;
     private readonly ISqlServerDacpacExporter _dacpacExporter;
-    private readonly EndpointSourceProjectResolver _sourceProjectResolver = new();
 
     public TuneCommand(
         TuneArgumentParser? argumentParser = null,
@@ -55,7 +54,7 @@ internal sealed class TuneCommand
             manifest,
             context.CurrentDirectory);
 
-        var sourceProjectPath = _sourceProjectResolver.Resolve(
+        var sourceProjectPath = EndpointSourceProjectResolver.Resolve(
             context.Arguments,
             context.StartupOptions,
             context.CurrentDirectory);

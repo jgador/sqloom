@@ -26,37 +26,13 @@ internal sealed class OpenAIAdviceGenerator : IAdviceReportGenerator
 
     internal OpenAIAdviceGenerator(
         OpenAIAdviceOptions options,
-        HostDebugWriter debugWriter)
-        : this(
-            options,
-            CreateHttpClient(options),
-            ownsHttpClient: true,
-            debugWriter)
-    {
-    }
-
-    internal OpenAIAdviceGenerator(
-        OpenAIAdviceOptions options,
-        HttpClient httpClient,
+        HttpClient? httpClient = null,
         HostDebugWriter? debugWriter = null)
-        : this(
-            options,
-            httpClient,
-            ownsHttpClient: false,
-            debugWriter ?? HostDebugWriter.Disabled)
-    {
-    }
-
-    private OpenAIAdviceGenerator(
-        OpenAIAdviceOptions options,
-        HttpClient httpClient,
-        bool ownsHttpClient,
-        HostDebugWriter debugWriter)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
-        _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-        _ownsHttpClient = ownsHttpClient;
-        _debugWriter = debugWriter ?? throw new ArgumentNullException(nameof(debugWriter));
+        _httpClient = httpClient ?? CreateHttpClient(_options);
+        _ownsHttpClient = httpClient is null;
+        _debugWriter = debugWriter ?? HostDebugWriter.Disabled;
         _httpClient.BaseAddress ??= BuildOpenAIBaseAddress(_options.BaseUrl);
         _httpClient.DefaultRequestHeaders.Authorization ??=
             new AuthenticationHeaderValue("Bearer", _options.ApiKey);

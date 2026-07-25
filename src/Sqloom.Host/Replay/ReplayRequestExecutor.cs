@@ -7,17 +7,17 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Testing.AspNetCore;
 using Sqloom.Pipeline.Execution;
+using Sqloom.Testing.AspNetCore;
 
 namespace Sqloom.Host.Replay;
 
 /// <summary>
 /// Executes replay requests and captures the resulting HTTP and SQL evidence.
 /// </summary>
-internal sealed class ReplayRequestExecutor
+internal static class ReplayRequestExecutor
 {
-    public async Task<EndpointReplayResult> ExecuteAsync(
+    public static async Task<EndpointReplayResult> ExecuteAsync(
         HttpClient httpClient,
         ReplaySqlCaptureCollector? captureCollector,
         EndpointReplayRequest request,

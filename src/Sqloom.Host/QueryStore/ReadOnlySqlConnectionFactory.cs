@@ -7,14 +7,14 @@ using Microsoft.Data.SqlClient;
 namespace Sqloom.Host.QueryStore;
 
 /// <summary>
-/// Creates readonly SQL connection.
+/// Creates readonly SQL connections.
 /// </summary>
-internal sealed class ReadOnlySqlConnectionFactory
+internal static class ReadOnlySqlConnectionFactory
 {
     /// <summary>
     /// Creates a SQL Server connection builder and supplies Sqloom's application name when none is configured.
     /// </summary>
-    public SqlConnectionStringBuilder CreateBuilder(string readOnlyConnectionString)
+    internal static SqlConnectionStringBuilder CreateBuilder(string readOnlyConnectionString)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(readOnlyConnectionString);
 
@@ -35,7 +35,7 @@ internal sealed class ReadOnlySqlConnectionFactory
     /// <summary>
     /// Opens a SQL Server connection from the normalized readonly connection string.
     /// </summary>
-    public async Task<SqlConnection> CreateOpenConnectionAsync(
+    internal static async Task<SqlConnection> CreateOpenConnectionAsync(
         string readOnlyConnectionString,
         CancellationToken cancellationToken = default)
     {

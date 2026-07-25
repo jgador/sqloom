@@ -231,7 +231,6 @@ public sealed class AppResolverTests
             typeof(Sqloom.Testing.AspNetCore.ReplaySqlCaptureCollector)) as
             Sqloom.Testing.AspNetCore.ReplaySqlCaptureCollector;
         Assert.NotNull(captureCollector);
-        Sqloom.Host.Replay.ReplayRequestExecutor executor = new();
         Sqloom.Pipeline.Execution.EndpointReplayRequest request = new()
         {
             OperationKey = "GET /api/products/by-category",
@@ -240,7 +239,7 @@ public sealed class AppResolverTests
             RelativePathAndQuery = "/api/products/by-category?categoryId=1&minPrice=9.99",
         };
 
-        var result = await executor.ExecuteAsync(
+        var result = await Sqloom.Host.Replay.ReplayRequestExecutor.ExecuteAsync(
             session.ReplayHost.Client,
             captureCollector,
             request,

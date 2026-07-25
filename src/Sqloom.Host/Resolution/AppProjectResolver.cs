@@ -12,12 +12,11 @@ namespace Sqloom.Host;
 /// <summary>
 /// Resolves harness target projects and assemblies into loadable assembly paths.
 /// </summary>
-internal sealed class AppProjectResolver
+internal static class AppProjectResolver
 {
     private const int MinimumFileBasedAppSdkMajorVersion = 10;
-    private readonly TargetPathResolver _targetPathResolver = new();
 
-    public async Task<string> ResolveAssemblyPathAsync(
+    public static async Task<string> ResolveAssemblyPathAsync(
         string targetPath,
         bool noBuild,
         string dotNetCommand,
@@ -36,14 +35,14 @@ internal sealed class AppProjectResolver
         };
     }
 
-    internal async Task<IReadOnlyList<ResolvedAssemblySelection>> ResolveAssemblySelectionsAsync(
+    internal static async Task<IReadOnlyList<ResolvedAssemblySelection>> ResolveAssemblySelectionsAsync(
         string targetPath,
         bool noBuild,
         string dotNetCommand,
         CancellationToken cancellationToken = default)
     {
         List<ResolvedAssemblySelection> assemblySelections = [];
-        foreach (var selection in _targetPathResolver.ResolveTargetSelections(targetPath))
+        foreach (var selection in TargetPathResolver.ResolveTargetSelections(targetPath))
         {
             assemblySelections.Add(new ResolvedAssemblySelection(
                 selection,
@@ -68,7 +67,7 @@ internal sealed class AppProjectResolver
             $"The Sqloom target '{Path.GetFullPath(targetPath)}' resolved to multiple harness assembly candidates: {string.Join(", ", assemblySelections.Select(static selection => selection.AssemblyPath))}. Pass a narrower target.");
     }
 
-    private async Task<string> ResolveAssemblyPathAsync(
+    private static async Task<string> ResolveAssemblyPathAsync(
         ResolvedTargetSelection targetSelection,
         bool noBuild,
         string dotNetCommand,

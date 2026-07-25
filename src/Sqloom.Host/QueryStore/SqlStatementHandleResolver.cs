@@ -35,7 +35,6 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
     ];
 
     private readonly string _connectionString;
-    private readonly ReadOnlySqlConnectionFactory _connectionFactory = new();
 
     /// <summary>
     /// Creates a resolver for the target database.
@@ -62,7 +61,7 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
 
         try
         {
-            var connection = await _connectionFactory
+            var connection = await ReadOnlySqlConnectionFactory
                 .CreateOpenConnectionAsync(_connectionString, cancellationToken)
                 .ConfigureAwait(false);
             await using (connection.ConfigureAwait(false))

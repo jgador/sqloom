@@ -17,7 +17,6 @@ internal sealed class EndpointReplayRunner
 {
     private readonly EndpointCatalogLoader _catalogLoader = new();
     private readonly ReplayPlanBuilder _planBuilder = new();
-    private readonly ReplayRequestExecutor _requestExecutor = new();
     private readonly ReplayRequestResolver _requestResolver = new();
 
     /// <summary>
@@ -226,7 +225,7 @@ internal sealed class EndpointReplayRunner
                     discoveredOperation,
                     replayInputOperation,
                     preparedOperation);
-                result = await _requestExecutor
+                result = await ReplayRequestExecutor
                     .ExecuteAsync(
                         replayHost.Client,
                         captureCollector,

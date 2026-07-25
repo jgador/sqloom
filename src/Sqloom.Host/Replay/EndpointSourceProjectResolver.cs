@@ -9,11 +9,11 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Resolves the ASP.NET Core source project used for endpoint discovery.
 /// </summary>
-internal sealed class EndpointSourceProjectResolver
+internal static class EndpointSourceProjectResolver
 {
     private const string FileAppProjectDirective = "#:project";
 
-    public string Resolve(
+    public static string Resolve(
         string[] args,
         HostStartupOptions startupOptions,
         string currentDirectory)

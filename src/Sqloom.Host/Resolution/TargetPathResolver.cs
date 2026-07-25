@@ -12,13 +12,13 @@ namespace Sqloom.Host;
 /// <summary>
 /// Resolves supported Sqloom harness targets down to concrete projects or assemblies.
 /// </summary>
-internal sealed class TargetPathResolver
+internal static class TargetPathResolver
 {
     private static readonly Regex _solutionProjectLineRegex = new(
         "^Project\\(\"\\{[^}]+\\}\"\\)\\s*=\\s*\"[^\"]+\",\\s*\"(?<path>[^\"]+)\",\\s*\"\\{[^}]+\\}\"$",
         RegexOptions.Compiled);
 
-    public IReadOnlyList<ResolvedTargetSelection> ResolveTargetSelections(string targetPath)
+    internal static IReadOnlyList<ResolvedTargetSelection> ResolveTargetSelections(string targetPath)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(targetPath);
 

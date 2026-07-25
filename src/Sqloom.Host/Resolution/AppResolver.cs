@@ -18,7 +18,6 @@ internal sealed class AppResolver
     private static readonly object _defaultProbeDirectoryLock = new();
     private static readonly List<AssemblyProbe> _defaultAssemblyProbes = [];
     private static bool _defaultAssemblyResolverRegistered;
-    private readonly AppProjectResolver _projectResolver = new();
 
     public async Task<ISqloomApplication> ResolveAsync(
         HostStartupOptions startupOptions,
@@ -27,7 +26,7 @@ internal sealed class AppResolver
         ArgumentNullException.ThrowIfNull(startupOptions);
 
         var targetPath = GetRequiredTargetPath(startupOptions);
-        var assemblySelections = await _projectResolver
+        var assemblySelections = await AppProjectResolver
             .ResolveAssemblySelectionsAsync(
                 targetPath,
                 startupOptions.NoBuild,
@@ -45,7 +44,7 @@ internal sealed class AppResolver
     {
         ArgumentNullException.ThrowIfNull(startupOptions);
 
-        return _projectResolver.ResolveAssemblyPathAsync(
+        return AppProjectResolver.ResolveAssemblyPathAsync(
             GetRequiredTargetPath(startupOptions),
             startupOptions.NoBuild,
             startupOptions.DotNetCommand,

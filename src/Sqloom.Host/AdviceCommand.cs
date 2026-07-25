@@ -152,7 +152,7 @@ internal sealed class AdviceCommand
     private IAdviceReportGenerator CreateAdviceReportGenerator(AdviseArguments arguments)
     {
         return _generatorFactory is null
-            ? new OpenAIAdviceGenerator(arguments.OpenAIOptions!, arguments.DebugWriter)
+            ? new OpenAIAdviceGenerator(arguments.OpenAIOptions!, debugWriter: arguments.DebugWriter)
             : _generatorFactory(arguments.OpenAIOptions!);
     }
 

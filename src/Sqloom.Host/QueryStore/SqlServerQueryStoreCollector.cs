@@ -147,8 +147,6 @@ internal sealed class SqlServerQueryStoreCollector
             query_store_wait_stats.plan_id ASC;
         """;
 
-    private readonly ReadOnlySqlConnectionFactory _connectionFactory = new();
-
     /// <inheritdoc />
     public async Task<QueryStoreSnapshot> CaptureAsync(
         string readOnlyConnectionString,
@@ -158,7 +156,7 @@ internal sealed class SqlServerQueryStoreCollector
         ArgumentException.ThrowIfNullOrWhiteSpace(readOnlyConnectionString);
         ValidateOptions(options);
 
-        var connection = await _connectionFactory
+        var connection = await ReadOnlySqlConnectionFactory
             .CreateOpenConnectionAsync(readOnlyConnectionString, cancellationToken)
             .ConfigureAwait(false);
 

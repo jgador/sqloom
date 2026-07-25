@@ -56,8 +56,6 @@ internal sealed class SqlServerDiscoveredObjectCollector
             object_kind;
         """;
 
-    private readonly ReadOnlySqlConnectionFactory _connectionFactory = new();
-
     /// <inheritdoc />
     public async Task<DbObjectCatalog> CaptureAsync(
         string readOnlyConnectionString,
@@ -67,7 +65,7 @@ internal sealed class SqlServerDiscoveredObjectCollector
         ArgumentException.ThrowIfNullOrWhiteSpace(readOnlyConnectionString);
         ValidateOptions(options);
 
-        var connection = await _connectionFactory
+        var connection = await ReadOnlySqlConnectionFactory
             .CreateOpenConnectionAsync(readOnlyConnectionString, cancellationToken)
             .ConfigureAwait(false);
 

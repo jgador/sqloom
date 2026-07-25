@@ -34,14 +34,9 @@ internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
 
     private readonly IAgentReplayDataClient _agentClient;
 
-    public AgentFrameworkReplayDataGenerator(OpenAIAdviceOptions options)
-        : this(options, null)
-    {
-    }
-
     internal AgentFrameworkReplayDataGenerator(
         OpenAIAdviceOptions options,
-        IAgentReplayDataClient? agentClient)
+        IAgentReplayDataClient? agentClient = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         _agentClient = agentClient ?? new OpenAIAgentReplayDataClient(options);

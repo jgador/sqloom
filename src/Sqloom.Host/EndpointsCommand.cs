@@ -12,7 +12,6 @@ internal sealed class EndpointsCommand
     : ICommandHandler
 {
     private readonly EndpointCatalogLoader _catalogLoader = new();
-    private readonly EndpointSourceProjectResolver _sourceProjectResolver = new();
 
     public HostCommandKind CommandKind => HostCommandKind.Endpoints;
 
@@ -21,7 +20,7 @@ internal sealed class EndpointsCommand
         ArgumentNullException.ThrowIfNull(context);
 
         CommandArgumentSupport.ValidateArguments(context.Arguments, HostCommandKind.Endpoints);
-        var sourceProjectPath = _sourceProjectResolver.Resolve(
+        var sourceProjectPath = EndpointSourceProjectResolver.Resolve(
             context.Arguments,
             context.StartupOptions,
             context.CurrentDirectory);

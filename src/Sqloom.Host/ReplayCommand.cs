@@ -16,7 +16,6 @@ internal sealed class ReplayCommand
 {
     private readonly ReplayArgumentParser _argumentParser = new();
     private readonly EndpointReplayRunner _runner = new();
-    private readonly EndpointSourceProjectResolver _sourceProjectResolver = new();
 
     public HostCommandKind CommandKind => HostCommandKind.Replay;
 
@@ -42,7 +41,7 @@ internal sealed class ReplayCommand
         var replayArtifactDirectory = _argumentParser.GetReplayArtifactDir(
             context.Arguments,
             context.CurrentDirectory);
-        var sourceProjectPath = _sourceProjectResolver.Resolve(
+        var sourceProjectPath = EndpointSourceProjectResolver.Resolve(
             context.Arguments,
             context.StartupOptions,
             context.CurrentDirectory);

@@ -8,14 +8,14 @@ namespace Sqloom.Host;
 /// <summary>
 /// Parses and validates the Sqloom correlate command arguments.
 /// </summary>
-internal sealed class CorrelateArgumentParser
+internal static class CorrelateArgumentParser
 {
-    public string? GetQueryStoreConnectionString(string[] args)
+    public static string? GetQueryStoreConnectionString(string[] args)
     {
         return CommandArgumentSupport.GetArgumentValue(args, "--read-only-connection-string");
     }
 
-    public CorrelateArguments Parse(
+    public static CorrelateArguments Parse(
         string[] args,
         string connectionString)
     {

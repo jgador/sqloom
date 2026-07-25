@@ -11,9 +11,7 @@ public sealed class ReadOnlySqlConnectionFactoryTests
     [Fact]
     public void SetsDefaultApplicationName_WhenMissing()
     {
-        ReadOnlySqlConnectionFactory factory = new();
-
-        var builder = factory.CreateBuilder("Server=tcp:readonly;Encrypt=True;");
+        var builder = ReadOnlySqlConnectionFactory.CreateBuilder("Server=tcp:readonly;Encrypt=True;");
 
         Assert.Equal("Sqloom", builder.ApplicationName);
         Assert.Contains("readonly", builder.DataSource);
@@ -22,9 +20,7 @@ public sealed class ReadOnlySqlConnectionFactoryTests
     [Fact]
     public void PreservesExistingApplicationName()
     {
-        ReadOnlySqlConnectionFactory factory = new();
-
-        var builder = factory.CreateBuilder("Server=tcp:readonly;Application Name=ExistingApp;");
+        var builder = ReadOnlySqlConnectionFactory.CreateBuilder("Server=tcp:readonly;Application Name=ExistingApp;");
 
         Assert.Equal("ExistingApp", builder.ApplicationName);
     }

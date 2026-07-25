@@ -12,7 +12,6 @@ public sealed class CorrelateArgumentParserTests
     [Fact]
     public void ThrowsWhenReplayArtifactDirIsMissing()
     {
-        CorrelateArgumentParser parser = new();
         var missingReplayDirectory = Path.Combine(
             Path.GetTempPath(),
             "sqloom-host-command-line-tests",
@@ -20,7 +19,7 @@ public sealed class CorrelateArgumentParserTests
         var snapshotPath = CreateTempFile();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => CorrelateArgumentParser.Parse(
                 [
                     "--replay-artifact-dir",
                     missingReplayDirectory,
@@ -35,12 +34,11 @@ public sealed class CorrelateArgumentParserTests
     [Fact]
     public void ThrowsWhenQueryStoreSnapshotIsMissing()
     {
-        CorrelateArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
         var missingSnapshotPath = Path.Combine(replayDirectory, "missing-query-store.json");
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => CorrelateArgumentParser.Parse(
                 [
                     "--replay-artifact-dir",
                     replayDirectory,
@@ -55,12 +53,11 @@ public sealed class CorrelateArgumentParserTests
     [Fact]
     public void RejectsLegacyQueryStoreSnapshotSwitch()
     {
-        CorrelateArgumentParser parser = new();
         var replayDirectory = CreateTempDir();
         var snapshotPath = CreateTempFile();
 
         var exception = Assert.Throws<ArgumentException>(
-            () => parser.Parse(
+            () => CorrelateArgumentParser.Parse(
                 [
                     "--replay-artifact-dir",
                     replayDirectory,
