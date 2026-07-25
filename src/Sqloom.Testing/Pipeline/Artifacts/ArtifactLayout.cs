@@ -128,13 +128,13 @@ public static class ArtifactLayout
     }
 
     /// <summary>
-    /// Builds the replay data preparation artifact path.
+    /// Builds the replay data generation artifact path.
     /// </summary>
-    public static string GetReplayDataPreparationPath(string replayArtifactDirectory)
+    public static string GetReplayDataGenerationPath(string replayArtifactDirectory)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(replayArtifactDirectory);
 
-        return Path.Combine(replayArtifactDirectory, "replay-data-prep.json");
+        return Path.Combine(replayArtifactDirectory, "replay-data-generation.json");
     }
 
     /// <summary>

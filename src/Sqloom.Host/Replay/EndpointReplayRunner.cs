@@ -4,9 +4,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using Sqloom.Testing.AspNetCore;
-using Sqloom.Pipeline.Execution;
 using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
+using Sqloom.Testing.AspNetCore;
 
 namespace Sqloom.Host.Replay;
 
@@ -71,7 +71,7 @@ public sealed class EndpointReplayRunner
 
         var results = new List<EndpointReplayResult>();
         var finalizedPlanItems = new List<EndpointReplayPlanItem>();
-        var replayDataPreparationOperations = new List<ReplayDataPreparationOperation>();
+        var replayDataGenerationOperations = new List<ReplayDataGenerationOperation>();
         var discoveredByKey = discoveredOperations.ToDictionary(
             operation => operation.StableOperationKey,
             StringComparer.OrdinalIgnoreCase);
@@ -93,7 +93,7 @@ public sealed class EndpointReplayRunner
                     overlays,
                     results,
                     finalizedPlanItems,
-                    replayDataPreparationOperations,
+                    replayDataGenerationOperations,
                     cancellationToken)
                 .ConfigureAwait(false);
             replayBootstrap = replayHost.Bootstrap;
@@ -118,22 +118,22 @@ public sealed class EndpointReplayRunner
             .ConfigureAwait(false);
 
         var summaryPath = _artifactWriter.GetSummaryPath(options.ReplayArtifactDir);
-        var replayDataPreparationPath =
+        var replayDataGenerationPath =
             options.ReplayDataAgentOptions.Mode == ReplayDataAgentMode.Off
                 ? null
-                : _artifactWriter.GetReplayDataPreparationPath(options.ReplayArtifactDir);
-        var replayDataPreparation = replayDataPreparationPath is null
+                : _artifactWriter.GetReplayDataGenerationPath(options.ReplayArtifactDir);
+        var replayDataGeneration = replayDataGenerationPath is null
             ? null
-            : CreateReplayDataPreparationReport(
+            : CreateReplayDataGenerationReport(
                 options,
-                replayDataPreparationOperations);
-        if (replayDataPreparationPath is not null
-            && replayDataPreparation is not null)
+                replayDataGenerationOperations);
+        if (replayDataGenerationPath is not null
+            && replayDataGeneration is not null)
         {
             await _artifactWriter
-                .WriteReplayDataPreparationAsync(
-                    replayDataPreparationPath,
-                    replayDataPreparation,
+                .WriteReplayDataGenerationAsync(
+                    replayDataGenerationPath,
+                    replayDataGeneration,
                     cancellationToken)
                 .ConfigureAwait(false);
         }
@@ -146,8 +146,8 @@ public sealed class EndpointReplayRunner
             DiscoveredOpsPath = endpointCatalogPath,
             ReplayPlanArtifactPath = replayPlanPath,
             SummaryArtifactPath = summaryPath,
-            ReplayDataPreparationPath = replayDataPreparationPath,
-            ReplayDataPreparation = replayDataPreparation,
+            ReplayDataGenerationPath = replayDataGenerationPath,
+            ReplayDataGeneration = replayDataGeneration,
             DiscoveredOperations = discoveredOperations,
             ReplayPlan = finalPlan,
             Pipeline = CreatePipeline(options.ReplayArtifactDir, summaryPath, results),
@@ -184,7 +184,7 @@ public sealed class EndpointReplayRunner
         IReadOnlyDictionary<string, ReplayOverlay> overlays,
         ICollection<EndpointReplayResult> results,
         ICollection<EndpointReplayPlanItem> finalizedPlanItems,
-        ICollection<ReplayDataPreparationOperation> replayDataPreparationOperations,
+        ICollection<ReplayDataGenerationOperation> replayDataGenerationOperations,
         CancellationToken cancellationToken)
     {
         var captureCollector =
@@ -213,11 +213,11 @@ public sealed class EndpointReplayRunner
             EndpointReplayResult result;
             try
             {
-                var replayInputOperation = await PrepareReplayDataAsync(
+                var replayInputOperation = await GenerateReplayDataAsync(
                         options,
                         discoveredOperation,
                         resolvedOperation,
-                        replayDataPreparationOperations,
+                        replayDataGenerationOperations,
                         cancellationToken)
                     .ConfigureAwait(false);
                 var preparedOperation = await replayHost
@@ -255,25 +255,25 @@ public sealed class EndpointReplayRunner
         }
     }
 
-    private static async Task<ResolvedReplayOperation> PrepareReplayDataAsync(
+    private static async Task<ResolvedReplayOperation> GenerateReplayDataAsync(
         ReplayRunnerOptions options,
         ReplayOperation discoveredOperation,
         ResolvedReplayOperation resolvedOperation,
-        ICollection<ReplayDataPreparationOperation> replayDataPreparationOperations,
+        ICollection<ReplayDataGenerationOperation> replayDataGenerationOperations,
         CancellationToken cancellationToken)
     {
         if (options.ReplayDataAgentOptions.Mode == ReplayDataAgentMode.Off
-            || options.ReplayDataPreparer is null)
+            || options.ReplayDataGenerator is null)
         {
             return resolvedOperation;
         }
 
-        ReplayDataPreparationOperation preparedData;
+        ReplayDataGenerationOperation preparedData;
         try
         {
-            preparedData = await options.ReplayDataPreparer
-                .PrepareAsync(
-                    new ReplayDataPreparationContext
+            preparedData = await options.ReplayDataGenerator
+                .GenerateAsync(
+                    new ReplayDataGenerationContext
                     {
                         Operation = discoveredOperation,
                         ResolvedOperation = resolvedOperation,
@@ -285,7 +285,7 @@ public sealed class EndpointReplayRunner
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            replayDataPreparationOperations.Add(new ReplayDataPreparationOperation
+            replayDataGenerationOperations.Add(new ReplayDataGenerationOperation
             {
                 OperationKey = discoveredOperation.StableOperationKey,
                 Strategy = "replay-data-agent",
@@ -299,12 +299,12 @@ public sealed class EndpointReplayRunner
                 [
                     "replay-data-agent",
                 ],
-                Notes = "Replay data preparation failed before the operation could be replayed.",
+                Notes = "Replay data generation failed before the operation could be replayed.",
             });
             throw;
         }
 
-        replayDataPreparationOperations.Add(preparedData);
+        replayDataGenerationOperations.Add(preparedData);
         return ApplyPreparedData(resolvedOperation, preparedData.PreparedData);
     }
 
@@ -344,11 +344,11 @@ public sealed class EndpointReplayRunner
         return merged;
     }
 
-    private static ReplayDataPreparationReport CreateReplayDataPreparationReport(
+    private static ReplayDataGenerationReport CreateReplayDataGenerationReport(
         ReplayRunnerOptions options,
-        IReadOnlyList<ReplayDataPreparationOperation> operations)
+        IReadOnlyList<ReplayDataGenerationOperation> operations)
     {
-        return new ReplayDataPreparationReport
+        return new ReplayDataGenerationReport
         {
             AppName = options.AppName,
             Mode = options.ReplayDataAgentOptions.Mode.ToString().ToLowerInvariant(),

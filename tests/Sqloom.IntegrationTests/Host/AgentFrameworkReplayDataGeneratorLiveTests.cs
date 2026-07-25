@@ -1,8 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using Sqloom.Pipeline.Execution;
 using Sqloom.Host.Replay;
+using Sqloom.Pipeline.Execution;
 using Xunit;
 
 namespace Sqloom.Host.Tests;
@@ -10,7 +10,7 @@ namespace Sqloom.Host.Tests;
 /// <summary>
 /// Exercises the live Microsoft Agent Framework replay data path without running Sqloom tune.
 /// </summary>
-public sealed class AgentFrameworkReplayDataPreparerLiveTests
+public sealed class AgentFrameworkReplayDataGeneratorLiveTests
 {
     private const string LiveModel = "gpt-5.4-mini";
 
@@ -19,14 +19,14 @@ public sealed class AgentFrameworkReplayDataPreparerLiveTests
     [Trait("Category", "OpenAI")]
     public async Task WithOpenAIApiKey_GeneratesProductByCategoryQueryValues()
     {
-        // Run with: dotnet test .\tests\Sqloom.IntegrationTests\Sqloom.IntegrationTests.csproj -- --filter-class Sqloom.Host.Tests.AgentFrameworkReplayDataPreparerLiveTests --explicit only
+        // Run with: dotnet test .\tests\Sqloom.IntegrationTests\Sqloom.IntegrationTests.csproj -- --filter-class Sqloom.Host.Tests.AgentFrameworkReplayDataGeneratorLiveTests --explicit only
         var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         if (string.IsNullOrWhiteSpace(apiKey))
         {
             Assert.Skip("Set OPENAI_API_KEY to run the live Microsoft Agent Framework replay data test.");
         }
 
-        AgentFrameworkReplayDataPreparer preparer = new(
+        AgentFrameworkReplayDataGenerator generator = new(
             new OpenAIAdviceOptions
             {
                 ApiKey = apiKey,
@@ -35,7 +35,7 @@ public sealed class AgentFrameworkReplayDataPreparerLiveTests
             });
 
         var context = await CreateContextAsync();
-        var result = await preparer.PrepareAsync(context);
+        var result = await generator.GenerateAsync(context);
 
         Assert.Equal("microsoft-agent-framework-openai", result.Strategy);
         Assert.Equal("generated", result.Status);
@@ -45,7 +45,7 @@ public sealed class AgentFrameworkReplayDataPreparerLiveTests
         Assert.Contains("microsoft-agent-framework", result.SourcesUsed);
     }
 
-    private static async Task<ReplayDataPreparationContext> CreateContextAsync()
+    private static async Task<ReplayDataGenerationContext> CreateContextAsync()
     {
         var operations = await new RoslynEndpointCatalogLoader()
             .LoadAsync(SqloomTestAppPaths.GetProjectPath());
@@ -63,7 +63,7 @@ public sealed class AgentFrameworkReplayDataPreparerLiveTests
                 && string.Equals(parameter.Location, "query", StringComparison.Ordinal)
                 && parameter.Required);
 
-        return new ReplayDataPreparationContext
+        return new ReplayDataGenerationContext
         {
             Operation = operation,
             ResolvedOperation = new ResolvedReplayOperation

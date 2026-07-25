@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Pipeline.Execution;
 using Sqloom.Pipeline.Artifacts;
+using Sqloom.Pipeline.Execution;
 
 namespace Sqloom.Host.Replay;
 
@@ -31,9 +31,9 @@ internal sealed class ReplayArtifactWriter
         return ArtifactLayout.GetReplaySummaryPath(replayArtifactDirectory);
     }
 
-    public string GetReplayDataPreparationPath(string replayArtifactDirectory)
+    public string GetReplayDataGenerationPath(string replayArtifactDirectory)
     {
-        return ArtifactLayout.GetReplayDataPreparationPath(replayArtifactDirectory);
+        return ArtifactLayout.GetReplayDataGenerationPath(replayArtifactDirectory);
     }
 
     public string GetOperationArtifactPath(
@@ -78,9 +78,9 @@ internal sealed class ReplayArtifactWriter
         return JsonFileWriter.WriteAsync(path, runResult, cancellationToken);
     }
 
-    public Task WriteReplayDataPreparationAsync(
+    public Task WriteReplayDataGenerationAsync(
         string path,
-        ReplayDataPreparationReport report,
+        ReplayDataGenerationReport report,
         CancellationToken cancellationToken)
     {
         return JsonFileWriter.WriteAsync(path, report, cancellationToken);

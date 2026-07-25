@@ -92,12 +92,12 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
     },
   ],
   [
-    "replay/replay-data-prep.json",
+    "replay/replay-data-generation.json",
     {
-      description: "Replay data preparation output",
+      description: "Replay data generation output",
       type: "JSON",
       typeTone: "json",
-      summary: "Replay data agent preparation details.",
+      summary: "Replay data agent generation details.",
       sortOrder: 90,
     },
   ],

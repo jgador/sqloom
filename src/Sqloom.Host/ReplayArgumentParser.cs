@@ -51,7 +51,7 @@ internal sealed class ReplayArgumentParser
                 ReplayHost = replayHost,
                 ReplayLaunchOptions = replayLaunchOptions,
                 ReplayDataAgentOptions = replayDataAgentOptions,
-                ReplayDataPreparer = CreateReplayDataPreparer(args, replayDataAgentOptions),
+                ReplayDataGenerator = CreateReplayDataGenerator(args, replayDataAgentOptions),
                 MaxOperations = CommandArgumentSupport.GetIntArgumentValue(args, "--max-operations") ?? 25,
                 TargetFilter = targetFilter,
             },
@@ -197,10 +197,10 @@ internal sealed class ReplayArgumentParser
     internal void ValidateReplayDataAgentOptions(string[] args)
     {
         var replayDataAgentOptions = CreateReplayDataAgentOptions(args);
-        _ = CreateReplayDataPreparer(args, replayDataAgentOptions);
+        _ = CreateReplayDataGenerator(args, replayDataAgentOptions);
     }
 
-    private static IReplayDataPreparer? CreateReplayDataPreparer(
+    private static IReplayDataGenerator? CreateReplayDataGenerator(
         string[] args,
         ReplayDataAgentOptions options)
     {
@@ -216,7 +216,7 @@ internal sealed class ReplayArgumentParser
                 "Sqloom replay data agent requires --openai-api-key unless --replay-data-agent off is supplied.");
         }
 
-        return new AgentFrameworkReplayDataPreparer(
+        return new AgentFrameworkReplayDataGenerator(
             new OpenAIAdviceOptions
             {
                 ApiKey = apiKey,

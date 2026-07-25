@@ -7,12 +7,12 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Prepares safe, replay-only request data before the app harness prepares an operation.
 /// </summary>
-public interface IReplayDataPreparer
+public interface IReplayDataGenerator
 {
     /// <summary>
     /// Prepares replay-only request data for a resolved endpoint operation.
     /// </summary>
-    Task<ReplayDataPreparationOperation> PrepareAsync(
-        ReplayDataPreparationContext context,
+    Task<ReplayDataGenerationOperation> GenerateAsync(
+        ReplayDataGenerationContext context,
         CancellationToken cancellationToken = default);
 }

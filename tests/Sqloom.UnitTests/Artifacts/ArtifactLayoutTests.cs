@@ -141,14 +141,14 @@ public sealed class ArtifactLayoutTests
     }
 
     [Fact]
-    public void GetReplayDataPreparationPath_UsesReplayArtifactDir()
+    public void GetReplayDataGenerationPath_UsesReplayArtifactDir()
     {
-        var path = ArtifactLayout.GetReplayDataPreparationPath(ReplayArtifactDir);
+        var path = ArtifactLayout.GetReplayDataGenerationPath(ReplayArtifactDir);
 
         Assert.Equal(
             Path.Combine(
                 ReplayArtifactDir,
-                "replay-data-prep.json"),
+                "replay-data-generation.json"),
             path);
     }
 

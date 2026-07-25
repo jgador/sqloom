@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using Sqloom.Pipeline.Execution;
 using Sqloom.Host.Replay;
+using Sqloom.Pipeline.Execution;
 using Sqloom.Testing;
 using Sqloom.Tests;
 using Xunit;
@@ -76,11 +76,11 @@ public sealed class ReplayArgumentParserTests
             arguments.RunnerOptions.SourceProjectPath,
             StringComparer.OrdinalIgnoreCase);
         Assert.Equal(ReplayDataAgentMode.Required, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
-        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+        Assert.IsType<AgentFrameworkReplayDataGenerator>(arguments.RunnerOptions.ReplayDataGenerator);
     }
 
     [Fact]
-    public void WithReplayDataAgentOff_DisablesAgentPreparer()
+    public void WithReplayDataAgentOff_DisablesAgentGenerator()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -96,11 +96,11 @@ public sealed class ReplayArgumentParserTests
             sourceProjectPathOverride: RepositoryPaths.GetTestAppProjectPath());
 
         Assert.Equal(ReplayDataAgentMode.Off, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
-        Assert.Null(arguments.RunnerOptions.ReplayDataPreparer);
+        Assert.Null(arguments.RunnerOptions.ReplayDataGenerator);
     }
 
     [Fact]
-    public void WithReplayDataAgentAuto_CreatesAgentPreparer()
+    public void WithReplayDataAgentAuto_CreatesAgentGenerator()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -121,7 +121,7 @@ public sealed class ReplayArgumentParserTests
 
         Assert.Equal(ReplayDataAgentMode.Auto, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.Equal("gpt-test", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
-        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+        Assert.IsType<AgentFrameworkReplayDataGenerator>(arguments.RunnerOptions.ReplayDataGenerator);
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public sealed class ReplayArgumentParserTests
     }
 
     [Fact]
-    public void WithRequiredReplayDataAgent_CreatesAgentPreparer()
+    public void WithRequiredReplayDataAgent_CreatesAgentGenerator()
     {
         ReplayArgumentParser parser = new();
         var currentDirectory = CreateTempDir();
@@ -166,7 +166,7 @@ public sealed class ReplayArgumentParserTests
 
         Assert.Equal(ReplayDataAgentMode.Required, arguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.Equal("gpt-5.4-mini", arguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
-        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.RunnerOptions.ReplayDataPreparer);
+        Assert.IsType<AgentFrameworkReplayDataGenerator>(arguments.RunnerOptions.ReplayDataGenerator);
     }
 
     [Fact]

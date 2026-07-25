@@ -12,7 +12,7 @@ namespace Sqloom.Host.QueryStore;
 /// <summary>
 /// Collects Query Store evidence from SQL Server or Azure SQL using a readonly connection.
 /// </summary>
-public sealed class SqlServerQueryStoreCollector : IQueryStoreCollector
+public sealed class SqlServerQueryStoreCollector
 {
     // Reads Query Store state and storage so observe can report whether capture is usable.
     private const string QueryStoreOptionsSql = """

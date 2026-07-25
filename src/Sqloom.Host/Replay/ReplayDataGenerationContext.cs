@@ -5,7 +5,7 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Carries the context needed to prepare replay request data.
 /// </summary>
-public sealed class ReplayDataPreparationContext
+public sealed class ReplayDataGenerationContext
 {
     /// <summary>
     /// Gets the endpoint operation being prepared.
@@ -18,12 +18,12 @@ public sealed class ReplayDataPreparationContext
     public required ResolvedReplayOperation ResolvedOperation { get; init; }
 
     /// <summary>
-    /// Gets the active agent-preparation policy.
+    /// Gets the active agent-generation policy.
     /// </summary>
     public required ReplayDataAgentMode Mode { get; init; }
 
     /// <summary>
-    /// Gets the model selected for agent-assisted preparation.
+    /// Gets the model selected for agent-assisted generation.
     /// </summary>
     public string? ModelName { get; init; }
 }

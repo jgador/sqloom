@@ -45,16 +45,16 @@ public sealed class EndpointReplayRunResult
     public required string SummaryArtifactPath { get; init; }
 
     /// <summary>
-    /// Gets the replay data preparation path.
+    /// Gets the replay data generation path.
     /// </summary>
-    [JsonPropertyName("replayDataPreparationPath")]
-    public string? ReplayDataPreparationPath { get; init; }
+    [JsonPropertyName("replayDataGenerationPath")]
+    public string? ReplayDataGenerationPath { get; init; }
 
     /// <summary>
-    /// Gets the replay data preparation.
+    /// Gets the replay data generation.
     /// </summary>
-    [JsonPropertyName("replayDataPreparation")]
-    public ReplayDataPreparationReport? ReplayDataPreparation { get; init; }
+    [JsonPropertyName("replayDataGeneration")]
+    public ReplayDataGenerationReport? ReplayDataGeneration { get; init; }
 
     /// <summary>
     /// Gets the discovered operations.

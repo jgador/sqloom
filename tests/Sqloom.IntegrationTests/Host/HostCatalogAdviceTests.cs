@@ -14,9 +14,9 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Sqloom.Host.Replay;
-using Sqloom.Pipeline.QueryStore;
 using Sqloom.Pipeline.Artifacts;
 using Sqloom.Pipeline.Execution;
+using Sqloom.Pipeline.QueryStore;
 using Sqloom.Testing;
 using Xunit;
 
@@ -72,7 +72,7 @@ public sealed class HostCatalogAdviceTests
                                 Mode = ReplayDataAgentMode.Required,
                                 ModelName = "test-replay-data",
                             },
-                            ReplayDataPreparer = new StaticCatalogReplayDataPreparer(),
+                            ReplayDataGenerator = new StaticCatalogReplayDataGenerator(),
                             TargetFilter = SampleCatalogReplayScenario.OperationKey,
                         })
                     .ConfigureAwait(true);
@@ -552,13 +552,13 @@ public sealed class HostCatalogAdviceTests
         };
     }
 
-    private sealed class StaticCatalogReplayDataPreparer : IReplayDataPreparer
+    private sealed class StaticCatalogReplayDataGenerator : IReplayDataGenerator
     {
-        public Task<ReplayDataPreparationOperation> PrepareAsync(
-            ReplayDataPreparationContext context,
+        public Task<ReplayDataGenerationOperation> GenerateAsync(
+            ReplayDataGenerationContext context,
             CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(new ReplayDataPreparationOperation
+            return Task.FromResult(new ReplayDataGenerationOperation
             {
                 OperationKey = context.Operation.StableOperationKey,
                 Strategy = "test-replay-data",

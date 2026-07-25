@@ -2,16 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Sqloom.Pipeline.Execution;
 using Sqloom.Host.Replay;
+using Sqloom.Pipeline.Execution;
 using Xunit;
 
 namespace Sqloom.Host.Tests.Replay;
 
 /// <summary>
-/// Exercises Microsoft Agent Framework replay data preparation behavior without network calls.
+/// Exercises Microsoft Agent Framework replay data generation behavior without network calls.
 /// </summary>
-public sealed class AgentFrameworkReplayDataPreparerTests
+public sealed class AgentFrameworkReplayDataGeneratorTests
 {
     [Theory]
     [InlineData("https://api.openai.com", "https://api.openai.com/v1")]
@@ -21,7 +21,7 @@ public sealed class AgentFrameworkReplayDataPreparerTests
         string baseUrl,
         string expectedEndpoint)
     {
-        var endpoint = AgentFrameworkReplayDataPreparer.BuildOpenAIEndpoint(baseUrl);
+        var endpoint = AgentFrameworkReplayDataGenerator.BuildOpenAIEndpoint(baseUrl);
 
         Assert.Equal(expectedEndpoint, endpoint.AbsoluteUri);
     }
@@ -29,7 +29,7 @@ public sealed class AgentFrameworkReplayDataPreparerTests
     [Fact]
     public void AgentReplayPreparedData_ConvertsValueListsToReplayPreparedData()
     {
-        AgentFrameworkReplayDataPreparer.AgentReplayPreparedData agentData = new()
+        AgentFrameworkReplayDataGenerator.AgentReplayPreparedData agentData = new()
         {
             Persona = "customer",
             RequestBodyJson = """{"name":"probe"}""",
@@ -60,15 +60,15 @@ public sealed class AgentFrameworkReplayDataPreparerTests
     }
 
     [Fact]
-    public async Task PrepareAsync_WhenResolvedOperationNeedsNoData_ReturnsNotNeededWithoutCallingAgent()
+    public async Task GenerateAsync_WhenResolvedOperationNeedsNoData_ReturnsNotNeededWithoutCallingAgent()
     {
         FakeAgentReplayDataClient agentClient = new(
-            new AgentFrameworkReplayDataPreparer.AgentReplayPreparedData());
-        AgentFrameworkReplayDataPreparer preparer = new(
+            new AgentFrameworkReplayDataGenerator.AgentReplayPreparedData());
+        AgentFrameworkReplayDataGenerator generator = new(
             CreateOptions(),
             agentClient);
 
-        var result = await preparer.PrepareAsync(
+        var result = await generator.GenerateAsync(
             CreateProductContext(
                 new Dictionary<string, string>
                 {
@@ -82,10 +82,10 @@ public sealed class AgentFrameworkReplayDataPreparerTests
     }
 
     [Fact]
-    public async Task PrepareAsync_WhenValuesAreMissing_UsesAgentValues()
+    public async Task GenerateAsync_WhenValuesAreMissing_UsesAgentValues()
     {
         FakeAgentReplayDataClient agentClient = new(
-            new AgentFrameworkReplayDataPreparer.AgentReplayPreparedData
+            new AgentFrameworkReplayDataGenerator.AgentReplayPreparedData
             {
                 QueryValues =
                 [
@@ -94,11 +94,11 @@ public sealed class AgentFrameworkReplayDataPreparerTests
                     "extra=ignored",
                 ],
             });
-        AgentFrameworkReplayDataPreparer preparer = new(
+        AgentFrameworkReplayDataGenerator generator = new(
             CreateOptions(),
             agentClient);
 
-        var result = await preparer.PrepareAsync(CreateProductContext());
+        var result = await generator.GenerateAsync(CreateProductContext());
 
         Assert.Equal("microsoft-agent-framework-openai", result.Strategy);
         Assert.Equal("generated", result.Status);
@@ -117,47 +117,47 @@ public sealed class AgentFrameworkReplayDataPreparerTests
     }
 
     [Fact]
-    public async Task PrepareAsync_WhenAgentCallFails_Throws()
+    public async Task GenerateAsync_WhenAgentCallFails_Throws()
     {
         FakeAgentReplayDataClient agentClient = new(
             new InvalidOperationException("agent failed"));
-        AgentFrameworkReplayDataPreparer preparer = new(
+        AgentFrameworkReplayDataGenerator generator = new(
             CreateOptions(),
             agentClient);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => preparer.PrepareAsync(CreateProductContext()));
+            () => generator.GenerateAsync(CreateProductContext()));
 
         Assert.Contains("Microsoft Agent Framework", exception.Message, StringComparison.Ordinal);
         Assert.Contains("agent failed", exception.InnerException?.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task PrepareAsync_WhenAgentMissesRequiredValue_Throws()
+    public async Task GenerateAsync_WhenAgentMissesRequiredValue_Throws()
     {
         FakeAgentReplayDataClient agentClient = new(
-            new AgentFrameworkReplayDataPreparer.AgentReplayPreparedData
+            new AgentFrameworkReplayDataGenerator.AgentReplayPreparedData
             {
                 QueryValues =
                 [
                     "categoryId=1",
                 ],
             });
-        AgentFrameworkReplayDataPreparer preparer = new(
+        AgentFrameworkReplayDataGenerator generator = new(
             CreateOptions(),
             agentClient);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => preparer.PrepareAsync(CreateProductContext()));
+            () => generator.GenerateAsync(CreateProductContext()));
 
         Assert.Contains("minPrice", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task PrepareAsync_WhenAgentReturnsInvalidPrimitiveValue_Throws()
+    public async Task GenerateAsync_WhenAgentReturnsInvalidPrimitiveValue_Throws()
     {
         FakeAgentReplayDataClient agentClient = new(
-            new AgentFrameworkReplayDataPreparer.AgentReplayPreparedData
+            new AgentFrameworkReplayDataGenerator.AgentReplayPreparedData
             {
                 QueryValues =
                 [
@@ -165,12 +165,12 @@ public sealed class AgentFrameworkReplayDataPreparerTests
                     "minPrice=900",
                 ],
             });
-        AgentFrameworkReplayDataPreparer preparer = new(
+        AgentFrameworkReplayDataGenerator generator = new(
             CreateOptions(),
             agentClient);
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
-            () => preparer.PrepareAsync(CreateProductContext()));
+            () => generator.GenerateAsync(CreateProductContext()));
 
         Assert.Contains("categoryId", exception.Message, StringComparison.Ordinal);
         Assert.Contains("non-integer", exception.Message, StringComparison.Ordinal);
@@ -186,10 +186,10 @@ public sealed class AgentFrameworkReplayDataPreparerTests
         };
     }
 
-    private static ReplayDataPreparationContext CreateProductContext(
+    private static ReplayDataGenerationContext CreateProductContext(
         IReadOnlyDictionary<string, string>? queryValues = null)
     {
-        return new ReplayDataPreparationContext
+        return new ReplayDataGenerationContext
         {
             Operation = new ReplayOperation
             {
@@ -228,13 +228,13 @@ public sealed class AgentFrameworkReplayDataPreparerTests
     }
 
     private sealed class FakeAgentReplayDataClient
-        : AgentFrameworkReplayDataPreparer.IAgentReplayDataClient
+        : AgentFrameworkReplayDataGenerator.IAgentReplayDataClient
     {
-        private readonly AgentFrameworkReplayDataPreparer.AgentReplayPreparedData? _response;
+        private readonly AgentFrameworkReplayDataGenerator.AgentReplayPreparedData? _response;
         private readonly Exception? _exception;
 
         public FakeAgentReplayDataClient(
-            AgentFrameworkReplayDataPreparer.AgentReplayPreparedData response)
+            AgentFrameworkReplayDataGenerator.AgentReplayPreparedData response)
         {
             _response = response;
         }
@@ -248,7 +248,7 @@ public sealed class AgentFrameworkReplayDataPreparerTests
 
         public string? Prompt { get; private set; }
 
-        public Task<AgentFrameworkReplayDataPreparer.AgentReplayPreparedData> RunAsync(
+        public Task<AgentFrameworkReplayDataGenerator.AgentReplayPreparedData> RunAsync(
             string prompt,
             CancellationToken cancellationToken = default)
         {

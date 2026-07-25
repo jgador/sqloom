@@ -1,8 +1,8 @@
 using System;
 using System.IO;
+using Sqloom.Host.Replay;
 using Sqloom.Pipeline.Artifacts;
 using Sqloom.Pipeline.Execution;
-using Sqloom.Host.Replay;
 using Sqloom.Testing;
 using Xunit;
 
@@ -105,7 +105,7 @@ public sealed class TuneArgumentParserTests
         Assert.Equal(SampleCatalogReplayScenario.OperationKey, arguments.ReplayArguments.RunnerOptions.TargetFilter);
         Assert.Equal(ReplayDataAgentMode.Auto, arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.Mode);
         Assert.Equal("gpt-replay", arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.ModelName);
-        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.ReplayArguments.RunnerOptions.ReplayDataPreparer);
+        Assert.IsType<AgentFrameworkReplayDataGenerator>(arguments.ReplayArguments.RunnerOptions.ReplayDataGenerator);
         Assert.Equal(expectedSnapshotPath, arguments.CorrelateArguments.QueryStoreSnapshotPath, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedReplayDirectory, arguments.CorrelateArguments.ReplayArtifactDir, StringComparer.OrdinalIgnoreCase);
         Assert.Equal(expectedCorrelationPath, arguments.CorrelateArguments.JsonOutputPath, StringComparer.OrdinalIgnoreCase);
@@ -295,7 +295,7 @@ public sealed class TuneArgumentParserTests
         Assert.Equal(Path.GetFullPath(dacpacPath), arguments.AdviseArguments.DacpacPath, StringComparer.OrdinalIgnoreCase);
         Assert.Null(arguments.AdviseArguments.ReadOnlyConnectionString);
         Assert.Equal(ReplayDataAgentMode.Required, arguments.ReplayArguments.RunnerOptions.ReplayDataAgentOptions.Mode);
-        Assert.IsType<AgentFrameworkReplayDataPreparer>(arguments.ReplayArguments.RunnerOptions.ReplayDataPreparer);
+        Assert.IsType<AgentFrameworkReplayDataGenerator>(arguments.ReplayArguments.RunnerOptions.ReplayDataGenerator);
     }
 
     [Fact]

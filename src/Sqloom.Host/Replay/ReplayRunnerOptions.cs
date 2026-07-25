@@ -43,14 +43,14 @@ public sealed class ReplayRunnerOptions
     public ReplayLaunchOptions ReplayLaunchOptions { get; init; } = new();
 
     /// <summary>
-    /// Gets the agent-assisted replay data preparation options.
+    /// Gets the agent-assisted replay data generation options.
     /// </summary>
     public ReplayDataAgentOptions ReplayDataAgentOptions { get; init; } = new();
 
     /// <summary>
-    /// Gets the replay data preparer used before harness operation preparation.
+    /// Gets the replay data generator used before harness operation preparation.
     /// </summary>
-    public IReplayDataPreparer? ReplayDataPreparer { get; init; }
+    public IReplayDataGenerator? ReplayDataGenerator { get; init; }
 
     /// <summary>
     /// Gets the maximum number of discovered operations to replay.

@@ -1,22 +1,22 @@
 namespace Sqloom.Host.Replay;
 
 /// <summary>
-/// Controls replay data preparation.
+/// Controls replay data generation.
 /// </summary>
 public enum ReplayDataAgentMode
 {
     /// <summary>
-    /// Disables agent-assisted replay data preparation.
+    /// Disables agent-assisted replay data generation.
     /// </summary>
     Off,
 
     /// <summary>
-    /// Uses agent-assisted preparation when it is available and applicable.
+    /// Uses agent-assisted generation when it is available and applicable.
     /// </summary>
     Auto,
 
     /// <summary>
-    /// Requires agent-assisted preparation to succeed.
+    /// Requires agent-assisted generation to succeed.
     /// </summary>
     Required,
 }

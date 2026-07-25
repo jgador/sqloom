@@ -5,12 +5,12 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Sqloom.Host;
 using Sqloom.Host.Replay;
 using Sqloom.Pipeline.Execution;
-using Sqloom.Pipeline.QueryStore;
 using Sqloom.Pipeline.OpenAI.Advice;
+using Sqloom.Pipeline.QueryStore;
 using Sqloom.TestApp;
-using Sqloom.Host;
 using Xunit;
 
 namespace Sqloom.Pipeline.Tests.Artifacts;
@@ -26,7 +26,7 @@ public sealed class JsonContractTests
             { typeof(AdviceReport), ["generatedAtUtc", "queryStoreCorrelationPath", "modelProvider"] },
             { typeof(EndpointReplayRunResult), ["appName", "discoveredOperations", "replayPlan"] },
             { typeof(QueryStoreSnapshot), ["capturedAtUtc", "databaseOptions", "plans"] },
-            { typeof(ReplayDataPreparationReport), ["appName", "mode", "operations"] },
+            { typeof(ReplayDataGenerationReport), ["appName", "mode", "operations"] },
             { typeof(SqlTuningProposalReport), ["generatedAtUtc", "sourceAdvicePath", "sqlScriptPath"] },
             { typeof(TuneWorkflowReport), ["generatedAtUtc", "queryStoreSnapshotPath", "summary"] },
         };
@@ -43,7 +43,7 @@ public sealed class JsonContractTests
         typeof(ProductResponse),
         typeof(QueryCorrelationReport),
         typeof(QueryStoreSnapshot),
-        typeof(ReplayDataPreparationReport),
+        typeof(ReplayDataGenerationReport),
         typeof(ReplayLaunchOptions),
         typeof(ReplayProfile),
         typeof(SqlTuningProposalReport),

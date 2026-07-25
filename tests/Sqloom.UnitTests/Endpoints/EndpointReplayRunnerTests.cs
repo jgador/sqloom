@@ -121,7 +121,7 @@ public sealed class EndpointReplayRunnerTests
     }
 
     [Fact]
-    public async Task WithReplayDataPreparer_FillsValuesAndWritesArtifact()
+    public async Task WithReplayDataGenerator_FillsValuesAndWritesArtifact()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
@@ -163,11 +163,11 @@ public sealed class EndpointReplayRunnerTests
                     Mode = ReplayDataAgentMode.Auto,
                     ModelName = "gpt-test",
                 },
-                ReplayDataPreparer = new StubReplayDataPreparer(
-                    new ReplayDataPreparationOperation
+                ReplayDataGenerator = new StubReplayDataGenerator(
+                    new ReplayDataGenerationOperation
                     {
                         OperationKey = "GET /api/items/{itemId}",
-                        Strategy = "test-preparer",
+                        Strategy = "test-generator",
                         Status = "generated",
                         Confidence = 0.8,
                         PreparedData = new ReplayPreparedData
@@ -196,14 +196,14 @@ public sealed class EndpointReplayRunnerTests
         Assert.Equal("1", replayHost.LastResolvedOperation!.PathValues["itemId"]);
         Assert.Equal("2026-01-01T00:00:00Z", replayHost.LastResolvedOperation.QueryValues["since"]);
         Assert.Equal("sqloom", replayHost.LastResolvedOperation.HeaderValues["x-trace"]);
-        Assert.Equal(Path.Combine(tempDirectory, "replay-data-prep.json"), result.ReplayDataPreparationPath);
-        Assert.True(File.Exists(result.ReplayDataPreparationPath));
-        Assert.NotNull(result.ReplayDataPreparation);
-        Assert.Equal("auto", result.ReplayDataPreparation!.Mode);
-        Assert.Equal("gpt-test", result.ReplayDataPreparation.ModelName);
+        Assert.Equal(Path.Combine(tempDirectory, "replay-data-generation.json"), result.ReplayDataGenerationPath);
+        Assert.True(File.Exists(result.ReplayDataGenerationPath));
+        Assert.NotNull(result.ReplayDataGeneration);
+        Assert.Equal("auto", result.ReplayDataGeneration!.Mode);
+        Assert.Equal("gpt-test", result.ReplayDataGeneration.ModelName);
 
-        var persistedReport = JsonSerializer.Deserialize<ReplayDataPreparationReport>(
-            await File.ReadAllTextAsync(result.ReplayDataPreparationPath),
+        var persistedReport = JsonSerializer.Deserialize<ReplayDataGenerationReport>(
+            await File.ReadAllTextAsync(result.ReplayDataGenerationPath),
             JsonSerializerOptions.Web);
         Assert.NotNull(persistedReport);
         var preparedOperation = Assert.Single(persistedReport!.Operations);
@@ -243,17 +243,17 @@ public sealed class EndpointReplayRunnerTests
                 {
                     Mode = ReplayDataAgentMode.Off,
                 },
-                ReplayDataPreparer = new ThrowingReplayDataPreparer(),
+                ReplayDataGenerator = new ThrowingReplayDataGenerator(),
             });
 
-        Assert.Null(result.ReplayDataPreparationPath);
-        Assert.Null(result.ReplayDataPreparation);
-        Assert.False(File.Exists(Path.Combine(tempDirectory, "replay-data-prep.json")));
+        Assert.Null(result.ReplayDataGenerationPath);
+        Assert.Null(result.ReplayDataGeneration);
+        Assert.False(File.Exists(Path.Combine(tempDirectory, "replay-data-generation.json")));
         Assert.Single(result.Results);
     }
 
     [Fact]
-    public async Task WhenReplayDataPreparerFails_WritesFailedArtifact()
+    public async Task WhenReplayDataGeneratorFails_WritesFailedArtifact()
     {
         var tempDirectory = Path.Combine(Path.GetTempPath(), "sqloom-runner-tests", Path.GetRandomFileName());
         Directory.CreateDirectory(tempDirectory);
@@ -290,21 +290,21 @@ public sealed class EndpointReplayRunnerTests
                     Mode = ReplayDataAgentMode.Auto,
                     ModelName = "gpt-test",
                 },
-                ReplayDataPreparer = new ThrowingReplayDataPreparer("prep failed"),
+                ReplayDataGenerator = new ThrowingReplayDataGenerator("generation failed"),
             });
 
         var replay = Assert.Single(result.Results);
         Assert.Equal("failed", replay.Status);
-        Assert.Contains("prep failed", replay.ErrorMessage);
+        Assert.Contains("generation failed", replay.ErrorMessage);
         Assert.Null(replayHost.LastResolvedOperation);
-        Assert.Equal(Path.Combine(tempDirectory, "replay-data-prep.json"), result.ReplayDataPreparationPath);
-        Assert.NotNull(result.ReplayDataPreparation);
+        Assert.Equal(Path.Combine(tempDirectory, "replay-data-generation.json"), result.ReplayDataGenerationPath);
+        Assert.NotNull(result.ReplayDataGeneration);
 
-        var preparedOperation = Assert.Single(result.ReplayDataPreparation!.Operations);
+        var preparedOperation = Assert.Single(result.ReplayDataGeneration!.Operations);
         Assert.Equal("GET /api/items/{itemId}", preparedOperation.OperationKey);
         Assert.Equal("failed", preparedOperation.Status);
         Assert.Equal("replay-data-agent", preparedOperation.Strategy);
-        Assert.Contains("prep failed", preparedOperation.Warnings);
+        Assert.Contains("generation failed", preparedOperation.Warnings);
     }
 
     private static ReplayOperation CreateOperation(
@@ -467,34 +467,34 @@ public sealed class EndpointReplayRunnerTests
         }
     }
 
-    private sealed class ThrowingReplayDataPreparer : IReplayDataPreparer
+    private sealed class ThrowingReplayDataGenerator : IReplayDataGenerator
     {
         private readonly string _message;
 
-        public ThrowingReplayDataPreparer(string message = "Replay data preparer should not be called.")
+        public ThrowingReplayDataGenerator(string message = "Replay data generator should not be called.")
         {
             _message = message;
         }
 
-        public Task<ReplayDataPreparationOperation> PrepareAsync(
-            ReplayDataPreparationContext context,
+        public Task<ReplayDataGenerationOperation> GenerateAsync(
+            ReplayDataGenerationContext context,
             CancellationToken cancellationToken = default)
         {
             throw new InvalidOperationException(_message);
         }
     }
 
-    private sealed class StubReplayDataPreparer : IReplayDataPreparer
+    private sealed class StubReplayDataGenerator : IReplayDataGenerator
     {
-        private readonly ReplayDataPreparationOperation _operation;
+        private readonly ReplayDataGenerationOperation _operation;
 
-        public StubReplayDataPreparer(ReplayDataPreparationOperation operation)
+        public StubReplayDataGenerator(ReplayDataGenerationOperation operation)
         {
             _operation = operation;
         }
 
-        public Task<ReplayDataPreparationOperation> PrepareAsync(
-            ReplayDataPreparationContext context,
+        public Task<ReplayDataGenerationOperation> GenerateAsync(
+            ReplayDataGenerationContext context,
             CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_operation);

@@ -7,7 +7,7 @@ namespace Sqloom.Pipeline.Execution;
 /// <summary>
 /// Captures replay data prepared for one replay run.
 /// </summary>
-public sealed class ReplayDataPreparationReport
+public sealed class ReplayDataGenerationReport
 {
     /// <summary>
     /// Gets the app name.
@@ -37,8 +37,8 @@ public sealed class ReplayDataPreparationReport
     /// Gets the operations.
     /// </summary>
     [JsonPropertyName("operations")]
-    public IReadOnlyList<ReplayDataPreparationOperation> Operations { get; init; } =
-        Array.Empty<ReplayDataPreparationOperation>();
+    public IReadOnlyList<ReplayDataGenerationOperation> Operations { get; init; } =
+        Array.Empty<ReplayDataGenerationOperation>();
 
     /// <summary>
     /// Gets the warnings.
@@ -51,7 +51,7 @@ public sealed class ReplayDataPreparationReport
 /// <summary>
 /// Captures replay data prepared for one operation.
 /// </summary>
-public sealed class ReplayDataPreparationOperation
+public sealed class ReplayDataGenerationOperation
 {
     /// <summary>
     /// Gets the operation key.

@@ -20,7 +20,7 @@ namespace Sqloom.Host.Replay;
 /// <summary>
 /// Uses Microsoft Agent Framework to fill replay inputs for harder binding cases.
 /// </summary>
-internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
+internal sealed class AgentFrameworkReplayDataGenerator : IReplayDataGenerator
 {
     private const string Instructions =
         "You prepare ASP.NET Core endpoint replay data for Sqloom. " +
@@ -34,12 +34,12 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
 
     private readonly IAgentReplayDataClient _agentClient;
 
-    public AgentFrameworkReplayDataPreparer(OpenAIAdviceOptions options)
+    public AgentFrameworkReplayDataGenerator(OpenAIAdviceOptions options)
         : this(options, null)
     {
     }
 
-    internal AgentFrameworkReplayDataPreparer(
+    internal AgentFrameworkReplayDataGenerator(
         OpenAIAdviceOptions options,
         IAgentReplayDataClient? agentClient)
     {
@@ -47,16 +47,16 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
         _agentClient = agentClient ?? new OpenAIAgentReplayDataClient(options);
     }
 
-    public async Task<ReplayDataPreparationOperation> PrepareAsync(
-        ReplayDataPreparationContext context,
+    public async Task<ReplayDataGenerationOperation> GenerateAsync(
+        ReplayDataGenerationContext context,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         var missingInputs = MissingReplayInputs.Create(context);
-        if (!missingInputs.NeedsPreparation)
+        if (!missingInputs.NeedsGeneration)
         {
-            return new ReplayDataPreparationOperation
+            return new ReplayDataGenerationOperation
             {
                 OperationKey = context.Operation.StableOperationKey,
                 Strategy = "microsoft-agent-framework-openai",
@@ -86,7 +86,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
         }
 
         var validation = ValidatePreparedData(response, missingInputs);
-        return new ReplayDataPreparationOperation
+        return new ReplayDataGenerationOperation
         {
             OperationKey = context.Operation.StableOperationKey,
             Strategy = "microsoft-agent-framework-openai",
@@ -117,7 +117,7 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
     }
 
     private static string BuildPrompt(
-        ReplayDataPreparationContext context,
+        ReplayDataGenerationContext context,
         MissingReplayInputs missingInputs)
     {
         var payload = new
@@ -433,13 +433,13 @@ internal sealed class AgentFrameworkReplayDataPreparer : IReplayDataPreparer
 
         public bool RequestBodyRequired { get; init; }
 
-        public bool NeedsPreparation =>
+        public bool NeedsGeneration =>
             PathParameters.Count > 0
             || QueryParameters.Count > 0
             || HeaderParameters.Count > 0
             || RequestBodyRequired;
 
-        public static MissingReplayInputs Create(ReplayDataPreparationContext context)
+        public static MissingReplayInputs Create(ReplayDataGenerationContext context)
         {
             List<ReplayParameter> pathParameters = [];
             List<ReplayParameter> queryParameters = [];

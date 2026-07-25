@@ -13,7 +13,7 @@ namespace Sqloom.Host.QueryStore;
 /// <summary>
 /// Discovers user-defined database objects from SQL Server or Azure SQL using a readonly connection.
 /// </summary>
-public sealed class SqlServerDiscoveredObjectCollector : IDbObjectCollector
+public sealed class SqlServerDiscoveredObjectCollector
 {
     private const string UserTablesAndViewsSql = """
         SELECT

@@ -200,9 +200,9 @@ internal sealed class HostConsoleWriter
 
         Console.WriteLine($"- Discovery artifact: {replayResult.DiscoveredOpsPath}");
         Console.WriteLine($"- Replay plan artifact: {replayResult.ReplayPlanArtifactPath}");
-        if (!string.IsNullOrWhiteSpace(replayResult.ReplayDataPreparationPath))
+        if (!string.IsNullOrWhiteSpace(replayResult.ReplayDataGenerationPath))
         {
-            Console.WriteLine($"- Replay data prep artifact: {replayResult.ReplayDataPreparationPath}");
+            Console.WriteLine($"- Replay data generation artifact: {replayResult.ReplayDataGenerationPath}");
         }
 
         Console.WriteLine($"- Summary artifact: {replayResult.SummaryArtifactPath}");
@@ -379,9 +379,9 @@ internal sealed class HostConsoleWriter
         Console.WriteLine($"- Workflow artifact directory: {report.WorkflowArtifactDir}");
         Console.WriteLine($"- Query Store snapshot: {report.QueryStoreSnapshotPath}");
         Console.WriteLine($"- Replay artifact directory: {report.ReplayArtifactDir}");
-        if (!string.IsNullOrWhiteSpace(report.ReplayDataPreparationPath))
+        if (!string.IsNullOrWhiteSpace(report.ReplayDataGenerationPath))
         {
-            Console.WriteLine($"- Replay data prep artifact: {report.ReplayDataPreparationPath}");
+            Console.WriteLine($"- Replay data generation artifact: {report.ReplayDataGenerationPath}");
         }
 
         Console.WriteLine($"- Correlation artifact: {report.QueryStoreCorrelationPath}");

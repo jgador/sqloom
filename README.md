@@ -87,7 +87,7 @@ The run writes a timestamped folder under `artifacts/sqloom/tune/`, including:
 
 - `query-store-snapshot.json`
 - `tune-summary.json`
-- `replay/replay-data-prep.json`
+- `replay/replay-data-generation.json`
 - `replay/query-store-correlation.json`
 - `replay/sqlserver-schema-source.dacpac` when Sqloom exports the schema source from the read-only connection
 - `replay/sqlserver-dacpac-extract/model.sql` when schema is extracted from a DACPAC
