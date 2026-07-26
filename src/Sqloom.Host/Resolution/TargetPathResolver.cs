@@ -10,7 +10,7 @@ using System.Xml.Linq;
 namespace Sqloom.Host;
 
 /// <summary>
-/// Resolves supported Sqloom harness targets down to concrete projects or assemblies.
+/// Expands a target path into concrete harness projects or assemblies that can be built or loaded.
 /// </summary>
 internal static class TargetPathResolver
 {

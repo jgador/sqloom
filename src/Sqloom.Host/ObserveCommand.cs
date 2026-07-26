@@ -158,7 +158,7 @@ internal sealed class ObserveCommand
             return Path.GetFullPath(jsonOutputPathOverride);
         }
 
-        var artifactRoot = ArtifactRootResolver.Resolve(currentDirectory);
+        var artifactRoot = DefaultArtifactRootLocator.GetPath(currentDirectory);
 
         return ArtifactLayout.GetQueryStoreSnapshotPath(
             artifactRoot,

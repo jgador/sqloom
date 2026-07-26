@@ -4,11 +4,11 @@ using Sqloom.Pipeline.Execution;
 namespace Sqloom.Host.Replay;
 
 /// <summary>
-/// Resolves resolved replay operation.
+/// Builds resolved replay operations from discovered endpoint metadata and overlays.
 /// </summary>
-internal static class ReplayOperationResolver
+internal static class ResolvedReplayOperationBuilder
 {
-    public static ResolvedReplayOperation Resolve(
+    public static ResolvedReplayOperation Build(
         ReplayOperation discoveredOperation,
         ReplayOverlay? overlay)
     {

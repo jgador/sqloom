@@ -7,14 +7,14 @@ using Xunit;
 namespace Sqloom.Host.Tests.Replay;
 
 /// <summary>
-/// Exercises endpoint replay request resolver.
+/// Exercises endpoint replay request building.
 /// </summary>
-public sealed class ReplayRequestResolverTests
+public sealed class ReplayRequestBuilderTests
 {
     [Fact]
     public void MergesPreparedValuesOverReplayDefaults()
     {
-        var request = ReplayRequestResolver.Resolve(
+        var request = ReplayRequestBuilder.Build(
             CreateOperation(requestBodyRequired: true),
             new ResolvedReplayOperation
             {
@@ -64,7 +64,7 @@ public sealed class ReplayRequestResolverTests
     public void ThrowsWhenRequiredRequestBodyIsMissing()
     {
 
-        var exception = Assert.Throws<InvalidOperationException>(() => ReplayRequestResolver.Resolve(
+        var exception = Assert.Throws<InvalidOperationException>(() => ReplayRequestBuilder.Build(
             CreateOperation(requestBodyRequired: true),
             new ResolvedReplayOperation
             {

@@ -6,12 +6,12 @@ using Sqloom.Pipeline.QueryStore;
 namespace Sqloom.Host.QueryStore;
 
 /// <summary>
-/// Resolves captured SQL text and parameters to SQL Server statement handles.
+/// Matches captured SQL text and parameters to SQL Server statement handles.
 /// </summary>
 internal interface ISqlHandleResolver
 {
     /// <summary>
-    /// Resolves the best statement-handle match for a captured SQL command.
+    /// Finds the best statement-handle match for a captured SQL command.
     /// </summary>
     Task<SqlHandleResolution> ResolveAsync(
         string sqlText,

@@ -11,7 +11,7 @@ using Sqloom.Testing;
 namespace Sqloom.Host;
 
 /// <summary>
-/// Loads Sqloom application harnesses from the resolved target projects or assemblies.
+/// Loads the single Sqloom application harness from resolved target projects or assemblies.
 /// </summary>
 internal static class AppResolver
 {

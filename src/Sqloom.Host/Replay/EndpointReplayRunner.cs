@@ -194,7 +194,7 @@ internal static class EndpointReplayRunner
             ordinal++;
             var discoveredOperation = discoveredByKey[planItem.OperationKey];
             overlays.TryGetValue(planItem.OperationKey, out var overlay);
-            var resolvedOperation = ReplayOperationResolver.Resolve(
+            var resolvedOperation = ResolvedReplayOperationBuilder.Build(
                 discoveredOperation,
                 overlay);
             var artifactPath = ArtifactLayout.GetOperationArtifactPath(
@@ -217,7 +217,7 @@ internal static class EndpointReplayRunner
                         replayInputOperation,
                         cancellationToken)
                     .ConfigureAwait(false);
-                var request = ReplayRequestResolver.Resolve(
+                var request = ReplayRequestBuilder.Build(
                     discoveredOperation,
                     replayInputOperation,
                     preparedOperation);

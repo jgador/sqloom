@@ -12,7 +12,7 @@ using Sqloom.Pipeline.QueryStore;
 namespace Sqloom.Host.QueryStore;
 
 /// <summary>
-/// Resolves SQL statement_sql_handle values for captured commands.
+/// Uses SQL Server metadata functions to match captured commands to statement_sql_handle values.
 /// </summary>
 internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
 {

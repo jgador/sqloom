@@ -24,7 +24,7 @@ internal static class ReplayPlanBuilder
                 overlays.TryGetValue(
                     discoveredOperation.StableOperationKey,
                     out var overlay);
-                var resolvedOperation = ReplayOperationResolver.Resolve(
+                var resolvedOperation = ResolvedReplayOperationBuilder.Build(
                     discoveredOperation,
                     overlay);
                 var replaySafe = IsReplaySafe(discoveredOperation, overlay, options.ReplayProfile);

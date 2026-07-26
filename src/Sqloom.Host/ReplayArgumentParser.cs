@@ -85,7 +85,7 @@ internal static class ReplayArgumentParser
                 currentDirectory);
         }
 
-        var artifactRoot = ArtifactRootResolver.Resolve(currentDirectory);
+        var artifactRoot = DefaultArtifactRootLocator.GetPath(currentDirectory);
         return ArtifactLayout.GetReplayArtifactDir(
             artifactRoot,
             DateTimeOffset.UtcNow);

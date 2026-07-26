@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Sqloom.Host;
 
 /// <summary>
-/// Resolves harness target projects and assemblies into loadable assembly paths.
+/// Builds or selects harness target outputs and returns loadable assembly paths.
 /// </summary>
 internal static class AppProjectResolver
 {

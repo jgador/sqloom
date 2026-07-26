@@ -7,7 +7,7 @@ using System.Xml.Linq;
 namespace Sqloom.Host.Replay;
 
 /// <summary>
-/// Resolves the ASP.NET Core source project used for endpoint discovery.
+/// Selects the ASP.NET Core source project from --app-project, harness project references, or file-based directives.
 /// </summary>
 internal static class EndpointSourceProjectResolver
 {

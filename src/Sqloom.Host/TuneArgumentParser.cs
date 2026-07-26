@@ -171,7 +171,7 @@ internal static class TuneArgumentParser
                 currentDirectory);
         }
 
-        var artifactRoot = ArtifactRootResolver.Resolve(currentDirectory);
+        var artifactRoot = DefaultArtifactRootLocator.GetPath(currentDirectory);
         return ArtifactLayout.GetTuneArtifactDir(
             artifactRoot,
             DateTimeOffset.UtcNow);

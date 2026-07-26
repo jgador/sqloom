@@ -24,7 +24,7 @@ Do not rename the current `Sqloom.*` projects into generic `Domain`, `Applicatio
 
 - Keep classes narrow. A class should have one primary responsibility and one clear reason to change.
 - Keep CLI entrypoints, startup code, and HTTP surfaces thin. They should validate inputs, compose dependencies, and delegate to focused collaborators.
-- Prefer precise names such as `Sqloom.<Feature>` or `Sqloom.<Provider>` over generic names.
+- Prefer precise names such as `Sqloom.<Feature>` or `Sqloom.<Capability>` over generic names; use `Provider` only for a real provider-pattern or adapter boundary.
 - For public-facing ASP.NET Core contracts, prefer `Request` and `Response` suffixes over `Dto`.
 - Use `Store` only for a real storage collaborator. Do not add a matching interface unless substitution is real.
 - Extension methods that register or compose framework behavior should use `Add*`, `Use*`, `Map*`, `Configure*`, or `With*`.

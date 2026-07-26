@@ -180,7 +180,7 @@ internal static class OpenAIAdviceClient
                     type = "json_schema",
                     name = "sqloom_tuning_advice",
                     strict = true,
-                    schema = OpenAIAdviceResponseSchema.Build(),
+                    schema = OpenAIAdviceResponseSchemaBuilder.Build(),
                 },
             },
         };

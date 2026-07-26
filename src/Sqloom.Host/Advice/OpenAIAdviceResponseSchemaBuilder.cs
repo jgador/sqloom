@@ -5,7 +5,7 @@ namespace Sqloom.Host;
 /// <summary>
 /// Builds the closed Responses API schema for Sqloom advice JSON.
 /// </summary>
-internal static class OpenAIAdviceResponseSchema
+internal static class OpenAIAdviceResponseSchemaBuilder
 {
     public static object Build()
     {
