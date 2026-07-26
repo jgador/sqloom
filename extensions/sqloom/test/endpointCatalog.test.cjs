@@ -297,7 +297,16 @@ test("renders syntactically valid dashboard client script", async () => {
     recentRunsAction: "View all",
     recentRunsEmptyTitle: "No runs",
     recentRunsEmptyDetail: "No runs yet",
-    recentRuns: [],
+    recentRuns: [
+      {
+        id: "formatted-run",
+        target: "GET /api/products",
+        status: "failed",
+        statusLabel: "Failed",
+        startedRelative: "2m ago",
+        artifactDir: "artifacts/sqloom/formatted-run",
+      },
+    ],
     summaryItems: [],
     configFields: [],
     readinessChecks: [],
@@ -329,7 +338,19 @@ test("renders syntactically valid dashboard client script", async () => {
         asWebviewUri: (value) => value,
         cspSource: "vscode-resource:",
       },
-      [],
+      [
+        {
+          id: "raw-run",
+          startedAtUtc: "2026-07-27T00:00:00.000Z",
+          finishedAtUtc: "2026-07-27T00:01:00.000Z",
+          success: false,
+          target: "GET /api/raw",
+          artifactDir: "artifacts/sqloom/raw-run",
+          workspaceFolderUri: "file:///workspace",
+          openAiModel: "gpt-5.4-mini",
+          source: "dashboard",
+        },
+      ],
       {
         selectedRunId: "",
         selectedArtifactDir: "",
@@ -346,6 +367,8 @@ test("renders syntactically valid dashboard client script", async () => {
     const script = html.match(/<script nonce="[^"]+">([\s\S]*?)<\/script>/);
     assert.ok(script, "Dashboard client script was not rendered.");
     assert.doesNotThrow(() => new vm.Script(script[1]));
+    assert.match(script[1], /formatted-run/);
+    assert.doesNotMatch(script[1], /raw-run/);
   } finally {
     Module._load = originalLoad;
     delete require.cache[rendererPath];

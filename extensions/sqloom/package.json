@@ -46,9 +46,9 @@
     "sync:version": "node ../../scripts/sync-vscode-extension-version.mjs",
     "sync:version:check": "node ../../scripts/sync-vscode-extension-version.mjs --check",
     "vscode:prepublish": "npm run sync:version && npm run build",
-    "build": "tsc -p tsconfig.extension.json",
-    "watch": "tsc -watch -p tsconfig.extension.json --preserveWatchOutput",
-    "lint": "npm run sync:version:check && eslint \"src/**/*.ts\" \"test/**/*.cjs\" && tsc -p tsconfig.extension.json --noEmit",
+    "build": "tsc -p tsconfig.extension.json && node esbuild.mjs",
+    "watch": "node esbuild.mjs --watch",
+    "lint": "npm run sync:version:check && eslint \"src/**/*.ts\" \"src/**/*.tsx\" \"test/**/*.cjs\" && tsc -p tsconfig.extension.json --noEmit && tsc -p tsconfig.webviews.json --noEmit",
     "test": "npm run build && node --test test/endpointCatalog.test.cjs test/tuneRunProgress.test.cjs test/recentRunsStore.test.cjs test/artifactCatalog.test.cjs test/webview.test.cjs",
     "package": "npm run sync:version && vsce package --no-dependencies --baseImagesUrl=https://github.com/jgador/sqloom/raw/master/extensions/sqloom",
     "publish:preview": "npm run sync:version && vsce publish --pre-release --no-dependencies --baseImagesUrl=https://github.com/jgador/sqloom/raw/master/extensions/sqloom"
@@ -134,8 +134,13 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.14",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
     "@types/vscode": "1.105.0",
     "@vscode/vsce": "^3.9.2",
+    "esbuild": "^0.28.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "typescript": "^5.8.3"
   }
 }

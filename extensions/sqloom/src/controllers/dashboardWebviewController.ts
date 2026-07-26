@@ -92,6 +92,7 @@ class DashboardWebviewController implements vscode.Disposable {
         retainContextWhenHidden: true,
         localResourceRoots: [
           vscode.Uri.joinPath(this.context.extensionUri, "images"),
+          vscode.Uri.joinPath(this.context.extensionUri, "dist"),
         ],
       },
     );
