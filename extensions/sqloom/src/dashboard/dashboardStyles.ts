@@ -58,10 +58,16 @@ export const dashboardStyles = `
         }
 
         .topbar {
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) auto;
-            gap: 24px;
-            align-items: start;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--vscode-editor-background);
+            border-bottom: 1px solid var(--sqloom-border);
+            padding: 14px 22px;
+            margin: -18px -22px 18px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .brand {
@@ -213,9 +219,12 @@ export const dashboardStyles = `
 
         .stepper {
             display: grid;
-            grid-template-columns: repeat(4, minmax(92px, 1fr));
+            grid-template-columns: repeat(4, minmax(80px, 1fr));
             gap: 0;
-            padding: 22px 180px 12px;
+            padding: 16px 20px;
+            border: 1px solid var(--sqloom-border);
+            border-radius: 6px;
+            background: var(--sqloom-card);
         }
 
         .step {
@@ -304,9 +313,9 @@ export const dashboardStyles = `
 
         .dashboard-grid {
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(310px, 380px);
-            gap: 18px;
-            align-items: stretch;
+            grid-template-columns: minmax(320px, 380px) minmax(0, 1fr);
+            gap: 20px;
+            align-items: start;
         }
 
         .main-column,
@@ -320,9 +329,9 @@ export const dashboardStyles = `
         .panel {
             min-width: 0;
             border: 1px solid var(--sqloom-border);
-            border-radius: 7px;
+            border-radius: 6px;
             background: var(--sqloom-card);
-            box-shadow: 0 12px 34px rgba(0, 0, 0, 0.12);
+            box-shadow: none;
         }
 
         .setup-panel,
@@ -359,23 +368,19 @@ export const dashboardStyles = `
 
         .setup-summary-grid {
             display: grid;
-            grid-template-columns: repeat(6, minmax(120px, 1fr));
-            border: 1px solid var(--sqloom-border);
-            border-radius: 6px;
-            overflow: hidden;
-            background: var(--sqloom-card-soft);
+            grid-template-columns: 1fr;
+            margin: 12px 0;
         }
 
         .setup-summary-item {
             display: grid;
-            gap: 7px;
-            min-height: 68px;
-            padding: 14px 16px;
-            border-right: 1px solid var(--sqloom-border);
+            gap: 5px;
+            padding: 10px 0;
+            border-bottom: 1px solid color-mix(in srgb, var(--sqloom-border) 35%, transparent);
         }
 
         .setup-summary-item:last-child {
-            border-right: 0;
+            border-bottom: 0;
         }
 
         .summary-label-row {
@@ -441,8 +446,8 @@ export const dashboardStyles = `
 
         .edit-grid {
             display: grid;
-            grid-template-columns: repeat(3, minmax(190px, 1fr));
-            gap: 18px 20px;
+            grid-template-columns: 1fr;
+            gap: 16px;
         }
 
         .field {
@@ -617,7 +622,6 @@ export const dashboardStyles = `
 
         .artifact-table {
             width: 100%;
-            min-width: 900px;
             border-collapse: collapse;
         }
 
@@ -967,29 +971,15 @@ export const dashboardStyles = `
             color: var(--sqloom-muted);
         }
 
-        @media (max-width: 1320px) {
-            .stepper {
-                padding-left: 80px;
-                padding-right: 80px;
-            }
-
-            .setup-summary-grid {
-                grid-template-columns: repeat(3, minmax(160px, 1fr));
-            }
-
-            .setup-summary-item:nth-child(3n) {
-                border-right: 0;
-            }
-
-            .setup-summary-item:nth-child(n + 4) {
-                border-top: 1px solid var(--sqloom-border);
-            }
-        }
-
         @media (max-width: 1050px) {
-            .dashboard-grid,
-            .topbar {
+            .dashboard-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .topbar {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
             }
 
             .stepper {
@@ -997,10 +987,6 @@ export const dashboardStyles = `
                 overflow-x: auto;
                 padding-left: 4px;
                 padding-right: 4px;
-            }
-
-            .edit-grid {
-                grid-template-columns: repeat(2, minmax(190px, 1fr));
             }
         }
 

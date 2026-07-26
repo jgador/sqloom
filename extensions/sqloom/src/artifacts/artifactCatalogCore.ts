@@ -36,6 +36,7 @@ function toDashboardArtifact(
     summary: metadata.summary,
     relativePath: file.workspaceRelativePath,
     sortOrder: metadata.sortOrder,
+    stage: metadata.stage,
   };
 }
 

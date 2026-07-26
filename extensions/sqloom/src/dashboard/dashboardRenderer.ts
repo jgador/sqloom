@@ -54,11 +54,10 @@ ${dashboardStyles}
                     <p>${escapeHtml(state.subtitle)}</p>
                 </div>
             </div>
+            <div class="topbar-actions mode-run">
+                <button class="primary-action compact" type="button" data-command="runTune" disabled>${renderIcon("play")}<span>Run tune</span></button>
+            </div>
         </header>
-
-        <nav class="stepper" aria-label="Tune workflow stages">
-            ${state.stages.map(renderStage).join("")}
-        </nav>
 
         <section class="dashboard-grid" aria-label="Sqloom Tune dashboard">
             <div class="main-column">
@@ -119,20 +118,25 @@ ${dashboardStyles}
                     </div>
                 </section>
 
-                <section class="panel artifacts-panel" aria-label="Tune results and artifacts">
-                    ${renderArtifactsPanel(artifactsPanel)}
-                </section>
-            </div>
-
-            <aside class="side-column" aria-label="Setup status and recent runs">
-                ${renderStatusPanel("run", state.runStatusTitle, state.runStatusSubtitle, state.runStatusChecks, true)}
+                ${renderStatusPanel("run", state.runStatusTitle, state.runStatusSubtitle, state.runStatusChecks, false)}
                 ${renderStatusPanel("edit", state.editStatusTitle, state.editStatusSubtitle, state.editStatusChecks, false)}
+
                 <section class="panel recent-panel" aria-label="${escapeHtml(state.recentRunsTitle)}">
                     <div class="panel-heading compact-heading">
                         <h2>${escapeHtml(state.recentRunsTitle)}</h2>
                         <button class="link-button" type="button" data-command="openRecentRunsFolder">${escapeHtml(state.recentRunsAction)}</button>
                     </div>
                     ${renderRecentRunsPanel(state, artifactsPanel.selectedRunId)}
+                </section>
+            </div>
+
+            <aside class="side-column" aria-label="Tune execution and results">
+                <nav class="stepper" aria-label="Tune workflow stages">
+                    ${state.stages.map(renderStage).join("")}
+                </nav>
+
+                <section class="panel artifacts-panel" aria-label="Tune results and artifacts">
+                    ${renderArtifactsPanel(artifactsPanel)}
                 </section>
             </aside>
         </section>
@@ -158,6 +162,16 @@ ${dashboardStyles}
         let selectedRunId = artifactsPanel.selectedRunId || "";
         const recentRunsEmptyTitle = ${serializeForScript(state.recentRunsEmptyTitle)};
         const recentRunsEmptyDetail = ${serializeForScript(state.recentRunsEmptyDetail)};
+        const artifactIcons = {
+            markdown: ${serializeForScript(renderArtifactIcon("markdown"))},
+            json: ${serializeForScript(renderArtifactIcon("json"))},
+            sql: ${serializeForScript(renderArtifactIcon("sql"))},
+            other: ${serializeForScript(renderArtifactIcon("other"))}
+        };
+        const actionIcons = {
+            eye: ${serializeForScript(renderIcon("eye"))},
+            browser: ${serializeForScript(renderIcon("browser"))}
+        };
 
         window.addEventListener("message", (event) => {
             const message = event.data;
@@ -863,38 +877,49 @@ ${dashboardStyles}
         }
 
         function renderArtifactsTableMarkup(artifacts) {
-            return '<div class="artifact-table-wrap"><table class="artifact-table"><thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Updated</th><th>Preview / Summary</th><th aria-label="Actions"></th></tr></thead><tbody>'
+            return '<div class="artifact-table-wrap"><table class="artifact-table"><thead><tr><th>Name</th><th>Size</th><th>Updated</th><th>Preview / Summary</th><th aria-label="Actions"></th></tr></thead><tbody>'
                 + artifacts.map(renderArtifactRowMarkup).join("")
                 + "</tbody></table></div>";
         }
 
         function renderArtifactRowMarkup(artifact) {
             const relativePath = escapeClientText(artifact.relativePath || "");
-            return '<tr><td><div class="artifact-name"><span class="artifact-icon tone-'
+            const iconHtml = artifactIcons[artifact.typeTone] || artifactIcons.other;
+            return '<tr class="stage-'
+                + escapeClientText(artifact.stage || "general")
+                + '"><td><div class="artifact-name"><span class="artifact-icon tone-'
                 + escapeClientText(artifact.typeTone || "other")
-                + '" aria-hidden="true"></span><span><strong>'
+                + '" title="'
+                + escapeClientText(artifact.type || "File")
+                + '" aria-hidden="true">'
+                + iconHtml
+                + '</span><span><strong>'
                 + escapeClientText(artifact.name || "")
                 + "</strong><small>"
                 + escapeClientText(artifact.description || "")
-                + '</small></span></div></td><td><span class="type-badge tone-'
-                + escapeClientText(artifact.typeTone || "other")
-                + '">'
-                + escapeClientText(artifact.type || "")
-                + "</td><td>"
+                + '</small></span></div></td><td>'
                 + escapeClientText(artifact.size || "")
                 + "</td><td>"
                 + escapeClientText(artifact.updated || "")
                 + "</td><td>"
                 + escapeClientText(artifact.summary || "")
-                + '</td><td><div class="row-actions"><button class="icon-button text-button" type="button" data-command="openArtifact" data-relative-path="'
+                + '</td><td><div class="row-actions"><button class="icon-button" type="button" data-command="openArtifact" data-relative-path="'
                 + relativePath
+                + '" title="Preview '
+                + escapeClientText(artifact.name || "artifact")
                 + '" aria-label="Preview '
                 + escapeClientText(artifact.name || "artifact")
-                + '">Preview</button><button class="icon-button text-button" type="button" data-command="revealArtifact" data-relative-path="'
+                + '">'
+                + actionIcons.eye
+                + '</button><button class="icon-button" type="button" data-command="revealArtifact" data-relative-path="'
                 + relativePath
+                + '" title="Reveal '
+                + escapeClientText(artifact.name || "artifact")
                 + '" aria-label="Reveal '
                 + escapeClientText(artifact.name || "artifact")
-                + '">Show</button></div></td></tr>';
+                + '">'
+                + actionIcons.browser
+                + '</button></div></td></tr>';
         }
 
         function escapeClientText(value) {
@@ -1058,7 +1083,6 @@ function renderArtifactsTable(artifacts: readonly DashboardArtifact[]): string {
             <thead>
                 <tr>
                     <th>Name</th>
-                    <th>Type</th>
                     <th>Size</th>
                     <th>Updated</th>
                     <th>Preview / Summary</th>
@@ -1073,24 +1097,23 @@ function renderArtifactsTable(artifacts: readonly DashboardArtifact[]): string {
 }
 
 function renderArtifactRow(artifact: DashboardArtifact): string {
-  return `<tr>
+  return `<tr class="stage-${artifact.stage}">
         <td>
             <div class="artifact-name">
-                <span class="artifact-icon tone-${artifact.typeTone}" aria-hidden="true">${renderArtifactIcon(artifact.typeTone)}</span>
+                <span class="artifact-icon tone-${artifact.typeTone}" aria-hidden="true" title="${escapeHtml(artifact.type)}">${renderArtifactIcon(artifact.typeTone)}</span>
                 <span>
                     <strong>${escapeHtml(artifact.name)}</strong>
                     <small>${escapeHtml(artifact.description)}</small>
                 </span>
             </div>
         </td>
-        <td><span class="type-badge tone-${artifact.typeTone}">${escapeHtml(artifact.type)}</span></td>
         <td>${escapeHtml(artifact.size)}</td>
         <td>${escapeHtml(artifact.updated)}</td>
         <td>${escapeHtml(artifact.summary)}</td>
         <td>
             <div class="row-actions">
-                <button class="icon-button text-button" type="button" data-command="openArtifact" data-relative-path="${escapeHtml(artifact.relativePath)}" aria-label="Preview ${escapeHtml(artifact.name)}">Preview</button>
-                <button class="icon-button text-button" type="button" data-command="revealArtifact" data-relative-path="${escapeHtml(artifact.relativePath)}" aria-label="Reveal ${escapeHtml(artifact.name)}">Show</button>
+                <button class="icon-button" type="button" data-command="openArtifact" data-relative-path="${escapeHtml(artifact.relativePath)}" title="Preview ${escapeHtml(artifact.name)}" aria-label="Preview ${escapeHtml(artifact.name)}">${renderIcon("eye")}</button>
+                <button class="icon-button" type="button" data-command="revealArtifact" data-relative-path="${escapeHtml(artifact.relativePath)}" title="Reveal ${escapeHtml(artifact.name)}" aria-label="Reveal ${escapeHtml(artifact.name)}">${renderIcon("browser")}</button>
             </div>
         </td>
     </tr>`;
@@ -1107,7 +1130,7 @@ function renderArtifactIcon(tone: DashboardArtifact["typeTone"]): string {
     case "html":
       return renderIcon("browser", "artifact-type-icon");
     default:
-      return renderIcon("fileText", "artifact-type-icon");
+      return renderIcon("file", "artifact-type-icon");
   }
 }
 
@@ -1162,6 +1185,7 @@ type DashboardIcon =
   | "database"
   | "edit"
   | "eye"
+  | "file"
   | "fileText"
   | "menu"
   | "moreVertical"
@@ -1186,6 +1210,8 @@ function renderIconBody(name: DashboardIcon): string {
       return '<path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"></path>';
     case "eye":
       return '<path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z"></path><circle cx="12" cy="12" r="3"></circle>';
+    case "file":
+      return '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline>';
     case "fileText":
       return '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path>';
     case "menu":

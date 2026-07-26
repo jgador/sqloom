@@ -89,6 +89,7 @@ export type DashboardArtifact = {
   summary: string;
   relativePath: string;
   sortOrder: number;
+  stage: "observe" | "replay" | "correlate" | "advise" | "proposal" | "general";
 };
 
 export type DashboardArtifactsPanelState = {

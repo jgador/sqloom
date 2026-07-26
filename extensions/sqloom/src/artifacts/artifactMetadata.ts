@@ -8,6 +8,7 @@ export type ArtifactMetadata = {
   typeTone: ArtifactTypeTone;
   summary: string;
   sortOrder: number;
+  stage: DashboardArtifact["stage"];
 };
 
 const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
@@ -18,7 +19,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Run configuration, stage outcomes, and workflow metadata.",
-      sortOrder: 10,
+      sortOrder: 130,
+      stage: "general",
     },
   ],
   [
@@ -28,7 +30,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Query Store evidence collected during observe.",
-      sortOrder: 20,
+      sortOrder: 120,
+      stage: "observe",
     },
   ],
   [
@@ -38,7 +41,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "SQL",
       typeTone: "sql",
       summary: "Suggested SQL changes produced by advise.",
-      sortOrder: 30,
+      sortOrder: 10,
+      stage: "proposal",
     },
   ],
   [
@@ -48,7 +52,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Machine-readable proposal details and rationale.",
-      sortOrder: 40,
+      sortOrder: 20,
+      stage: "proposal",
     },
   ],
   [
@@ -58,7 +63,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Advice request, response, and supporting evidence.",
-      sortOrder: 50,
+      sortOrder: 30,
+      stage: "advise",
     },
   ],
   [
@@ -68,7 +74,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Statement and plan handle matches between replay and observe.",
-      sortOrder: 60,
+      sortOrder: 40,
+      stage: "correlate",
     },
   ],
   [
@@ -78,7 +85,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Replay execution results and captured SQL evidence.",
-      sortOrder: 70,
+      sortOrder: 50,
+      stage: "replay",
     },
   ],
   [
@@ -88,7 +96,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Selected endpoints and replay plan metadata.",
-      sortOrder: 80,
+      sortOrder: 60,
+      stage: "replay",
     },
   ],
   [
@@ -98,7 +107,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Replay data agent generation details.",
-      sortOrder: 90,
+      sortOrder: 70,
+      stage: "replay",
     },
   ],
   [
@@ -108,7 +118,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "JSON",
       typeTone: "json",
       summary: "Endpoint catalog captured for the replay run.",
-      sortOrder: 100,
+      sortOrder: 80,
+      stage: "replay",
     },
   ],
   [
@@ -118,7 +129,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "SQL",
       typeTone: "sql",
       summary: "Schema extracted for advice generation.",
-      sortOrder: 110,
+      sortOrder: 100,
+      stage: "observe",
     },
   ],
   [
@@ -128,7 +140,8 @@ const artifactMetadataByRelativePath = new Map<string, ArtifactMetadata>([
       type: "DACPAC",
       typeTone: "other",
       summary: "DACPAC exported for schema extraction.",
-      sortOrder: 120,
+      sortOrder: 110,
+      stage: "observe",
     },
   ],
 ]);
@@ -152,7 +165,8 @@ export function getArtifactMetadata(
       type: "JSON",
       typeTone: "json",
       summary: "Captured SQL and execution details for one replayed operation.",
-      sortOrder: 200,
+      sortOrder: 90,
+      stage: "replay",
     };
   }
 
@@ -169,6 +183,7 @@ export function getArtifactMetadata(
         typeTone: "sql",
         summary: "SQL output from the tune workflow.",
         sortOrder: 300,
+        stage: "general",
       };
     case "json":
       return {
@@ -177,6 +192,7 @@ export function getArtifactMetadata(
         typeTone: "json",
         summary: "Structured output from the tune workflow.",
         sortOrder: 310,
+        stage: "general",
       };
     case "html":
     case "htm":
@@ -186,6 +202,7 @@ export function getArtifactMetadata(
         typeTone: "html",
         summary: "HTML output from the tune workflow.",
         sortOrder: 320,
+        stage: "general",
       };
     case "md":
     case "markdown":
@@ -195,6 +212,7 @@ export function getArtifactMetadata(
         typeTone: "markdown",
         summary: "Markdown output from the tune workflow.",
         sortOrder: 330,
+        stage: "general",
       };
     default:
       return {
@@ -203,6 +221,7 @@ export function getArtifactMetadata(
         typeTone: "other",
         summary: "Generated output from the tune workflow.",
         sortOrder: 400,
+        stage: "general",
       };
   }
 }
