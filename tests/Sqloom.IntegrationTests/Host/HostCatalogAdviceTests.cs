@@ -10,6 +10,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -408,14 +409,11 @@ public sealed class HostCatalogAdviceTests
         SqlConnection connection = new(connectionString);
         await using (connection.ConfigureAwait(false))
         {
-            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-            var command = connection.CreateCommand();
-            await using (command.ConfigureAwait(false))
-            {
-                command.CommandText = "EXEC sys.sp_query_store_flush_db;";
-                command.CommandTimeout = 60;
-                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
+            CommandDefinition command = new(
+                "EXEC sys.sp_query_store_flush_db;",
+                commandTimeout: 60,
+                cancellationToken: cancellationToken);
+            await connection.ExecuteAsync(command).ConfigureAwait(false);
         }
     }
 
@@ -434,14 +432,11 @@ public sealed class HostCatalogAdviceTests
         SqlConnection connection = new(connectionString);
         await using (connection.ConfigureAwait(false))
         {
-            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-            var command = connection.CreateCommand();
-            await using (command.ConfigureAwait(false))
-            {
-                command.CommandText = enableQueryStoreSql;
-                command.CommandTimeout = 60;
-                await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
-            }
+            CommandDefinition command = new(
+                enableQueryStoreSql,
+                commandTimeout: 60,
+                cancellationToken: cancellationToken);
+            await connection.ExecuteAsync(command).ConfigureAwait(false);
         }
     }
 

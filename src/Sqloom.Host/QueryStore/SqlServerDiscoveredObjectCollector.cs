@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Sqloom.Host.QueryStore;
 using Sqloom.Pipeline.QueryStore;
@@ -17,13 +17,13 @@ internal static class SqlServerDiscoveredObjectCollector
 {
     private const string UserTablesAndViewsSql = """
         SELECT
-            schema_info.name AS schema_name,
-            objects.name AS object_name,
+            schema_info.name AS SchemaName,
+            objects.name AS ObjectName,
             CASE
                 WHEN objects.type = N'U' THEN N'Table'
                 WHEN objects.type = N'V' THEN N'View'
                 ELSE N'Unknown'
-            END AS object_kind
+            END AS ObjectKind
         FROM sys.objects AS objects
         INNER JOIN sys.schemas AS schema_info
             ON schema_info.schema_id = objects.schema_id
@@ -32,19 +32,19 @@ internal static class SqlServerDiscoveredObjectCollector
         ORDER BY
             schema_info.name,
             objects.name,
-            object_kind;
+            ObjectKind;
         """;
 
     private const string ViewDefinitionPermissionSql = """
         SELECT
-            CAST(HAS_PERMS_BY_NAME(DB_NAME(), 'DATABASE', 'VIEW DEFINITION') AS bit) AS has_view_definition;
+            CAST(HAS_PERMS_BY_NAME(DB_NAME(), 'DATABASE', 'VIEW DEFINITION') AS bit) AS HasViewDefinition;
         """;
 
     private const string UserModulesSql = """
         SELECT
-            schema_info.name AS schema_name,
-            objects.name AS object_name,
-            N'Module' AS object_kind
+            schema_info.name AS SchemaName,
+            objects.name AS ObjectName,
+            N'Module' AS ObjectKind
         FROM sys.objects AS objects
         INNER JOIN sys.schemas AS schema_info
             ON schema_info.schema_id = objects.schema_id
@@ -53,7 +53,7 @@ internal static class SqlServerDiscoveredObjectCollector
         ORDER BY
             schema_info.name,
             objects.name,
-            object_kind;
+            ObjectKind;
         """;
 
     /// <summary>
@@ -116,24 +116,17 @@ internal static class SqlServerDiscoveredObjectCollector
         }
     }
 
-    internal static DiscoveredDatabaseObject ReadDiscoveredObjectRecord(DbDataReader reader)
+    internal static DiscoveredDatabaseObject MapDiscoveredObject(DiscoveredDatabaseObjectRow row)
     {
-        var schemaName = reader.GetString(reader.GetOrdinal("schema_name"));
-        var objectName = reader.GetString(reader.GetOrdinal("object_name"));
-        var objectKind = reader.GetString(reader.GetOrdinal("object_kind"));
+        ArgumentNullException.ThrowIfNull(row);
 
         return new DiscoveredDatabaseObject
         {
-            SchemaName = schemaName,
-            ObjectName = objectName,
-            FullyQualifiedName = $"[{schemaName}].[{objectName}]",
-            Kind = ParseKind(objectKind),
+            SchemaName = row.SchemaName,
+            ObjectName = row.ObjectName,
+            FullyQualifiedName = $"[{row.SchemaName}].[{row.ObjectName}]",
+            Kind = ParseKind(row.ObjectKind),
         };
-    }
-
-    internal static bool ReadViewDefinitionPermission(DbDataReader reader)
-    {
-        return reader.GetBoolean(reader.GetOrdinal("has_view_definition"));
     }
 
     internal static DbObjectCatalog FinalizeCatalog(
@@ -179,17 +172,18 @@ internal static class SqlServerDiscoveredObjectCollector
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        using var command = CreateCommand(connection, ViewDefinitionPermissionSql, commandTimeoutSeconds);
-        DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        await using (reader.ConfigureAwait(false))
+        CommandDefinition command = new(
+            ViewDefinitionPermissionSql,
+            commandTimeout: commandTimeoutSeconds,
+            cancellationToken: cancellationToken);
+        var row = await connection.QueryFirstOrDefaultAsync<ViewDefinitionPermissionRow>(command)
+            .ConfigureAwait(false);
+        if (row is null)
         {
-            if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                throw new InvalidOperationException("VIEW DEFINITION permission check returned no rows.");
-            }
-
-            return ReadViewDefinitionPermission(reader);
+            throw new InvalidOperationException("VIEW DEFINITION permission check returned no rows.");
         }
+
+        return row.HasViewDefinition;
     }
 
     private static async Task<IReadOnlyList<DiscoveredDatabaseObject>> ReadObjectsAsync(
@@ -198,25 +192,11 @@ internal static class SqlServerDiscoveredObjectCollector
         int commandTimeoutSeconds,
         CancellationToken cancellationToken)
     {
-        using var command = CreateCommand(connection, commandText, commandTimeoutSeconds);
-        List<DiscoveredDatabaseObject> objects = new();
-        DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        await using (reader.ConfigureAwait(false))
-        {
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                objects.Add(ReadDiscoveredObjectRecord(reader));
-            }
-        }
-
-        return objects;
-    }
-
-    private static SqlCommand CreateCommand(SqlConnection connection, string commandText, int commandTimeoutSeconds)
-    {
-        var command = connection.CreateCommand();
-        command.CommandText = commandText;
-        command.CommandTimeout = commandTimeoutSeconds;
-        return command;
+        CommandDefinition command = new(
+            commandText,
+            commandTimeout: commandTimeoutSeconds,
+            cancellationToken: cancellationToken);
+        var rows = await connection.QueryAsync<DiscoveredDatabaseObjectRow>(command).ConfigureAwait(false);
+        return rows.Select(MapDiscoveredObject).ToArray();
     }
 }

@@ -1,5 +1,4 @@
 using System;
-using System.Data;
 using Sqloom.Host.QueryStore;
 using Sqloom.Pipeline.QueryStore;
 using Xunit;
@@ -26,39 +25,25 @@ public sealed class SqlServerDiscoveredObjectCollectorTests
     [InlineData("dbo", "ExpenseRecord", "Table", DbObjectKind.Table)]
     [InlineData("reporting", "ExpenseSummary", "View", DbObjectKind.View)]
     [InlineData("dbo", "RebuildExpenseCache", "Module", DbObjectKind.Module)]
-    public void ReadDiscoveredObjectRecord_MapsExpectedColumns(
+    public void MapDiscoveredObject_MapsExpectedColumns(
         string schemaName,
         string objectName,
         string objectKind,
         DbObjectKind expectedKind)
     {
-        using var table = CreateDiscoveredObjectTable();
-        table.Rows.Add(schemaName, objectName, objectKind);
-        using var reader = table.CreateDataReader();
-        Assert.True(reader.Read());
+        DiscoveredDatabaseObjectRow row = new()
+        {
+            SchemaName = schemaName,
+            ObjectName = objectName,
+            ObjectKind = objectKind,
+        };
 
-        var record = SqlServerDiscoveredObjectCollector.ReadDiscoveredObjectRecord(reader);
+        var record = SqlServerDiscoveredObjectCollector.MapDiscoveredObject(row);
 
         Assert.Equal(schemaName, record.SchemaName);
         Assert.Equal(objectName, record.ObjectName);
         Assert.Equal($"[{schemaName}].[{objectName}]", record.FullyQualifiedName);
         Assert.Equal(expectedKind, record.Kind);
-    }
-
-    [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public void ReadViewDefinitionPermission_MapsPermissionFlag(bool hasViewDefinition)
-    {
-        using DataTable table = new();
-        table.Columns.Add("has_view_definition", typeof(bool));
-        table.Rows.Add(hasViewDefinition);
-        using var reader = table.CreateDataReader();
-        Assert.True(reader.Read());
-
-        var actual = SqlServerDiscoveredObjectCollector.ReadViewDefinitionPermission(reader);
-
-        Assert.Equal(hasViewDefinition, actual);
     }
 
     [Fact]
@@ -98,12 +83,4 @@ public sealed class SqlServerDiscoveredObjectCollectorTests
         Assert.Equal(DbObjectKind.View, catalog.Objects[1].Kind);
     }
 
-    private static DataTable CreateDiscoveredObjectTable()
-    {
-        DataTable table = new();
-        table.Columns.Add("schema_name", typeof(string));
-        table.Columns.Add("object_name", typeof(string));
-        table.Columns.Add("object_kind", typeof(string));
-        return table;
-    }
 }

@@ -48,6 +48,37 @@ public sealed class SqlStatementHandleResolverTests
     }
 
     [Fact]
+    public void MapCandidateRecord_CombinesContextAndHydratedRow()
+    {
+        SqlStatementHandleRow row = new()
+        {
+            QueryParameterizationType = 2,
+            StatementSqlHandle = "0xAAAA",
+        };
+
+        var candidate = SqlStatementHandleResolver.MapCandidateRecord(
+            row,
+            "ParameterDefinitionPrefix",
+            "Simple");
+
+        Assert.Equal("ParameterDefinitionPrefix", candidate.QueryTextShape);
+        Assert.Equal("Simple", candidate.RequestedParamType);
+        Assert.Equal(2, candidate.QueryParameterizationType);
+        Assert.Equal("0xAAAA", candidate.StatementSqlHandle);
+    }
+
+    [Fact]
+    public void MapCandidateRecord_PreservesMissingRow()
+    {
+        var candidate = SqlStatementHandleResolver.MapCandidateRecord(null, "Raw", "Default");
+
+        Assert.Equal("Raw", candidate.QueryTextShape);
+        Assert.Equal("Default", candidate.RequestedParamType);
+        Assert.Null(candidate.QueryParameterizationType);
+        Assert.Null(candidate.StatementSqlHandle);
+    }
+
+    [Fact]
     public void BuildResolution_PreservesResolverErrors()
     {
         var resolution = SqlStatementHandleResolver.BuildResolution(

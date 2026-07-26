@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Sqloom.Host.QueryStore;
 using Sqloom.Pipeline.QueryStore;
@@ -19,8 +20,8 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
     private const int DefaultCommandTimeoutSeconds = 30;
     private const string ResolveStatementHandleSql = """
         SELECT
-            CONVERT(int, resolved.query_parameterization_type) AS query_parameterization_type,
-            CONVERT(varchar(130), resolved.statement_sql_handle, 1) AS statement_sql_handle
+            CONVERT(int, resolved.query_parameterization_type) AS QueryParameterizationType,
+            CONVERT(varchar(130), resolved.statement_sql_handle, 1) AS StatementSqlHandle
         FROM sys.fn_stmt_sql_handle_from_sql_stmt(
             @QuerySqlText,
             @RequestedParamType) AS resolved;
@@ -66,47 +67,25 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
                 .ConfigureAwait(false);
             await using (connection.ConfigureAwait(false))
             {
-                using var command = connection.CreateCommand();
-                command.CommandText = ResolveStatementHandleSql;
-                command.CommandTimeout = DefaultCommandTimeoutSeconds;
-                var querySqlTextParameter = command.Parameters.Add(
-                    new SqlParameter("@QuerySqlText", System.Data.SqlDbType.NVarChar, -1));
-                var requestedParamTypeParameter = command.Parameters.Add(
-                    new SqlParameter("@RequestedParamType", System.Data.SqlDbType.TinyInt)
-                    {
-                        IsNullable = true,
-                    });
-
                 List<SqlHandleCandidateRecord> records = new();
                 foreach (var queryTextCandidate in queryTextCandidates)
                 {
-                    querySqlTextParameter.Value = queryTextCandidate.QuerySqlText;
                     foreach (var requestedParamType in _requestedParamTypes)
                     {
-                        requestedParamTypeParameter.Value =
-                            requestedParamType.Value is null
-                                ? DBNull.Value
-                                : requestedParamType.Value.Value;
-
-                        DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-                        await using (reader.ConfigureAwait(false))
-                        {
-                            if (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-                            {
-                                records.Add(ReadCandidateRecord(
-                                    reader,
-                                    queryTextCandidate.QueryTextShape,
-                                    requestedParamType.Description));
-                            }
-                            else
-                            {
-                                records.Add(new SqlHandleCandidateRecord(
-                                    queryTextCandidate.QueryTextShape,
-                                    requestedParamType.Description,
-                                    null,
-                                    null));
-                            }
-                        }
+                        DynamicParameters commandParameters = new();
+                        commandParameters.Add("QuerySqlText", queryTextCandidate.QuerySqlText, DbType.String, size: -1);
+                        commandParameters.Add("RequestedParamType", requestedParamType.Value, DbType.Byte);
+                        CommandDefinition command = new(
+                            ResolveStatementHandleSql,
+                            commandParameters,
+                            commandTimeout: DefaultCommandTimeoutSeconds,
+                            cancellationToken: cancellationToken);
+                        var row = await connection.QueryFirstOrDefaultAsync<SqlStatementHandleRow>(command)
+                            .ConfigureAwait(false);
+                        records.Add(MapCandidateRecord(
+                            row,
+                            queryTextCandidate.QueryTextShape,
+                            requestedParamType.Description));
                     }
                 }
 
@@ -127,16 +106,16 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
         }
     }
 
-    internal static SqlHandleCandidateRecord ReadCandidateRecord(
-        DbDataReader reader,
+    internal static SqlHandleCandidateRecord MapCandidateRecord(
+        SqlStatementHandleRow? row,
         string queryTextShape,
         string requestedParamType)
     {
         return new SqlHandleCandidateRecord(
             queryTextShape,
             requestedParamType,
-            GetNullableInt32(reader, "query_parameterization_type"),
-            GetNullableString(reader, "statement_sql_handle"));
+            row?.QueryParameterizationType,
+            row?.StatementSqlHandle);
     }
 
     internal static IReadOnlyList<SqlStatementQueryTextCandidate> BuildQueryTextCandidates(
@@ -209,18 +188,6 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
             }).ToArray(),
             ErrorMessage = errorMessage,
         };
-    }
-
-    private static string? GetNullableString(DbDataReader reader, string columnName)
-    {
-        var ordinal = reader.GetOrdinal(columnName);
-        return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
-    }
-
-    private static int? GetNullableInt32(DbDataReader reader, string columnName)
-    {
-        var ordinal = reader.GetOrdinal(columnName);
-        return reader.IsDBNull(ordinal) ? null : Convert.ToInt32(reader.GetValue(ordinal));
     }
 
     private static string? TryBuildParameterPrefixedQueryText(

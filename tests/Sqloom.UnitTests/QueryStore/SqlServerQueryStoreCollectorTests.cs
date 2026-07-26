@@ -1,5 +1,4 @@
 using System;
-using System.Data;
 using Sqloom.Host.QueryStore;
 using Sqloom.Pipeline.QueryStore;
 using Xunit;
@@ -26,29 +25,50 @@ public sealed class SqlServerQueryStoreCollectorTests
     }
 
     [Fact]
-    public void ReadDatabaseOptions_MapsExpectedColumns()
+    public void MapDatabaseOptions_MapsExpectedColumns()
     {
-        using var table = CreateDatabaseOptionsTable();
-        using var reader = table.CreateDataReader();
-        Assert.True(reader.Read());
+        QueryStoreDatabaseOptionsRow row = new()
+        {
+            DesiredState = "READ_WRITE",
+            ActualState = "READ_ONLY",
+            ReadOnlyReason = 65536L,
+            CurrentStorageSizeMb = 128L,
+            MaxStorageSizeMb = 1024L,
+        };
 
-        var options = SqlServerQueryStoreCollector.ReadDatabaseOptions(reader);
+        var options = SqlServerQueryStoreCollector.MapDatabaseOptions(row);
 
         Assert.Equal("READ_WRITE", options.DesiredState);
         Assert.Equal("READ_ONLY", options.ActualState);
         Assert.Equal(65536L, options.ReadOnlyReason);
-        Assert.Equal(128.5d, options.CurrentStorageSizeMb);
+        Assert.Equal(128d, options.CurrentStorageSizeMb);
         Assert.Equal(1024d, options.MaxStorageSizeMb);
     }
 
     [Fact]
-    public void ReadPlanRecord_MapsRuntimeMetricsAndOptionalColumns()
+    public void MapPlanRecord_MapsRuntimeMetricsAndOptionalColumns()
     {
-        using var table = CreatePlanTable();
-        using var reader = table.CreateDataReader();
-        Assert.True(reader.Read());
+        QueryStorePlanRow row = new()
+        {
+            QueryId = 42L,
+            PlanId = 84L,
+            QueryTextId = 21L,
+            StatementSqlHandle = "0x010203040506",
+            ObjectId = 7L,
+            QueryParameterizationType = 2,
+            ParamTypeDescription = "Simple",
+            QueryHash = "0x000000000000002A",
+            QueryText = "SELECT 1",
+            ObjectName = "[dbo].[Expenses]",
+            ExecutionCount = 12L,
+            MeanDurationMicroseconds = 2500d,
+            MeanCpuMicroseconds = 4200d,
+            MeanLogicalReads = 77.5d,
+            MaxDurationMicroseconds = 11000d,
+            LastExecutionTimeUtc = new DateTimeOffset(2026, 6, 7, 0, 0, 0, TimeSpan.Zero),
+        };
 
-        var record = SqlServerQueryStoreCollector.ReadPlanRecord(reader);
+        var record = SqlServerQueryStoreCollector.MapPlanRecord(row);
 
         Assert.Equal(42L, record.QueryId);
         Assert.Equal(84L, record.PlanId);
@@ -71,13 +91,18 @@ public sealed class SqlServerQueryStoreCollectorTests
     }
 
     [Fact]
-    public void ReadWaitStat_MapsWaitTotals()
+    public void MapWaitStat_MapsWaitTotals()
     {
-        using var table = CreateWaitTable();
-        using var reader = table.CreateDataReader();
-        Assert.True(reader.Read());
+        QueryStoreWaitRow row = new()
+        {
+            QueryId = 42L,
+            PlanId = 84L,
+            WaitCategory = "Lock",
+            TotalWaitMilliseconds = 87.5d,
+            AvgWaitMs = 7.25d,
+        };
 
-        var wait = SqlServerQueryStoreCollector.ReadWaitStat(reader);
+        var wait = SqlServerQueryStoreCollector.MapWaitStat(row);
 
         Assert.Equal(42L, wait.QueryId);
         Assert.Equal(84L, wait.PlanId);
@@ -86,66 +111,4 @@ public sealed class SqlServerQueryStoreCollectorTests
         Assert.Equal(7.25d, wait.AvgWaitMs);
     }
 
-    private static DataTable CreateDatabaseOptionsTable()
-    {
-        DataTable table = new();
-        table.Columns.Add("desired_state_desc", typeof(string));
-        table.Columns.Add("actual_state_desc", typeof(string));
-        table.Columns.Add("readonly_reason", typeof(int));
-        table.Columns.Add("current_storage_size_mb", typeof(decimal));
-        table.Columns.Add("max_storage_size_mb", typeof(decimal));
-        table.Rows.Add("READ_WRITE", "READ_ONLY", 65536, 128.5m, 1024m);
-        return table;
-    }
-
-    private static DataTable CreatePlanTable()
-    {
-        DataTable table = new();
-        table.Columns.Add("query_id", typeof(long));
-        table.Columns.Add("plan_id", typeof(long));
-        table.Columns.Add("query_text_id", typeof(long));
-        table.Columns.Add("statement_sql_handle", typeof(string));
-        table.Columns.Add("object_id", typeof(long));
-        table.Columns.Add("query_parameterization_type", typeof(int));
-        table.Columns.Add("query_parameterization_type_desc", typeof(string));
-        table.Columns.Add("query_hash", typeof(string));
-        table.Columns.Add("query_sql_text", typeof(string));
-        table.Columns.Add("object_name", typeof(string));
-        table.Columns.Add("execution_count", typeof(long));
-        table.Columns.Add("mean_duration_us", typeof(double));
-        table.Columns.Add("mean_cpu_us", typeof(double));
-        table.Columns.Add("mean_logical_reads", typeof(double));
-        table.Columns.Add("max_duration_us", typeof(double));
-        table.Columns.Add("last_execution_time", typeof(DateTimeOffset));
-        table.Rows.Add(
-            42L,
-            84L,
-            21L,
-            "0x010203040506",
-            7L,
-            2,
-            "Simple",
-            "0x000000000000002A",
-            "SELECT 1",
-            "[dbo].[Expenses]",
-            12L,
-            2500d,
-            4200d,
-            77.5d,
-            11000d,
-            new DateTimeOffset(2026, 6, 7, 0, 0, 0, TimeSpan.Zero));
-        return table;
-    }
-
-    private static DataTable CreateWaitTable()
-    {
-        DataTable table = new();
-        table.Columns.Add("query_id", typeof(long));
-        table.Columns.Add("plan_id", typeof(long));
-        table.Columns.Add("wait_category_desc", typeof(string));
-        table.Columns.Add("total_query_wait_time_ms", typeof(decimal));
-        table.Columns.Add("avg_query_wait_time_ms", typeof(decimal));
-        table.Rows.Add(42L, 84L, "Lock", 87.5m, 7.25m);
-        return table;
-    }
 }

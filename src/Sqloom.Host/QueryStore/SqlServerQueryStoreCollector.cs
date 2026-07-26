@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Data.Common;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Dapper;
 using Microsoft.Data.SqlClient;
 using Sqloom.Host.QueryStore;
 using Sqloom.Pipeline.QueryStore;
@@ -17,11 +18,11 @@ internal static class SqlServerQueryStoreCollector
     // Reads Query Store state and storage so observe can report whether capture is usable.
     private const string QueryStoreOptionsSql = """
         SELECT
-            desired_state_desc,
-            actual_state_desc,
-            readonly_reason,
-            current_storage_size_mb,
-            max_storage_size_mb
+            desired_state_desc AS DesiredState,
+            actual_state_desc AS ActualState,
+            CONVERT(bigint, readonly_reason) AS ReadOnlyReason,
+            CONVERT(bigint, current_storage_size_mb) AS CurrentStorageSizeMb,
+            CONVERT(bigint, max_storage_size_mb) AS MaxStorageSizeMb
         FROM sys.database_query_store_options;
         """;
 
@@ -59,34 +60,34 @@ internal static class SqlServerQueryStoreCollector
             GROUP BY filtered_runtime_stats.plan_id
         )
         SELECT TOP (@MaxPlans)
-            query_store_query.query_id,
-            query_store_plan.plan_id,
-            query_store_query.query_text_id,
-            CONVERT(varchar(130), query_store_query_text.statement_sql_handle, 1) AS statement_sql_handle,
-            NULLIF(CONVERT(bigint, query_store_query.object_id), 0) AS object_id,
-            CONVERT(int, query_store_query.query_parameterization_type) AS query_parameterization_type,
-            query_store_query.query_parameterization_type_desc,
-            CONVERT(varchar(18), query_store_query.query_hash, 1) AS query_hash,
-            query_store_query_text.query_sql_text,
+            query_store_query.query_id AS QueryId,
+            query_store_plan.plan_id AS PlanId,
+            query_store_query.query_text_id AS QueryTextId,
+            CONVERT(varchar(130), query_store_query_text.statement_sql_handle, 1) AS StatementSqlHandle,
+            NULLIF(CONVERT(bigint, query_store_query.object_id), 0) AS ObjectId,
+            CONVERT(int, query_store_query.query_parameterization_type) AS QueryParameterizationType,
+            query_store_query.query_parameterization_type_desc AS ParamTypeDescription,
+            CONVERT(varchar(18), query_store_query.query_hash, 1) AS QueryHash,
+            query_store_query_text.query_sql_text AS QueryText,
             CASE
                 WHEN query_store_query.object_id = 0 THEN NULL
                 ELSE QUOTENAME(OBJECT_SCHEMA_NAME(query_store_query.object_id)) + N'.' + QUOTENAME(OBJECT_NAME(query_store_query.object_id))
-            END AS object_name,
-            plan_runtime.execution_count,
+            END AS ObjectName,
+            plan_runtime.execution_count AS ExecutionCount,
             CASE
                 WHEN plan_runtime.execution_count = 0 THEN 0
                 ELSE plan_runtime.total_duration_us / CAST(plan_runtime.execution_count AS float)
-            END AS mean_duration_us,
+            END AS MeanDurationMicroseconds,
             CASE
                 WHEN plan_runtime.execution_count = 0 THEN 0
                 ELSE plan_runtime.total_cpu_us / CAST(plan_runtime.execution_count AS float)
-            END AS mean_cpu_us,
+            END AS MeanCpuMicroseconds,
             CASE
                 WHEN plan_runtime.execution_count = 0 THEN 0
                 ELSE plan_runtime.total_logical_reads / CAST(plan_runtime.execution_count AS float)
-            END AS mean_logical_reads,
-            plan_runtime.max_duration_us,
-            plan_runtime.last_execution_time
+            END AS MeanLogicalReads,
+            CONVERT(float, plan_runtime.max_duration_us) AS MaxDurationMicroseconds,
+            plan_runtime.last_execution_time AS LastExecutionTimeUtc
         FROM plan_runtime
         INNER JOIN sys.query_store_plan AS query_store_plan
             ON query_store_plan.plan_id = plan_runtime.plan_id
@@ -96,9 +97,9 @@ internal static class SqlServerQueryStoreCollector
             ON query_store_query_text.query_text_id = query_store_query.query_text_id
         WHERE query_store_query.is_internal_query = 0
         ORDER BY
-            mean_duration_us DESC,
-            mean_cpu_us DESC,
-            execution_count DESC,
+            MeanDurationMicroseconds DESC,
+            MeanCpuMicroseconds DESC,
+            ExecutionCount DESC,
             query_store_plan.plan_id ASC;
         """;
 
@@ -119,14 +120,14 @@ internal static class SqlServerQueryStoreCollector
                 runtime_stats.runtime_stats_interval_id
         )
         SELECT TOP (@MaxWaits)
-            query_store_query.query_id,
-            query_store_wait_stats.plan_id,
-            query_store_wait_stats.wait_category_desc,
-            SUM(query_store_wait_stats.total_query_wait_time_ms) AS total_query_wait_time_ms,
+            query_store_query.query_id AS QueryId,
+            query_store_wait_stats.plan_id AS PlanId,
+            query_store_wait_stats.wait_category_desc AS WaitCategory,
+            SUM(query_store_wait_stats.total_query_wait_time_ms) AS TotalWaitMilliseconds,
             CASE
                 WHEN SUM(filtered_runtime_counts.execution_count) = 0 THEN 0
                 ELSE SUM(query_store_wait_stats.total_query_wait_time_ms) / CAST(SUM(filtered_runtime_counts.execution_count) AS float)
-            END AS avg_query_wait_time_ms
+            END AS AvgWaitMs
         FROM sys.query_store_wait_stats AS query_store_wait_stats
         INNER JOIN filtered_runtime_counts
             ON filtered_runtime_counts.plan_id = query_store_wait_stats.plan_id
@@ -142,8 +143,8 @@ internal static class SqlServerQueryStoreCollector
             query_store_wait_stats.plan_id,
             query_store_wait_stats.wait_category_desc
         ORDER BY
-            total_query_wait_time_ms DESC,
-            avg_query_wait_time_ms DESC,
+            TotalWaitMilliseconds DESC,
+            AvgWaitMs DESC,
             query_store_wait_stats.plan_id ASC;
         """;
 
@@ -225,50 +226,56 @@ internal static class SqlServerQueryStoreCollector
         }
     }
 
-    internal static QueryStoreDatabaseOptions ReadDatabaseOptions(DbDataReader reader)
+    internal static QueryStoreDatabaseOptions MapDatabaseOptions(QueryStoreDatabaseOptionsRow row)
     {
+        ArgumentNullException.ThrowIfNull(row);
+
         return new QueryStoreDatabaseOptions
         {
-            DesiredState = reader.GetString(reader.GetOrdinal("desired_state_desc")),
-            ActualState = reader.GetString(reader.GetOrdinal("actual_state_desc")),
-            ReadOnlyReason = Convert.ToInt64(reader.GetValue(reader.GetOrdinal("readonly_reason"))),
-            CurrentStorageSizeMb = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("current_storage_size_mb"))),
-            MaxStorageSizeMb = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("max_storage_size_mb"))),
+            DesiredState = row.DesiredState,
+            ActualState = row.ActualState,
+            ReadOnlyReason = row.ReadOnlyReason,
+            CurrentStorageSizeMb = row.CurrentStorageSizeMb,
+            MaxStorageSizeMb = row.MaxStorageSizeMb,
         };
     }
 
-    internal static QueryStorePlanRecord ReadPlanRecord(DbDataReader reader)
+    internal static QueryStorePlanRecord MapPlanRecord(QueryStorePlanRow row)
     {
+        ArgumentNullException.ThrowIfNull(row);
+
         return new QueryStorePlanRecord
         {
-            QueryId = reader.GetInt64(reader.GetOrdinal("query_id")),
-            PlanId = reader.GetInt64(reader.GetOrdinal("plan_id")),
-            QueryTextId = reader.GetInt64(reader.GetOrdinal("query_text_id")),
-            StatementSqlHandle = GetNullableString(reader, "statement_sql_handle"),
-            ObjectId = GetNullableInt64(reader, "object_id"),
-            QueryHash = reader.GetString(reader.GetOrdinal("query_hash")),
-            QueryText = reader.GetString(reader.GetOrdinal("query_sql_text")),
-            ObjectName = GetNullableString(reader, "object_name"),
-            QueryParameterizationType = Convert.ToInt32(reader.GetValue(reader.GetOrdinal("query_parameterization_type"))),
-            ParamTypeDescription = reader.GetString(reader.GetOrdinal("query_parameterization_type_desc")),
-            ExecutionCount = reader.GetInt64(reader.GetOrdinal("execution_count")),
-            MeanDuration = FromMicroseconds(Convert.ToDouble(reader.GetValue(reader.GetOrdinal("mean_duration_us")))),
-            MaxDuration = FromMicroseconds(Convert.ToDouble(reader.GetValue(reader.GetOrdinal("max_duration_us")))),
-            MeanCpuMilliseconds = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("mean_cpu_us"))) / 1000d,
-            MeanLogicalReads = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("mean_logical_reads"))),
-            LastExecutionTimeUtc = GetNullableDateTimeOffset(reader, "last_execution_time"),
+            QueryId = row.QueryId,
+            PlanId = row.PlanId,
+            QueryTextId = row.QueryTextId,
+            StatementSqlHandle = row.StatementSqlHandle,
+            ObjectId = row.ObjectId,
+            QueryHash = row.QueryHash,
+            QueryText = row.QueryText,
+            ObjectName = row.ObjectName,
+            QueryParameterizationType = row.QueryParameterizationType,
+            ParamTypeDescription = row.ParamTypeDescription,
+            ExecutionCount = row.ExecutionCount,
+            MeanDuration = FromMicroseconds(row.MeanDurationMicroseconds),
+            MaxDuration = FromMicroseconds(row.MaxDurationMicroseconds),
+            MeanCpuMilliseconds = row.MeanCpuMicroseconds / 1000d,
+            MeanLogicalReads = row.MeanLogicalReads,
+            LastExecutionTimeUtc = row.LastExecutionTimeUtc,
         };
     }
 
-    internal static QueryStoreWaitStat ReadWaitStat(DbDataReader reader)
+    internal static QueryStoreWaitStat MapWaitStat(QueryStoreWaitRow row)
     {
+        ArgumentNullException.ThrowIfNull(row);
+
         return new QueryStoreWaitStat
         {
-            QueryId = reader.GetInt64(reader.GetOrdinal("query_id")),
-            PlanId = reader.GetInt64(reader.GetOrdinal("plan_id")),
-            WaitCategory = reader.GetString(reader.GetOrdinal("wait_category_desc")),
-            AvgWaitMs = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("avg_query_wait_time_ms"))),
-            TotalWaitMilliseconds = Convert.ToDouble(reader.GetValue(reader.GetOrdinal("total_query_wait_time_ms"))),
+            QueryId = row.QueryId,
+            PlanId = row.PlanId,
+            WaitCategory = row.WaitCategory,
+            AvgWaitMs = row.AvgWaitMs,
+            TotalWaitMilliseconds = row.TotalWaitMilliseconds,
         };
     }
 
@@ -277,40 +284,23 @@ internal static class SqlServerQueryStoreCollector
         return TimeSpan.FromMicroseconds(value);
     }
 
-    private static string? GetNullableString(DbDataReader reader, string columnName)
-    {
-        var ordinal = reader.GetOrdinal(columnName);
-        return reader.IsDBNull(ordinal) ? null : reader.GetString(ordinal);
-    }
-
-    private static DateTimeOffset? GetNullableDateTimeOffset(DbDataReader reader, string columnName)
-    {
-        var ordinal = reader.GetOrdinal(columnName);
-        return reader.IsDBNull(ordinal) ? null : reader.GetFieldValue<DateTimeOffset>(ordinal);
-    }
-
-    private static long? GetNullableInt64(DbDataReader reader, string columnName)
-    {
-        var ordinal = reader.GetOrdinal(columnName);
-        return reader.IsDBNull(ordinal) ? null : Convert.ToInt64(reader.GetValue(ordinal));
-    }
-
     private static async Task<QueryStoreDatabaseOptions> ReadDatabaseOptionsAsync(
         SqlConnection connection,
         QueryStoreOptions options,
         CancellationToken cancellationToken)
     {
-        using var command = CreateCommand(connection, QueryStoreOptionsSql, options.CommandTimeoutSeconds);
-        DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        await using (reader.ConfigureAwait(false))
+        CommandDefinition command = new(
+            QueryStoreOptionsSql,
+            commandTimeout: options.CommandTimeoutSeconds,
+            cancellationToken: cancellationToken);
+        var row = await connection.QueryFirstOrDefaultAsync<QueryStoreDatabaseOptionsRow>(command)
+            .ConfigureAwait(false);
+        if (row is null)
         {
-            if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                throw new InvalidOperationException("sys.database_query_store_options returned no rows.");
-            }
-
-            return ReadDatabaseOptions(reader);
+            throw new InvalidOperationException("sys.database_query_store_options returned no rows.");
         }
+
+        return MapDatabaseOptions(row);
     }
 
     private static async Task<IReadOnlyList<QueryStorePlanRecord>> ReadPlansAsync(
@@ -319,11 +309,13 @@ internal static class SqlServerQueryStoreCollector
         DateTimeOffset startTimeUtc,
         CancellationToken cancellationToken)
     {
-        using var command = CreateCommand(connection, QueryStorePlansSql, options.CommandTimeoutSeconds);
-        command.Parameters.Add(new SqlParameter("@StartTimeUtc", System.Data.SqlDbType.DateTimeOffset) { Value = startTimeUtc });
-        command.Parameters.Add(new SqlParameter("@MaxPlans", System.Data.SqlDbType.Int) { Value = options.MaxPlans });
-
-        return await ReadRecordsAsync(command, ReadPlanRecord, cancellationToken).ConfigureAwait(false);
+        CommandDefinition command = new(
+            QueryStorePlansSql,
+            new { StartTimeUtc = startTimeUtc, MaxPlans = options.MaxPlans },
+            commandTimeout: options.CommandTimeoutSeconds,
+            cancellationToken: cancellationToken);
+        var rows = await connection.QueryAsync<QueryStorePlanRow>(command).ConfigureAwait(false);
+        return rows.Select(MapPlanRecord).ToArray();
     }
 
     private static async Task<IReadOnlyList<QueryStoreWaitStat>> ReadWaitsAsync(
@@ -332,36 +324,12 @@ internal static class SqlServerQueryStoreCollector
         DateTimeOffset startTimeUtc,
         CancellationToken cancellationToken)
     {
-        using var command = CreateCommand(connection, QueryStoreWaitsSql, options.CommandTimeoutSeconds);
-        command.Parameters.Add(new SqlParameter("@StartTimeUtc", System.Data.SqlDbType.DateTimeOffset) { Value = startTimeUtc });
-        command.Parameters.Add(new SqlParameter("@MaxWaits", System.Data.SqlDbType.Int) { Value = options.MaxWaits });
-
-        return await ReadRecordsAsync(command, ReadWaitStat, cancellationToken).ConfigureAwait(false);
-    }
-
-    private static SqlCommand CreateCommand(SqlConnection connection, string commandText, int commandTimeoutSeconds)
-    {
-        var command = connection.CreateCommand();
-        command.CommandText = commandText;
-        command.CommandTimeout = commandTimeoutSeconds;
-        return command;
-    }
-
-    private static async Task<IReadOnlyList<T>> ReadRecordsAsync<T>(
-        SqlCommand command,
-        Func<DbDataReader, T> map,
-        CancellationToken cancellationToken)
-    {
-        List<T> records = new();
-        DbDataReader reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
-        await using (reader.ConfigureAwait(false))
-        {
-            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
-            {
-                records.Add(map(reader));
-            }
-
-            return records;
-        }
+        CommandDefinition command = new(
+            QueryStoreWaitsSql,
+            new { StartTimeUtc = startTimeUtc, MaxWaits = options.MaxWaits },
+            commandTimeout: options.CommandTimeoutSeconds,
+            cancellationToken: cancellationToken);
+        var rows = await connection.QueryAsync<QueryStoreWaitRow>(command).ConfigureAwait(false);
+        return rows.Select(MapWaitStat).ToArray();
     }
 }
