@@ -57,15 +57,7 @@ internal sealed record CommandSpec(
             // Keep usage compact: show target shape and required switches, then collapse everything else.
             List<string> parts = [];
             parts.Add(Verb);
-            if (TargetKind == CommandTargetKind.Optional)
-            {
-                parts.Add("[<path>]");
-            }
-            else if (TargetKind == CommandTargetKind.Required)
-            {
-                parts.Add("<path>");
-            }
-
+            parts.AddRange(ArgumentRows.Select(static row => row.Syntax));
             parts.AddRange(Options
                 .Where(static option => option.IsRequired)
                 .Select(static option => option.Syntax));
@@ -77,6 +69,38 @@ internal sealed record CommandSpec(
             }
 
             return string.Join(' ', parts);
+        }
+    }
+
+    public IReadOnlyList<CommandOptionSpec> SupportedStartupOptions
+    {
+        get
+        {
+            return CommandCatalog.StartupOptions
+                .Where(option =>
+                    option.Name == "--debug"
+                        ? SupportsDebug
+                        : SupportsHarnessOptions)
+                .ToArray();
+        }
+    }
+
+    public IReadOnlyList<(string Syntax, string Description)> ArgumentRows
+    {
+        get
+        {
+            return TargetKind switch
+            {
+                CommandTargetKind.Required =>
+                [
+                    ("<path>", "C# file-based harness, harness project, harness assembly, solution, solution filter, or directory."),
+                ],
+                CommandTargetKind.Optional =>
+                [
+                    ("[<path>]", "Optional C# file-based harness, harness project, harness assembly, solution, solution filter, or directory."),
+                ],
+                _ => Array.Empty<(string Syntax, string Description)>(),
+            };
         }
     }
 }

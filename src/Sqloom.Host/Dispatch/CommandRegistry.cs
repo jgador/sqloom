@@ -69,8 +69,4 @@ internal sealed class CommandRegistry
         return CommandCatalog.Find(args[0])?.Kind;
     }
 
-    internal static string GetCommandVerb(HostCommandKind commandKind)
-    {
-        return CommandCatalog.GetRequired(commandKind).Verb;
-    }
 }

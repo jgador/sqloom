@@ -99,18 +99,13 @@ internal sealed class TuneCommand
         arguments.ReplayArguments.DebugEnabled = context.DebugEnabled;
         arguments.CorrelateArguments.DebugEnabled = context.DebugEnabled;
         arguments.AdviseArguments.DebugEnabled = context.DebugEnabled;
-        var result = await ExecuteAsync(arguments).ConfigureAwait(false);
+        var result = await TuneWorkflowRunner
+            .RunAsync(arguments)
+            .ConfigureAwait(false);
         HostConsoleWriter.PrintTuneSummary(
             result.Report,
             result.SummaryOutputPath);
         return result.ExitCode;
-    }
-
-    internal Task<(TuneWorkflowReport Report, string SummaryOutputPath, int ExitCode)> ExecuteAsync(
-        TuneArguments arguments,
-        CancellationToken cancellationToken = default)
-    {
-        return TuneWorkflowRunner.RunAsync(arguments, cancellationToken);
     }
 
     internal async Task<ReplayLaunchOptions> ResolveReplayLaunchOptionsAsync(

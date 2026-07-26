@@ -76,7 +76,9 @@ public static class HostRuntime
                 return exitCode;
             }
 
-            var hostApplication = CreateApplication(application);
+            var hostApplication = application is null
+                ? new HostApplication()
+                : new HostApplication(application);
             return await hostApplication
                 .RunAsync(
                     startupOptions,
@@ -106,13 +108,6 @@ public static class HostRuntime
 
         return assembly.GetName().Version?.ToString()
             ?? "unknown";
-    }
-
-    private static HostApplication CreateApplication(ISqloomApplication? application)
-    {
-        return application is null
-            ? new HostApplication()
-            : new HostApplication(application);
     }
 
     private static int HandleStartupFailure(string message)

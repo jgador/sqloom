@@ -423,10 +423,10 @@ internal static class HostConsoleWriter
 
         PrintRows(
             "Arguments:",
-            GetArgumentRows(command));
+            command.ArgumentRows);
         PrintRows(
             "startup-options:",
-            GetStartupOptions(command).Select(static option => FormatOptionRow(option)));
+            command.SupportedStartupOptions.Select(static option => FormatOptionRow(option)));
         PrintRows(
             "options:",
             command.Options.Select(static option => FormatOptionRow(option)));
@@ -482,32 +482,6 @@ internal static class HostConsoleWriter
         return CommandCatalog.Find(verb)
             ?? throw new ArgumentException(
                 $"Unknown Sqloom command '{verb}'. Use 'sqloom help' to list commands.");
-    }
-
-    private static IReadOnlyList<CommandOptionSpec> GetStartupOptions(CommandSpec command)
-    {
-        return CommandCatalog.StartupOptions
-            .Where(option =>
-                option.Name == "--debug"
-                    ? command.SupportsDebug
-                    : command.SupportsHarnessOptions)
-            .ToArray();
-    }
-
-    private static IReadOnlyList<(string Syntax, string Description)> GetArgumentRows(CommandSpec command)
-    {
-        return command.TargetKind switch
-        {
-            CommandTargetKind.Required =>
-            [
-                ("<path>", "C# file-based harness, harness project, harness assembly, solution, solution filter, or directory."),
-            ],
-            CommandTargetKind.Optional =>
-            [
-                ("[<path>]", "Optional C# file-based harness, harness project, harness assembly, solution, solution filter, or directory."),
-            ],
-            _ => Array.Empty<(string Syntax, string Description)>(),
-        };
     }
 
     private static (string Syntax, string Description) FormatOptionRow(CommandOptionSpec option)

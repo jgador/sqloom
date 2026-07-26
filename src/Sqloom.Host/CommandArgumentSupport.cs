@@ -90,7 +90,7 @@ internal static class CommandArgumentSupport
             .Where(option => option.TakesValue)
             .Select(option => option.Name)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var commandVerb = CommandRegistry.GetCommandVerb(commandKind);
+        var commandVerb = command.Verb;
         var leadingVerb = CommandRegistry.GetLeadingVerb(args);
         if (leadingVerb is not null && leadingVerb != commandKind)
         {

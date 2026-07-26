@@ -66,11 +66,11 @@ public static class CommandReferenceMarkdown
                 builder,
                 "Argument",
                 "Description",
-                GetArgumentRows(command).Select(static row => ($"`{row.Syntax}`", row.Description)));
+                command.ArgumentRows.Select(static row => ($"`{row.Syntax}`", row.Description)));
 
             AppendOptionTable(
                 builder,
-                GetStartupOptions(command),
+                command.SupportedStartupOptions,
                 heading: "#### Startup options");
             AppendOptionTable(
                 builder,
@@ -91,12 +91,11 @@ public static class CommandReferenceMarkdown
         IEnumerable<CommandOptionSpec> options,
         string? heading = null)
     {
-        var materializedOptions = options.ToArray();
         AppendTable(
             builder,
             "Option",
             "Description",
-            materializedOptions.Select(static option => ($"`{EscapeMarkdown(option.Syntax)}`", FormatOptionDescription(option))),
+            options.Select(static option => ($"`{EscapeMarkdown(option.Syntax)}`", FormatOptionDescription(option))),
             heading);
     }
 
@@ -148,32 +147,6 @@ public static class CommandReferenceMarkdown
         }
 
         builder.AppendLine();
-    }
-
-    private static IReadOnlyList<CommandOptionSpec> GetStartupOptions(CommandSpec command)
-    {
-        return CommandCatalog.StartupOptions
-            .Where(option =>
-                option.Name == "--debug"
-                    ? command.SupportsDebug
-                    : command.SupportsHarnessOptions)
-            .ToArray();
-    }
-
-    private static IReadOnlyList<(string Syntax, string Description)> GetArgumentRows(CommandSpec command)
-    {
-        return command.TargetKind switch
-        {
-            CommandTargetKind.Required =>
-            [
-                ("<path>", "C# file-based harness, harness project, harness assembly, solution, solution filter, or directory."),
-            ],
-            CommandTargetKind.Optional =>
-            [
-                ("[<path>]", "Optional C# file-based harness, harness project, harness assembly, solution, solution filter, or directory."),
-            ],
-            _ => Array.Empty<(string Syntax, string Description)>(),
-        };
     }
 
     private static string FormatOptionDescription(CommandOptionSpec option)

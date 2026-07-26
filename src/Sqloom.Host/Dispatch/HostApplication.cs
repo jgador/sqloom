@@ -70,19 +70,6 @@ internal sealed class HostApplication
         }
     }
 
-    public Task<int> RunAsync(
-        string[] args,
-        string currentDirectory,
-        CancellationToken cancellationToken = default)
-    {
-        HostStartupOptions startupOptions = new()
-        {
-            ApplicationArguments = args,
-        };
-
-        return RunAsync(startupOptions, currentDirectory, cancellationToken);
-    }
-
     internal static IReadOnlyList<string> GetProjectNames(ISqloomApplication? application)
     {
         List<string> projectNames = [];
