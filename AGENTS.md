@@ -200,6 +200,10 @@ Agent rules:
 - When the repo adds root-level ESLint config, also run ESLint with `--fix` on touched `extensions/sqloom/src` files before finishing; until then, treat `npm run lint -- --target sqloom` as the required lint gate (TypeScript `tsc --noEmit` plus version sync check).
 - Do not hand-edit generated output under `extensions/sqloom/dist/`.
 
+## Extension Architecture Reference
+
+- **Tech Stack Reference**: The `vscode-mssql` extension (located at `C:/repo/GitHub/vscode-mssql`) uses **React 19 + TypeScript + Fluent UI Web Components** (bundled via esbuild) for its webview dashboards. Use this architecture as the primary design baseline or comparison reference for any future extension migration or webview modernization planning.
+
 ## State-Changing Git Command Safety
 
 Git read commands such as `git status`, `git log`, `git diff`, `git show`, and `git branch --show-current` are allowed for inspection.
