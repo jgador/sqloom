@@ -45,13 +45,13 @@ public sealed class EndpointReplayRunResult
     public required string SummaryArtifactPath { get; init; }
 
     /// <summary>
-    /// Gets the replay data generation path.
+    /// Path to the persisted replay data generation report, or <see langword="null"/> when agent generation is disabled.
     /// </summary>
     [JsonPropertyName("replayDataGenerationPath")]
     public string? ReplayDataGenerationPath { get; init; }
 
     /// <summary>
-    /// Gets the replay data generation.
+    /// Per-operation replay data generation results, or <see langword="null"/> when agent generation is disabled.
     /// </summary>
     [JsonPropertyName("replayDataGeneration")]
     public ReplayDataGenerationReport? ReplayDataGeneration { get; init; }

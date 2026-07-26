@@ -20,6 +20,23 @@ dotnet add package Sqloom.Testing
 
 The package also contains the shared `Sqloom.Pipeline.*` namespaces for replay, Query Store, artifact, and advice pipeline types, so harnesses only need this one library package.
 
+## Replay data generation contract
+
+The public replay-data API and persisted artifacts use **generation** for the agent workflow that fills missing HTTP path, query, header, and body inputs. Consumers upgrading from the earlier preparation-named contract must update these references:
+
+| Earlier name | Current name |
+| --- | --- |
+| `ReplayDataPreparationReport` | `ReplayDataGenerationReport` |
+| `ReplayDataPreparationOperation` | `ReplayDataGenerationOperation` |
+| `ArtifactLayout.GetReplayDataPreparationPath(...)` | `ArtifactLayout.GetReplayDataGenerationPath(...)` |
+| `EndpointReplayRunResult.ReplayDataPreparationPath` | `EndpointReplayRunResult.ReplayDataGenerationPath` |
+| `EndpointReplayRunResult.ReplayDataPreparation` | `EndpointReplayRunResult.ReplayDataGeneration` |
+| `replay-data-prep.json` | `replay-data-generation.json` |
+| `replayDataPreparationPath` | `replayDataGenerationPath` |
+| `replayDataPreparation` | `replayDataGeneration` |
+
+This is a breaking API and JSON contract rename: Sqloom does not emit aliases or a duplicate legacy artifact. `ReplayPreparedData` and its `preparedData` JSON property retain their names because they represent the values after generation, ready to apply to a replay request.
+
 Install the Sqloom CLI separately:
 
 ```powershell

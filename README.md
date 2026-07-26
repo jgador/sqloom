@@ -56,6 +56,8 @@ dotnet add package Sqloom.Testing
 
 `Sqloom.Testing` contains the harness APIs plus the shared `Sqloom.Pipeline.*` pipeline surface used by replay, Query Store, artifact, and advice flows.
 
+When upgrading code or artifact readers from the earlier replay-data preparation names, use the [replay data generation migration mapping](src/Sqloom.Testing/PackageReadme.md#replay-data-generation-contract).
+
 ### VS Code extension
 
 Install the Marketplace preview extension `jessegador.sqloom`, or build a local `.vsix` from the repo root:
