@@ -18,11 +18,11 @@ internal static class SqlServerQueryStoreCollector
     // Reads Query Store state and storage so observe can report whether capture is usable.
     private const string QueryStoreOptionsSql = """
         SELECT
-            desired_state_desc AS DesiredState,
-            actual_state_desc AS ActualState,
-            CONVERT(bigint, readonly_reason) AS ReadOnlyReason,
-            CONVERT(bigint, current_storage_size_mb) AS CurrentStorageSizeMb,
-            CONVERT(bigint, max_storage_size_mb) AS MaxStorageSizeMb
+            desired_state_desc,
+            actual_state_desc,
+            CONVERT(bigint, readonly_reason) AS readonly_reason,
+            CONVERT(bigint, current_storage_size_mb) AS current_storage_size_mb,
+            CONVERT(bigint, max_storage_size_mb) AS max_storage_size_mb
         FROM sys.database_query_store_options;
         """;
 
@@ -60,34 +60,34 @@ internal static class SqlServerQueryStoreCollector
             GROUP BY filtered_runtime_stats.plan_id
         )
         SELECT TOP (@MaxPlans)
-            query_store_query.query_id AS QueryId,
-            query_store_plan.plan_id AS PlanId,
-            query_store_query.query_text_id AS QueryTextId,
-            CONVERT(varchar(130), query_store_query_text.statement_sql_handle, 1) AS StatementSqlHandle,
-            NULLIF(CONVERT(bigint, query_store_query.object_id), 0) AS ObjectId,
-            CONVERT(int, query_store_query.query_parameterization_type) AS QueryParameterizationType,
-            query_store_query.query_parameterization_type_desc AS ParamTypeDescription,
-            CONVERT(varchar(18), query_store_query.query_hash, 1) AS QueryHash,
-            query_store_query_text.query_sql_text AS QueryText,
+            query_store_query.query_id,
+            query_store_plan.plan_id,
+            query_store_query.query_text_id,
+            CONVERT(varchar(130), query_store_query_text.statement_sql_handle, 1) AS statement_sql_handle,
+            NULLIF(CONVERT(bigint, query_store_query.object_id), 0) AS object_id,
+            CONVERT(int, query_store_query.query_parameterization_type) AS query_parameterization_type,
+            query_store_query.query_parameterization_type_desc,
+            CONVERT(varchar(18), query_store_query.query_hash, 1) AS query_hash,
+            query_store_query_text.query_sql_text,
             CASE
                 WHEN query_store_query.object_id = 0 THEN NULL
                 ELSE QUOTENAME(OBJECT_SCHEMA_NAME(query_store_query.object_id)) + N'.' + QUOTENAME(OBJECT_NAME(query_store_query.object_id))
-            END AS ObjectName,
-            plan_runtime.execution_count AS ExecutionCount,
+            END AS object_name,
+            plan_runtime.execution_count,
             CASE
                 WHEN plan_runtime.execution_count = 0 THEN 0
                 ELSE plan_runtime.total_duration_us / CAST(plan_runtime.execution_count AS float)
-            END AS MeanDurationMicroseconds,
+            END AS mean_duration_us,
             CASE
                 WHEN plan_runtime.execution_count = 0 THEN 0
                 ELSE plan_runtime.total_cpu_us / CAST(plan_runtime.execution_count AS float)
-            END AS MeanCpuMicroseconds,
+            END AS mean_cpu_us,
             CASE
                 WHEN plan_runtime.execution_count = 0 THEN 0
                 ELSE plan_runtime.total_logical_reads / CAST(plan_runtime.execution_count AS float)
-            END AS MeanLogicalReads,
-            CONVERT(float, plan_runtime.max_duration_us) AS MaxDurationMicroseconds,
-            plan_runtime.last_execution_time AS LastExecutionTimeUtc
+            END AS mean_logical_reads,
+            CONVERT(float, plan_runtime.max_duration_us) AS max_duration_us,
+            plan_runtime.last_execution_time
         FROM plan_runtime
         INNER JOIN sys.query_store_plan AS query_store_plan
             ON query_store_plan.plan_id = plan_runtime.plan_id
@@ -120,14 +120,14 @@ internal static class SqlServerQueryStoreCollector
                 runtime_stats.runtime_stats_interval_id
         )
         SELECT TOP (@MaxWaits)
-            query_store_query.query_id AS QueryId,
-            query_store_wait_stats.plan_id AS PlanId,
-            query_store_wait_stats.wait_category_desc AS WaitCategory,
-            SUM(query_store_wait_stats.total_query_wait_time_ms) AS TotalWaitMilliseconds,
+            query_store_query.query_id,
+            query_store_wait_stats.plan_id,
+            query_store_wait_stats.wait_category_desc,
+            SUM(query_store_wait_stats.total_query_wait_time_ms) AS total_query_wait_time_ms,
             CASE
                 WHEN SUM(filtered_runtime_counts.execution_count) = 0 THEN 0
                 ELSE SUM(query_store_wait_stats.total_query_wait_time_ms) / CAST(SUM(filtered_runtime_counts.execution_count) AS float)
-            END AS AvgWaitMs
+            END AS avg_query_wait_time_ms
         FROM sys.query_store_wait_stats AS query_store_wait_stats
         INNER JOIN filtered_runtime_counts
             ON filtered_runtime_counts.plan_id = query_store_wait_stats.plan_id
@@ -158,6 +158,7 @@ internal static class SqlServerQueryStoreCollector
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(readOnlyConnectionString);
         ValidateOptions(options);
+        SqlServerQueryTypeMaps.EnsureRegistered();
 
         var connection = await ReadOnlySqlConnectionFactory
             .CreateOpenConnectionAsync(readOnlyConnectionString, cancellationToken)

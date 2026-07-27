@@ -17,13 +17,13 @@ internal static class SqlServerDiscoveredObjectCollector
 {
     private const string UserTablesAndViewsSql = """
         SELECT
-            schema_info.name AS SchemaName,
-            objects.name AS ObjectName,
+            schema_info.name AS schema_name,
+            objects.name AS object_name,
             CASE
                 WHEN objects.type = N'U' THEN N'Table'
                 WHEN objects.type = N'V' THEN N'View'
                 ELSE N'Unknown'
-            END AS ObjectKind
+            END AS object_kind
         FROM sys.objects AS objects
         INNER JOIN sys.schemas AS schema_info
             ON schema_info.schema_id = objects.schema_id
@@ -32,19 +32,19 @@ internal static class SqlServerDiscoveredObjectCollector
         ORDER BY
             schema_info.name,
             objects.name,
-            ObjectKind;
+            object_kind;
         """;
 
     private const string ViewDefinitionPermissionSql = """
         SELECT
-            CAST(HAS_PERMS_BY_NAME(DB_NAME(), 'DATABASE', 'VIEW DEFINITION') AS bit) AS HasViewDefinition;
+            CAST(HAS_PERMS_BY_NAME(DB_NAME(), 'DATABASE', 'VIEW DEFINITION') AS bit) AS has_view_definition;
         """;
 
     private const string UserModulesSql = """
         SELECT
-            schema_info.name AS SchemaName,
-            objects.name AS ObjectName,
-            N'Module' AS ObjectKind
+            schema_info.name AS schema_name,
+            objects.name AS object_name,
+            N'Module' AS object_kind
         FROM sys.objects AS objects
         INNER JOIN sys.schemas AS schema_info
             ON schema_info.schema_id = objects.schema_id
@@ -53,7 +53,7 @@ internal static class SqlServerDiscoveredObjectCollector
         ORDER BY
             schema_info.name,
             objects.name,
-            ObjectKind;
+            object_kind;
         """;
 
     /// <summary>
@@ -66,6 +66,7 @@ internal static class SqlServerDiscoveredObjectCollector
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(readOnlyConnectionString);
         ValidateOptions(options);
+        SqlServerQueryTypeMaps.EnsureRegistered();
 
         var connection = await ReadOnlySqlConnectionFactory
             .CreateOpenConnectionAsync(readOnlyConnectionString, cancellationToken)

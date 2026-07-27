@@ -89,27 +89,27 @@ internal sealed class QueryStorePlanRow
     public string? ObjectName { get; set; }
 
     /// <summary>
-    /// The aggregated execution count returned as <c>ExecutionCount</c>.
+    /// The aggregated execution count returned as <c>execution_count</c>.
     /// </summary>
     public long ExecutionCount { get; set; }
 
     /// <summary>
-    /// The mean execution duration in microseconds returned as <c>MeanDurationMicroseconds</c>.
+    /// The mean execution duration in microseconds returned as <c>mean_duration_us</c>.
     /// </summary>
     public double MeanDurationMicroseconds { get; set; }
 
     /// <summary>
-    /// The maximum execution duration in microseconds returned as <c>MaxDurationMicroseconds</c>.
+    /// The maximum execution duration in microseconds returned as <c>max_duration_us</c>.
     /// </summary>
     public double MaxDurationMicroseconds { get; set; }
 
     /// <summary>
-    /// The mean CPU consumption in microseconds returned as <c>MeanCpuMicroseconds</c>.
+    /// The mean CPU consumption in microseconds returned as <c>mean_cpu_us</c>.
     /// </summary>
     public double MeanCpuMicroseconds { get; set; }
 
     /// <summary>
-    /// The mean logical-read count returned as <c>MeanLogicalReads</c>.
+    /// The mean logical-read count returned as <c>mean_logical_reads</c>.
     /// </summary>
     public double MeanLogicalReads { get; set; }
 
@@ -140,12 +140,12 @@ internal sealed class QueryStoreWaitRow
     public string WaitCategory { get; set; } = string.Empty;
 
     /// <summary>
-    /// The average wait time in milliseconds returned as <c>AvgWaitMs</c>.
+    /// The average wait time in milliseconds returned as <c>avg_query_wait_time_ms</c>.
     /// </summary>
     public double AvgWaitMs { get; set; }
 
     /// <summary>
-    /// The total wait time in milliseconds returned as <c>TotalWaitMilliseconds</c>.
+    /// The total wait time in milliseconds returned as <c>total_query_wait_time_ms</c>.
     /// </summary>
     public double TotalWaitMilliseconds { get; set; }
 }
@@ -166,7 +166,7 @@ internal sealed class DiscoveredDatabaseObjectRow
     public string ObjectName { get; set; } = string.Empty;
 
     /// <summary>
-    /// The normalized object-kind label returned as <c>ObjectKind</c>.
+    /// The normalized object-kind label returned as <c>object_kind</c>.
     /// </summary>
     public string ObjectKind { get; set; } = string.Empty;
 }

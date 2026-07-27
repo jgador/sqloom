@@ -20,8 +20,8 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
     private const int DefaultCommandTimeoutSeconds = 30;
     private const string ResolveStatementHandleSql = """
         SELECT
-            CONVERT(int, resolved.query_parameterization_type) AS QueryParameterizationType,
-            CONVERT(varchar(130), resolved.statement_sql_handle, 1) AS StatementSqlHandle
+            CONVERT(int, resolved.query_parameterization_type) AS query_parameterization_type,
+            CONVERT(varchar(130), resolved.statement_sql_handle, 1) AS statement_sql_handle
         FROM sys.fn_stmt_sql_handle_from_sql_stmt(
             @QuerySqlText,
             @RequestedParamType) AS resolved;
@@ -55,6 +55,7 @@ internal sealed partial class SqlStatementHandleResolver : ISqlHandleResolver
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sqlText);
         ArgumentNullException.ThrowIfNull(parameters);
+        SqlServerQueryTypeMaps.EnsureRegistered();
 
         var comparableSqlText = QueryStoreSqlText.TrimOuterNoise(sqlText);
         var queryTextCandidates =
